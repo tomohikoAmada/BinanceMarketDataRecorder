@@ -620,6 +620,8 @@ async def run_benchmark(
         underlying_assets=("BTC", "ETH"),
         spot_intervals=("1m", "5m"),
         futures_intervals=("1m", "5m"),
+        spot_utc8_intervals=("1m", "5m"),
+        kline_forming_policy="all",
     )
     products = [
         p

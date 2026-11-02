@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -26,6 +27,15 @@ SPOT_INTERVALS = (
     "1M",
 )
 FUTURES_INTERVALS = SPOT_INTERVALS[1:]
+# S12 keeps distinct boundaries; S11 covers the other 10 intraday intervals.
+SPOT_UTC8_INTERVALS = (
+    "6h",
+    "12h",
+    "1d",
+    "3d",
+    "1w",
+    "1M",
+)
 
 
 class CoverageConfig(BaseModel):
@@ -40,7 +50,10 @@ class CoverageConfig(BaseModel):
     directory_interval_seconds: float = Field(default=3600.0, ge=60)
     # Full native interval sets are the default. Explicit subsets disclose a reduction.
     spot_intervals: tuple[str, ...] = SPOT_INTERVALS
+    spot_utc8_intervals: tuple[str, ...] = SPOT_UTC8_INTERVALS
     futures_intervals: tuple[str, ...] = FUTURES_INTERVALS
+    # ADR-0058: kline forming bar persistence policy ("closed_only" or "all").
+    kline_forming_policy: Literal["closed_only", "all"] = "closed_only"
     # False explicitly selects the owner-approved ADR-0055 initial-release omission.
     # Keep the complete target for existing configurations unless they opt in.
     capture_dated_premium_klines: bool = True
@@ -80,7 +93,7 @@ class CoverageConfig(BaseModel):
             raise ValueError("at least one underlying asset is required")
         return value
 
-    @field_validator("spot_intervals", "futures_intervals", mode="before")
+    @field_validator("spot_intervals", "spot_utc8_intervals", "futures_intervals", mode="before")
     @classmethod
     def _intervals(cls, value: object) -> tuple[str, ...]:
         if not isinstance(value, (list, tuple)) or not value:

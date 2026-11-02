@@ -89,6 +89,8 @@ def envelope_for_group(
             source = group.by_wire[wire]
             sequence.update(sourceStream=source.stream, sourceFamily=source.family, wireStream=wire)
         data = combined["data"]
+        if "kline" in source.stream and not isinstance(data, dict):
+            raise ValueError("invalid kline data")
         if isinstance(data, dict):
             if wire != "!serverShutdown" and any(k not in data for k in source.required_fields):
                 raise ValueError("required WS field is missing")
@@ -128,6 +130,39 @@ def envelope_for_group(
                 value = data.get(key)
                 if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
                     sequence[key] = value
+            if "kline" in source.stream or (
+                isinstance(data.get("e"), str) and "kline" in data["e"].lower()
+            ):
+                k = data.get("k")
+                if not isinstance(k, dict):
+                    raise ValueError("missing or invalid kline object")
+                if any(field not in k for field in ("i", "o", "c", "h", "l", "v")):
+                    raise ValueError("missing required kline fields")
+                expected_interval = source.stream.removesuffix("_utc8").rsplit("_", 1)[-1]
+                if k["i"] != expected_interval:
+                    raise ValueError("kline interval does not match subscription")
+                x = k.get("x")
+                t = k.get("t")
+                T = k.get("T")
+                if not isinstance(x, bool):
+                    raise ValueError("kline x must be boolean")
+                if not isinstance(t, int) or isinstance(t, bool) or t < 0:
+                    raise ValueError("invalid kline openTime")
+                if not isinstance(T, int) or isinstance(T, bool) or T < 0:
+                    raise ValueError("invalid kline closeTime")
+                if t > T:
+                    raise ValueError("kline openTime exceeds closeTime")
+                if (
+                    product is not None
+                    and source.stream.startswith("kline_")
+                    and k.get("s") != product.key.symbol
+                ):
+                    raise ValueError("kline symbol does not match directory")
+                sequence["klineClosed"] = 1 if x else 0
+                sequence["openTime"] = t
+                sequence["closeTime"] = T
+                if "i" in k and isinstance(k["i"], str):
+                    sequence["interval"] = k["i"]
             if source.stream in {"diff_depth", "rpi_depth"}:
                 required = ("U", "u") if source.venue_market == "spot" else ("U", "u", "pu")
                 if any(key not in sequence for key in required) or int(sequence["U"]) > int(

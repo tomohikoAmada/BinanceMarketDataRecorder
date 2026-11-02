@@ -184,6 +184,25 @@
   - 单元测试覆盖：① 正常 `k.x == False` 过滤计数且保持源 `VALID` 不超时；② 模拟 WebSocket 在整分收盘前断线、收盘后重连，系统自动通过 REST 补齐缺失的收盘 K 线；
   - 一次性 Seed 源在完成后不再出现在每秒调度循环中。
 
+- **完成状态（2026-11-02 独立实施并全量验收通过）**：
+  - **具体实施内容**：
+    1. **`S12` 周期直接去重**：在 `CoverageConfig` 中新增 `SPOT_UTC8_INTERVALS = ("6h", "12h", "1d", "3d", "1w", "1M")` 与配置项校验；在 `public_sources.py` 中 `S12` 源直接使用过滤后的 6 个与 UTC 边界不同的周期，免除其余 10 个重叠周期的重复订阅，并在 [`docs/data_coverage.md`](data_coverage.md) 中完整披露。
+    2. **K 线解析与形成中过滤（`ADR-0058`）**：在 `CoverageConfig` 新增 `kline_forming_policy: Literal["closed_only", "all"] = "closed_only"`；在 `envelope_for_group()` 中严谨解析与校验 `k.x`、`t`、`T`，填入 `source_sequence`（`klineClosed`、`openTime`、`closeTime`、`interval`），任何非法或残缺帧严格打上 `flags = ("malformed",)` 标记落盘；在 `SelectedAssetCapture` 接收路径中对 `k.x == False` 累加 `forming_filtered_count` 并刷新活跃时间，保持源在 `AvailabilityJournal` 为 `VALID` 且不超时，但不推入 `StreamSpool`。
+    3. **断线漏收收盘 bar 检测与自动 REST 补齐**：`SelectedAssetCapture` 维护每个 K 线源的 `last_closed_open_time_ms`。在收盘帧 `t > next_expected_open_time` 或连接在错过预期收盘边界（`now_ms > expected_close_ms`）后恢复时，自动通过 `shared_request_budget()`（按 `rest_source.charges` 扣除 `spot_weight`/`usdm_weight` 预算）调度低优先级 REST 补采任务，将补回的收盘 bar 打上 `capture_flags = ("closed_bar_backfill",)` 及真实 REST 接收时间写入 Raw。
+    4. **一次性 Seed 源退役（Seed Retirement）**：在 `SelectedAssetCapture` 中通过 `SourcesView` 统合管理 `_active_sources` 与 `_completed_seed_sources`；`cadence_seconds == 0` 的一次性种子源完成首次请求并持久化后，即刻移入 `_completed_seed_sources` 并将其最新收盘时间预植入对应 WS 源的 `last_closed_open_time_ms`；每秒的 `_poll_rest_loop` 与 `_observe_availability` 仅遍历 `_active_sources`，彻底消除每秒对千余个已完成种子源的无效循环与空转调度，同时保留状态展示与覆盖度核对接口。
+  - **实施过程中发现并解决的问题**：
+    - **问题 1（指数 K 线 symbol 匹配误判）**：`envelope_for_group()` 中原 `k["s"] != product.key.symbol` 检查在交割合约指数 K 线（如 `BTCUSD_261225` 的 `indexPriceKline`）时触发异常，因为 Binance 指数流的 payload 中 `s` 为现货标的对 `BTCUSD`。修复：将该强校验限定在标准现货/合约流（`source.stream.startswith("kline_")`）。
+    - **问题 2（批次全过滤时的下角标越界）**：在 `UsdMStreamCollector._writer_loop` 中，当某个批次的所有帧均被形成中过滤器过滤导致 `persisted` 为空时，`persisted[-1].connection_id` 触发 `IndexError`。修复：改用 `persisted[-1].connection_id if persisted else batch[-1].connection_id`。
+    - **问题 3（未绑定局部变量异常）**：在 `UsdMStreamCollector._writer_loop` 中，`persisted` 为空时清理语句 `del receipt, envelope` 抛出 `UnboundLocalError`。修复：移除无谓的手动局部变量删除，保留列表的 `.clear()`。
+    - **问题 4（基准测试工具流等待挂起）**：基准工具 `tools/benchmark_m1_m3_pipeline.py` 原假定所有接收帧都会落盘（`received == persisted`），在默认开启 `closed_only` 后因形成中过滤导致等待挂起。修复：在基准与对应单测中显式配置 `kline_forming_policy="all"` 以确保基线测试逻辑准确。
+    - **问题 5（REST 请求预算配额键错误）**：补采请求原使用 `{f"{pool}_rest": weight}` 向 `shared_request_budget()` 申请配额，但 `RECORDER_WINDOWS` 中实际定义为 `spot_weight` 与 `usdm_weight`，导致报 `KeyError` 并被异常捕获吞没。修复：统一调用 `shared_request_budget().acquire(rest_source.charges)`，完美适配现有预算系统。
+    - **问题 6（Mypy 变量类型推导错误）**：`UsdMStreamCollector._persist_batch` 循环中 `envelope` 变量原未赋初值，被推断为非 Optional 类型导致 mypy 报类型冲突。修复：显式初始化为 `envelope: EventEnvelope | None = None`。
+  - **验收与回归验证证据**：
+    - 新增专用单元测试套件 [`tests/unit/test_m1_3_kline_and_seed_retirement.py`](../tests/unit/test_m1_3_kline_and_seed_retirement.py) **6 passed**，覆盖：`S12` 6 周期去重、K 线格式校验与畸形标记、形成中过滤与源心跳维持、漏收 gap 自动触发 REST 补采、重连跨界补采调度、一次性种子源退役与初始 openTime 播种。
+    - 现有覆盖率测试 [`tests/unit/test_p2_coverage.py`](../tests/unit/test_p2_coverage.py) **27 passed**；基准测试 [`tests/unit/test_m1_pipeline_benchmark.py`](../tests/unit/test_m1_pipeline_benchmark.py) **3 passed**。
+    - 全量回归测试：`pytest` **2,487 passed / 24 skipped / 5 deselected**（耗时 4m08s），零失败用例；
+    - 代码规范与跨语言契约：`ruff check .` 全部通过；`mypy src`（141 源文件）与 `mypy tests` 零错误；`python tests/verify_m0_contracts.py` 通过；`go run tools/verify_raw_chunk_golden.go` 通过；`git diff --check` 无空白或格式违规。
+
 ---
 
 #### 任务 M1.4：移除热路径防御性拷贝与合并 REST 持久化线程交接
@@ -420,7 +439,7 @@
 
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
-| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
+| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

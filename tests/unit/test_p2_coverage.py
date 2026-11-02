@@ -30,7 +30,10 @@ from binance_market_data_recorder.spool.format import decode_envelope, encode_en
 
 FIXTURES = Path(__file__).parents[1] / "fixtures/binance/p2"
 SMALL = CoverageConfig(
-    underlying_assets=("BTC", "ETH"), spot_intervals=("1m",), futures_intervals=("1m",)
+    underlying_assets=("BTC", "ETH"),
+    spot_intervals=("1m",),
+    spot_utc8_intervals=("1m",),
+    futures_intervals=("1m",),
 )
 
 
@@ -133,7 +136,11 @@ def test_full_intervals_and_timezone_not_silently_reduced() -> None:
     plan = product_sources(spot, c)
     for interval in c.spot_intervals:
         assert any(s.stream == "kline_" + interval for s in plan)
+    for interval in c.spot_utc8_intervals:
         assert any(s.stream == "kline_" + interval + "_utc8" for s in plan)
+    # S12 10 redundant intervals are omitted and covered by S11 (ADR-0058 / Decision D2)
+    for interval in ("1s", "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "8h"):
+        assert not any(s.stream == "kline_" + interval + "_utc8" for s in plan)
     assert len(stream_groups(tuple(s for s in plan if s.transport == "ws"), 4)) > 1
 
 

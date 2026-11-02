@@ -240,6 +240,7 @@ def capture_public_response(
     collector_version: str,
     parameters: dict[str, Any] | None = None,
     recent_trades: RecentTradesCompactor | None = None,
+    additional_capture_flags: tuple[str, ...] = (),
     utc_clock_ns: Callable[[], int] = time.time_ns,
     monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
 ) -> RestObservation:
@@ -360,6 +361,7 @@ def capture_public_response(
             else "sdk_model_not_raw_http_body",
         )
         + gap_flags
+        + additional_capture_flags
         + (() if valid else ("source_failed", "malformed")),
     )
     return RestObservation(envelope, document, valid, status, error)

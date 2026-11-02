@@ -246,7 +246,12 @@ def product_sources(product: Product, config: CoverageConfig) -> tuple[Source, .
             weight=2 if spot else 1,
             priority="bar_repair",
         )
-        if spot:
+    if spot:
+        # ADR-0058 / Decision D2: S12 only subscribes distinct intervals (6h, 12h, 1d, 3d, 1w, 1M).
+        # The other 10 intraday intervals identical to UTC are covered by S11.
+        for interval in config.spot_utc8_intervals:
+            if interval not in config.spot_intervals:
+                continue
             ws(
                 "S12",
                 "kline_" + interval + "_utc8",

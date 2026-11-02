@@ -28,7 +28,9 @@ def test_fixed_seed_changes_content_and_all_ws_scopes_have_valid_frames() -> Non
     cfg = CoverageConfig(
         underlying_assets=("BTC", "ETH"),
         spot_intervals=("1m", "5m", "1M"),
+        spot_utc8_intervals=("1m", "5m", "1M"),
         futures_intervals=("1m", "5m", "1M"),
+        kline_forming_policy="all",
     )
     products = [
         p

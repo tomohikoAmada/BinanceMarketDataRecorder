@@ -10,6 +10,7 @@ import asyncio
 import json
 import logging
 import time
+from collections import ChainMap
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
@@ -76,6 +77,12 @@ class SourceState:
     sequence_reliable: bool | None = None
     completed_deliveries: set[int] = field(default_factory=set)
     availability: dict[str, object] = field(default_factory=dict)
+    forming_filtered_count: int = 0
+    last_closed_open_time_ms: int | None = None
+    first_kline_open_time_ms: int | None = None
+    backfill_start_ms: int | None = None
+    backfill_end_ms: int = 0
+    backfill_due: float = 0
 
     def public_dict(self, now: int) -> dict[str, object]:
         source = self.source
@@ -107,6 +114,10 @@ class SourceState:
             "last_attempt_utc_ns": self.last_attempt,
             "error_type": self.error,
             "observations": self.count,
+            "forming_filtered_count": self.forming_filtered_count,
+            "last_closed_open_time_ms": self.last_closed_open_time_ms,
+            "backfill_start_ms": self.backfill_start_ms,
+            "backfill_end_ms": self.backfill_end_ms if self.backfill_start_ms is not None else None,
             "success_deadline_utc_ns": deadline,
             "cadence_seconds": source.cadence_seconds,
             "priority": source.priority,
@@ -261,6 +272,8 @@ class ProductCapture:
             state.connected = event == "connected"
             if event != "connected":
                 self.owner.availability.failure("/".join(source.key), time.time_ns(), event)
+            else:
+                self.owner._check_reconnect_kline_backfill(source, state)
             if source.stream in CORE_STREAMS:
                 if event == "connected":
                     self.readiness.observe_connected(source.stream)
@@ -316,7 +329,9 @@ class SelectedAssetCapture:
         )
         self.layout, self.catalog = layout, catalog
         self.metrics = MetricsRecorder(
-            catalog=catalog, data_root=layout.root, collector_instance_id=instance_id,
+            catalog=catalog,
+            data_root=layout.root,
+            collector_instance_id=instance_id,
             logger=logger,
         )
         self._last_metrics_flush = time.monotonic()
@@ -329,7 +344,11 @@ class SelectedAssetCapture:
         }
         self.collectors: dict[ProductKey, ProductCapture] = {}
         self.failures: dict[ProductKey, BaseException] = {}
-        self.sources: dict[tuple[str, str, str, str], SourceState] = {}
+        self._active_sources: dict[tuple[str, str, str, str], SourceState] = {}
+        self._completed_seed_sources: dict[tuple[str, str, str, str], SourceState] = {}
+        self.sources: ChainMap[tuple[str, str, str, str], SourceState] = ChainMap(
+            self._active_sources, self._completed_seed_sources
+        )
         self.spools: dict[tuple[str, str, str], StreamSpool] = {}
         self._spool_locks: dict[tuple[str, str, str], asyncio.Lock] = {}
         self.product_tasks: dict[ProductKey, asyncio.Task[None]] = {}
@@ -342,9 +361,7 @@ class SelectedAssetCapture:
         self._changed = asyncio.Event()
         self._stop: asyncio.Event | None = None
         self._discovery_lock = asyncio.Lock()
-        self.availability = AvailabilityJournal(
-            instance_id, selection_id=self.source_selection_id
-        )
+        self.availability = AvailabilityJournal(instance_id, selection_id=self.source_selection_id)
         self._pending_watermark_utc_ns: int | None = None
         self._last_watermark_flush_utc_ns: int | None = None
         self._last_monitor_utc_ns: int | None = None
@@ -362,23 +379,24 @@ class SelectedAssetCapture:
         return f"assets:{assets}:{self.instance_id}"
 
     def add_source(self, source: Source) -> None:
-        if source.key not in self.sources:
-            self.sources[source.key] = SourceState(
+        if source.key in self.sources:
+            state = self.sources[source.key]
+            if source.family == "D31":
+                source = replace(
+                    source, products=tuple(sorted(set(source.products + state.source.products)))
+                )
+            state.source = source
+        else:
+            state = SourceState(
                 source,
                 time.time_ns(),
                 recent_trades=RecentTradesCompactor()
                 if source.family == "D06" and self.coverage.recent_trades_compact
                 else None,
             )
-        else:
-            if source.family == "D31":
-                source = replace(
-                    source,
-                    products=tuple(
-                        sorted(set(source.products + self.sources[source.key].source.products))
-                    ),
-                )
-            self.sources[source.key].source = source
+            self.sources[source.key] = state
+        if source.key not in self._completed_seed_sources:
+            self._active_sources[source.key] = state
         self._changed.set()
 
     def spool(self, market: str, symbol: str, stream: str) -> StreamSpool:
@@ -456,6 +474,8 @@ class SelectedAssetCapture:
             ):
                 return
             state.next_due = when
+            self._completed_seed_sources.pop(key, None)
+            self._active_sources[key] = state
             self._snapshot_after[key] = when + 1
             self._changed.set()
 
@@ -503,8 +523,43 @@ class SelectedAssetCapture:
 
         sequence = DepthSequenceObserver()
 
-        def capture(**kwargs: Any) -> EventEnvelope:
-            return sequence.observe(envelope_for_group(group, product, **kwargs))
+        def capture(**kwargs: Any) -> EventEnvelope | None:
+            envelope = sequence.observe(envelope_for_group(group, product, **kwargs))
+            if (
+                "klineClosed" in envelope.source_sequence
+                and "malformed" not in envelope.capture_flags
+            ):
+                state = self._find_source_state_for_envelope(group, envelope)
+                is_closed = envelope.source_sequence["klineClosed"] == 1
+                t = int(envelope.source_sequence["openTime"])
+                if state is not None:
+                    if state.first_kline_open_time_ms is None:
+                        state.first_kline_open_time_ms = t
+                    if is_closed:
+                        interval = self._extract_kline_interval(state.source)
+                        expected_t = state.first_kline_open_time_ms
+                        if interval and state.last_closed_open_time_ms is not None:
+                            expected_t = self._next_kline_open_time_ms(
+                                state.last_closed_open_time_ms,
+                                interval,
+                                utc8=state.source.family == "S12",
+                            )
+                        if interval and expected_t is not None and t > expected_t:
+                            self._schedule_kline_backfill(state.source, expected_t, t - 1, interval)
+                        state.last_closed_open_time_ms = max(state.last_closed_open_time_ms or 0, t)
+                if not is_closed and self.coverage.kline_forming_policy == "closed_only":
+                    if state is not None:
+                        state.last_success = envelope.receive_time_utc_ns
+                        state.error = None
+                        state.forming_filtered_count += 1
+                        state.count += 1
+                        now = envelope.receive_time_utc_ns
+                        key = "/".join(state.source.key)
+                        if now >= self._clock_unreliable_until:
+                            self.availability.valid(key, now, checkpoint=False)
+                        state.availability = self.availability.ensure(key, now).public_dict(now)
+                    return None
+            return envelope
 
         collector = UsdMStreamCollector(
             stream=group.name,
@@ -525,6 +580,192 @@ class SelectedAssetCapture:
         )
         self._group_sources[collector] = group
         return collector
+
+    def _find_source_state_for_envelope(
+        self, group: StreamGroup, envelope: EventEnvelope
+    ) -> SourceState | None:
+        wire = envelope.source_sequence.get("wireStream")
+        if isinstance(wire, str) and wire in group.by_wire:
+            source = group.by_wire[wire]
+            return self.sources.get(source.key)
+        stream = envelope.source_sequence.get("sourceStream")
+        if isinstance(stream, str):
+            for s in group.sources:
+                if s.stream == stream:
+                    return self.sources.get(s.key)
+        return None
+
+    @staticmethod
+    def _extract_kline_interval(source: Source) -> str | None:
+        import re
+
+        match = re.search(r"(?:kline_|price_kline_)([0-9]+[smhdMwy])(?:_utc8)?$", source.stream)
+        if match:
+            return match.group(1)
+        return None
+
+    @staticmethod
+    def _next_kline_open_time_ms(open_time_ms: int, interval: str, *, utc8: bool = False) -> int:
+        if interval != "1M":
+            period = 1 if interval == "1s" else bar_period_seconds(interval)
+            return open_time_ms + period * 1000
+        from datetime import UTC, datetime, timedelta
+
+        # UTC+8 monthly opens fall at 16:00 on the previous UTC date.
+        offset = timedelta(hours=8 if utc8 else 0)
+        opened = datetime.fromtimestamp(open_time_ms / 1000, UTC) + offset
+        following = (
+            opened.replace(
+                year=opened.year + (opened.month == 12), month=opened.month % 12 + 1, day=1
+            )
+            - offset
+        )
+        return int(following.timestamp() * 1000)
+
+    def _schedule_kline_backfill(
+        self, source: Source, start_time_ms: int, end_time_ms: int, interval: str
+    ) -> None:
+        if start_time_ms > end_time_ms:
+            return
+        state = self.sources[source.key]
+        state.backfill_start_ms = min(
+            state.backfill_start_ms if state.backfill_start_ms is not None else start_time_ms,
+            start_time_ms,
+        )
+        state.backfill_end_ms = max(state.backfill_end_ms, end_time_ms)
+
+    async def _run_kline_backfill(self, state: SourceState) -> RestObservation:
+        source = state.source
+        interval = self._extract_kline_interval(source)
+        assert interval is not None and state.backfill_start_ms is not None
+        start = state.backfill_start_ms
+        # One small page per scheduler turn; normal live polls have priority.
+        end = start
+        page_size = (
+            5
+            if interval == "1M"
+            else min(100, 200 * 86400 // (1 if interval == "1s" else bar_period_seconds(interval)))
+        )
+        for _ in range(page_size - 1):
+            following = self._next_kline_open_time_ms(end, interval, utc8=source.family == "S12")
+            if following > state.backfill_end_ms:
+                break
+            end = following
+        end = self._next_kline_open_time_ms(end, interval, utc8=source.family == "S12") - 1
+        end = min(end, state.backfill_end_ms)
+        rest_source = self._build_kline_backfill_source(source, interval, start, end)
+        await shared_request_budget().acquire(rest_source.charges)
+        self._wire_started.add(source.key)
+        result = await run_owned_blocking_call(
+            capture_public_response,
+            rest_source,
+            self.clients[source.venue_market].request,
+            collector_instance_id=self.instance_id,
+            collector_version=self.version,
+            parameters=dict(rest_source.parameters),
+            additional_capture_flags=("closed_bar_backfill",),
+        )
+        self._observe_rest_rejection(source, result)
+        # Keep failure evidence too. Storage failures propagate to the supervisor.
+        await self.persist_rest(result.envelope)
+        cursor = start
+        latest_open = start
+        if result.valid:
+            for row in result.document:
+                if row[0] != cursor or row[6] >= result.envelope.receive_time_utc_ns // 1_000_000:
+                    break
+                latest_open = cursor
+                cursor = self._next_kline_open_time_ms(
+                    cursor, interval, utc8=source.family == "S12"
+                )
+        if cursor > start:
+            state.last_closed_open_time_ms = max(state.last_closed_open_time_ms or 0, latest_open)
+            state.backfill_start_ms = cursor if cursor <= state.backfill_end_ms else None
+        state.backfill_due = time.monotonic() + (5 if cursor == start else 0)
+        return result
+
+    def _build_kline_backfill_source(
+        self, source: Source, interval: str, start_time_ms: int, end_time_ms: int
+    ) -> Source:
+        from ..binance.public_sources import REST_PREFIX
+
+        limit = 100
+
+        venue = source.venue_market
+        prefix = REST_PREFIX[venue]
+        params: dict[str, Any] = {
+            "interval": interval,
+            "startTime": start_time_ms,
+            "endTime": end_time_ms,
+            "limit": limit,
+        }
+        if venue == "spot":
+            params["symbol"] = source.symbol
+            if source.family == "S12":
+                params["timeZone"] = "8"
+            endpoint = prefix + "/klines"
+        else:
+            if source.stream.startswith("continuous_kline_"):
+                pair = source.symbol.split("_", 1)[0] if "_" in source.symbol else source.symbol
+                contract_type = (
+                    source.symbol.split("_", 1)[1] if "_" in source.symbol else "PERPETUAL"
+                )
+                params["pair"] = pair
+                params["contractType"] = contract_type
+                endpoint = prefix + "/continuousKlines"
+            elif source.stream.startswith("mark_price_kline_"):
+                params["symbol"] = source.symbol
+                endpoint = prefix + "/markPriceKlines"
+            elif source.stream.startswith("index_price_kline_"):
+                params["pair"] = source.symbol
+                endpoint = prefix + "/indexPriceKlines"
+            elif source.stream.startswith("premium_price_kline_"):
+                params["symbol"] = source.symbol
+                endpoint = prefix + "/premiumIndexKlines"
+            else:
+                params["symbol"] = source.symbol
+                endpoint = prefix + "/klines"
+
+        return Source(
+            family=source.family,
+            venue_market=venue,
+            market=source.market,
+            symbol=source.symbol,
+            stream=source.stream,
+            transport="rest",
+            endpoint=endpoint,
+            cadence_seconds=0,
+            parameters=tuple(params.items()),
+            weight=2,
+            priority="bar_repair",
+            lifecycle="closed_bar",
+        )
+
+    def _check_reconnect_kline_backfill(self, source: Source, state: SourceState) -> None:
+        interval = self._extract_kline_interval(source)
+        if interval is None:
+            return
+        start = state.first_kline_open_time_ms
+        if state.last_closed_open_time_ms is not None:
+            start = self._next_kline_open_time_ms(
+                state.last_closed_open_time_ms, interval, utc8=source.family == "S12"
+            )
+        if start is None:
+            return
+        now_ms = time.time_ns() // 1_000_000
+        end = start
+        if interval != "1M":
+            period = (1 if interval == "1s" else bar_period_seconds(interval)) * 1000
+            end += max(0, (now_ms - start) // period) * period
+        else:
+            while (
+                following := self._next_kline_open_time_ms(
+                    end, interval, utc8=source.family == "S12"
+                )
+            ) <= now_ms:
+                end = following
+        if end > start:
+            self._schedule_kline_backfill(source, start, end - 1, interval)
 
     async def run_group(self, collector: UsdMStreamCollector, stop: asyncio.Event) -> None:
         try:
@@ -558,6 +799,8 @@ class SelectedAssetCapture:
             self.sources[source.key].connected = event == "connected"
             if event != "connected":
                 self.availability.failure("/".join(source.key), time.time_ns(), event)
+            else:
+                self._check_reconnect_kline_backfill(source, self.sources[source.key])
 
     async def reconcile(self, venue: str, document: dict[str, Any]) -> None:
         async with self._discovery_lock:
@@ -718,42 +961,7 @@ class SelectedAssetCapture:
                 params["endTime"] = now_ms - int(interval[:-1]) * units[interval[-1]]
         return params
 
-    async def poll_once(self, state: SourceState) -> RestObservation:
-        source = state.source
-        await shared_request_budget().acquire(source.charges)
-        state.last_attempt = time.time_ns()
-        eligible_since = state.first_due
-        if source.lifecycle == "after_delivery":
-            delivery_times = [p.delivery_time_ms * 1_000_000
-                for p in self.directory.products.values()
-                if p.key.symbol in source.products and p.delivery_time_ms is not None
-                and p.delivery_time_ms * 1_000_000 <= state.last_attempt
-                and p.delivery_time_ms not in state.completed_deliveries]
-            eligible_since = max(eligible_since, min(delivery_times, default=state.last_attempt))
-        self.availability.ensure("/".join(source.key), eligible_since)
-        self._wire_started.add(source.key)
-        parameters = self._parameters(source)
-        result = await run_owned_blocking_call(
-            capture_public_response,
-            source,
-            self.clients[source.venue_market].request,
-            collector_instance_id=self.instance_id,
-            collector_version=self.version,
-            parameters=parameters,
-            recent_trades=state.recent_trades,
-        )
-        if source.family == "D16":
-            saved = json.loads(result.envelope.raw_payload)
-            saved["request"]["evaluated_period"] = {
-                "start_time_ms": parameters["startTime"],
-                "end_time_ms": parameters["endTime"] - 300_000,
-                "allowed_preceding_overlap_ms": 300_000,
-            }
-            result = replace(result, envelope=result.envelope.model_copy(update={
-                "raw_payload": json.dumps(saved, separators=(",", ":")).encode(),
-            }))
-        # A known rejection closes new admission before any storage await.
-        # Existing wire attempts retain their normal completion/drain boundary.
+    def _observe_rest_rejection(self, source: Source, result: RestObservation) -> None:
         if result.error in {"TooManyRequestsError", "RateLimitBanError"} or result.status in {
             418,
             429,
@@ -785,21 +993,69 @@ class SelectedAssetCapture:
                 "spot" if source.venue_market == "spot" else "usdm",
                 max(0.0, (until - time.time_ns()) / 1e9),
             )
+
+    async def poll_once(self, state: SourceState) -> RestObservation:
+        source = state.source
+        await shared_request_budget().acquire(source.charges)
+        state.last_attempt = time.time_ns()
+        eligible_since = state.first_due
+        if source.lifecycle == "after_delivery":
+            delivery_times = [
+                p.delivery_time_ms * 1_000_000
+                for p in self.directory.products.values()
+                if p.key.symbol in source.products
+                and p.delivery_time_ms is not None
+                and p.delivery_time_ms * 1_000_000 <= state.last_attempt
+                and p.delivery_time_ms not in state.completed_deliveries
+            ]
+            eligible_since = max(eligible_since, min(delivery_times, default=state.last_attempt))
+        self.availability.ensure("/".join(source.key), eligible_since)
+        self._wire_started.add(source.key)
+        parameters = self._parameters(source)
+        result = await run_owned_blocking_call(
+            capture_public_response,
+            source,
+            self.clients[source.venue_market].request,
+            collector_instance_id=self.instance_id,
+            collector_version=self.version,
+            parameters=parameters,
+            recent_trades=state.recent_trades,
+        )
+        if source.family == "D16":
+            saved = json.loads(result.envelope.raw_payload)
+            saved["request"]["evaluated_period"] = {
+                "start_time_ms": parameters["startTime"],
+                "end_time_ms": parameters["endTime"] - 300_000,
+                "allowed_preceding_overlap_ms": 300_000,
+            }
+            result = replace(
+                result,
+                envelope=result.envelope.model_copy(
+                    update={
+                        "raw_payload": json.dumps(saved, separators=(",", ":")).encode(),
+                    }
+                ),
+            )
+        self._observe_rest_rejection(source, result)
         # Persistence exceptions propagate; they are never reclassified as network retries.
         await self.persist_rest(result.envelope)
         state.count += 1
         state.error = result.error
         if result.error is not None:
             self.availability.failure(
-                "/".join(source.key), time.time_ns(), result.error,
+                "/".join(source.key),
+                time.time_ns(),
+                result.error,
                 since=state.last_attempt,
             )
         if result.valid:
             previous_success = state.last_success
             if "sequence_gap" in result.envelope.capture_flags:
                 self.availability.failure(
-                    "/".join(source.key), result.envelope.receive_time_utc_ns,
-                    "OBSERVED_SEQUENCE_GAP", since=previous_success or state.first_due,
+                    "/".join(source.key),
+                    result.envelope.receive_time_utc_ns,
+                    "OBSERVED_SEQUENCE_GAP",
+                    since=previous_success or state.first_due,
                 )
             state.last_success = result.envelope.receive_time_utc_ns
             state.failures = 0
@@ -850,10 +1106,15 @@ class SelectedAssetCapture:
                 if not isinstance(rows, list):
                     state.error = "DataPeriodShapeUnknown"
                     state.publication_status = "UNKNOWN"
-                elif any(not isinstance(value, int) or isinstance(value, bool)
-                       or not (period_start <= value <= period_end
-                               or (source.family == "D16" and value == period_start - 300_000))
-                       for value in timestamps):
+                elif any(
+                    not isinstance(value, int)
+                    or isinstance(value, bool)
+                    or not (
+                        period_start <= value <= period_end
+                        or (source.family == "D16" and value == period_start - 300_000)
+                    )
+                    for value in timestamps
+                ):
                     state.error = "DataOutsideRequestedPeriod"
                     state.publication_status = "STALE"
                 else:
@@ -869,8 +1130,9 @@ class SelectedAssetCapture:
             if source.cadence_seconds:
                 state.response_deadline_utc_ns = (
                     time.time_ns() + int((max(0, state.next_due - time.monotonic()) + 10) * 1e9)
-                    if source.lifecycle == "closed_bar" else
-                    result.envelope.receive_time_utc_ns + int((source.cadence_seconds + 10) * 1e9)
+                    if source.lifecycle == "closed_bar"
+                    else result.envelope.receive_time_utc_ns
+                    + int((source.cadence_seconds + 10) * 1e9)
                 )
             if source.family == "D31":
                 rows = result.document if isinstance(result.document, list) else [result.document]
@@ -889,19 +1151,43 @@ class SelectedAssetCapture:
                 else:
                     state.publication_status = "CURRENT"
             completed_at = time.time_ns()
-            if state.error is None and (state.response_deadline_utc_ns is None
-                                        or completed_at <= state.response_deadline_utc_ns):
+            if state.error is None and (
+                state.response_deadline_utc_ns is None
+                or completed_at <= state.response_deadline_utc_ns
+            ):
                 if completed_at >= self._clock_unreliable_until:
                     self.availability.valid("/".join(source.key), completed_at)
                 if state.dormant:
                     self.availability.suspend("/".join(source.key), completed_at)
             elif state.error is not None:
                 self.availability.failure(
-                    "/".join(source.key), completed_at, state.error,
+                    "/".join(source.key),
+                    completed_at,
+                    state.error,
                     since=previous_success or state.first_due,
                 )
             if source.stream == "exchange_info":
                 await self.reconcile(source.venue_market, result.document)
+            if source.cadence_seconds == 0 and state.error is None:
+                self._active_sources.pop(source.key, None)
+                self._completed_seed_sources[source.key] = state
+                if "_seed_" in source.stream and isinstance(result.document, list):
+                    valid_opens = [
+                        row[0]
+                        for row in result.document
+                        if row[6] < result.envelope.receive_time_utc_ns // 1_000_000
+                    ]
+                    if valid_opens:
+                        latest_open = max(valid_opens)
+                        ws_stream = source.stream.replace(
+                            "continuous_seed_", "continuous_kline_"
+                        ).replace("_seed_", "_")
+                        ws_key = (source.venue_market, source.symbol, ws_stream, "ws")
+                        ws_state = self.sources.get(ws_key)
+                        if ws_state is not None:
+                            ws_state.last_closed_open_time_ms = max(
+                                ws_state.last_closed_open_time_ms or 0, latest_open
+                            )
         else:
             state.failures += 1
             state.next_due = time.monotonic() + min(60, 2 ** min(state.failures, 6))
@@ -938,6 +1224,9 @@ class SelectedAssetCapture:
             "capture_metrics": {
                 "failure_count": self.metrics.failure_count,
                 "last_error_type": self.metrics.last_error_type,
+                "forming_filtered_count": sum(
+                    s.forming_filtered_count for s in self.sources.values()
+                ),
             },
             "transport_progress": [
                 {"group_id": group.name, **collector.capture_progress()}
@@ -1042,12 +1331,16 @@ class SelectedAssetCapture:
         if previous is not None and now < previous:
             self._clock_unreliable_until = max(self._clock_unreliable_until, previous)
         self._last_monitor_utc_ns = now
-        for state in self.sources.values():
+        for state in self._active_sources.values():
             source = state.source
             key = "/".join(source.key)
-            if state.dormant and key not in self.availability.sources and (
-                key not in self.availability.previous
-                or self.availability.previous[key].get("dormant")
+            if (
+                state.dormant
+                and key not in self.availability.sources
+                and (
+                    key not in self.availability.previous
+                    or self.availability.previous[key].get("dormant")
+                )
             ):
                 state.availability = {"lifecycle": "DORMANT", "source_id": key}
                 continue
@@ -1072,9 +1365,8 @@ class SelectedAssetCapture:
                 reason, since = self._ws_unavailability(state, now, stalled)
             else:
                 deadline = state.response_deadline_utc_ns or (
-                    (state.last_success or state.first_due) + int(
-                        (source.cadence_seconds + 10) * 1e9
-                    )
+                    (state.last_success or state.first_due)
+                    + int((source.cadence_seconds + 10) * 1e9)
                 )
                 if state.error:
                     reason = state.error
@@ -1099,8 +1391,11 @@ class SelectedAssetCapture:
             while not stop.is_set():
                 self._changed.clear()
                 now = time.time_ns()
-                if (self._last_monitor_utc_ns is None or now < self._last_monitor_utc_ns
-                        or now - self._last_monitor_utc_ns >= 1_000_000_000):
+                if (
+                    self._last_monitor_utc_ns is None
+                    or now < self._last_monitor_utc_ns
+                    or now - self._last_monitor_utc_ns >= 1_000_000_000
+                ):
                     self._observe_availability(now)
                 await self._flush_availability()
                 if time.monotonic() - self._last_metrics_flush >= 10:
@@ -1126,7 +1421,7 @@ class SelectedAssetCapture:
                 due = sorted(
                     (
                         s
-                        for k, s in self.sources.items()
+                        for k, s in self._active_sources.items()
                         if s.source.transport == "rest" and k not in self.polls and not s.dormant
                     ),
                     key=lambda s: s.next_due,
@@ -1138,6 +1433,17 @@ class SelectedAssetCapture:
                     ):
                         break
                     self.polls[state.source.key] = asyncio.create_task(self.poll_once(state))
+                for state in self._active_sources.values():
+                    if len(self.polls) >= self.coverage.rest_concurrency:
+                        break
+                    if (
+                        state.backfill_start_ms is not None
+                        and state.source.key not in self.polls
+                        and time.monotonic() >= state.backfill_due
+                    ):
+                        self.polls[state.source.key] = asyncio.create_task(
+                            self._run_kline_backfill(state)
+                        )
                 # Idle REST spools need the same periodic sync/rotation as active ones.
                 for spool_key, spool in tuple(self.spools.items()):
                     if (
@@ -1160,9 +1466,11 @@ class SelectedAssetCapture:
                 for state in self.sources.values():
                     if not state.dormant:
                         self.availability.unavailable(
-                            "/".join(state.source.key), stopped_at,
-                            "SERVICE_STOPPED" if terminal_error is None else
-                            "SERVICE_FAILED:" + type(terminal_error).__name__,
+                            "/".join(state.source.key),
+                            stopped_at,
+                            "SERVICE_STOPPED"
+                            if terminal_error is None
+                            else "SERVICE_FAILED:" + type(terminal_error).__name__,
                         )
             except BaseException as exc:
                 cleanup_error = exc

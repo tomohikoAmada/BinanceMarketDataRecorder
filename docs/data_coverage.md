@@ -1,5 +1,21 @@
 # Data coverage
 
+## Production Milestone Implementation — M1.3 (2026-11-02, ADR-0058)
+
+### S12 (@+08:00) Deduplication
+Under Decision D2 and [ADR-0058](adr/0058-kline-closed-bar-persistence-and-backfill.md), `S12` (`@+08:00` Spot K-lines) subscribes only to the 6 timezone-dependent intervals whose open/close boundaries differ between UTC and UTC+8:
+- `6h`, `12h`, `1d`, `3d`, `1w`, `1M`
+
+The other 10 intraday intervals that evenly divide 8 hours:
+- `1s`, `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`
+have mathematically identical timestamp boundaries in both UTC and UTC+8. These 10 intervals are omitted from `S12` subscriptions by default and are 100% covered by `S11` (UTC).
+
+### Closed-Bar K-line Persistence & REST Backfill
+Under Decision D1 and [ADR-0058](adr/0058-kline-closed-bar-persistence-and-backfill.md):
+- WebSocket K-lines persist only completed, closed bars (`k.x == True`) by default (`kline_forming_policy = "closed_only"`).
+- Forming updates (`k.x == False`) are filtered in memory: they refresh source liveness in the availability ledger and increment `forming_filtered_count`, but are not written to Raw chunks.
+- If a closed bar is missed due to network disconnection, sequence gap, or reconnect past a period boundary, an automated bounded REST backfill is executed via `shared_request_budget()`, tagged with `closed_bar_backfill` capture flag, and persisted to Raw. Intermediate intra-bar forming trajectories are not stored.
+
 ## Current implementation — P2, 2026-10-27
 
 Selected-underlying discovery and public capture now distinguish Spot, USD-M

@@ -77,7 +77,7 @@ class WebSocketConnection(Protocol):
 
 
 ConnectionOpener = Callable[[str], AbstractAsyncContextManager[WebSocketConnection]]
-EnvelopeFactory = Callable[..., EventEnvelope]
+EnvelopeFactory = Callable[..., EventEnvelope | None]
 EnvelopeObserver = Callable[[EventEnvelope], None]
 FailureObserver = Callable[[str], None]
 LifecycleObserver = Callable[[str], None]
@@ -218,6 +218,7 @@ class UsdMStreamCollector:
         self._connection_receipt_count = 0
         self._received_total = 0
         self._persisted_total = 0
+        self._filtered_total = 0
         self._pending_since_utc_ns: int | None = None
         self._last_write_utc_ns: int | None = None
         self._last_writer_batch_size = 0
@@ -682,6 +683,7 @@ class UsdMStreamCollector:
     ) -> list[EventEnvelope]:
         persisted: list[EventEnvelope] = []
         for receipt in batch:
+            envelope: EventEnvelope | None = None
             if self.envelope_factory is None:
                 if not isinstance(self.stream, UsdMStream):
                     raise RuntimeError("missing USD-M envelope factory")
@@ -705,7 +707,7 @@ class UsdMStreamCollector:
                     receive_time_utc_ns=receipt.receive_time_utc_ns,
                     receive_monotonic_ns=receipt.receive_monotonic_ns,
                 )
-                if receipt.capture_flags:
+                if envelope is not None and receipt.capture_flags:
                     envelope = envelope.model_copy(
                         update={
                             "capture_flags": tuple(
@@ -715,26 +717,31 @@ class UsdMStreamCollector:
                             )
                         }
                     )
-            self.spool.enqueue(envelope)
-            persisted.append(envelope)
+            if envelope is not None:
+                self.spool.enqueue(envelope)
+                persisted.append(envelope)
+            else:
+                self._filtered_total += 1
         drain_started = time.perf_counter_ns()
         drained = await _run_owned_blocking_call(self.spool.drain_all)
         drain_duration = time.perf_counter_ns() - drain_started
         self._last_writer_batch_size = len(batch)
         self._last_writer_drain_ns = drain_duration
         self._max_writer_drain_ns = max(self._max_writer_drain_ns, drain_duration)
-        if drained != len(batch):
+        if drained != len(persisted):
             raise RuntimeError("USD-M Raw spool did not drain the complete writer batch")
         self._persisted_total += len(persisted)
         self._last_write_utc_ns = self.utc_clock_ns()
-        if self._received_total == self._persisted_total:
+        if self._received_total == self._persisted_total + self._filtered_total:
             self._pending_since_utc_ns = None
         return persisted
 
     def capture_progress(self) -> dict[str, int | None]:
         """Event-loop-owned counters; observing a busy writer never takes its lock."""
         return {
-            "received_frames": self._received_total, "persisted_frames": self._persisted_total,
+            "received_frames": self._received_total,
+            "persisted_frames": self._persisted_total,
+            "filtered_frames": self._filtered_total,
             "pending_since_utc_ns": self._pending_since_utc_ns,
             "last_write_utc_ns": self._last_write_utc_ns,
         }
@@ -762,12 +769,11 @@ class UsdMStreamCollector:
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
-            connection_id = persisted[-1].connection_id
+            connection_id = persisted[-1].connection_id if persisted else batch[-1].connection_id
             for receipt in batch:
                 self._receipts.task_done(receipt)
             batch.clear()
             persisted.clear()
-            del receipt, envelope
             if self._receipts.note_consumer_progress() and self._backpressure_active:
                 self._backpressure_active = False
                 self._log_ingress_state(
