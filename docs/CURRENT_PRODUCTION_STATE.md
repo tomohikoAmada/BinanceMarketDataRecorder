@@ -1,8 +1,8 @@
 # Current Production State
 
-## Active Status (November 2026)
+## Active Status (2026-11-02)
 
-- **Production Readiness**: **NO** (awaiting execution of the streamlined milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md)).
+- **Production Readiness**: **NO** (awaiting execution of the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md)).
 - **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.
 - **GreenCloud VPS (`greencloud-tokyo-01`) State**:
   - Primary service `binance-market-data-recorder.service` remains `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
@@ -11,9 +11,9 @@
 ## Summary of Retained Baseline & Diagnostic Findings (P0–P3 & P4-prep)
 
 1. **P4 Diagnostic Runs (2026-11-01, [`milestones/P4/README.md`](milestones/P4/README.md))**:
-   - **Run A (`f622a4c`)**: Exposed USD-M dated public ADL (`BTCUSDT_261225`, `BTCUSDT_270327`) returning HTTP `400 / -1121`. Owner approved initial-release omission of dated public ADL with `UNKNOWN` official applicability ([`ADR-0057`](adr/0057-initial-production-dated-adl-exception.md)).
-   - **Run B (`f622a4c`)**: Exposed `Catalog` single-lock starvation when draining `AvailabilityJournal` in large transactions.
-   - **Run C (`8bdae20`)**: Ran 55 minutes and was stopped cleanly when `AvailabilityJournal` pending rows reached `52,997` (because 2,233 healthy sources each emitted a checkpoint row every 10s while the bounded drain processed 64 rows/pass) and 80 active spools rotated every 60s (`874` sealed files in 55 minutes).
+   - **Run A (`f622a4c`)**: Exposed a 17.8 MiB Spot directory payload exceeding the default 16 MiB frame limit, and USD-M dated public ADL (`BTCUSDT_261225`, `BTCUSDT_270327`) returning HTTP `400 / -1121`. Owner approved initial-release omission of dated public ADL with `UNKNOWN` official applicability ([`ADR-0057`](adr/0057-initial-production-dated-adl-exception.md)).
+   - **Run B (`f622a4c`)**: Exposed `Catalog` single-lock starvation when draining `AvailabilityJournal` in unbounded transactions.
+   - **Run C (`8bdae20`)**: Ran ~55 minutes and was stopped cleanly when `AvailabilityJournal` pending rows reached `52,997` (because 2,233 healthy sources emitted checkpoints every 10s while `8bdae20` drained one `128`-row batch per pass; `2a4fefd` later raised the drain cap to `32` batches or `100ms`) and sealed `874` chunks in 55 minutes (`~15.9` chunks/min).
 2. **P3 Independent Closure (`30e8a4a` / `30ebbd6`, [`milestones/P3/review-20261101.md`](milestones/P3/review-20261101.md#r3-independent-closure))**:
    - Accepted durable per-source availability intervals, clock-uncertainty boundary guards, and incremental new-file verification (`raw-independent.v2`).
 3. **P2 Independent Closure (`1c1785c` / `464ed56`, [`milestones/P2/review-20261029.md`](milestones/P2/review-20261029.md#r5-independent-closure))**:

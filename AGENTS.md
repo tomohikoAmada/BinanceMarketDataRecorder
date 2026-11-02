@@ -1,19 +1,28 @@
 # Binance Market Data Recorder Agent Contract
 
+## Pragmatic Engineering Principles (No Over-Engineering or Over-Defense)
+
+1. **Simplicity & High Throughput First**: Favor straightforward, maintainable Python code and low-I/O paths over defensive ceremony, multi-layer wrappers, or speculative abstractions.
+2. **Trust In-Process Memory & OS `fsync`**:
+   - Do not add defensive deep copies of internal objects/dicts passed between author-controlled functions in the same process.
+   - During live capture, streaming write-time `CRC32C` + `SHA-256` calculation followed by `fsync` and atomic rename is sufficient to seal a chunk. Do **not** immediately re-read and decompress sealed `.zst` files from disk on the live capture path or run background live re-verification loops. Reserve full-file readback for `.partial` crash recovery, cross-volume archive copies, and manual `verify-raw` CLI checks.
+3. **Pragmatic Metadata & State Tracking**:
+   - Use `PRAGMA journal_mode = WAL` and `PRAGMA synchronous = NORMAL` for routine `Catalog` metadata updates so SQLite commits do not block the capture loop on disk `fsync`.
+   - Track per-source health state transitions (`AVAILABLE` ↔ `UNAVAILABLE`/`UNKNOWN`) when they actually change, coalescing steady-state health watermarks in memory rather than flooding SQLite with per-poll rows.
+   - Do not create 0-record `.zst` files or extra boundary files on process startup; record startup boundaries in `Catalog` and on the first real chunk's manifest.
+4. **No Redundant Data Subscriptions**:
+   - Persist closed K-line bars (`k.x == True`) with automatic REST backfill on reconnect gaps; filter intermediate forming updates (`k.x == False`) in memory.
+   - Subscribe only to the 6 distinct timezone-dependent intervals (`6h, 12h, 1d, 3d, 1w, 1M`) on `S12` (`@+08:00`), avoiding duplicate subscriptions for the 10 intervals already identically covered by `S11` (UTC).
+
 ## Current Milestone Direction (November 2026)
 
-The previous P0–P6 milestone plan has been **abolished and superseded** by the streamlined Python optimization & qualification plan in [`docs/production_milestone_plan.md`](docs/production_milestone_plan.md) (`M1` → `M2` → `M3` → `M4`).
+The previous P0–P6 milestone plan has been **abolished and superseded** by the pragmatic Python optimization & qualification plan in [`docs/production_milestone_plan.md`](docs/production_milestone_plan.md) (`M1` → `M2` → `M3` → `M4`):
+- **`M1` (Core I/O & Hot-Path Optimization)**: `15m / 64 MiB` chunk rotation (`M1.1`), SQLite `WAL + NORMAL` with in-memory availability coalescing (`M1.2`), closed-bar K-line persistence with disconnect REST backfill & `S12` deduplication (`M1.3`), and zero-copy hot-path framing + single-hop REST persistence (`M1.4`).
+- **`M2` (De-bloating & Removing Over-Defense)**: Remove live post-seal full-file readback and background re-verification (`M2.1`), remove startup 0-record `.zst` files (`M2.2`), unify the dual collector stack and WebSocket base (`M2.3`), and isolate peripheral/legacy modules via lazy CLI imports while splitting `storage/catalog.py` (`M2.4`).
+- **`M3` (Benchmark & Stability Convergence)**: Multi-rotation (`45–60m`) three-way benchmark (`M3.1`), full test/stress/recovery suite (`M3.2`), and production wheel/config freeze (`M3.3`).
+- **`M4` (GreenCloud VPS Qualification)**: Single continuous `BTC + ETH` run verified at **`2h` → `12h` → `24h`** checkpoints (`M4.1`–`M4.4`).
 
-### Retained Historical Baseline Summary (P0–P3 & P4 Diagnostic Runs)
-
-- **Scope & ADRs**: Target architecture supports at least ten underlying assets; initial production exit is BTC and ETH across Spot quote pairs and USD-M/COIN-M perpetual and dated futures (Options deferred). Capture preserves exact WebSocket payload bytes and single primary REST representations ([ADR-0053](docs/adr/0053-single-rest-representation-and-required-information.md), [ADR-0054](docs/adr/0054-d06-fixed-cadence-and-daily-trade-supplement.md)). Owner-approved initial-release omissions with `UNKNOWN` official applicability: USD-M/COIN-M dated premium-index klines ([ADR-0055](docs/adr/0055-initial-production-dated-premium-exception.md), public inquiry [binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585)) and USD-M dated public ADL ([ADR-0057](docs/adr/0057-initial-production-dated-adl-exception.md)).
-- **Completed Baseline Milestones**:
-  - **P0**: Preserved local base `9e8ec37` / user edits `d81e7d2` and merged remote main `01d7421` into `113cdb3`. Isolated VPS baseline measured installed source `20e57f3` ([research](docs/research/2026-10-26/README.md), [P0 review](docs/milestones/P0/review-20261026.md)).
-  - **P1**: Vectored append, long-lived receive loops, sequence-only capture health under [ADR-0052](docs/adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md), accepted at `b292d0d` ([P1 review](docs/milestones/P1/review-20261027.md)).
-  - **P2**: Multi-asset Spot/USD-M/COIN-M coverage, D06 per-product live polling (`2s` USDT / `3s` USDC / `30s` COIN-M) + daily trade supplement, synchronous `Retry-After` cooldown before persistence await, accepted at `1c1785c` / `464ed56` ([P2 review](docs/milestones/P2/review-20261029.md#r5-independent-closure)).
-  - **P3**: Per-source availability intervals and incremental new-file verification under [ADR-0051](docs/adr/0051-production-continuity-and-incremental-verification.md) and [ADR-0056](docs/adr/0056-source-recovery-and-bounded-background-verification.md), accepted at `30e8a4a` / `30ebbd6` ([P3 review](docs/milestones/P3/review-20261101.md#r3-independent-closure)).
-  - **P4 Diagnostic Runs**: Run A (dated ADL 400/-1121), Run B (journal batch lock starvation), and Run C (`8bdae20`, stopped after 55 min due to `AvailabilityJournal` 52,997-row backlog and 60s rotation file storm; all 874 sealed chunks verified valid). See [P4 record](docs/milestones/P4/README.md).
-- **Active Roadmap**: Execute `M1` (resolve primary I/O, SQLite, source-count, and hot-path bottlenecks) → `M2` (remove over-engineering, redundant verification passes, and legacy code bloat) → `M3` (local benchmark & stability convergence) → `M4` (GreenCloud VPS continuous `2h` → `12h` → `24h` qualification). Historical operational notes are condensed in [`docs/history/pre-P0-AGENTS.md`](docs/history/pre-P0-AGENTS.md).
+Historical P0–P4 records are condensed in [`docs/history/pre-P0-AGENTS.md`](docs/history/pre-P0-AGENTS.md) and [`docs/milestones/`](docs/milestones/).
 
 ## Frozen project identity
 
@@ -33,27 +42,15 @@ The previous P0–P6 milestone plan has been **abolished and superseded** by the
   `/var/lib/binance-market-data-recorder/` and
   `/etc/binance-market-data-recorder/recorder.toml`
 
-Use the established package, CLI, service, and data identifiers in ADR-0007.
-The project uses its own branding and author-controlled service namespaces.
-
 ## Non-goals
 
-- No current GUI, web frontend, FastAPI product API, or trading interface. A
-  future Web UI is separately authorized and must not be forced into Recorder
-  core.
-- No factors, Alpha DSL, strategies, positions, backtests, account ledger, or
-  live/simulated execution.
+- No current GUI, web frontend, FastAPI product API, or trading interface.
+- No factors, Alpha DSL, strategies, positions, backtests, account ledger, or live/simulated execution.
 - No account endpoints, orders, API keys, secrets, or credential discovery.
-- No other exchanges or unbounded all-exchange subscriptions. P2 discovers products
-  only for configured underlying assets under explicit resource budgets.
-- No Docker as the certified V1 deployment, Kafka, Kubernetes, or cloud-first
-  stateless collection.
-- No automatic formatting, repair, repartitioning, or exclusive ownership of an
-  external volume.
-- No exclusive ownership of the production VPS host or filesystem; unrelated
-  co-resident services remain outside Recorder control.
-- No production data under the repository, Desktop, Documents, iCloud Drive, or
-  `/tmp`.
+- No other exchanges or unbounded all-exchange subscriptions.
+- No Docker as the certified V1 deployment, Kafka, Kubernetes, or cloud-first stateless collection.
+- No automatic formatting, repair, repartitioning, or exclusive ownership of an external volume or VPS host.
+- No production data under the repository, Desktop, Documents, iCloud Drive, or `/tmp`.
 
 ## Architecture boundary
 
@@ -61,7 +58,7 @@ Dependency direction is one-way:
 
 ```text
 Binance public APIs
-  -> Binance Spot / USD-M modules (COIN-M and dated identities in P2)
+  -> Binance Spot / USD-M / COIN-M modules
   -> Binance Market Data Recorder
   -> immutable raw chunks
   -> normalized datasets and manifests
@@ -69,268 +66,25 @@ Binance public APIs
   -> arbitrary research, backtest, and monitoring consumers
 ```
 
-Recorder is an independent repository and service. Consumers may depend only on
-its generic published contracts, Catalog read interfaces, manifests, and replay
-APIs, never Recorder internals. Recorder must not import from or write to any
-consumer project. Alpha101Crypto is one optional external consumer example; it
-has no privileged influence on Raw, Catalog, replay, normalization, or archive
-protocols. See ADR-0001 and ADR-0007.
+Recorder is an independent repository and service. Consumers may depend only on its published contracts, Catalog read interfaces, manifests, and replay APIs. Alpha101Crypto is one optional external consumer example; it has no privileged influence on Recorder protocols. Supporting another exchange requires a separate future architecture review.
 
-Spot and USD-M transport/schema modules are required boundaries. Do not build a
-framework for hypothetical exchanges as a V1 acceptance condition. Supporting
-another exchange requires a separate future architecture review. The
-operator-configured product-set authority is ADR-0032; its ProductKey is
-`(market, symbol)` and its runtime topology is one process with one Collector
-per configured ProductKey.
+## Core Data-Integrity Rules
 
-## Data-integrity rules
+1. Collector writes only to the internal active area (`~/Library/Application Support/BinanceMarketDataRecorder/` on macOS, `~/.local/share/BinanceMarketDataRecorder/` or `/var/lib/binance-market-data-recorder` on Linux). Never use the repository or `/Users/amada/Documents/Development/Crypto` as a production data root.
+2. Preserve exact WebSocket payload bytes and single primary REST representations (ADR-0053) with exchange times, receive UTC/monotonic times, market, symbol, stream, connection ID, and sequence IDs in Raw v1 format (`ADR-0010`).
+3. Raw files are append-only while active (`.partial`) and immutable after sealing (`.zst` + `.json`).
+4. Truncated or checksum-failed `.partial` tails are recovered to the last valid frame or quarantined on startup; never label an incomplete interval as complete.
+5. Never silently delete unarchived raw data. At the hard disk reserve, seal gracefully, stop collection, and emit `DISK_EMERGENCY_STOP`. Cross-volume archive copies verify the target file before deleting local source chunks.
 
-1. Collector writes only to the internal active area. An external volume is
-   never an active write target and its absence is not a Collector failure.
-2. Preserve the exact raw WebSocket payload bytes plus exchange times, receive
-   UTC wall-clock time, monotonic time, market, symbol, stream, connection ID,
-   collector instance/version, and source sequence IDs. REST uses the declared
-   single representation and required-field contract in ADR-0053; SDK models
-   are not byte-exact HTTP bodies.
-3. Raw files are append-only while active and immutable after sealing. Active
-   files end in `.partial`. Duplicate raw events are allowed; derived layers
-   own explicit deterministic deduplication.
-   Future P2 D06 may use the explicitly versioned compact polling representation
-   in ADR-0053 after measuring its benefit; this does not authorize blanket WS
-   deduplication or rewriting historical Raw.
-4. Every sealed file has count, time and sequence ranges, byte counts, schema
-   and collector versions, SHA-256, and gap/resync metadata.
-5. Never label a truncated, checksum-failed, or sequence-incomplete interval as
-   complete. Recover to the last verified frame or quarantine it.
-6. Archive through a target temporary file, fsync, readback, size and SHA-256
-   verification, atomic rename, external manifest, and Catalog transaction.
-   Delete the source only after all local/remote authorization steps succeed.
-7. Never silently delete unarchived raw data, even under disk pressure. At the
-   hard reserve, seal gracefully, stop collection, emit
-   `DISK_EMERGENCY_STOP`, and mark the gap start.
-8. All replay ordering and deduplication tie-breakers must be specified and
-   deterministic. Raw payload bytes remain recoverable.
+## Official-Source, SDK, and Security Policy
 
-## Performance and meaningful SHA-256 use
+- For Binance behavior, consult official Binance documentation (`llms.txt`, developer portal pages/changelogs, `binance/binance-connector-python`, `binance/binance-spot-api-docs`, `binance/binance-toolbox-python`) and record new source references in `docs/binance_sources.md`. Do not load all of `llms-full.txt` by default.
+- Use `binance-sdk-spot` and `binance-sdk-derivatives-trading-usds-futures` where appropriate. Do not add deprecated `binance-futures-connector-python` or `python-binance`.
+- Never place trades, call account or order endpoints, read API keys, inspect credential stores, add secret fields to configuration, or request trading permissions. Public, unsigned market-data endpoints only.
+- Never emit a raw proxy URL into logs, status, Raw, manifests, or Catalog records.
 
-Avoid excessive, meaningless SHA-256 work. A new or repeated digest must serve a
-specific content identity, corruption check, trust transition or published
-contract. Explain that purpose in the change/review; do not add per-event hash
-chains, whole-corpus scans or dependency-tree hashing merely for routine metrics,
-status polling or extra reassurance.
+## Development Workflow & Remote Safety
 
-- Prefer one canonical immutable snapshot and one digest reused within the same
-  operation over rebuilding/sorting/hashing the same bytes repeatedly. Bind the
-  file, Catalog row and proof to that exact snapshot; do not cache across updates.
-- Where equivalent validation can share an unavoidable read, compute required
-  hashes/statistics together. Stored and uncompressed SHA-256 cover different
-  byte representations and remain required. CRC, canonical encoding, counts,
-  sequence/gap checks and writer poison/recovery rules also remain intact.
-- A copy-time or write-time digest cannot replace independent full target
-  readback after fsync. Preserve archive identity/receipt/manifest checks,
-  restart/retry revalidation and deletion authorization, including the required
-  source revalidation immediately before retirement.
-- Reusing validation across steps requires an explicit ownership/observation
-  boundary and mutation/replacement/retirement guards. A sealed pathname or
-  matching inode, size and timestamps alone does not prove unchanged content.
-  Historical audit artifacts retain their original verification rules. New P0–P6
-  qualification follows ADR-0051: independently read each new sealed file,
-  without requiring repeated whole-history LIVE passes.
-- Benchmark reduced reads, canonicalization, allocations and wall/CPU cost with
-  identical inputs; verify exact bytes/hashes/results and fault behavior. Report
-  local prototypes separately from representative VPS evidence. Do not claim
-  production speed or safety from fewer SHA calls alone. Substantial verification
-  or archive-protocol changes require the corresponding contract/ADR review.
-
-## Official-source priority
-
-For Binance behavior, use only these sources, in this order:
-
-1. The current Binance Agent Native index (`llms.txt`) and selected pages from
-   the Binance developer portal.
-2. Binance developer portal product pages and changelogs.
-3. Official `binance/binance-connector-python` source and releases for SDK
-   behavior.
-4. Official `binance/binance-spot-api-docs` repository for Spot behavior and
-   changelog corroboration.
-5. Official `binance/binance-toolbox-python` examples only as corroborating
-   implementation evidence, never as a silent replacement for conflicting
-   normative product documentation.
-
-Record URL, UTC retrieval time, content SHA-256, and relevant conclusion in
-`docs/binance_sources.md`. Do not load all of `llms-full.txt` by default. The
-documentation updater may download text only from `developers.binance.com` and
-`github.com/binance`; it must never execute downloaded content.
-
-If official sources conflict, have moved, or cannot establish the required
-semantics, stop that implementation, preserve evidence, and update
-`docs/risk_register.md`. Do not substitute a plausible but semantically
-different implementation.
-
-## SDK and transport policy
-
-Evaluate `binance-sdk-spot` and
-`binance-sdk-derivatives-trading-usds-futures` first for public REST snapshots
-and metadata. Do not add deprecated `binance-futures-connector-python`, the
-third-party `python-binance` package as a production core dependency, or an
-unverified “Binance MCP”.
-
-Every production network exit uses the M20 proxy policy. `direct` explicitly
-ignores proxy environment variables, `environment` uses standard environment
-discovery plus `no_proxy`, and `explicit` accepts only unauthenticated HTTP(S)
-proxy URLs. Never emit a raw proxy URL into logs, status, Raw, manifests,
-Catalog event bodies, or snapshots. Public state is limited to proxy mode,
-scheme, loopback, and port.
-
-Use an official SDK for WebSocket capture only if M2 proves raw-payload
-fidelity, receive-time control, lifecycle/reconnect/24-hour rotation control,
-unhidden depth update IDs, fault-injection support, and backpressure without
-silent loss. Otherwise use a mature generic WebSocket client against an
-officially documented stream and record the decision in an ADR.
-
-## Security prohibition
-
-Never place trades, call account or order endpoints, read API keys, inspect
-credential stores, add secret fields to configuration, or request trading
-permissions. Public, unsigned market-data endpoints only.
-
-## Development workflow
-
-Follow the owner's latest task and the current code. Historical milestone
-instructions describe their original runs; they do not automatically constrain
-new development. Update obsolete documentation and checks when requirements
-change. Keep documents practical and avoid adding speculative infrastructure.
-
-1. Read the current handoff and the contracts relevant to the task.
-2. Check Git status and preserve unrelated changes.
-3. Implement a coherent scope, using as many logical commits as the work needs.
-4. Run checks that cover the change; record results and relevant unrun checks.
-5. Update current docs where behavior or status changed. Record substantial
-   architecture or data-contract changes in an ADR.
-6. Report the result, remaining limitations, and the next useful step.
-
-Production operations follow the current owner-approved task. A documentation
-status or a historical live-run procedure is not itself a command to start work.
-
-## Test layers
-
-- Unit: deterministic, offline, no filesystem outside a temporary test root.
-- Integration: local components and SQLite/filesystem behavior; offline by
-  default.
-- E2E fixture: local mock servers and official-schema fixtures.
-- Fault injection/property: truncation, kill points, disk/volume/network and
-  sequencing faults.
-- Online smoke: explicit pytest marker, public endpoints only, opt-in, never
-  part of the default test command.
-- Soak/manual platform tests: explicitly recorded duration, machine, and
-  unrun reasons.
-
-Tests must not write to a real external volume unless the user explicitly
-registered a test folder and the milestone calls for it.
-
-## Common commands
-
-Current baseline engineering checks:
-
-```bash
-git status --short --branch
-python3.12 -m pip install -e '.[dev]'
-python3.12 -m pytest -q
-python3.12 -m ruff check .
-python3.12 -m mypy
-python3.12 tests/verify_m0_contracts.py
-git diff --check
-binance-market-recorder --version
-binance-market-recorder config show
-binance-market-recorder doctor
-binance-market-recorder status
-binance-market-recorder report daily --date <YYYY-MM-DD>
-binance-market-recorder normalize status
-binance-market-recorder normalize run
-python3.12 examples/replay_consumer.py --data-root <root> \
-  --build-id <sha256> --market spot --stream agg_trade
-binance-market-recorder storage list
-binance-market-recorder storage inspect <path>
-binance-market-recorder storage register <folder-path>
-binance-market-recorder storage unregister <storage-id>
-binance-market-recorder storage status
-binance-market-recorder storage eject <storage-id>
-binance-market-recorder storage forecast
-binance-market-recorder archive status
-binance-market-recorder archive retry [--storage-id <storage-id>]
-binance-market-recorder archive verify <storage-id>
-binance-market-recorder launchd install --label <author-owned-label> \
-  --author-controls-namespace
-binance-market-recorder launchd start
-binance-market-recorder launchd stop
-binance-market-recorder launchd status
-binance-market-recorder launchd uninstall
-sudo binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
-  systemd install --user <user> --group <group>
-sudo binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
-  systemd start
-binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
-  systemd status
-python3.12 tools/update_binance_docs.py --output-dir <temporary-directory>
-python3.12 tools/probe_binance_transports.py
-BINANCE_MARKET_RECORDER_ONLINE=1 python3.12 -m pytest -m online -q
-python3.12 -m pytest -m stress -q tests/stress/test_million_events.py
-go run tools/verify_raw_chunk_golden.go
-```
-
-The documentation update performs network access only to its official
-allowlist. The transport probe is offline by default; `--online-rest` and the
-`online` pytest marker opt in only to unsigned public depth snapshots.
-The `stress` marker is excluded from the default suite and must be run
-explicitly for M3 acceptance because it writes and scans one million synthetic
-Raw frames in a temporary test directory.
-
-## Storage safety
-
-### Remote administrative command safety
-
-The 2026-09-12 root-home incident makes these rules permanent for every human,
-agent, prompt, script, and SSH operation:
-
-- Never recursively remove `/`, `/root`, another home directory, `/etc`,
-  `/opt`, `/var`, `/srv`, a mount root, or an unresolved/empty target.
-- Never assume a shell variable crosses the SSH boundary, and never construct
-  a remote deletion target from local/remote interpolation. Cleanup variables
-  must be created, validated, and consumed in the same remote shell with unset
-  variables fatal.
-- Prefer retaining evidence and creating a new `mktemp -d` child under an
-  approved disposable parent. Do not clean merely to obtain a fresh workspace.
-- If cleanup is necessary, require a nonempty canonical path, exact approved
-  parent/child relationship, explicit protected-path and mount-root refusal,
-  and printed resolved target before mutation. Creation/inspection and cleanup
-  are separate reviewed steps; cleanup failure is normally nonfatal.
-- A stopped live service is not necessarily safe across reboot. Every stopped
-  handoff and maintenance preflight must record both `systemctl is-active` and
-  `systemctl is-enabled`; keep Recorder disabled until an explicitly authorized
-  pre-start step.
-
-The interactive defaults are:
-
-```text
-macOS: ~/Library/Application Support/BinanceMarketDataRecorder/
-Linux: ~/.local/share/BinanceMarketDataRecorder/
-```
-
-The Ubuntu system-service root is `/var/lib/binance-market-data-recorder`.
-Linux discovers only already-mounted external block filesystems; it never
-mounts, unmounts, formats, repairs, or creates udev rules. Without a reliable
-OS eject capability it must report manual action and must not claim
-`SAFE_TO_REMOVE`.
-
-Never treat an entire external volume as project-owned. Operate only inside the
-registered relative directory identified by volume UUID plus marker and
-`storage_id`. Do not change filesystem format, repair it, write outside that
-directory, or rely only on `/Volumes/<name>`. Never use the repository or its
-parent `/Users/amada/Documents/Development/Crypto` as a production data root.
-
-The future local archive client targets macOS, Linux, and Windows. Platform
-volume/eject adapters may differ, but archive verification, Archive Set
-identity, receipt binding, and deletion authorization remain portable. The
-archive protocol/library is implemented; the operator-selected archive-machine
-receive/readback/receipt command freeze and cross-platform production
-certification remain pending.
+1. Follow the owner's latest task and current code; check Git status and preserve unrelated changes.
+2. Keep changes focused and practical; run relevant checks (`pytest`, `ruff`, `mypy`, `python3.12 tests/verify_m0_contracts.py`, `git diff --check`).
+3. **Remote SSH & Cleanup Safety**: Never recursively remove `/`, `/root`, home directories, `/etc`, `/opt`, `/var`, `/srv`, mount roots, or unvalidated shell variables across SSH. Record `systemctl is-active` and `systemctl is-enabled` during service maintenance.
