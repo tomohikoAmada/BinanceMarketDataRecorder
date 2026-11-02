@@ -857,3 +857,12 @@ Read the Agent Native index before selected Spot documentation. These are docume
 | [Spot K-line stream catalog](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~), rendered excerpt with line labels L1337–L1355 and L1558–L1564, 968 UTF-8 bytes | 2026-11-02T00:16:14Z–2026-11-02T00:16:15Z | `6c2d826039267f65833324d663d116a1de530efeccdde47567c6eb9dcf63d6e9` | UTC+8 affects bar boundaries; timestamps remain UTC; `k.x` identifies closure. This does not establish byte-identical UTC/UTC+8 messages, identical intermediate observations, or automatic recovery of a missed closing update. |
 
 The catalog's direct HTTP retrieval at 2026-11-02T00:14:38.862053Z returned zero bytes and is excluded as semantic evidence; the catalog digest above identifies only the rendered excerpt, not its HTTP body. Matching boundaries for fixed intervals dividing eight hours are a mathematical inference, not an official guarantee that two feeds are interchangeable. Closed-bar filtering changes retained observation scope even when Raw v1 encoding remains unchanged. No full documentation corpus or downloaded code was executed.
+
+
+## M1.3 closed K-line review — 2026-11-02
+
+- [Official Spot WebSocket source](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md): `k.x` is the closed indicator; K-line timestamps remain UTC with timezone-offset subscriptions.
+- [Official Spot REST market data](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market#kline-candlestick-data): open-time identity, start/end bounds, `timeZone`, and request weight.
+- [Official USD-M REST market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data): native/continuous/mark/index K-line routing and parameters. Repair requests use limit 100 and charge weight 2.
+
+Reviewed documentation only; no live collection or production qualification was run.

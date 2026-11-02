@@ -624,5 +624,3 @@ def test_seed_source_retires_upon_successful_completion(tmp_path: Path) -> None:
         assert capture.sources[ws_src.key].last_closed_open_time_ms == 1700000060000
 
     asyncio.run(scenario())
-
-

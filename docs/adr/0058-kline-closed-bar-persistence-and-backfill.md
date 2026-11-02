@@ -14,7 +14,7 @@ During live Binance market data collection across Spot, USD-M, and COIN-M market
    Binance WebSocket K-line streams push intermediate forming bar updates every 1–2 seconds on Spot and as frequently as every 250ms on futures. Over 95% of these frames represent forming bars with identical open times, updating only the current price, high/low, and running volume. Persisting every forming bar generated hundreds of thousands of ephemeral Raw frames and accelerated spool rotations without providing discrete closed historical bars.
 
 2. **Redundant East-8 Timezone Subscriptions (`S12` vs `S11`)**:
-   `S12` (`@+08:00`) subscribed to all 16 Spot K-line intervals. However, any interval that evenly divides 8 hours (`1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h`) has mathematically identical open and close timestamp boundaries in UTC (`S11`) and UTC+8 (`S12`). Subscribing to these 10 identical intervals in both timezones doubled WebSocket connections and Raw chunks for zero analytical gain (for `BTC + ETH`, ~600 redundant sources).
+   `S12` (`@+08:00`) subscribed to all 16 Spot K-line intervals. However, any interval that evenly divides 8 hours (`1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h`) has mathematically identical open and close timestamp boundaries in UTC (`S11`) and UTC+8 (`S12`). Subscribing to these 10 identical intervals in both timezones doubled WebSocket connections and Raw chunks for zero analytical gain.
 
 3. **One-Off Startup Seed Sources Polling Overhead**:
    Startup seed sources (`kline_seed_*`, `continuous_seed_*`, `reference_price_seed`, `rpi_depth_snapshot`) with `cadence_seconds == 0` are designed to execute once on process startup. Previously, they remained in the active `sources` table indefinitely, being repeatedly iterated, sorted, and evaluated by `_poll_rest_loop` and `_observe_availability` every second.
@@ -53,29 +53,28 @@ By default, `S12` only subscribes to the 6 intervals whose boundaries genuinely 
 ```python
 SPOT_UTC8_INTERVALS = ("6h", "12h", "1d", "3d", "1w", "1M")
 ```
-The other 10 intraday intervals (`1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h`) are mathematically identical to `S11` and are explicitly documented as covered by `S11`. This eliminates ~600 redundant sources for dual-asset (`BTC + ETH`) capture.
+The other 10 intraday intervals (`1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h`) are mathematically identical to `S11` and are explicitly documented as covered by `S11`. Source reduction depends on the discovered Spot product count (10 WS and 10 seed sources per Spot product).
 
 ### 2.3 One-Off Seed Source Retirement
 
 In `SelectedAssetCapture`:
-1. `self.sources` is organized via `SourcesView` managing `_active_sources` and `_completed_seed_sources`.
+1. `_active_sources` and `_completed_seed_sources` hold source state; the standard-library `ChainMap` exposes their combined status and lookup view.
 2. When a source with `cadence_seconds == 0` successfully completes and persists its response, it is moved from `_active_sources` to `_completed_seed_sources`.
 3. Routine per-second tasks (`_observe_availability` and REST polling due evaluation) iterate only over `_active_sources`.
 4. Overall coverage reports, status queries (`status()`), and dictionary lookups continue to include `_completed_seed_sources`.
-5. Initial K-lines returned by seed sources seed the `last_closed_open_time_ms` for the corresponding live WebSocket stream.
+5. Only already-closed K-lines returned by seed sources seed `last_closed_open_time_ms` for the corresponding live stream, including `continuous_seed_*`. An on-demand RPI snapshot request reactivates its retired seed.
 
 ### 2.4 Automatic Bounded REST Backfill for Missed Closed Bars
 
-To guarantee a gapless closed K-line sequence:
+The existing REST scheduler also owns low-priority repair pages:
 
-1. **Gap Detection Triggers**:
-   - **Sequence Discontinuity**: When a newly received closed bar has `openTime = t` greater than `last_closed_open_time_ms + interval_duration_ms`.
-   - **Reconnect Past Boundary**: When a WebSocket connection reconnects (`lifecycle("connected")`), and the current wall clock exceeds the expected close boundary of the next pending bar (`now_ms > expected_close_ms`).
-2. **Bounded REST Fetch**:
-   - The capture loop schedules an asynchronous, non-blocking background repair task using `shared_request_budget()`.
-   - It requests missing bars from the appropriate exchange endpoint (`/api/v3/klines`, `/fapi/v1/klines`, `/continuousKlines`, etc.) bounded by `startTime = expected_next_open_ms` and `endTime = t - 1` (or `now_ms`).
-   - Responses are verified, tagged with `capture_flags = ("closed_bar_backfill",)` and authentic REST receive timestamps, and persisted to `rest_observations` in Raw v1 format.
-   - Upon successful persistence, `last_closed_open_time_ms` is advanced and `AvailabilityJournal` is marked valid.
+1. A closed-bar jump or reconnect beyond the next expected close boundary merges a missing range into the source's in-memory pending cursor. The first observed forming bar supplies the starting boundary when no closed bar has arrived yet. Stale closed frames never rewind the cursor.
+2. Ordinary polls are admitted first. Repairs share `rest_concurrency`, `shared_request_budget()`, and the existing 418/429 cooldown handling. Each turn requests at most 100 bars (five monthly bars, and at most 200 days for longer intervals), with explicit start/end bounds excluding forming bars. UTC+8 monthly arithmetic preserves local month boundaries; continuous contract routing preserves `CURRENT_QUARTER` and `NEXT_QUARTER`.
+3. Each response, including failures, is persisted once to the existing `rest_observations` Raw stream with its logical source identity, `closed_bar_backfill` flag and true REST receive timestamps. Binary Raw v1 is unchanged.
+4. Only a contiguous, closed returned prefix advances the pending cursor. Empty, failed or incomplete responses retain the missing range and retry after five seconds; later gap discoveries extend the pending range. Status exposes `backfill_start_ms` and `backfill_end_ms` until complete. A REST outage is not declared repaired merely because a newer WS close arrived.
+5. Storage exceptions propagate to the existing supervisor. Shutdown cancels requests still waiting for admission and drains requests already on the wire before closing spools. No separate repair service, task-per-source loop, or disk verification loop is added.
+
+Pending repair cursors are process-local. Seed observations establish the new process baseline; this milestone does not add historical gap recovery across process restarts. Availability tracks current transport/observation health independently of whether an earlier missing range has finished repairing.
 
 ---
 
