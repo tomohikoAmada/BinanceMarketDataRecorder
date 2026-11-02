@@ -387,11 +387,12 @@ async def run_arm(arm: str, seconds: int, seed: int, root: Path) -> dict[str, An
                 "elapsed_seconds": samples[-1]["elapsed_seconds"],
                 **{k: current[k] - previous[k] for k in current},
             }
-            for name, values in stats.latencies.items():
+            for name in stats.latencies:
+                values = stats.latencies[name]
+                stats.latencies[name] = []
                 counts = Counter(round(v * 1000) for v in values)
                 row[name + "_ms"] = distribution(counts)
                 histograms[name].update(counts)
-                values.clear()
             previous.clear()
             previous.update(current)
             minutes.append(row)
