@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
-import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
@@ -18,7 +17,6 @@ from binance_market_data_recorder.service.acceptance_v5_reconnect import advance
 from binance_market_data_recorder.spool.recovery import RecoveryConflictError, recover_storage
 from binance_market_data_recorder.spool.seal import (
     FORCED_FLAGS_EVIDENCE_KEY,
-    RECONNECT_GAP_FLAG,
     seal_partial,
     validate_sealed_artifact,
 )
@@ -48,9 +46,8 @@ def make_spool(root: Path, catalog: Catalog, *, symbol: str = "ETHUSDT") -> Stre
 
 
 @pytest.mark.parametrize("market", ["spot", "um_perpetual"])
-@pytest.mark.parametrize("failure", [False, True])
-def test_startup_commits_before_socket_and_only_once(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, market: str, failure: bool,
+def test_startup_creates_zero_empty_chunks_and_opens_cleanly(
+    tmp_path: Path, market: str,
 ) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
@@ -60,70 +57,62 @@ def test_startup_commits_before_socket_and_only_once(
         async def opener(_url: str) -> Any:
             nonlocal openings
             openings += 1
+            # In M2.2 (updating ADR-0038), zero 0-record .zst chunks or manifests
+            # are generated on startup.
             manifests = list((tmp_path / "data/manifests").glob("*.json"))
-            assert len(manifests) == 1
-            marker = json.loads(manifests[0].read_bytes())
-            assert marker["record_count"] == 0
-            assert marker["connection_ids"] == []
-            assert marker["gap"] is True and marker["complete"] is False
-            assert marker["market"] == market
-            assert marker["collector_instance_ids"] == [collector.collector_instance_id]
-            assert catalog.operational_events() == []
+            assert len(manifests) == 0
+            partials = list((tmp_path / "data/active").glob("*.partial"))
+            assert len(partials) == 0
             stop.set()
-            yield BlockingSocket()  # No payload is needed for the initial boundary.
+            yield (ScriptedWebSocket([], stop) if market == "spot" else BlockingSocket())
 
         collector: SpotStreamCollector | UsdMStreamCollector
         if market == "spot":
             collector, catalog = spot_stream(tmp_path, opener=opener, stop=stop)
         else:
             collector, catalog = usdm_stream(tmp_path, opener)
-        if failure:
-            def fail_compression(*_args: Any) -> Any:
-                raise OSError("startup seal failed")
-            monkeypatch.setattr(seal_module, "_compress", fail_compression)
         try:
-            if failure:
-                with pytest.raises(OSError, match="startup seal failed"):
-                    await collector.run(stop)
-                assert openings == 0
-                assert not collector._capture_startup_recorded
-                assert catalog.operational_events() == []
-            else:
-                # Two explicit run calls on this same capture owner do not
-                # add a marker for each network generation.
-                await collector.run(stop)
-                stop.clear()
-                await collector.run(stop)
-                assert openings == 2
-                assert len(list(collector.spool.layout.manifests.glob("*.json"))) == 1
+            # Two explicit run calls on this same capture owner do not
+            # create any 0-record files.
+            await collector.run(stop)
+            stop.clear()
+            await collector.run(stop)
+            assert openings == 2
+            assert collector._capture_startup_recorded
+            assert len(list(collector.spool.layout.manifests.glob("*.json"))) == 0
+            assert len(list(collector.spool.layout.sealed.glob("*.zst"))) == 0
         finally:
             catalog.close()
 
     asyncio.run(exercise())
 
 
-def test_startup_marker_does_not_pass_through_idle_rotation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_idle_spool_rotation_creates_zero_files(tmp_path: Path) -> None:
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         spool = make_spool(tmp_path, catalog)
-        monkeypatch.setattr(RawChunkWriter, "should_rotate", lambda _writer: True)
-        marker = spool.seal_capture_startup()
-        assert marker["record_count"] == 0
-        assert marker["capture_flags"] == [RECONNECT_GAP_FLAG]
-        assert marker["gap"] is True and marker["complete"] is False
+        # Rotating an idle spool with 0 records does not create any files
+        assert spool.drain_one() is False
+        assert spool.close_and_seal() is None
         assert not list(layout.active.glob("*.partial"))
+        assert not list(layout.sealed.glob("*.zst"))
+        assert not list(layout.manifests.glob("*.json"))
 
 
 @pytest.mark.parametrize("crash_at", ["before_manifest", "before_sealed"])
 @pytest.mark.parametrize("retry", ["recovery", "direct"])
-def test_startup_seal_crash_retains_flags(
+def test_startup_seal_crash_retains_process_boundary_flag(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, crash_at: str, retry: str,
 ) -> None:
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         spool = make_spool(tmp_path, catalog)
+        # Enqueue first event
+        spool.enqueue(event().model_copy(update={
+            "market": "um_perpetual", "symbol": "ETHUSDT", "stream": "liquidation",
+        }))
+        spool.drain_one()
+
         with monkeypatch.context() as context:
             if crash_at == "before_manifest":
                 def fail_manifest(*_args: Any) -> Any:
@@ -137,7 +126,7 @@ def test_startup_seal_crash_retains_flags(
                     original(chunk_id, state, **kwargs)
                 context.setattr(catalog, "transition", fail_sealed)
             with pytest.raises(OSError, match="injected startup crash"):
-                spool.seal_capture_startup()
+                spool._seal_current()
         partial, = layout.active.glob("*.partial")
         if retry == "direct":
             seal_partial(partial, layout=layout, catalog=catalog)
@@ -145,24 +134,26 @@ def test_startup_seal_crash_retains_flags(
             recover_storage(layout=layout, catalog=catalog)
         path, = layout.manifests.glob("*.json")
         marker = json.loads(path.read_bytes())
-        assert marker["record_count"] == 0 and marker["connection_ids"] == []
-        assert marker["gap"] is True and marker["complete"] is False
-        assert marker["collector_instance_ids"] == ["new-process"]
+        assert marker["record_count"] == 1
+        assert marker["process_boundary_before_first_frame"] is True
         validate_sealed_artifact(layout.root / marker["relative_path"], marker)
         assert catalog.state(marker["chunk_id"]) is ChunkState.SEALED
-        assert catalog.operational_events() == []
         assert not list(layout.active.glob("*.partial"))
         before = path.read_bytes()
         recover_storage(layout=layout, catalog=catalog)
         assert path.read_bytes() == before
 
 
-def test_startup_crash_before_sealing_keeps_unfinished_header_and_never_opens(
+def test_startup_crash_before_sealing_keeps_unfinished_header(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         spool = make_spool(tmp_path, catalog)
+        spool.enqueue(event().model_copy(update={
+            "market": "um_perpetual", "symbol": "ETHUSDT", "stream": "liquidation",
+        }))
+        spool.drain_one()
         with monkeypatch.context() as context:
             original = catalog.transition
             def fail_sealing(chunk_id: str, state: ChunkState, **kwargs: Any) -> None:
@@ -171,18 +162,12 @@ def test_startup_crash_before_sealing_keeps_unfinished_header_and_never_opens(
                 original(chunk_id, state, **kwargs)
             context.setattr(catalog, "transition", fail_sealing)
             with pytest.raises(OSError, match="before durable flags"):
-                spool.seal_capture_startup()
+                spool._seal_current()
         partial, = layout.active.glob("*.partial")
         recover_storage(layout=layout, catalog=catalog)
-        assert partial.exists()  # Existing REQ-108 retention, no false complete.
+        assert partial.exists()
         assert not list(layout.manifests.glob("*.json"))
         assert len(catalog.chunks_in_states(ChunkState.ACTIVE)) == 1
-        assert catalog.operational_events() == []
-        # A later process can record its own boundary but does not silently
-        # clean this incomplete attempt; zero-partials acceptance still blocks.
-        marker = make_spool(tmp_path, catalog).seal_capture_startup()
-        assert marker["gap"] is True
-        assert partial.exists()
 
 
 @pytest.mark.parametrize("flags", [None, [], [""], [1], ["a", "a"], ["b", "a"]])
@@ -206,13 +191,15 @@ def test_malformed_durable_flags_keep_partial(
         assert not list(layout.manifests.glob("*.json"))
 
 
-def test_delayed_liquidation_uses_only_its_startup_boundary(tmp_path: Path) -> None:
+def test_delayed_liquidation_uses_process_boundary_without_empty_chunks(tmp_path: Path) -> None:
     layout = ensure_storage_layout(tmp_path)
     contexts: dict[str, Any] = {}
     now = 1_700_000_000_000_000_000
     t0 = now + 100
     with Catalog(layout.catalog) as catalog:
-        def seal_frame(connection: str, received: int) -> dict[str, Any]:
+        def seal_frame(
+            connection: str, received: int, *, is_startup: bool = False
+        ) -> dict[str, Any]:
             writer = RawChunkWriter(
                 layout=layout, catalog=catalog, market="um_perpetual", symbol="ETHUSDT",
                 stream="liquidation", collector_instance_id=connection, collector_version="test",
@@ -223,7 +210,10 @@ def test_delayed_liquidation_uses_only_its_startup_boundary(tmp_path: Path) -> N
                 "source_sequence": {}, "receive_time_utc_ns": received,
             }))
             writer.close()
-            return seal_partial(writer.path, layout=layout, catalog=catalog)
+            return seal_partial(
+                writer.path, layout=layout, catalog=catalog,
+                process_boundary_before_first_frame=is_startup,
+            )
 
         def advance(state: dict[str, Any], manifest: dict[str, Any]) -> Any:
             proof = {"local": scan_raw(layout.root, manifest["relative_path"], manifest)}
@@ -233,65 +223,26 @@ def test_delayed_liquidation_uses_only_its_startup_boundary(tmp_path: Path) -> N
         old = seal_frame("prior-process", now)
         assert advance(contexts, old)[0] == []
         baseline = copy.deepcopy(contexts)
-        marker = make_spool(tmp_path, catalog).seal_capture_startup()
-        new = seal_frame("new-process", t0 + 1_000_000_000_000)
-        assert advance(copy.deepcopy(baseline), new)[0] == ["unmarked_reconnect"]
-        assert advance(contexts, marker)[1]["kind"] == "ZERO_RECORD_MARKER"
+
+        # Without process_boundary_before_first_frame, unmarked connection change fails
+        new_unmarked = seal_frame("new-process", t0 + 1_000_000_000_000, is_startup=False)
+        assert advance(copy.deepcopy(baseline), new_unmarked)[0] == ["unmarked_reconnect"]
+
+        # With process_boundary_before_first_frame (M2.2), no 0-record marker needed:
+        # the inter-chunk connection change is proven as EXPLICIT_SEQUENCE_GAP
+        new = seal_frame("new-process", t0 + 1_000_000_000_000, is_startup=True)
         findings, boundary = advance(contexts, new)
         assert findings == [] and boundary["kind"] == "EXPLICIT_SEQUENCE_GAP"
-        next_connection = seal_frame("later-unmarked-connection", t0 + 2_000_000_000_000)
+
+        # A later unmarked connection in the same process is still correctly flagged
+        next_connection = seal_frame(
+            "later-unmarked-connection", t0 + 2_000_000_000_000, is_startup=False
+        )
         assert advance(contexts, next_connection)[0] == ["unmarked_reconnect"]
 
-        other_product = make_spool(tmp_path, catalog, symbol="BTCUSDT").seal_capture_startup()
-        wrong_product = copy.deepcopy(baseline)
-        assert advance(wrong_product, other_product)[0] == []
-        assert advance(wrong_product, new)[0] == ["unmarked_reconnect"]
+        # Fresh context sees first frame cleanly
         fresh: dict[str, Any] = {}
-        assert advance(fresh, marker)[0] == []
         assert advance(fresh, new)[1]["kind"] == "NO_CONNECTION_CHANGE"
-
-
-@pytest.mark.parametrize("market", ["spot", "um_perpetual"])
-def test_startup_cancellation_waits_for_owned_seal_without_opening_socket(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, market: str,
-) -> None:
-    entered = threading.Event()
-    release = threading.Event()
-    original = seal_module._compress
-    def blocking_compress(*args: Any) -> Any:
-        entered.set()
-        assert release.wait(5)
-        return original(*args)
-    monkeypatch.setattr(seal_module, "_compress", blocking_compress)
-
-    async def exercise() -> None:
-        stop = asyncio.Event()
-        @asynccontextmanager
-        async def opener(_url: str) -> Any:
-            raise AssertionError("cancelled startup opened a socket")
-            yield  # pragma: no cover
-        collector: SpotStreamCollector | UsdMStreamCollector
-        if market == "spot":
-            collector, catalog = spot_stream(tmp_path, opener=opener, stop=stop)
-        else:
-            collector, catalog = usdm_stream(tmp_path, opener)
-        task = asyncio.create_task(collector.run(stop))
-        try:
-            assert await asyncio.to_thread(entered.wait, 5)
-            task.cancel()
-            await asyncio.sleep(0)
-            assert not task.done()
-            release.set()
-            with pytest.raises(asyncio.CancelledError):
-                await task
-            assert collector._capture_startup_recorded
-            marker_path, = collector.spool.layout.manifests.glob("*.json")
-            assert json.loads(marker_path.read_bytes())["gap"] is True
-            assert catalog.operational_events() == []
-        finally:
-            release.set()
-            catalog.close()
-    asyncio.run(exercise())
 
 
 @pytest.mark.parametrize("market", ["spot", "um_perpetual"])
@@ -327,9 +278,11 @@ def test_real_drop_before_first_payload_and_restored_pending_gap(
                 json.loads(path.read_bytes())
                 for path in first.spool.layout.manifests.glob("*.json")
             ]
-            assert len(docs) == 2  # Initial marker and actual captured network tail.
-            assert sorted(doc["record_count"] for doc in docs) == [0, 1]
-            assert all(doc["gap"] for doc in docs)
+            # M2.2: Exactly 1 chunk (the actual captured network tail). NO 0-record startup marker!
+            assert len(docs) == 1
+            assert docs[0]["record_count"] == 1
+            assert docs[0]["process_boundary_before_first_frame"] is True
+            assert docs[0]["gap"] is True
         finally:
             catalog.close()
 

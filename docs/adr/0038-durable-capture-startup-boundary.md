@@ -1,7 +1,7 @@
 # ADR-0038: Persist each capture owner's initial stream boundary
 
-- Status: Implemented; independent source ACCEPT; new release/cloud gates pending
-- Date: 2026-10-02
+- Status: Superseded in part by M2.2 (abolished 0-record startup chunks; startup boundary conveyed via Catalog + first real chunk manifest); independent source ACCEPT
+- Date: 2026-10-02 (Amended 2026-11-02)
 - Scope: Q3 sparse WebSocket startup correction; Raw/manifest/V5/SQLite schemas unchanged
 
 ## Evidence and decision
@@ -57,3 +57,35 @@ identity/completion. Existing network fault tests explicitly isolate already
 completed startup so their faults still target their original lifecycle phases.
 Full offline checks, exact review/release identity and actual cloud qualification
 remain required; this correction grants no Formal duration credit.
+
+## M2.2 Amendment: Abolishing 0-record startup chunks (2026-11-02)
+
+Under the pragmatic Python optimization and qualification plan (Milestone M2.2,
+governed by the `AGENTS.md` pragmatic engineering principles):
+
+1. **Zero Empty `.zst` Chunks on Startup**:
+   The collector no longer writes or seals 0-record `.zst` files or empty manifests
+   upon process startup (`StreamSpool.seal_capture_startup()` is now a no-op that
+   creates 0 files on disk). This eliminates the burst of dozens of empty chunks,
+   disk syncs, and Catalog mutations on every service restart.
+
+2. **Durable Capture Startup Conveyance**:
+   - The process startup boundary is captured globally once in SQLite `Catalog` as an
+     operational event (`SERVICE_STARTED`) during runtime initialization.
+   - Each stream maintains an in-process pending flag (`_process_boundary_pending = True`).
+   - When the stream receives its first real frame and seals its first non-empty Raw
+     chunk, the chunk manifest sets `"process_boundary_before_first_frame": true`.
+     Subsequent chunks omit this field.
+   - The boundary information is preserved across crash recovery (`Catalog` transition
+     evidence and manifest validation).
+
+3. **Replay, Normalization, and Strict Classification**:
+   - The inter-chunk reconnect classifier (`_classify_inter_chunk` in
+     `src/binance_market_data_recorder/audit/reconnect_boundaries.py`) inspects
+     `process_boundary_before_first_frame`: if set on the new chunk, an inter-chunk
+     connection change across the process restart is proven and classified as
+     `EXPLICIT_SEQUENCE_GAP` without requiring an intervening 0-record chunk.
+   - All subsequent unmarked connection changes within the same process execution
+     continue to be caught and reported as `UNMARKED_RECONNECT`.
+   - Raw v1 binary framing, manifest schemas (`MANIFEST_OPTIONAL_FIELDS`), and
+     downstream replay and normalization contracts remain 100% compatible.

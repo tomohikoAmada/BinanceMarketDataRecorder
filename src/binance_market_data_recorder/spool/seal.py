@@ -162,6 +162,7 @@ MANIFEST_REQUIRED_FIELDS = frozenset(
         "uncompressed_sha256",
     }
 )
+MANIFEST_OPTIONAL_FIELDS = frozenset({"process_boundary_before_first_frame"})
 _HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -349,6 +350,7 @@ def _manifest(
     stored_sha256: str,
     recovery: dict[str, object] | None,
     forced_flags: frozenset[str] = frozenset(),
+    process_boundary_before_first_frame: bool = False,
 ) -> dict[str, object]:
     statistics = evidence.statistics.mutable_copy()
     capture_flags = set(statistics.capture_flags)
@@ -368,7 +370,7 @@ def _manifest(
         capture_flags.add(RECONNECT_GAP_FLAG)
     complete = not bool(capture_flags & INCOMPLETE_FLAGS)
     sealed_at = time.time_ns()
-    return {
+    manifest: dict[str, object] = {
         "capture_flags": sorted(capture_flags),
         "chunk_id": str(evidence.header.chunk_id),
         "chunk_schema_version": evidence.header.chunk_schema_version,
@@ -421,6 +423,9 @@ def _manifest(
         "uncompressed_bytes": evidence.file_size,
         "uncompressed_sha256": evidence.uncompressed_sha256,
     }
+    if process_boundary_before_first_frame:
+        manifest["process_boundary_before_first_frame"] = True
+    return manifest
 
 
 def _validate_existing_manifest(path: Path, expected: dict[str, object]) -> None:
@@ -453,6 +458,7 @@ def seal_partial(
     catalog: Catalog,
     forced_flags: frozenset[str] = frozenset(),
     seal_intent: Mapping[str, object] | None = None,
+    process_boundary_before_first_frame: bool = False,
 ) -> dict[str, object]:
     """Seal a closed partial idempotently; never delete it before Catalog commit.
 
@@ -482,6 +488,7 @@ def seal_partial(
         catalog=catalog,
         forced_flags=forced_flags,
         seal_intent=seal_intent,
+        process_boundary_before_first_frame=process_boundary_before_first_frame,
     )
 
 
@@ -492,6 +499,7 @@ def _seal_clean_writer(
     catalog: Catalog,
     forced_flags: frozenset[str] = frozenset(),
     seal_intent: Mapping[str, object] | None = None,
+    process_boundary_before_first_frame: bool = False,
 ) -> dict[str, object]:
     """Consume one live writer's clean evidence and use the shared seal protocol."""
 
@@ -504,6 +512,7 @@ def _seal_clean_writer(
         catalog=catalog,
         forced_flags=forced_flags,
         seal_intent=seal_intent,
+        process_boundary_before_first_frame=process_boundary_before_first_frame,
     )
 
 
@@ -514,6 +523,7 @@ def _seal_verified(
     catalog: Catalog,
     forced_flags: frozenset[str],
     seal_intent: Mapping[str, object] | None,
+    process_boundary_before_first_frame: bool = False,
 ) -> dict[str, object]:
     """The one durable ACTIVE/RECOVERED -> SEALING -> SEALED protocol."""
 
@@ -535,6 +545,8 @@ def _seal_verified(
             transition_evidence[FORCED_FLAGS_EVIDENCE_KEY] = sorted(forced_flags)
         if seal_intent is not None:
             transition_evidence[SEAL_INTENT_EVIDENCE_KEY] = dict(seal_intent)
+        if process_boundary_before_first_frame:
+            transition_evidence["process_boundary_before_first_frame"] = True
         catalog.transition(
             chunk_id,
             ChunkState.SEALING,
@@ -550,6 +562,8 @@ def _seal_verified(
         # A direct seal_partial retry must retain these flags too, even when
         # the caller does not pass them again. Recovery may add further flags.
         forced_flags |= durable_forced_flags(existing)
+        if existing.get("process_boundary_before_first_frame") is True:
+            process_boundary_before_first_frame = True
         prior = existing.get(SEAL_INTENT_EVIDENCE_KEY)
         if seal_intent is not None and prior is not None and (
             not isinstance(prior, dict) or dict(prior) != dict(seal_intent)
@@ -591,6 +605,7 @@ def _seal_verified(
         stored_sha256=stored_sha256,
         recovery=recovery_evidence,
         forced_flags=forced_flags,
+        process_boundary_before_first_frame=process_boundary_before_first_frame,
     )
     manifest_path = layout.manifests / f"{verified.header.chunk_id.hex}.manifest.json"
     if manifest_path.exists():
@@ -655,8 +670,13 @@ def parse_strict_manifest_bytes(
     missing = MANIFEST_REQUIRED_FIELDS - set(document)
     if missing:
         raise SealError(f"Raw manifest {path} is missing fields: {sorted(missing)}")
-    if set(document) != MANIFEST_REQUIRED_FIELDS:
+    extra = set(document) - MANIFEST_REQUIRED_FIELDS
+    if extra - MANIFEST_OPTIONAL_FIELDS:
         raise SealError(f"Raw manifest {path} has malformed fields")
+    if "process_boundary_before_first_frame" in document and not isinstance(
+        document["process_boundary_before_first_frame"], bool
+    ):
+        raise SealError(f"Raw manifest {path} has invalid process_boundary_before_first_frame")
     text_fields = (
         "chunk_id",
         "chunk_schema_version",

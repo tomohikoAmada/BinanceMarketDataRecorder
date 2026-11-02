@@ -961,9 +961,6 @@ class SpotStreamCollector:
         return "stopped"
 
     def _record_capture_startup(self) -> None:
-        self.spool.seal_capture_startup()
-        # Keep successful persistence and this owner's once-only state in the
-        # same owned call, even if its awaiting task is cancelled.
         self._capture_startup_recorded = True
 
     async def run(

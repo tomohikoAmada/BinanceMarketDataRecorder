@@ -710,6 +710,14 @@ def _classify_inter_chunk(
         # boundary without fabricating a frame or being borrowed by another
         # transition.
         return EXPLICIT_SEQUENCE_GAP
+    if bool(new_chunk.manifest.get("process_boundary_before_first_frame")) or any(
+        bool(item.manifest.get("process_boundary_before_first_frame"))
+        for item in intervening_chunks
+    ):
+        # A process startup boundary was recorded before the first frame of
+        # the new chunk (M2.2 / ADR-0038 update). Documents this inter-chunk
+        # boundary without creating zero-record chunks on disk.
+        return EXPLICIT_SEQUENCE_GAP
     if catalog_identity_kind == EXACT_PAIR:
         # The Catalog documents this exact connection pair as a durable
         # discontinuity interval (matched_gap_id provenance).

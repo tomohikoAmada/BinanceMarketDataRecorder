@@ -25,7 +25,7 @@ def stream_key(manifest: Mapping[str, Any]) -> str:
 
 
 def manifest_projection(manifest: Mapping[str, Any]) -> dict[str, Any]:
-    return {
+    projected = {
         key: manifest[key]
         for key in (
             "chunk_id",
@@ -41,6 +41,11 @@ def manifest_projection(manifest: Mapping[str, Any]) -> dict[str, Any]:
             "complete",
         )
     }
+    if "process_boundary_before_first_frame" in manifest:
+        projected["process_boundary_before_first_frame"] = bool(
+            manifest["process_boundary_before_first_frame"]
+        )
+    return projected
 
 
 def advance_reconnect(

@@ -273,6 +273,15 @@
   - 进程启动时磁盘上产生的空 `.zst` 分片与额外文件数量为 **`0`**；
   - 现有回放与规范化测试全部通过。
 
+- **完成状态（2026-11-02 独立实施与复核完成）**：
+  - **事实模型校正**：计划提及的 `src/binance_market_data_recorder/models/manifest.py（RawChunkManifest）` 在代码库中并不存在（无 `models/` 目录）；manifest 的构建与严格 schema 校验均在 [`src/binance_market_data_recorder/spool/seal.py`](../src/binance_market_data_recorder/spool/seal.py) 中。已在 `spool/seal.py` 的 `MANIFEST_OPTIONAL_FIELDS` 中扩展 `process_boundary_before_first_frame`，并在 `parse_strict_manifest_bytes()` 中严格校验布尔类型，保留严格 schema 拒绝未知多余字段。
+  - **消除启动空分片**：修改 [`src/binance_market_data_recorder/spool/stream.py`](../src/binance_market_data_recorder/spool/stream.py) 中的 `StreamSpool.seal_capture_startup()` 为无操作并返回 `{}`，不再向磁盘写入任何 0 记录分片或边界文件，启动阶段磁盘空分片与额外文件数为 **`0`**。
+  - **首分片边界标记与流转**：`StreamSpool` 启动时置 `_process_boundary_pending = True`；首个真实数据帧封存时将 `process_boundary_before_first_frame = True` 写入该分片的 `.json` manifest 及 `Catalog` 的 `SEALING` 状态 transition evidence 中，成功后清除 pending 标记；次分片及后续分片均不包含该字段。崩溃截断恢复路径（`seal_partial`）保持该标记不丢。
+  - **全局启动事件与重连分界兼容**：`ServiceRuntime.start()` 启动时已在 `Catalog` 记录全局 `SERVICE_STARTED` 事件。在 [`src/binance_market_data_recorder/audit/reconnect_boundaries.py`](../src/binance_market_data_recorder/audit/reconnect_boundaries.py) 的 `_classify_inter_chunk()` 中引入对新分片 `process_boundary_before_first_frame: True` 的识别，跨进程启动重连准确判定为 `EXPLICIT_SEQUENCE_GAP`，不再依赖 0 记录空分片，且进程内后续发生的未标记重连继续严格判定为 `UNMARKED_RECONNECT`。在 [`src/binance_market_data_recorder/service/acceptance_v5_reconnect.py`](../src/binance_market_data_recorder/service/acceptance_v5_reconnect.py) 中更新 `manifest_projection()` 保持字段传递。
+  - **更新架构决策记录**：更新 [`docs/adr/0038-durable-capture-startup-boundary.md`](adr/0038-durable-capture-startup-boundary.md)，增补 M2.2 修正说明。
+  - **验收与回归**：新增专项测试 [`tests/unit/test_m2_2_zero_empty_startup.py`](../tests/unit/test_m2_2_zero_empty_startup.py)（7 项全部通过）；更新已有启动与重连测试套件 [`tests/integration/test_capture_startup_boundary.py`](../tests/integration/test_capture_startup_boundary.py)（17 项全部通过）、[`tests/integration/test_spot_stream_collector.py`](../tests/integration/test_spot_stream_collector.py)（10 项全部通过）、[`tests/integration/test_usdm_stream_collector.py`](../tests/integration/test_usdm_stream_collector.py)（4 项全部通过）、[`tests/integration/test_ms3b_production_paths.py`](../tests/integration/test_ms3b_production_paths.py)（9 项全部通过）；回放与规范化测试套件全部通过（50 项 passed）。
+  - 复核报告见 [`M2.2 复核记录`](benchmarks/m2.2-review-20261102.md)。本次仅完成 M2.2，未提前实施 M2.3–M2.4 或 VPS 部署。
+
 ---
 
 #### 任务 `M2.3`：抽取公共 WebSocket 底座并统一新旧两套采集器栈

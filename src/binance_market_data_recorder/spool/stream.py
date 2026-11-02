@@ -95,6 +95,7 @@ class StreamSpool:
         self._synchronized_frames = 0
         self._writer_written = 0
         self._writer_synchronized = 0
+        self._process_boundary_pending = True
 
     def enqueue(self, envelope: EventEnvelope) -> None:
         self.queue.put_nowait(envelope)
@@ -306,6 +307,9 @@ class StreamSpool:
             return manifest
         writer = self._writer
         seal_started = time.perf_counter_ns()
+        process_boundary = False
+        if self._process_boundary_pending and writer is not None and writer.record_count > 0:
+            process_boundary = True
         try:
             manifest = _seal_clean_writer(
                 writer,
@@ -313,7 +317,10 @@ class StreamSpool:
                 catalog=self.catalog,
                 forced_flags=forced_flags,
                 seal_intent=seal_intent,
+                process_boundary_before_first_frame=process_boundary,
             )
+            if process_boundary:
+                self._process_boundary_pending = False
         except BaseException:
             with suppress(OSError):
                 writer.abort()
@@ -329,22 +336,12 @@ class StreamSpool:
         return manifest
 
     def seal_capture_startup(self) -> dict[str, object]:
-        """Seal this process's stream boundary before any connection can open.
+        """Deprecated in M2.2 (superseded by process_boundary_before_first_frame).
 
-        A sparse stream may receive its first payload long after startup. The
-        empty, incomplete marker separates prior-process capture without
-        inventing a payload, connection ID or network-discontinuity event.
+        Startup 0-record chunks were removed in M2.2 (updating ADR-0038).
+        Retained as a no-op for backward compatibility; creates 0 files on disk.
         """
-
-        if self._writer is not None or self.queue.depth:
-            raise RuntimeError("capture startup requires an unused stream spool")
-        self._writer = self._new_writer()
-        # Do not drain_all here: idle rotation could seal this empty writer
-        # with ordinary complete semantics before applying the boundary flag.
-        manifest = self._seal_current(forced_flags=frozenset({RECONNECT_GAP_FLAG}))
-        if manifest is None:
-            raise RuntimeError("capture startup marker was not sealed")
-        return manifest
+        return {}
 
     def close_and_seal(
         self,

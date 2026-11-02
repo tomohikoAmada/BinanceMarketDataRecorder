@@ -177,11 +177,13 @@ def assert_reconnect_layout(
     data = [d for d in documents if d["record_count"] > 0]
     markers = [d for d in documents if d["record_count"] == 0]
     assert len(data) == 2
-    assert len(markers) == 1 + int(rotated)
+    assert len(markers) == int(rotated)
     assert len(documents) == len(data) + len(markers)
     assert all(d["record_count"] == 1 for d in data)
     old_data = next(d for d in data if d["connection_ids"] == [old.connection_id])
     new_data = next(d for d in data if d["connection_ids"] == [new.connection_id])
+    assert old_data.get("process_boundary_before_first_frame") is True
+    assert "process_boundary_before_first_frame" not in new_data
     assert set(old_data["capture_flags"]) == old_flags | (set() if rotated else {"reconnect_gap"})
     assert old_data["complete"] is rotated
     assert old_data["gap"] is not rotated
@@ -194,7 +196,6 @@ def assert_reconnect_layout(
         and d["gap"] is True
         for d in markers
     )
-    assert len([d for d in markers if d["created_at_utc_ns"] < old_data["created_at_utc_ns"]]) == 1
     assert len(
         [
             d
@@ -237,10 +238,10 @@ def test_duplicates_and_out_of_order_messages_are_all_written(tmp_path: Path) ->
 
     asyncio.run(exercise())
     documents = manifests(tmp_path)
-    assert sum(int(document["record_count"]) for document in documents) == 3
-    assert documents[0]["record_count"] == 0
-    assert documents[0]["capture_flags"] == ["reconnect_gap"]
-    assert documents[1]["sequence_ranges"] == {
+    assert len(documents) == 1
+    assert documents[0]["record_count"] == 3
+    assert documents[0]["process_boundary_before_first_frame"] is True
+    assert documents[0]["sequence_ranges"] == {
         "U": {"min": 8, "max": 10},
         "u": {"min": 8, "max": 10},
     }

@@ -1038,7 +1038,6 @@ class UsdMStreamCollector:
         return "stopped"
 
     def _record_capture_startup(self) -> None:
-        self.spool.seal_capture_startup()
         self._capture_startup_recorded = True
 
     async def run(
