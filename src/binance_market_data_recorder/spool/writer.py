@@ -12,7 +12,7 @@ RawChunkWriter 为单个 market/symbol/stream 元组持有一个 .partial 文件
   触发当前 chunk 的密封和新 chunk 的创建。
 - header(chunk 身份、创建时间、schema 版本)在 Catalog register_active 调用
   之前被写入和 fsync,因此 header 之后、第一个帧之前的崩溃留下可恢复的 partial。
-- 每帧先复制成 private immutable semantic snapshot; exact frame bytes、stats、
+- 每帧直接编码受控进程内的 EventEnvelope; exact frame bytes、stats、
   connection transition、SHA-256 与 verified byte count 只在完整写入后共同提交。
 - 任意不明确的 write/evidence/fsync/close 失败永久 poison clean evidence;
   final fsync + close 成功后 evidence 只能被 live seal 入口消费一次。
@@ -64,69 +64,10 @@ class _WriterState(StrEnum):
 @dataclass(frozen=True, slots=True)
 class _PreparedFrame:
     envelope: EventEnvelope
-    source_sequence: dict[str, int | str]
     exact_bytes: bytes
     capture_flags_set: frozenset[str]
     connection_transition: ConnectionTransition | None
     expected_ordinal: int
-
-    @property
-    def capture_flags(self) -> tuple[str, ...]:
-        return self.envelope.capture_flags
-
-    @property
-    def receive_time_utc_ns(self) -> int:
-        return self.envelope.receive_time_utc_ns
-
-    @property
-    def receive_monotonic_ns(self) -> int:
-        return self.envelope.receive_monotonic_ns
-
-    @property
-    def exchange_event_time(self) -> int | None:
-        return self.envelope.exchange_event_time
-
-    @property
-    def exchange_transaction_time(self) -> int | None:
-        return self.envelope.exchange_transaction_time
-
-    @property
-    def exchange_trade_time(self) -> int | None:
-        return self.envelope.exchange_trade_time
-
-    @property
-    def connection_id(self) -> str:
-        return self.envelope.connection_id
-
-    @property
-    def collector_instance_id(self) -> str:
-        return self.envelope.collector_instance_id
-
-    @property
-    def raw_payload(self) -> bytes:
-        return self.envelope.raw_payload
-
-    def canonical_mapping(self) -> dict[str, object]:
-        return {
-            "schema_version": self.envelope.schema_version,
-            "venue": self.envelope.venue,
-            "market": self.envelope.market,
-            "symbol": self.envelope.symbol,
-            "stream": self.envelope.stream,
-            "module": self.envelope.module,
-            "connection_id": self.envelope.connection_id,
-            "collector_instance_id": self.envelope.collector_instance_id,
-            "collector_version": self.envelope.collector_version,
-            "receive_time_utc_ns": self.envelope.receive_time_utc_ns,
-            "receive_monotonic_ns": self.envelope.receive_monotonic_ns,
-            "exchange_event_time": self.envelope.exchange_event_time,
-            "exchange_transaction_time": self.envelope.exchange_transaction_time,
-            "exchange_trade_time": self.envelope.exchange_trade_time,
-            "source_sequence": self.source_sequence,
-            "payload_encoding": self.envelope.payload_encoding,
-            "raw_payload": self.envelope.raw_payload,
-            "capture_flags": self.envelope.capture_flags,
-        }
 
 
 class RawChunkWriter:
@@ -278,20 +219,12 @@ class RawChunkWriter:
                 self._previous_capture_flags,
                 capture_flags,
             )
-        source_seq = dict(envelope.source_sequence)
-        prepared = _PreparedFrame(
+        return _PreparedFrame(
             envelope=envelope,
-            source_sequence=source_seq,
-            exact_bytes=b"",
+            exact_bytes=encode_frame(envelope, max_frame_bytes=self.header.max_frame_bytes),
             capture_flags_set=capture_flags,
             connection_transition=transition,
             expected_ordinal=self._record_count,
-        )
-        return replace(
-            prepared,
-            exact_bytes=encode_frame(
-                prepared, max_frame_bytes=self.header.max_frame_bytes
-            ),
         )
 
     def _commit_prepared_frame(self, prepared: _PreparedFrame) -> None:
@@ -299,7 +232,7 @@ class RawChunkWriter:
             raise RuntimeError("prepared Raw frame ordinal is stale")
         if prepared.connection_transition is not None:
             self._connection_transitions.append(prepared.connection_transition)
-        self._statistics.add(prepared)
+        self._statistics.add(prepared.envelope)
         self._raw_digest.update(prepared.exact_bytes)
         self._verified_bytes += len(prepared.exact_bytes)
         self._record_count += 1
@@ -335,10 +268,10 @@ class RawChunkWriter:
     def append_batch(self, envelopes: Sequence[EventEnvelope]) -> tuple[int, ...]:
         """Append a bounded prefix with one vectored write (plus short-write retries).
 
-        Preparation owns one immutable snapshot per frame. Nothing is committed
-        until ALL bytes in this group have been written; ambiguous partial writes
-        poison the writer and recovery owns the physical tail. Rotation retains
-        its per-frame size boundary. A group owns at most 256 frames and 1 MiB
+        Preparation encodes each envelope once without copying its metadata.
+        Nothing is committed until ALL bytes in this group have been written;
+        ambiguous partial writes poison the writer and recovery owns the tail.
+        Rotation retains its per-frame size boundary. A group owns at most 256 frames and 1 MiB
         plus one maximum frame, independently of the caller's input length.
         """
 

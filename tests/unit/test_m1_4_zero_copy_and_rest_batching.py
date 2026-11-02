@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import json
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -65,6 +67,7 @@ def test_canonical_mapping_matches_model_dump_and_produces_identical_cbor() -> N
         capture_flags=("flag1", "flag2"),
     )
     direct_mapping = envelope.canonical_mapping()
+    assert direct_mapping["source_sequence"] is envelope.source_sequence
     dumped_mapping = envelope.model_dump(mode="python", exclude_none=False)
     assert direct_mapping == dumped_mapping
     cbor_direct = cbor2.dumps(direct_mapping, canonical=True)
@@ -112,6 +115,7 @@ def test_writer_directly_processes_event_envelopes(tmp_path: Path) -> None:
 
         assert writer.record_count == 3
         assert not writer.poisoned
+        writer.close()
 
 
 def test_rest_observation_response_headers_and_alias() -> None:
@@ -343,3 +347,76 @@ def test_collector_readiness_observe_persisted_handles_grouped_streams() -> None
     readiness.observe_persisted(grouped_env)
     snapshot = readiness.snapshot()
     assert "diff_depth" in snapshot.persisted_streams
+
+
+@pytest.mark.parametrize("outcome", ["success", "error", "cancel_leader", "cancel_follower"])
+def test_rest_batch_late_arrivals_failure_and_cancellation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, outcome: str,
+) -> None:
+    notices: list[str] = []
+
+    async def scenario() -> None:
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda _loop, context: notices.append(context["message"]))
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = SelectedAssetCapture(
+                RecorderConfig(
+                    data_root=tmp_path, coverage=CoverageConfig(underlying_assets=("BTC",))
+                ),
+                logging.getLogger("test_m1_4_outcomes"), "ver-1", "inst-1", layout, catalog,
+            )
+            spool = owner.spool("spot", "BTCUSDT", "rest_observations")
+            real_drain = spool.drain_all
+            entered = asyncio.Event()
+            release = threading.Event()
+            calls = 0
+
+            def drain() -> int:
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    loop.call_soon_threadsafe(entered.set)
+                    assert release.wait(timeout=5)
+                    if outcome == "error":
+                        raise OSError("storage failure")
+                return real_drain()
+
+            monkeypatch.setattr(spool, "drain_all", drain)
+            leader = asyncio.create_task(owner.persist_rest(_make_envelope()))
+            try:
+                await asyncio.wait_for(entered.wait(), timeout=5)
+                follower = asyncio.create_task(owner.persist_rest(_make_envelope()))
+                await asyncio.sleep(0)
+                assert not follower.done()
+                if outcome == "cancel_leader":
+                    leader.cancel()
+                    await asyncio.sleep(0)
+                    # The non-cancellable thread still belongs to the leader.
+                    assert not leader.done()
+                elif outcome == "cancel_follower":
+                    follower.cancel()
+            finally:
+                release.set()
+            results = await asyncio.wait_for(
+                asyncio.gather(leader, follower, return_exceptions=True), timeout=5,
+            )
+            if outcome == "error":
+                assert all(isinstance(result, OSError) for result in results)
+            elif outcome == "cancel_leader":
+                assert all(isinstance(result, asyncio.CancelledError) for result in results)
+            elif outcome == "cancel_follower":
+                assert results[0] is None
+                assert isinstance(results[1], asyncio.CancelledError)
+            else:
+                assert all(result is None for result in results)
+            assert not owner._rest_drain_in_progress
+            assert not owner._rest_drain_waiters
+            if outcome != "error":
+                assert spool.persistence_progress().written_frames == 2
+                spool.close_and_seal()
+
+    asyncio.run(scenario())
+    # A failed leader must not leave its own unawaited exception Future behind.
+    gc.collect()
+    assert notices == []

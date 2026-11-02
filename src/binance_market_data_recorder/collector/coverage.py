@@ -442,17 +442,11 @@ class SelectedAssetCapture:
         spool = self.spool(*spool_key)
         spool.enqueue(grouped)
 
-        loop = asyncio.get_running_loop()
-        waiter: asyncio.Future[None] = loop.create_future()
-        self._rest_drain_waiters.setdefault(spool_key, []).append(waiter)
-
         if spool_key not in self._rest_drain_in_progress:
             self._rest_drain_in_progress.add(spool_key)
             try:
                 while True:
-                    batch_waiters = self._rest_drain_waiters.pop(spool_key, None)
-                    if not batch_waiters:
-                        break
+                    batch_waiters = self._rest_drain_waiters.pop(spool_key, [])
                     try:
                         async with self._spool_locks[spool_key]:
                             await run_owned_blocking_call(spool.drain_all)
@@ -467,9 +461,13 @@ class SelectedAssetCapture:
                             if not remaining.done():
                                 remaining.set_exception(exc)
                         raise
+                    if spool_key not in self._rest_drain_waiters:
+                        break
             finally:
                 self._rest_drain_in_progress.discard(spool_key)
         else:
+            waiter: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+            self._rest_drain_waiters.setdefault(spool_key, []).append(waiter)
             await waiter
 
         source_stream = envelope.stream
@@ -994,11 +992,10 @@ class SelectedAssetCapture:
             received = result.envelope.receive_time_utc_ns
             status = result.status or (418 if result.error == "RateLimitBanError" else 429)
             body_text = json.dumps(result.document) if result.document is not None else ""
-            headers = dict(result.response_headers)
             try:
                 until = _retry_at_utc_ns(
                     status=status,
-                    headers=headers,
+                    headers=result.response_headers,
                     body_text=body_text,
                     now_utc_ns=received,
                 )

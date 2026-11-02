@@ -139,22 +139,13 @@ def test_batch_failure_never_issues_clean_evidence_or_false_sync(
             assert scanned.statistics.record_count == 1
 
 
-def test_batch_snapshots_mutable_sequence_before_write(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_batch_envelope_reuse_after_append_keeps_committed_evidence(tmp_path: Path) -> None:
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         writer = _writer(layout, catalog)
         event = _envelope(7)
-        original = os.writev
-
-        def mutate(fd: int, vectors: list[memoryview]) -> int:
-            event.source_sequence["u"] = 999
-            return original(fd, vectors)
-
-        monkeypatch.setattr(os, "writev", mutate)
         writer.append_batch([event])
+        event.source_sequence["u"] = 999
         _assert_incremental_matches_scan(writer)
         assert _read_envelopes(writer.path)[0].source_sequence == {"U": 7, "u": 7}
 

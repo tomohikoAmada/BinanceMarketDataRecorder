@@ -203,7 +203,7 @@
   2. 在 REST 路径上，`poll_once()` 先通过 `run_owned_blocking_call` 进线程执行 HTTP 请求，回到事件循环后（若是 `D16` 或 `418/429` 还把刚序列化的 `raw_payload` 重新 `json.loads` + `json.dumps`），紧接着又调一次 `run_owned_blocking_call` 进线程执行 `persist_rest()` 写盘。
 - **具体实施内容**：
   1. **直接移除 `_ImmutableEnvelopeSnapshot` 防御包装与多余字典拷贝**：
-     - 在 `spool/writer.py` 的 `_prepare_frame()` 中，直接从 `EventEnvelope` 读取字段构造 CBOR 映射并累加统计，删除 `_ImmutableEnvelopeSnapshot` 及 `MappingProxyType` 防御包装；同时在 `envelope_for_group()` 中直接填入逻辑流名称，省去 `logical_envelope()` 的二次 `.model_copy()`。
+     - 在 `spool/writer.py` 的 `_prepare_frame()` 中，直接从 `EventEnvelope` 读取字段构造 CBOR 映射并累加统计，删除 `_ImmutableEnvelopeSnapshot` 及 `MappingProxyType` 防御包装；保留 `envelope_for_group()` 的物理组名 `stream=group.name`，消费端直接读取 `source_sequence["sourceStream"]`，省去正常 WS 逐帧路径上的 `logical_envelope()` 拷贝（分片头和帧身份必须一致）。
   2. **消除 REST `D16` / `418` / `429` 的二次 JSON 解析**：
      - 在 `capture_public_response()` 中直接支持传入 `evaluated_period` 参数，并在 `RestCaptureResult` 上直接保留 `response_headers: Mapping[str, str]` 字段，彻底删除 `coverage.py:735–756` 中的二次 `json.loads` 与 `json.dumps`。
   3. **合并/批量化 REST 写盘线程切换**：
@@ -212,14 +212,14 @@
   - `418/429` 冷却顺序回归测试通过；
   - `tools/verify_raw_chunk_golden.go` 校验生成的 `.zst` 分片与 Raw v1 规范 100% 兼容。
 
-- **完成状态（2026-11-02 独立复核并完成）**：
-  - 彻底删除 `spool/writer.py` 中的 `_ImmutableEnvelopeSnapshot` 及 `MappingProxyType` 防御包装，`RawChunkWriter` 直接基于 `EventEnvelope` 编码 CBOR 并累加统计；
-  - 优化 `EventEnvelope.canonical_mapping()` 字典构造路径，实测提速约 3.7x，经 Go 独立校验器验证保持 100% Raw v1 规范二进制兼容；
-  - `capture_public_response()` 支持前置传入 `evaluated_period` 参数，在构造单份 REST provenance 时一次性完成序列化，彻底消除 `D16` 路径上的二次 `json.loads` 与 `json.dumps`；
-  - `RestObservation`（及别名 `RestCaptureResult`）直接保留 `response_headers` 映射，使 `_observe_rest_rejection()` 无需解析 `raw_payload` 即可直接读取 `Retry-After`，消除 418/429 路径上的二次 JSON 解析；
-  - 保持 418/429 冷却门在进入存储等待前在事件循环中同步生效，确保防穿透保护；在 `persist_rest()` 中引入基于事件循环的协同合并机制，使同属一个分片的并发 REST 写入共享单次线程池 `spool.drain_all` 批处理，大幅降低线程池上下文切换开销；
-  - 澄清并修正原计划假设：WebSocket 分片按物理组名 `group.name`（形如 `ws_market_<id>`）聚合，分片头与帧内流标识必须严格一致以保持 Raw v1 契约；保留 Raw 分片内 `envelope.stream == group.name` 满足 ADR-0010 不变，将下游消费端（`persisted`、`readiness.observe_persisted`、`DepthContinuity`）优化为直接读取 `source_sequence["sourceStream"]`，彻底移除了热路径上对 `logical_envelope()` 和 `.model_copy()` 的调用；
-  - 验证记录见 [`M1.4 复核记录`](benchmarks/m1.4-review-20261102.md)，新增专项 [`test_m1_4_zero_copy_and_rest_batching.py`](../tests/unit/test_m1_4_zero_copy_and_rest_batching.py) 与全量测试均通过。
+- **完成状态（2026-11-02 再次独立复核后补齐）**：
+  - 原 `9915c83` 已完成 D16 一次性 provenance 序列化、418/429 响应头直读、REST 并发合并与正常 WS 消费路径的逻辑流拷贝移除；但 Writer 仍在 `_prepare_frame()` 内复制 `source_sequence`，并通过 `_PreparedFrame` 重复转发字段和构造 CBOR 映射，原“直接编码 EventEnvelope、彻底移除拷贝”声明不成立。
+  - 现删除残留字典拷贝、字段转发与重复映射实现，直接 `encode_frame(envelope)` / `ChunkStatistics.add(envelope)`。保留有界批次、完整写入后提交统计和摘要、短写/失败恢复；调用方在 append 完成前保持内部元数据稳定。旧的单帧/批量篡改防御测试改为验证 append 完成后复用对象不影响已提交 Raw 和统计。
+  - 修正 REST 合并刷盘失败时主调用方遗留未读取异常 Future 的问题：仅等待共享结果的后续调用方分配 Future，主调用方直接接收异常；正常合并仍复用既有 spool 锁和 owned worker。原提交可稳定复现 `Future exception was never retrieved`，新增回归在原提交失败、修正后通过。418/429 冷却在持久化 await 前同步生效，响应头 Mapping 直接传递。
+  - 兼容性选择保持不变：Raw 帧 `stream=group.name`，正常 WS readiness / persisted 直接读取 `sourceStream`；异常序列缺口标记和低频快照适配仍可执行必要的 `model_copy`，不宣称所有复制都已删除。
+  - 原“3.7x”仅指字典构造微测，不能代表 Writer 或全链路收益。此次本机交错五轮、每轮 100,000 次 `_prepare_frame`，相对 `9915c83` 中位耗时 **1.016s → 0.884s（约 1.15x）**；不含写盘且与离线测试并行运行，仅为局部参考，不替代 M3.1。
+  - 实际 Writer 和封存 `.zst` 解压后内容逐字节匹配冻结 Raw v1 golden。除仓库 Go golden 校验外，另将真实新封存分片解压内容（773 bytes / 1 frame）作为临时输入交给未修改的 Go 工具，framing/CRC 校验通过；canonical CBOR、统计和 manifest 由 Python 回归覆盖。
+  - 验证、具体计数和边界见 [`M1.4 复核记录`](benchmarks/m1.4-review-20261102.md)。本次仅补齐 M1.4，不提前实施 M2、M3 或 VPS 部署。
 
 
 ---

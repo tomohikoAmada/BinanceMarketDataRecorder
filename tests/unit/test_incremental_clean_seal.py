@@ -4,7 +4,6 @@ import io
 import os
 import random
 import struct
-import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
@@ -227,46 +226,19 @@ def test_bounded_randomized_differential_evidence(tmp_path: Path) -> None:
             _assert_incremental_matches_scan(writer)
 
 
-def test_alias_mutation_after_snapshot_cannot_diverge_raw_and_evidence(
+def test_envelope_reuse_after_append_keeps_committed_raw_and_evidence(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         writer = _writer(layout, catalog)
         envelope = _envelope(7, source_sequence={"U": 7, "u": 7})
-        write_entered = threading.Event()
-        release_write = threading.Event()
-        original_write = os.write
-        blocked = False
-
-        def blocking_write(descriptor: int, data: Any) -> int:
-            nonlocal blocked
-            if descriptor == writer._descriptor and not blocked:
-                blocked = True
-                write_entered.set()
-                assert release_write.wait(timeout=5)
-            return original_write(descriptor, data)
-
-        monkeypatch.setattr(os, "write", blocking_write)
-        errors: list[BaseException] = []
-
-        def append() -> None:
-            try:
-                writer.append(envelope)
-            except BaseException as exc:  # pragma: no cover - assertion reports it
-                errors.append(exc)
-
-        thread = threading.Thread(target=append)
-        thread.start()
-        assert write_entered.wait(timeout=5)
+        writer.append(envelope)
+        # Author-controlled callers keep metadata stable until append returns.
+        # Later reuse cannot alter bytes or statistics already committed.
         envelope.source_sequence["U"] = 700
         envelope.source_sequence["u"] = 700
         envelope.source_sequence["late"] = 1
-        release_write.set()
-        thread.join(timeout=5)
-        assert not thread.is_alive()
-        assert errors == []
 
         evidence = writer._take_clean_seal_evidence()
         scanned = scan_chunk(writer.path)
