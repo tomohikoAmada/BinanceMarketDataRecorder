@@ -38,6 +38,7 @@ ALLOWED_ENV_SETTINGS = {
     f"{ENV_PREFIX}HEARTBEAT_SECONDS",
     f"{ENV_PREFIX}SLEEP_GAP_THRESHOLD_SECONDS",
     f"{ENV_PREFIX}PREVENT_SLEEP",
+    f"{ENV_PREFIX}LIVE_RAW_VERIFICATION_ENABLED",
     f"{ENV_PREFIX}NETWORK_PROXY_MODE",
     f"{ENV_PREFIX}NETWORK_PROXY_URL",
 }
@@ -72,6 +73,7 @@ class RecorderConfig(BaseModel):
     heartbeat_seconds: float = Field(default=5.0, ge=1.0, le=60.0)
     sleep_gap_threshold_seconds: float = Field(default=30.0, ge=5.0, le=600.0)
     prevent_sleep: bool = False
+    live_raw_verification_enabled: bool = False
     side_mark_price_enabled: bool = True
     side_liquidation_enabled: bool = True
     side_premium_index_enabled: bool = True
@@ -222,6 +224,7 @@ class _RecorderOverrides(BaseModel):
     heartbeat_seconds: float | None = Field(default=None, ge=1.0, le=60.0)
     sleep_gap_threshold_seconds: float | None = Field(default=None, ge=5.0, le=600.0)
     prevent_sleep: bool | None = None
+    live_raw_verification_enabled: bool | None = None
     side_mark_price_enabled: bool | None = None
     side_liquidation_enabled: bool | None = None
     side_premium_index_enabled: bool | None = None
@@ -338,6 +341,7 @@ def load_config(
         "heartbeat_seconds": 5.0,
         "sleep_gap_threshold_seconds": 30.0,
         "prevent_sleep": False,
+        "live_raw_verification_enabled": False,
         "side_mark_price_enabled": True,
         "side_liquidation_enabled": True,
         "side_premium_index_enabled": True,
@@ -401,6 +405,7 @@ def load_config(
             "heartbeat_seconds",
             "sleep_gap_threshold_seconds",
             "prevent_sleep",
+            "live_raw_verification_enabled",
             "side_mark_price_enabled",
             "side_liquidation_enabled",
             "side_premium_index_enabled",
@@ -490,6 +495,18 @@ def load_config(
             )
         values["prevent_sleep"] = normalized in {"true", "1"}
         sources["prevent_sleep"] = "environment"
+
+    live_verification_env = environment.get(
+        f"{ENV_PREFIX}LIVE_RAW_VERIFICATION_ENABLED"
+    )
+    if live_verification_env is not None:
+        normalized = live_verification_env.strip().casefold()
+        if normalized not in {"true", "false", "1", "0"}:
+            raise ConfigurationError(
+                f"invalid boolean environment setting {ENV_PREFIX}LIVE_RAW_VERIFICATION_ENABLED"
+            )
+        values["live_raw_verification_enabled"] = normalized in {"true", "1"}
+        sources["live_raw_verification_enabled"] = "environment"
 
     try:
         parsed = RecorderConfig.model_validate(values)

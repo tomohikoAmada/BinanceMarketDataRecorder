@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from hashlib import sha256
@@ -430,6 +430,27 @@ class RawChunkWriter:
             raise
         self._state = _WriterState.EVIDENCE_CONSUMED
         return evidence
+
+    def seal(
+        self,
+        *,
+        layout: StorageLayout | None = None,
+        catalog: Catalog | None = None,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: Mapping[str, object] | None = None,
+        verify_readback: bool = False,
+    ) -> dict[str, object]:
+        """Seal this writer using the shared durable seal protocol."""
+        from .seal import _seal_clean_writer
+
+        return _seal_clean_writer(
+            self,
+            layout=layout or self.layout,
+            catalog=catalog or self.catalog,
+            forced_flags=forced_flags,
+            seal_intent=seal_intent,
+            verify_readback=verify_readback,
+        )
 
     def abort(self) -> None:
         """Close without sealing after a write failure; recovery owns the partial."""

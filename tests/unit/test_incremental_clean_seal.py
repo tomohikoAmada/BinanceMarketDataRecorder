@@ -778,7 +778,12 @@ def test_clean_seal_failure_boundaries_retain_source_and_never_false_seal(
             )
 
         with pytest.raises((OSError, SealError), match=r"(injected|readback)"):
-            _seal_clean_writer(writer, layout=layout, catalog=catalog)
+            _seal_clean_writer(
+                writer,
+                layout=layout,
+                catalog=catalog,
+                verify_readback=(failure_phase == "readback"),
+            )
         assert writer.path.exists()
         assert catalog.state(str(writer.header.chunk_id)) is not ChunkState.SEALED
 

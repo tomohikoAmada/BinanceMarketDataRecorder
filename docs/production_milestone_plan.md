@@ -248,6 +248,13 @@
   - 实时采集封存一个分片的磁盘全文件解压读取次数从 `2` 次直接降至 **`0` 次**（纯流式写盘 + `fsync`）；
   - 手动执行 `verify-raw` CLI 与崩溃 `.partial` 恢复测试依然 100% 检出任何损坏或截断帧。
 
+- **完成状态（2026-11-02 独立复核与执行完成）**：
+  - **实时封存零回读落地**：在 `spool/seal.py` 的 `_compress()` 中实现流式哈希读写包装类 `_HashingReader` 与 `_HashingWriter`，在将 `.partial` 压缩为 `.zst.partial` 的单次流式写入时，同步计算并校验未压缩 `SHA-256`（与内存证据对照）并计算压缩后 `stored_sha256` 与 `stored_bytes`；`_seal_verified` 默认设置 `verify_readback=False`，不再重新打开 `.zst` 文件做全文件解压回读，封存回读次数直接降至 **`0` 次**。
+  - **关闭后台重验循环**：在 `RecorderConfig` 增加 `live_raw_verification_enabled: bool = False`（默认关闭，支持环境变量 `BINANCE_MARKET_RECORDER_LIVE_RAW_VERIFICATION_ENABLED` 覆盖）；`ServiceRuntime.run()` 采集运行期默认不再创建 `GLOBAL:raw-verification-owner` 循环子进程，彻底消除每 10 秒对磁盘与 CPU 的争抢。
+  - **`RawChunkWriter.seal()` 与 CLI 支持**：在 `RawChunkWriter` 新增 `seal()` 方法桥接封存协议；在 CLI 正式提供 `binance-market-recorder verify-raw` 子命令，供运维人员手动执行离线批次校验。
+  - **非实时独立全文件校验保留**：崩溃恢复扫描与对账（`spool/recovery.py`）、跨盘归档拷贝后验证（`archive/manager.py`）及离线抽检命令行（`cli.py`）的逐帧全量回读与校验能力全部完好保留，并验证在分片损坏时 100% 检出。
+  - **专项与全量验证**：新增专项测试 [`tests/unit/test_m2_1_zero_readback.py`](../tests/unit/test_m2_1_zero_readback.py)（6 项通过）；全量回归 `pytest -q` **2,516 passed / 24 skipped / 5 deselected**；`ruff check .`、`mypy`（367 文件无错误）、`verify_m0_contracts.py`、Go Raw v1 golden 独立验证器与 `git diff --check` 全部绿灯通过。详见 [`M2.1 复核记录`](benchmarks/m2.1-review-20261102.md)。
+
 ---
 
 #### 任务 `M2.2`：取消启动时每流 0 记录空 `.zst` 分片（更新 `ADR-0038`）

@@ -242,6 +242,14 @@ def build_parser() -> argparse.ArgumentParser:
     verify_new_command.add_argument("--max-files", type=int, default=32)
     verify_new_command.add_argument("--max-bytes", type=int, default=512 * 1024 * 1024)
     verify_new_command.add_argument("--max-seconds", type=float, default=30)
+    verify_raw_command = commands.add_parser(
+        "verify-raw", help="manual offline raw chunk verification"
+    )
+    verify_raw_command.add_argument("--chunk-id", action="append", default=[])
+    verify_raw_command.add_argument("--through-utc-ns", type=int)
+    verify_raw_command.add_argument("--max-files", type=int, default=32)
+    verify_raw_command.add_argument("--max-bytes", type=int, default=512 * 1024 * 1024)
+    verify_raw_command.add_argument("--max-seconds", type=float, default=30)
     continuity = report_commands.add_parser("continuity", help="per-source availability intervals")
     continuity.add_argument("--start-utc-ns", type=int, required=True)
     continuity.add_argument("--end-utc-ns", type=int, required=True)
@@ -1298,13 +1306,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 stream=sys.stderr,
             )
             return 2
-    if command == "verify":
+    if command in {"verify", "verify-raw"}:
         from .service.verification import verify_new
 
         layout = ensure_storage_layout(loaded.config.data_root)
         try:
             with Catalog(layout.catalog) as catalog:
-                if args.verify_command == "status":
+                if command == "verify" and args.verify_command == "status":
                     result = catalog.raw_verification_status()
                 else:
                     verification_roots: dict[str, Path] = {}
@@ -1329,7 +1337,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (OSError, RuntimeError, ValueError) as exc:
             _write_json({"error": "verification_error", "message": str(exc)}, stream=sys.stderr)
             return 2
-        _write_json({"command": f"verify.{args.verify_command}", **result})
+        command_label = "verify-raw" if command == "verify-raw" else f"verify.{args.verify_command}"
+        _write_json({"command": command_label, **result})
         return 2 if result.get("failed_files") else 0
     if command == "report" and args.report_command == "continuity":
         from .metrics.continuity import continuity_report
