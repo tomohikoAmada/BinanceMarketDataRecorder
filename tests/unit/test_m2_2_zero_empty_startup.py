@@ -11,6 +11,7 @@ import pytest
 
 from binance_market_data_recorder.audit.reconnect_boundaries import (
     EXPLICIT_SEQUENCE_GAP,
+    UNKNOWN,
     UNMARKED_RECONNECT,
     ChunkScan,
     FrameIdentity,
@@ -140,7 +141,8 @@ def test_parse_strict_manifest_validates_process_boundary_flag(tmp_path: Path) -
             )
 
 
-def test_inter_chunk_classification_with_process_boundary() -> None:
+@pytest.mark.parametrize("old_flags", [(), ("sequence_gap",)])
+def test_inter_chunk_classification_with_process_boundary(old_flags: tuple[str, ...]) -> None:
     old_scan = ChunkScan(manifest={"connection_ids": ["old-conn"]})
     new_scan = ChunkScan(manifest={
         "connection_ids": ["new-conn"],
@@ -148,7 +150,7 @@ def test_inter_chunk_classification_with_process_boundary() -> None:
     })
     last_old = FrameIdentity(
         chunk_id="old-chunk", frame_index=0, connection_id="old-conn",
-        receive_time_utc_ns=100, capture_flags=(), source_sequence={},
+        receive_time_utc_ns=100, capture_flags=old_flags, source_sequence={},
         payload_sha256="a" * 64, exchange_event_time_ns=None,
     )
     first_new = FrameIdentity(
@@ -165,17 +167,20 @@ def test_inter_chunk_classification_with_process_boundary() -> None:
     )
     assert kind == EXPLICIT_SEQUENCE_GAP
 
-    # Without process_boundary_before_first_frame (unmarked change) -> UNMARKED_RECONNECT
+    # Without startup evidence, retain the existing unmarked/ambiguous distinction.
     unmarked_scan = ChunkScan(manifest={"connection_ids": ["new-conn"]})
     kind_unmarked = _classify_inter_chunk(
         old_scan, unmarked_scan, last_old, first_new,
         catalog_identity_kind="NONE", catalog_matched_gap_id=None,
         old_frames=[last_old], intervening_chunks=[],
     )
-    assert kind_unmarked == UNMARKED_RECONNECT
+    assert kind_unmarked == (UNKNOWN if old_flags else UNMARKED_RECONNECT)
 
 
-def test_delayed_stream_reconnect_projection_without_empty_chunks(tmp_path: Path) -> None:
+@pytest.mark.parametrize("old_flags", [(), ("sequence_gap",)])
+def test_delayed_stream_reconnect_projection_without_empty_chunks(
+    tmp_path: Path, old_flags: tuple[str, ...],
+) -> None:
     layout = ensure_storage_layout(tmp_path)
     contexts: dict[str, Any] = {}
     now = 1_700_000_000_000_000_000
@@ -193,6 +198,7 @@ def test_delayed_stream_reconnect_projection_without_empty_chunks(tmp_path: Path
                 "market": "um_perpetual", "symbol": "ETHUSDT", "stream": "liquidation",
                 "connection_id": connection, "collector_instance_id": connection,
                 "source_sequence": {}, "receive_time_utc_ns": received,
+                "capture_flags": old_flags if connection == "prior-process" else (),
             }))
             writer.close()
             return seal_partial(

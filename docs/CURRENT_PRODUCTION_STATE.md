@@ -11,7 +11,8 @@
   - `M1.3` (closed-bar K-line persistence, REST gap backfill, S12 deduplication and seed retirement): **COMPLETED after independent correction** ([review](benchmarks/m1.3-review-20261102.md)).
   - `M1.4` (direct envelope framing and batched REST persistence): **COMPLETED after independent correction** ([review](benchmarks/m1.4-review-20261102.md)); removed residual Writer dictionary copies and fixed unobserved Future exceptions on REST drain failures.
   - `M2.1` (remove live post-seal full-file readback and background re-verification): **COMPLETED after independent correction** ([review](benchmarks/m2.1-review-20261102.md)); removed live verification toggles and seal compatibility fallbacks, fixed compressed short writes, and exercised actual rotation/stop and manual corruption detection.
-  - Next task: `M2.2` (remove startup empty chunks). This review did not deploy to the VPS or reobserve its service state.
+  - `M2.2` (remove startup empty chunks): **COMPLETED after independent correction** ([review](benchmarks/m2.2-review-20261102.md)); startup emits no empty Raw/boundary files, first real stream chunks carry the manifest marker. Fixed startup evidence being masked by an ambiguous old-frame gap; verified legacy/new Raw normalization and replay together.
+  - Next task: `M2.3` (unify the WebSocket base and collector stacks). This review did not deploy to the VPS or reobserve its service state.
 - **GreenCloud VPS (`greencloud-tokyo-01`) State**:
   - Primary service `binance-market-data-recorder.service` remains `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
   - Temporary P4 diagnostic units (`p4-btc-recorder.service` and timers) were stopped cleanly after diagnostic runs; all 45, 337, and 874 sealed chunks across Runs A, B, and C passed independent `raw-independent.v2` verification with zero corruption.

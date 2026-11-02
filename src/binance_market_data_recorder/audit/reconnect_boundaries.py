@@ -675,6 +675,10 @@ def _classify_inter_chunk(
     """
     if _frame_has_gap(first_new):
         return EXPLICIT_SEQUENCE_GAP
+    if new_chunk.manifest.get("process_boundary_before_first_frame") is True:
+        # This marks exactly the boundary before the new chunk. An ambiguous
+        # marker on the old connection cannot invalidate this explicit evidence.
+        return EXPLICIT_SEQUENCE_GAP
     if (
         _frame_has_gap(last_old)
         and last_old is not None
@@ -709,14 +713,6 @@ def _classify_inter_chunk(
         # connection-bearing chunks.  It therefore documents this one logical
         # boundary without fabricating a frame or being borrowed by another
         # transition.
-        return EXPLICIT_SEQUENCE_GAP
-    if bool(new_chunk.manifest.get("process_boundary_before_first_frame")) or any(
-        bool(item.manifest.get("process_boundary_before_first_frame"))
-        for item in intervening_chunks
-    ):
-        # A process startup boundary was recorded before the first frame of
-        # the new chunk (M2.2 / ADR-0038 update). Documents this inter-chunk
-        # boundary without creating zero-record chunks on disk.
         return EXPLICIT_SEQUENCE_GAP
     if catalog_identity_kind == EXACT_PAIR:
         # The Catalog documents this exact connection pair as a durable

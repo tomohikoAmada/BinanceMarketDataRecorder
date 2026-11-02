@@ -273,7 +273,7 @@
   - 进程启动时磁盘上产生的空 `.zst` 分片与额外文件数量为 **`0`**；
   - 现有回放与规范化测试全部通过。
 
-- **完成状态（2026-11-02 独立实施与复核完成）**：
+- **完成状态（2026-11-02 再次独立复核后补齐）**：
   - **事实模型校正**：计划提及的 `src/binance_market_data_recorder/models/manifest.py（RawChunkManifest）` 在代码库中并不存在（无 `models/` 目录）；manifest 的构建与严格 schema 校验均在 [`src/binance_market_data_recorder/spool/seal.py`](../src/binance_market_data_recorder/spool/seal.py) 中。已在 `spool/seal.py` 的 `MANIFEST_OPTIONAL_FIELDS` 中扩展 `process_boundary_before_first_frame`，并在 `parse_strict_manifest_bytes()` 中严格校验布尔类型，保留严格 schema 拒绝未知多余字段。
   - **消除启动空分片**：修改 [`src/binance_market_data_recorder/spool/stream.py`](../src/binance_market_data_recorder/spool/stream.py) 中的 `StreamSpool.seal_capture_startup()` 为无操作并返回 `{}`，不再向磁盘写入任何 0 记录分片或边界文件，启动阶段磁盘空分片与额外文件数为 **`0`**。
   - **首分片边界标记与流转**：`StreamSpool` 启动时置 `_process_boundary_pending = True`；首个真实数据帧封存时将 `process_boundary_before_first_frame = True` 写入该分片的 `.json` manifest 及 `Catalog` 的 `SEALING` 状态 transition evidence 中，成功后清除 pending 标记；次分片及后续分片均不包含该字段。崩溃截断恢复路径（`seal_partial`）保持该标记不丢。
@@ -281,6 +281,8 @@
   - **更新架构决策记录**：更新 [`docs/adr/0038-durable-capture-startup-boundary.md`](adr/0038-durable-capture-startup-boundary.md)，增补 M2.2 修正说明。
   - **验收与回归**：新增专项测试 [`tests/unit/test_m2_2_zero_empty_startup.py`](../tests/unit/test_m2_2_zero_empty_startup.py)（7 项全部通过）；更新已有启动与重连测试套件 [`tests/integration/test_capture_startup_boundary.py`](../tests/integration/test_capture_startup_boundary.py)（17 项全部通过）、[`tests/integration/test_spot_stream_collector.py`](../tests/integration/test_spot_stream_collector.py)（10 项全部通过）、[`tests/integration/test_usdm_stream_collector.py`](../tests/integration/test_usdm_stream_collector.py)（4 项全部通过）、[`tests/integration/test_ms3b_production_paths.py`](../tests/integration/test_ms3b_production_paths.py)（9 项全部通过）；回放与规范化测试套件全部通过（50 项 passed）。
   - 复核报告见 [`M2.2 复核记录`](benchmarks/m2.2-review-20261102.md)。本次仅完成 M2.2，未提前实施 M2.3–M2.4 或 VPS 部署。
+  - **再次复核发现并修正**：原 `5afcb40` 在旧连接仅有一帧且带 `sequence_gap` 时，先返回 `UNKNOWN`，导致新首分片已有启动标记仍误报 `unknown_reconnect`。现优先消费新分片的明确启动标记；无该标记时保留原来的 `UNKNOWN` / `UNMARKED_RECONNECT` 区分。两项新增参数化回归在原分类器上均失败，修正后通过。
+  - **补实验收证据**：新增 Spot / USD-M 真实 `StreamSpool → Raw → Normalizer → Replay` 测试，混读旧 manifest 与两个进程的首/次分片，核对帧、成交 ID、连接 ID、payload 摘要和原始文件不变；运行时验证单一 `SERVICE_STARTED` 事件及无数据时 Raw 目录零文件。专项单测现为 9 项，新增回放集成测试 2 项；最终完整检查结果见复核记录。
 
 ---
 
@@ -454,6 +456,6 @@
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
-| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
+| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

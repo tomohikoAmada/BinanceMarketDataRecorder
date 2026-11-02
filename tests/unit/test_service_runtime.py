@@ -239,6 +239,13 @@ def test_running_capture_has_no_background_raw_verifier(
             assert "GLOBAL:raw-verification-owner" not in {
                 item.get_name() for item in asyncio.all_tasks()
             }
+            with Catalog(runtime.layout.catalog) as catalog:
+                starts = catalog.operational_events(event_type="SERVICE_STARTED")
+                assert len(starts) == 1
+            for directory in (
+                runtime.layout.active, runtime.layout.sealed, runtime.layout.manifests,
+            ):
+                assert not list(directory.iterdir())
         finally:
             runtime.request_stop("test-complete")
             await asyncio.wait_for(task, timeout=3)

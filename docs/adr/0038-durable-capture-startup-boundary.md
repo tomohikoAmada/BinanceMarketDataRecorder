@@ -87,5 +87,8 @@ governed by the `AGENTS.md` pragmatic engineering principles):
      `EXPLICIT_SEQUENCE_GAP` without requiring an intervening 0-record chunk.
    - All subsequent unmarked connection changes within the same process execution
      continue to be caught and reported as `UNMARKED_RECONNECT`.
+   - The new chunk's startup marker is evaluated before an ambiguous old-frame
+     `sequence_gap`: the latter may belong to an earlier boundary and cannot
+     invalidate explicit evidence for this process restart.
    - Raw v1 binary framing, manifest schemas (`MANIFEST_OPTIONAL_FIELDS`), and
      downstream replay and normalization contracts remain 100% compatible.
