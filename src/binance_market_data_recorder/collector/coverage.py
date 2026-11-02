@@ -32,6 +32,7 @@ from ..binance.public_sources import (
     source_selection_report,
 )
 from ..binance.public_websocket import (
+    CombinedWebSocketStream,
     DepthSequenceObserver,
     StreamGroup,
     envelope_for_group,
@@ -40,7 +41,6 @@ from ..binance.public_websocket import (
 )
 from ..binance.recent_trades import RecentTradesCompactor
 from ..binance.request_budget import observe_websocket_rejection, shared_request_budget
-from ..binance.usdm.websocket import UsdMStreamCollector
 from ..binance.websocket_common import run_owned_blocking_call
 from ..config import RecorderConfig
 from ..domain.event import EventEnvelope
@@ -149,7 +149,7 @@ class ProductCapture:
         self.rpi = DepthContinuity(
             product.key.market, capacity=owner.config.ingress_queue_capacity, audit_observer=None
         )
-        self.groups: list[UsdMStreamCollector] = []
+        self.groups: list[CombinedWebSocketStream] = []
         self.source_states = {
             s.source.stream: s
             for s in owner.sources.values()
@@ -186,18 +186,19 @@ class ProductCapture:
             )
         if isinstance(stream, str) and stream in CORE_STREAMS:
             self.readiness.observe_persisted(envelope)
-            if (
-                stream == "diff_depth"
-                and not self.readiness.snapshot().orderbook_synchronized
-            ):
+            if stream == "diff_depth" and not self.readiness.snapshot().orderbook_synchronized:
                 if self.snapshot is not None:
                     self.readiness.observe_snapshot_persisted(self.snapshot)
                 if not self.readiness.snapshot().orderbook_synchronized:
                     self.owner.request_snapshot(self.product)
-            if (stream == "diff_depth" and state is not None
-                    and not self.readiness.snapshot().orderbook_synchronized):
+            if (
+                stream == "diff_depth"
+                and state is not None
+                and not self.readiness.snapshot().orderbook_synchronized
+            ):
                 self.owner.availability.unavailable(
-                    "/".join(state.source.key), envelope.receive_time_utc_ns,
+                    "/".join(state.source.key),
+                    envelope.receive_time_utc_ns,
                     "DEPTH_RESYNC_PENDING",
                 )
         if stream == "rpi_depth":
@@ -361,12 +362,18 @@ class SelectedAssetCapture:
         self._last_watermark_flush_utc_ns: int | None = None
         self._last_monitor_utc_ns: int | None = None
         self._clock_unreliable_until: int = 0
-        self._group_sources: dict[UsdMStreamCollector, StreamGroup] = {}
+        self._group_sources: dict[CombinedWebSocketStream, StreamGroup] = {}
         self._wire_started: set[tuple[str, str, str, str]] = set()
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
         self._rest_drain_waiters: dict[tuple[str, str, str], list[asyncio.Future[None]]] = {}
         self._rest_drain_in_progress: set[tuple[str, str, str]] = set()
         for venue in ("spot", "usdm", "coinm"):
+            if venue == "spot" and self.coverage.usdm_symbols and not self.coverage.spot_symbols:
+                continue
+            if venue == "usdm" and self.coverage.spot_symbols and not self.coverage.usdm_symbols:
+                continue
+            if venue == "coinm" and (self.coverage.spot_symbols or self.coverage.usdm_symbols):
+                continue
             self.add_source(directory_source(venue, self.coverage))
 
     @property
@@ -399,16 +406,22 @@ class SelectedAssetCapture:
     def spool(self, market: str, symbol: str, stream: str) -> StreamSpool:
         key = market, symbol, stream
         if key not in self.spools:
+
             def observe_event(event: EventEnvelope, frame_bytes: int, queue_depth: int) -> None:
                 # Aggregate the physical Raw stream once; per-source health remains
                 # in the availability ledger. Do not parse combined JSON again.
                 self.metrics.safely_observe_written(
-                    event, raw_frame_bytes=frame_bytes, queue_depth=queue_depth,
+                    event,
+                    raw_frame_bytes=frame_bytes,
+                    queue_depth=queue_depth,
                 )
 
             def observe_operation(name: str, duration: int) -> None:
                 self.metrics.safely_observe_operation(
-                    market=market, stream=stream, name=name, duration_ns=duration,
+                    market=market,
+                    stream=stream,
+                    name=name,
+                    duration_ns=duration,
                 )
 
             def observe_seal(manifest: dict[str, object]) -> None:
@@ -506,7 +519,7 @@ class SelectedAssetCapture:
         product: Product | None,
         observer: Callable[[EventEnvelope], None],
         lifecycle: Callable[[str], None],
-    ) -> UsdMStreamCollector:
+    ) -> CombinedWebSocketStream:
         source = group.sources[0]
         market = product.key.market if product else source.market
         symbol = product.key.symbol if product else source.symbol
@@ -515,7 +528,7 @@ class SelectedAssetCapture:
         from collections.abc import AsyncIterator
         from contextlib import asynccontextmanager
 
-        from ..binance.usdm.websocket import WebSocketConnection
+        from ..binance.public_websocket import WebSocketConnection
 
         @asynccontextmanager
         async def opener(url: str) -> AsyncIterator[WebSocketConnection]:
@@ -582,7 +595,8 @@ class SelectedAssetCapture:
                     return None
             return envelope
 
-        collector = UsdMStreamCollector(
+        collector = CombinedWebSocketStream(
+            market=market,
             stream=group.name,
             symbol=symbol,
             route=group.route,
@@ -788,7 +802,7 @@ class SelectedAssetCapture:
         if end > start:
             self._schedule_kline_backfill(source, start, end - 1, interval)
 
-    async def run_group(self, collector: UsdMStreamCollector, stop: asyncio.Event) -> None:
+    async def run_group(self, collector: CombinedWebSocketStream, stop: asyncio.Event) -> None:
         try:
             await collector.run(stop)
         finally:
@@ -1253,15 +1267,11 @@ class SelectedAssetCapture:
         deadline = time.monotonic() + AVAILABILITY_FLUSH_SECONDS
         batches = 0
         watermark_param: tuple[str, int] | None = None
-        if (
-            self._pending_watermark_utc_ns is not None
-            and (
-                all_pending
-                or self._last_watermark_flush_utc_ns is None
-                or (
-                    self._pending_watermark_utc_ns - self._last_watermark_flush_utc_ns
-                    >= 10_000_000_000
-                )
+        if self._pending_watermark_utc_ns is not None and (
+            all_pending
+            or self._last_watermark_flush_utc_ns is None
+            or (
+                self._pending_watermark_utc_ns - self._last_watermark_flush_utc_ns >= 10_000_000_000
             )
         ):
             watermark_param = (self.source_selection_id, self._pending_watermark_utc_ns)
@@ -1272,7 +1282,8 @@ class SelectedAssetCapture:
             # Standalone journal users retain ordinary per-source checkpoints.
             to_persist = (
                 [entry for entry in batch if entry.get("is_transition", False)]
-                if self._pending_watermark_utc_ns is not None else batch
+                if self._pending_watermark_utc_ns is not None
+                else batch
             )
             current_watermark = (
                 watermark_param if len(batch) == len(self.availability.pending) else None
@@ -1288,7 +1299,8 @@ class SelectedAssetCapture:
                     watermark_param = None
                 else:
                     await run_owned_blocking_call(
-                        self.catalog.persist_source_availability, to_persist,
+                        self.catalog.persist_source_availability,
+                        to_persist,
                     )
                 batches += 1
             self.availability.acknowledge(len(batch))
@@ -1313,7 +1325,8 @@ class SelectedAssetCapture:
             last_write = progress["last_write_utc_ns"]
             boundary = (
                 max(pending, last_write)
-                if pending is not None and last_write is not None else pending
+                if pending is not None and last_write is not None
+                else pending
             )
             if pending is not None and boundary is not None and now - boundary > 10_000_000_000:
                 stalled.update((source.key, boundary) for source in group.sources)
@@ -1518,3 +1531,6 @@ class SelectedAssetCapture:
                     cleanup_error = result
             if cleanup_error is not None:
                 raise cleanup_error
+
+
+CoverageRuntimeSupervisor = SelectedAssetCapture

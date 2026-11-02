@@ -19,19 +19,12 @@ from binance_sdk_derivatives_trading_usds_futures.derivatives_trading_usds_futur
 
 from ...domain.event import EventEnvelope
 from ...network import ProxyPolicy
+from ..rest_representation import safe_provenance_headers as safe_provenance_headers
 
 USDM_SDK_DISTRIBUTION = "binance-sdk-derivatives-trading-usds-futures"
 USDM_SDK_VERSION = version(USDM_SDK_DISTRIBUTION)
 USDM_REST_BASE_URL = "https://fapi.binance.com"
 SNAPSHOT_LIMIT = 1000
-_PROVENANCE_HEADERS = {
-    "content-type",
-    "date",
-    "retry-after",
-    "x-mbx-used-weight",
-    "x-mbx-used-weight-1m",
-    "x-response-time",
-}
 
 
 class DepthModel(Protocol):
@@ -101,15 +94,6 @@ def create_usdm_rest_api(
     rest_api = DerivativesTradingUsdsFutures(config_rest_api=configuration).rest_api
     proxy_policy.configure_sdk_rest_api(rest_api)
     return rest_api
-
-
-def safe_provenance_headers(headers: Mapping[str, object]) -> dict[str, str]:
-    return {
-        str(name).lower(): str(value)
-        for name, value in headers.items()
-        if str(name).lower() in _PROVENANCE_HEADERS
-        or str(name).lower().startswith("x-mbx-used-weight-")
-    }
 
 
 def _non_negative_seconds(value: object) -> float | None:
@@ -231,9 +215,7 @@ def capture_depth_snapshot(
         or not isinstance(model_document, dict)
         or model_document.get("lastUpdateId") != last_update_id
     ):
-        raise UsdMSnapshotResponseError(
-            "USD-M depth snapshot response schema is invalid"
-        )
+        raise UsdMSnapshotResponseError("USD-M depth snapshot response schema is invalid")
     provenance = {
         "schema_version": "binance-usdm-depth-snapshot-provenance.v1",
         "request": {

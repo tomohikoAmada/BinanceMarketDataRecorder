@@ -99,11 +99,14 @@ def envelope_from_side_stream_frame(
     collector_version: str,
     receive_time_utc_ns: int,
     receive_monotonic_ns: int,
+    additional_capture_flags: tuple[str, ...] = (),
 ) -> EventEnvelope:
     """Preserve exact side-stream bytes and extract only official metadata."""
 
     flags: tuple[str, ...] = (
-        ("event_sparse_snapshot_stream",) if stream is UsdMSideStream.LIQUIDATION else ()
+        ("event_sparse_snapshot_stream", *additional_capture_flags)
+        if stream is UsdMSideStream.LIQUIDATION
+        else (*additional_capture_flags,)
     )
     event_time: int | None = None
     trade_time: int | None = None

@@ -4,7 +4,28 @@ from __future__ import annotations
 
 import base64
 import json
+from collections.abc import Mapping
 from typing import Any
+
+_PROVENANCE_HEADERS = frozenset(
+    {
+        "content-type",
+        "date",
+        "retry-after",
+        "x-mbx-used-weight",
+        "x-mbx-used-weight-1m",
+        "x-response-time",
+    }
+)
+
+
+def safe_provenance_headers(headers: Mapping[str, object]) -> dict[str, str]:
+    return {
+        str(name).lower(): str(value)
+        for name, value in headers.items()
+        if str(name).lower() in _PROVENANCE_HEADERS
+        or str(name).lower().startswith("x-mbx-used-weight-")
+    }
 
 
 def response_document(provenance: dict[str, Any]) -> Any:

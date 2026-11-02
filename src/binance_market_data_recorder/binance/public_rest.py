@@ -24,8 +24,8 @@ from ..domain.event import EventEnvelope
 from ..network import ProxyPolicy
 from .public_sources import PUBLIC_SDK_VERSIONS, REST_HOSTS, Source
 from .recent_trades import RecentTradesCompactor
+from .rest_representation import safe_provenance_headers
 from .spot.exchange_info import PublicResponse
-from .usdm.rest import safe_provenance_headers
 
 
 class PublicSdkApi(Protocol):

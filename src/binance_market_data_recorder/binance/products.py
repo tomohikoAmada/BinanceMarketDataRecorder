@@ -45,10 +45,23 @@ def discover_products(
             continue
         symbol, base, quote = (_text(row, k) for k in ("symbol", "baseAsset", "quoteAsset"))
         spot = venue_market == "spot"
-        if spot and config.spot_quote_assets and quote not in config.spot_quote_assets:
-            continue
-        if spot and row.get("isSpotTradingAllowed") is not True:
-            continue
+        if spot:
+            if config.usdm_symbols and not config.spot_symbols:
+                continue
+            if config.spot_symbols and symbol not in config.spot_symbols:
+                continue
+            if config.spot_quote_assets and quote not in config.spot_quote_assets:
+                continue
+            if row.get("isSpotTradingAllowed") is not True:
+                continue
+        elif venue_market == "usdm":
+            if config.spot_symbols and not config.usdm_symbols:
+                continue
+            if config.usdm_symbols and symbol not in config.usdm_symbols:
+                continue
+        elif venue_market == "coinm":
+            if config.spot_symbols or config.usdm_symbols:
+                continue
         contract = "SPOT" if spot else _text(row, "contractType")
         if not spot and contract not in {
             "PERPETUAL",

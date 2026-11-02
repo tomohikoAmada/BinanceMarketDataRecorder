@@ -1,86 +1,41 @@
-"""Owned lifecycle for one Binance USD-M raw WebSocket stream.
-
-Every transport boundary that closes one connection and opens another is
-routed through one reconnect-boundary state machine (M21.4.11):
-
-    CONNECTED(generation N)
-        -> boundary detected (backpressure / unexpected disconnect /
-           planned rotation / server shutdown / session restart)
-        -> Catalog STREAM_DISCONTINUITY_STARTED durable
-        -> drain old generation
-        -> seal old generation (forced manifest gap when no in-hand frame)
-        -> generation N + 1
-        -> open new connection
-        -> first new frame carries sequence_gap
-        -> Raw sync
-        -> Catalog STREAM_DISCONTINUITY_COMPLETED
-        -> CONNECTED(generation N + 1, historical continuity false)
-
-Exchange-side completeness between close and the first new frame can never be
-proven; intentional close (planned rotation) is not an exemption. When no
-unpersisted last-old frame is available the old generation is sealed through
-the manifest-level ``reconnect_gap`` marker; persisted Raw frames are never
-mutated and no exchange payload is fabricated. A connection that fails before
-delivering any frame extends the pending gap without a new STARTED or a new
-generation.
-"""
+"""Binance USD-M WebSocket stream collector."""
 
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import logging
 import time
 from collections.abc import AsyncIterator, Callable, Mapping
-from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
-from dataclasses import replace
-from typing import Protocol, cast
+from contextlib import asynccontextmanager
+from typing import Any, cast
 from urllib.parse import quote
-from uuid import uuid4
 
 from websockets.asyncio.client import connect
-from websockets.exceptions import InvalidStatus, WebSocketException
+from websockets.exceptions import InvalidStatus
 
 from ...domain.event import EventEnvelope, Market
-from ...domain.product import product_log_fields
-from ...logging import log_event
 from ...network import WebSocketProxy
-from ...spool.async_queue import AsyncQueueStats, BoundedAsyncQueue
-from ...spool.queue import (
-    IngressBackpressureTimeout,
-    IngressGapStateConflict,
-    IngressPostCloseHandoffTimeout,
-    IngressStopRequested,
-)
-from ...spool.seal import RECONNECT_GAP_FLAG, RECONNECT_INTENT_SCHEMA_V2
 from ...spool.stream import StreamSpool
-from ...storage.catalog import stream_discontinuity_event_id
-from ..spot.websocket import ReceivedFrame, ReconnectBackoff
+from ..public_websocket import (
+    CombinedWebSocketStream,
+    ConnectionOpener,
+    EnvelopeFactory,
+    EnvelopeObserver,
+    FailureObserver,
+    LifecycleObserver,
+    PublicWebSocketStream,
+    ReceivedFrame,
+    ReconnectBackoff,
+    WebSocketConnection,
+    _CombinedWebSocketStream,
+    _PublicWebSocketStream,
+)
 from ..websocket_common import (
     DEFAULT_RECEIPT_BYTE_CAPACITY,
-    RECONNECT_REASONS,
-    ConnectionReceiveControl,
-    release_writer_preserving_errors,
-    run_connection_receiver,
     run_owned_blocking_call,
-    websocket_disconnect_log_fields,
 )
 from .schema import UsdMStream, envelope_from_websocket_frame
 
 USDM_WEBSOCKET_ROOT = "wss://fstream.binance.com"
-
-
-class WebSocketConnection(Protocol):
-    async def recv(self, decode: bool | None = None) -> str | bytes: ...
-
-    async def close(self, code: int = 1000, reason: str = "") -> None: ...
-
-
-ConnectionOpener = Callable[[str], AbstractAsyncContextManager[WebSocketConnection]]
-EnvelopeFactory = Callable[..., EventEnvelope | None]
-EnvelopeObserver = Callable[[EventEnvelope], None]
-FailureObserver = Callable[[str], None]
-LifecycleObserver = Callable[[str], None]
 
 
 async def _run_owned_blocking_call[**BlockingParams, BlockingResult](
@@ -117,13 +72,11 @@ async def open_usdm_websocket(
         ) as websocket:
             yield websocket
     except InvalidStatus as exc:
-        observe_websocket_rejection(
-            "usdm", exc.response.status_code, exc.response.headers
-        )
+        observe_websocket_rejection("usdm", exc.response.status_code, exc.response.headers)
         raise
 
 
-class UsdMStreamCollector:
+class UsdMStreamCollector(CombinedWebSocketStream):
     """Receive, timestamp, persist, reconnect, and rotate one USD-M stream."""
 
     def __init__(
@@ -157,1109 +110,75 @@ class UsdMStreamCollector:
     ) -> None:
         if route not in {"public", "market", ""} or (not route and not combined_streams):
             raise ValueError("USD-M market data route must be public or market")
-        if receipt_queue_capacity < 1:
-            raise ValueError("receipt queue capacity must be positive")
-        if not 0 < planned_rotation_seconds < 24 * 60 * 60:
-            raise ValueError("planned rotation must occur before the 24-hour limit")
-        if post_close_handoff_timeout_seconds <= 0:
-            raise ValueError("post-close handoff timeout must be positive")
         if not symbol or spool.symbol != symbol:
             raise ValueError("USD-M collector symbol must match its spool")
         if envelope_factory is None and not isinstance(stream, UsdMStream):
             raise ValueError("a side-data stream requires an envelope factory")
-        self.market = cast(Market, spool.market)
-        self.combined_streams = combined_streams
-        self.stream = stream
-        self.symbol = symbol
-        self.stream_name = stream.value if isinstance(stream, UsdMStream) else stream
-        self.route = route
-        self.wire_name = wire_name if combined_streams else (
-            f"{quote(symbol.lower(), safe='')}@{wire_name.split('@', 1)[1]}"
-        )
-        self.spool = spool
-        self.collector_instance_id = collector_instance_id
-        self.collector_version = collector_version
-        self.logger = logger
-        self.log_context = dict(
-            log_context or product_log_fields(self.market, symbol)
-        )
-        self.planned_rotation_seconds = planned_rotation_seconds
-        self.backoff = backoff or ReconnectBackoff()
-        self.websocket_root = websocket_root.rstrip("/")
-        self.opener = opener
-        self.utc_clock_ns = utc_clock_ns
-        self.monotonic_clock_ns = monotonic_clock_ns
-        self.envelope_factory = envelope_factory
-        self.envelope_observer = envelope_observer
-        self.failure_observer = failure_observer
-        self.lifecycle_observer = lifecycle_observer
-        self._capture_flags: tuple[str, ...] = ()
-        self._receipts = BoundedAsyncQueue[ReceivedFrame](
-            receipt_queue_capacity,
-            put_timeout_seconds=backpressure_put_timeout_seconds,
-            saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
-            byte_capacity=receipt_byte_capacity,
-            size_of=lambda frame: len(frame.raw_payload),
-        )
-        self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
-        self._backpressure_active = False
-        self._generation = 0
-        self._capture_startup_recorded = False
-        self._recovery_flag_pending = False
-        self._recovery_marker_enqueued = False
-        self._pending_gap: dict[str, object] | None = None
-        self._backpressure_boundary: ReceivedFrame | None = None
-        self._backpressure_boundary_handoff_succeeded: bool | None = None
-        self._post_close_handoff_outcome: str | None = None
-        self._forced_seal_flags: frozenset[str] = frozenset()
-        self._seal_intent: dict[str, object] | None = None
-        self._boundary_connection_id: str | None = None
-        self._boundary_detected_at_utc_ns: int | None = None
-        self._connection_receipt_count = 0
-        self._received_total = 0
-        self._persisted_total = 0
-        self._filtered_total = 0
-        self._pending_since_utc_ns: int | None = None
-        self._last_write_utc_ns: int | None = None
-        self._last_writer_batch_size = 0
-        self._last_writer_drain_ns = 0
-        self._max_writer_drain_ns = 0
-        self._active_connection_id: str | None = None
-        self._server_shutdown = asyncio.Event()
-        self._restore_open_gap()
 
-    @property
-    def url(self) -> str:
-        prefix = self.websocket_root + ("/" + self.route if self.route else "")
-        if self.combined_streams:
-            names = "/".join(quote(name, safe="@!_,:") for name in self.combined_streams)
-            return f"{prefix}/stream?streams={names}"
-        return f"{prefix}/ws/{self.wire_name}"
-
-    def request_rotation(self) -> None:
-        self._server_shutdown.set()
-
-    def set_capture_flags(self, flags: tuple[str, ...]) -> None:
-        self._capture_flags = flags
-
-    @property
-    def receipt_queue_stats(self) -> AsyncQueueStats:
-        return self._receipts.snapshot()
-
-    def _restore_open_gap(self) -> None:
-        open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
-            market=self.market,
-            symbol=self.symbol,
-            stream=self.stream_name,
-        )
-        if len(open_gaps) > 1:
-            raise IngressGapStateConflict(
-                f"USD-M {self.stream_name} has {len(open_gaps)} conflicting "
-                "unclosed stream discontinuities"
+        def default_envelope_factory(**kwargs: Any) -> EventEnvelope:
+            if not isinstance(stream, UsdMStream):
+                raise RuntimeError("missing USD-M envelope factory")
+            return envelope_from_websocket_frame(
+                symbol=symbol,
+                raw_payload=kwargs["raw_payload"],
+                stream=stream,
+                connection_id=kwargs["connection_id"],
+                collector_instance_id=kwargs["collector_instance_id"],
+                collector_version=kwargs["collector_version"],
+                receive_time_utc_ns=kwargs["receive_time_utc_ns"],
+                receive_monotonic_ns=kwargs["receive_monotonic_ns"],
+                additional_capture_flags=kwargs.get("additional_capture_flags", ()),
             )
-        if not open_gaps:
-            return
-        evidence = open_gaps[0].get("evidence")
-        if not isinstance(evidence, dict):
-            raise IngressGapStateConflict(
-                f"USD-M {self.stream_name} has malformed open gap evidence"
-            )
-        gap_id = evidence.get("gap_id")
-        started_at = evidence.get("gap_started_at_utc_ns")
-        connection_id = evidence.get("original_connection_id")
-        original_generation = evidence.get("original_generation")
-        if (
-            not isinstance(gap_id, str)
-            or not gap_id
-            or not isinstance(started_at, int)
-            or isinstance(started_at, bool)
-            or started_at < 0
-            or not isinstance(connection_id, str)
-            or not connection_id
-            or not isinstance(original_generation, int)
-            or isinstance(original_generation, bool)
-            or original_generation < 0
-            or evidence.get("reason") not in RECONNECT_REASONS
-        ):
-            raise IngressGapStateConflict(
-                f"USD-M {self.stream_name} has invalid open gap identity"
-            )
-        self._pending_gap = {
-            "gap_id": gap_id,
-            "gap_started_at_utc_ns": started_at,
-            "original_connection_id": connection_id,
-            "original_generation": original_generation,
-            "reason": evidence["reason"],
-        }
-        self._generation = original_generation + 1
-        self._recovery_flag_pending = True
-        self._recovery_marker_enqueued = False
-        log_event(
-            self.logger,
-            logging.WARNING,
-            "usdm_ingress_gap_recovered",
-            "USD-M stream recovered an unclosed discontinuity from Catalog",
-            **self.log_context,
-            stream=self.stream_name,
-            connection_id=connection_id,
-            generation=self._generation,
-            gap_id=gap_id,
-            outcome="RECOVERY_PENDING",
-            **self._queue_fields(),
+
+        super().__init__(
+            market=cast(Market, spool.market),
+            stream=stream,
+            symbol=symbol,
+            route=route,
+            wire_name=wire_name
+            if combined_streams
+            else (f"{quote(symbol.lower(), safe='')}@{wire_name.split('@', 1)[1]}"),
+            spool=spool,
+            collector_instance_id=collector_instance_id,
+            collector_version=collector_version,
+            logger=logger,
+            log_context=log_context,
+            receipt_queue_capacity=receipt_queue_capacity,
+            receipt_byte_capacity=receipt_byte_capacity,
+            planned_rotation_seconds=planned_rotation_seconds,
+            backoff=backoff,
+            websocket_root=websocket_root,
+            combined_streams=combined_streams,
+            opener=opener,
+            utc_clock_ns=utc_clock_ns,
+            monotonic_clock_ns=monotonic_clock_ns,
+            envelope_factory=envelope_factory or default_envelope_factory,
+            envelope_observer=envelope_observer,
+            failure_observer=failure_observer,
+            lifecycle_observer=lifecycle_observer,
+            backpressure_put_timeout_seconds=backpressure_put_timeout_seconds,
+            backpressure_saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
+            post_close_handoff_timeout_seconds=post_close_handoff_timeout_seconds,
+            market_label="USD-M",
+            market_prefix="usdm",
         )
 
-    async def _receive_once(
-        self, websocket: WebSocketConnection, connection_id: str
-    ) -> ReceivedFrame:
-        message = await websocket.recv(decode=False)
-        receive_time_utc_ns = self.utc_clock_ns()
-        receive_monotonic_ns = self.monotonic_clock_ns()
-        payload = message.encode() if isinstance(message, str) else message
-        if self._received_total == self._persisted_total:
-            self._pending_since_utc_ns = receive_time_utc_ns
-        self._received_total += 1
-        return ReceivedFrame(
-            raw_payload=payload,
-            connection_id=connection_id,
-            receive_time_utc_ns=receive_time_utc_ns,
-            receive_monotonic_ns=receive_monotonic_ns,
-            capture_flags=self._capture_flags,
-        )
 
-    def _with_recovery_marker(self, receipt: ReceivedFrame) -> ReceivedFrame:
-        if not self._recovery_flag_pending or self._recovery_marker_enqueued:
-            return receipt
-        return replace(
-            receipt,
-            capture_flags=tuple(
-                dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
-            ),
-        )
-
-    async def _accept(
-        self,
-        receipt: ReceivedFrame,
-        writer_task: asyncio.Task[None],
-        stop: asyncio.Event,
-    ) -> None:
-        if self._receipts.would_block(receipt) and not self._backpressure_active:
-            self._backpressure_active = True
-            self._log_ingress_state(
-                logging.WARNING,
-                "usdm_ingress_backpressure_started",
-                "bounded USD-M receipt queue started applying producer backpressure",
-                connection_id=receipt.connection_id,
-                outcome="WAITING",
-            )
-        recovery_marker = self._with_recovery_marker(receipt)
-        reserved = recovery_marker is not receipt
-        if reserved:
-            self._recovery_marker_enqueued = True
-        try:
-            await self._receipts.put(
-                recovery_marker,
-                writer_task=writer_task,
-                stop=stop,
-            )
-        except BaseException:
-            if reserved and self._pending_gap is not None:
-                self._recovery_marker_enqueued = False
-            raise
-        self._connection_receipt_count += 1
-
-    def _queue_fields(self) -> dict[str, object]:
-        stats = self._receipts.snapshot()
-        operations = self.spool.operation_stats()
-        progress = self.spool.persistence_progress()
-        return {
-            "raw_written_frames": progress.written_frames,
-            "raw_synchronized_frames": progress.synchronized_frames,
-            "spool_queued_bytes": self.spool.queue.queued_bytes,
-            "spool_byte_capacity": self.spool.queue.byte_capacity,
-            "receipt_queue_capacity": stats.capacity,
-            "receipt_queue_depth": stats.depth,
-            "receipt_queue_high_watermark": stats.high_watermark,
-            "receipt_byte_capacity": stats.byte_capacity,
-            "receipt_queued_bytes": stats.queued_bytes,
-            "receipt_owned_bytes": stats.owned_bytes,
-            "receipt_owned_bytes_high_watermark": stats.high_watermark_bytes,
-            "queue_wait_count": stats.wait_count,
-            "queue_wait_total_ns": stats.wait_total_ns,
-            "queue_wait_max_ns": stats.wait_max_ns,
-            "queue_wait_p50_ns": stats.wait_p50_ns,
-            "queue_wait_p95_ns": stats.wait_p95_ns,
-            "queue_wait_p99_ns": stats.wait_p99_ns,
-            "saturation_seconds": stats.saturation_seconds,
-            "writer_batch_size": self._last_writer_batch_size,
-            "writer_drain_ns": self._last_writer_drain_ns,
-            "writer_drain_max_ns": self._max_writer_drain_ns,
-            "writer_append_ns": operations.append_last_ns,
-            "writer_append_max_ns": operations.append_max_ns,
-            "writer_write_ns": operations.write_last_ns,
-            "writer_write_max_ns": operations.write_max_ns,
-            "writer_fsync_ns": operations.fsync_last_ns,
-            "writer_fsync_max_ns": operations.fsync_max_ns,
-            "writer_seal_ns": operations.seal_last_ns,
-            "writer_seal_max_ns": operations.seal_max_ns,
-        }
-
-    def _log_ingress_state(
-        self,
-        level: int,
-        event: str,
-        message: str,
-        *,
-        connection_id: str,
-        outcome: str,
-    ) -> None:
-        log_event(
-            self.logger,
-            level,
-            event,
-            message,
-            **self.log_context,
-            stream=self.stream_name,
-            connection_id=connection_id,
-            generation=self._generation,
-            outcome=outcome,
-            **self._queue_fields(),
-        )
-
-    async def _record_gap_started(
-        self,
-        boundary: ReceivedFrame | None,
-        reason: str,
-        *,
-        gap_id: str,
-        started_at_utc_ns: int,
-        connection_id: str,
-        boundary_frame_persisted: bool | None = None,
-    ) -> None:
-        if reason not in RECONNECT_REASONS:
-            raise ValueError(f"unknown USD-M reconnect reason: {reason}")
-        if not gap_id:
-            raise ValueError("gap_id must be non-empty")
-        if self._pending_gap is not None:
-            raise IngressGapStateConflict(
-                f"USD-M {self.stream_name} cannot start a second discontinuity "
-                "while an earlier gap remains open"
-            )
-        if boundary_frame_persisted is None:
-            boundary_frame_persisted = boundary is not None
-        if boundary is not None:
-            boundary_payload_sha256 = hashlib.sha256(boundary.raw_payload).hexdigest()
-            boundary_kind = "last_frame_in_hand"
-        else:
-            boundary_frame_persisted = False
-            boundary_payload_sha256 = None
-            boundary_kind = "no_last_frame_available"
-        evidence: dict[str, object] = {
-            "gap_id": gap_id,
-            "market": self.market,
-            "symbol": self.symbol,
-            "stream": self.stream_name,
-            "reason": reason,
-            "interval_classification": "UNRELIABLE",
-            "gap_started_at_utc_ns": started_at_utc_ns,
-            "original_connection_id": connection_id,
-            "original_generation": self._generation,
-            "boundary_kind": boundary_kind,
-            "boundary_frame_persisted": boundary_frame_persisted,
-            "boundary_precision": (
-                (
-                    "connection closed after the last Recorder-received frame; "
-                    "the boundary frame was admitted to the bounded Raw-writer "
-                    "handoff and unread WebSocket/TCP buffers are indeterminate"
-                )
-                if boundary_frame_persisted
-                else (
-                    "connection closed after the last Recorder-received frame; "
-                    "the boundary frame could not enter the Raw-writer handoff "
-                    "and unread WebSocket/TCP buffers are indeterminate"
-                )
-                if boundary is not None
-                else (
-                    "no unpersisted last-old frame exists at the boundary; "
-                    "already persisted frames were not modified and no "
-                    "boundary payload hash is fabricated"
-                )
-            ),
-            **self._queue_fields(),
-        }
-        if boundary_payload_sha256 is not None:
-            evidence["boundary_payload_sha256"] = boundary_payload_sha256
-        await _run_owned_blocking_call(
-            self.spool.catalog.ensure_operational_event,
-            event_id=stream_discontinuity_event_id(
-                event_type="STREAM_DISCONTINUITY_STARTED",
-                market=self.market,
-                symbol=self.symbol,
-                stream=self.stream_name,
-                gap_id=gap_id,
-            ),
-            event_type="STREAM_DISCONTINUITY_STARTED",
-            occurred_at_utc_ns=started_at_utc_ns,
-            evidence=evidence,
-            symbol=self.symbol,
-        )
-        self._pending_gap = {
-            "gap_id": gap_id,
-            "gap_started_at_utc_ns": started_at_utc_ns,
-            "original_connection_id": connection_id,
-            "original_generation": self._generation,
-            "reason": reason,
-        }
-
-    async def _record_gap_completed(self, envelope: EventEnvelope) -> None:
-        gap = self._pending_gap
-        if gap is None or "sequence_gap" not in envelope.capture_flags:
-            return
-        if str(envelope.connection_id) == str(gap["original_connection_id"]):
-            # The gap's own boundary frame (for example an ingress
-            # backpressure sequence_gap marker drained with the old
-            # generation) must not close the discontinuity: COMPLETED is
-            # legal only after a first-new-generation frame is durably
-            # synced. The identity check keeps the completion boundary-local.
-            return
-        completed_at = envelope.receive_time_utc_ns
-        gap_id = str(gap["gap_id"])
-        await _run_owned_blocking_call(self.spool.sync)
-        await _run_owned_blocking_call(
-            self.spool.catalog.ensure_operational_event,
-            event_id=stream_discontinuity_event_id(
-                event_type="STREAM_DISCONTINUITY_COMPLETED",
-                market=self.market,
-                symbol=self.symbol,
-                stream=self.stream_name,
-                gap_id=gap_id,
-            ),
-            event_type="STREAM_DISCONTINUITY_COMPLETED",
-            occurred_at_utc_ns=completed_at,
-            evidence={
-                **gap,
-                "market": self.market,
-                "symbol": self.symbol,
-                "stream": self.stream_name,
-                "reason": gap["reason"],
-                "interval_classification": "UNRELIABLE",
-                "gap_ended_at_utc_ns": completed_at,
-                "new_connection_id": envelope.connection_id,
-                "new_generation": self._generation,
-                "raw_gap_marker": "sequence_gap",
-                "historical_continuity_restored": False,
-            },
-            symbol=self.symbol,
-        )
-        self._pending_gap = None
-        self._recovery_flag_pending = False
-        self._recovery_marker_enqueued = False
-
-    def _build_seal_intent(
-        self, outcome: str, boundary: ReceivedFrame | None
-    ) -> dict[str, object] | None:
-        """Build the durable seal-intent document for a reconnect boundary.
-
-        The intent captures the required manifest-level seal semantics plus
-        the exact boundary identity (gap_id, reason, original connection,
-        original generation, boundary timestamp) BEFORE any storage mutation
-        whose crash recovery depends on it. ``seal_partial`` persists it into
-        the ChunkState.SEALING transition evidence; if the Catalog STARTED
-        event then fails to commit, startup recovery reconstructs the
-        fail-closed seal and the pending discontinuity from this evidence
-        (P1-A, INV-005/INV-007). The gap_id is minted once per boundary and
-        shared with the STARTED/COMPLETED pair so recovery never invents a
-        second logical gap (INV-010, REQ-106).
-
-        If the boundary merely EXTENDS an already-open pending logical gap
-        (the pending gap's first-new replacement frame was never even
-        enqueued), the intent reuses the pending gap's canonical identity
-        (gap_id, reason, original connection, original generation, start
-        time) so startup recovery can never interpret the extension as an
-        independent second gap (M21.4.11-R3 P1-001).  Current-attempt
-        information stays observable under the separate ``extension`` key
-        and never masquerades as the canonical logical-gap identity.
-
-        Every R3.3+ intent carries the durable ``intent_schema``
-        (``reconnect-seal-intent.v2``) provenance inside the immutable
-        SEALING evidence: under the versioned runtime prevention contract
-        a fresh ABSENT intent is safe REQ-103 materialization authority
-        for legacy recovery (M21.4.11-R3.3).
-        """
-        if self._boundary_connection_id is None or self._boundary_detected_at_utc_ns is None:
-            return None
-        boundary_persisted = (
-            self._backpressure_boundary_handoff_succeeded
-            if boundary is not None
-            else False
-        )
-        started_at = (
-            boundary.receive_time_utc_ns
-            if boundary is not None
-            else self._boundary_detected_at_utc_ns
-        )
-        if self._pending_gap is not None and not self._recovery_marker_enqueued:
-            parent = self._pending_gap
-            return {
-                "required_forced_flags": sorted(self._forced_seal_flags),
-                "intent_schema": RECONNECT_INTENT_SCHEMA_V2,
-                "gap_id": str(parent["gap_id"]),
-                "reason": str(parent["reason"]),
-                "market": self.market,
-                "symbol": self.symbol,
-                "stream": self.stream_name,
-                "original_connection_id": str(
-                    parent["original_connection_id"]
-                ),
-                "original_generation": int(
-                    cast(int, parent["original_generation"])
-                ),
-                "gap_started_at_utc_ns": int(
-                    cast(int, parent["gap_started_at_utc_ns"])
-                ),
-                "boundary_kind": "no_last_frame_available",
-                "boundary_frame_persisted": False,
-                "extension": {
-                    "attempt_connection_id": self._boundary_connection_id,
-                    "attempt_generation": self._generation,
-                    "attempt_reason": outcome,
-                    "detected_at_utc_ns": self._boundary_detected_at_utc_ns,
-                },
-            }
-        intent: dict[str, object] = {
-            "required_forced_flags": sorted(self._forced_seal_flags),
-            "intent_schema": RECONNECT_INTENT_SCHEMA_V2,
-            "gap_id": str(uuid4()),
-            "reason": outcome,
-            "market": self.market,
-            "symbol": self.symbol,
-            "stream": self.stream_name,
-            "original_connection_id": self._boundary_connection_id,
-            "original_generation": self._generation,
-            "gap_started_at_utc_ns": started_at,
-            "boundary_kind": (
-                "last_frame_in_hand"
-                if boundary is not None
-                else "no_last_frame_available"
-            ),
-            "boundary_frame_persisted": boundary_persisted,
-        }
-        if boundary is not None:
-            intent["boundary_payload_sha256"] = hashlib.sha256(
-                boundary.raw_payload
-            ).hexdigest()
-        return intent
-
-    async def _writer_loop(self, producer_done: asyncio.Event) -> None:
-        try:
-            await self._write_until_done(producer_done)
-        except asyncio.CancelledError:
-            await _run_owned_blocking_call(self.spool.abort_writer)
-            raise
-        except BaseException as writer_error:
-            log_event(
-                self.logger,
-                logging.CRITICAL,
-                "usdm_ingress_writer_failed",
-                "USD-M Raw writer stopped before its ingress generation completed",
-                **self.log_context,
-                stream=self.stream_name,
-                connection_id=self._active_connection_id or "unavailable",
-                generation=self._generation,
-                outcome="FATAL",
-                **self._queue_fields(),
-            )
-            try:
-                await _run_owned_blocking_call(self.spool.abort_writer)
-            except asyncio.CancelledError as cancellation:
-                # Once the Writer has failed, a coincident cancellation during
-                # descriptor cleanup must not hide the integrity failure.
-                raise writer_error from cancellation
-            except BaseException as abort_error:
-                raise abort_error from writer_error
-            raise
-
-    async def _persist_batch(
-        self, batch: list[ReceivedFrame]
-    ) -> list[EventEnvelope]:
-        persisted: list[EventEnvelope] = []
-        for receipt in batch:
-            envelope: EventEnvelope | None = None
-            if self.envelope_factory is None:
-                if not isinstance(self.stream, UsdMStream):
-                    raise RuntimeError("missing USD-M envelope factory")
-                envelope = envelope_from_websocket_frame(
-                    symbol=self.symbol,
-                    raw_payload=receipt.raw_payload,
-                    stream=self.stream,
-                    connection_id=receipt.connection_id,
-                    collector_instance_id=self.collector_instance_id,
-                    collector_version=self.collector_version,
-                    receive_time_utc_ns=receipt.receive_time_utc_ns,
-                    receive_monotonic_ns=receipt.receive_monotonic_ns,
-                    additional_capture_flags=receipt.capture_flags,
-                )
-            else:
-                envelope = self.envelope_factory(
-                    raw_payload=receipt.raw_payload,
-                    connection_id=receipt.connection_id,
-                    collector_instance_id=self.collector_instance_id,
-                    collector_version=self.collector_version,
-                    receive_time_utc_ns=receipt.receive_time_utc_ns,
-                    receive_monotonic_ns=receipt.receive_monotonic_ns,
-                )
-                if envelope is not None and receipt.capture_flags:
-                    envelope = envelope.model_copy(
-                        update={
-                            "capture_flags": tuple(
-                                dict.fromkeys(
-                                    (*envelope.capture_flags, *receipt.capture_flags)
-                                )
-                            )
-                        }
-                    )
-            if envelope is not None:
-                self.spool.enqueue(envelope)
-                persisted.append(envelope)
-            else:
-                self._filtered_total += 1
-        drain_started = time.perf_counter_ns()
-        drained = await _run_owned_blocking_call(self.spool.drain_all)
-        drain_duration = time.perf_counter_ns() - drain_started
-        self._last_writer_batch_size = len(batch)
-        self._last_writer_drain_ns = drain_duration
-        self._max_writer_drain_ns = max(self._max_writer_drain_ns, drain_duration)
-        if drained != len(persisted):
-            raise RuntimeError("USD-M Raw spool did not drain the complete writer batch")
-        self._persisted_total += len(persisted)
-        self._last_write_utc_ns = self.utc_clock_ns()
-        if self._received_total == self._persisted_total + self._filtered_total:
-            self._pending_since_utc_ns = None
-        return persisted
-
-    def capture_progress(self) -> dict[str, int | None]:
-        """Event-loop-owned counters; observing a busy writer never takes its lock."""
-        return {
-            "received_frames": self._received_total,
-            "persisted_frames": self._persisted_total,
-            "filtered_frames": self._filtered_total,
-            "pending_since_utc_ns": self._pending_since_utc_ns,
-            "last_write_utc_ns": self._last_write_utc_ns,
-        }
-
-    async def _write_until_done(self, producer_done: asyncio.Event) -> None:
-        while not producer_done.is_set() or not self._receipts.empty():
-            batch: list[ReceivedFrame] = []
-            try:
-                batch.append(await asyncio.wait_for(self._receipts.get(), timeout=0.1))
-            except TimeoutError:
-                await _run_owned_blocking_call(self.spool.drain_all)
-                continue
-            batch_bytes = len(batch[0].raw_payload)
-            for _ in range(min(255, self.spool.queue.capacity - 1)):
-                if batch_bytes >= 1024 * 1024:
-                    break
-                try:
-                    batch.append(self._receipts.get_nowait())
-                    batch_bytes += len(batch[-1].raw_payload)
-                except asyncio.QueueEmpty:
-                    break
-            persisted = await self._persist_batch(batch)
-            for envelope in persisted:
-                await self._record_gap_completed(envelope)
-            if self.envelope_observer is not None:
-                for envelope in persisted:
-                    self.envelope_observer(envelope)
-            connection_id = persisted[-1].connection_id if persisted else batch[-1].connection_id
-            for receipt in batch:
-                self._receipts.task_done(receipt)
-            batch.clear()
-            persisted.clear()
-            if self._receipts.note_consumer_progress() and self._backpressure_active:
-                self._backpressure_active = False
-                self._log_ingress_state(
-                    logging.INFO,
-                    "usdm_ingress_backpressure_recovered",
-                    "USD-M receipt queue recovered below its low watermark",
-                    connection_id=connection_id,
-                    outcome="RECOVERED",
-                )
-        await _run_owned_blocking_call(
-            self.spool.close_and_seal,
-            forced_flags=self._forced_seal_flags,
-            seal_intent=self._seal_intent,
-        )
-
-    async def _receive_connection(
-        self,
-        websocket: WebSocketConnection,
-        connection_id: str,
-        stop: asyncio.Event,
-        writer_task: asyncio.Task[None],
-        session_restart: asyncio.Event | None = None,
-    ) -> str:
-        async def receive_frames(control: ConnectionReceiveControl) -> str:
-            while True:
-                # No await may separate this check from control.receive():
-                # retirement can arrive while the previous iteration yields.
-                if control.retirement is not None:
-                    return control.retirement
-                try:
-                    receipt = await control.receive(
-                        lambda: self._receive_once(websocket, connection_id)
-                    )
-                    await self._accept(receipt, writer_task, stop)
-                    # A ready frame and stop can complete together. Preserve
-                    # this frame, then stop instead of letting continuous recv
-                    # readiness starve shutdown (including stop during handoff).
-                    if stop.is_set():
-                        await websocket.close(code=1000, reason="collector shutdown")
-                        if self._is_session_restart(session_restart):
-                            return "session_restart"
-                        return "graceful_shutdown"
-                except IngressBackpressureTimeout:
-                    self._log_ingress_state(
-                        logging.ERROR,
-                        "usdm_ingress_backpressure_timeout",
-                        "USD-M receipt queue exceeded its bounded saturation budget",
-                        connection_id=connection_id,
-                        outcome="ROTATE_CONNECTION",
-                    )
-                    await websocket.close(
-                        code=1013,
-                        reason="bounded ingress backpressure",
-                    )
-                    boundary = replace(
-                        receipt,
-                        capture_flags=tuple(
-                            dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
-                        ),
-                    )
-                    try:
-                        await self._receipts.put_after_connection_close(
-                            boundary,
-                            writer_task=writer_task,
-                            timeout_seconds=self.post_close_handoff_timeout_seconds,
-                        )
-                    except IngressPostCloseHandoffTimeout:
-                        self._backpressure_boundary = boundary
-                        self._backpressure_boundary_handoff_succeeded = False
-                        self._post_close_handoff_outcome = "ingress_backpressure"
-                        self._remember_boundary(connection_id)
-                        self._log_ingress_state(
-                            logging.CRITICAL,
-                            "usdm_ingress_post_close_handoff_timeout",
-                            "received USD-M boundary frame couldn't enter its Raw writer queue",
-                            connection_id=connection_id,
-                            outcome="FATAL",
-                        )
-                        raise
-                    if self._recovery_flag_pending:
-                        self._recovery_marker_enqueued = True
-                    self._backpressure_boundary = boundary
-                    self._backpressure_boundary_handoff_succeeded = True
-                    return "ingress_backpressure"
-                except IngressStopRequested:
-                    post_close_outcome = (
-                        "session_restart"
-                        if self._is_session_restart(session_restart)
-                        else "stopped"
-                    )
-                    await websocket.close(code=1000, reason="collector shutdown")
-                    receipt = self._with_recovery_marker(receipt)
-                    try:
-                        await self._receipts.put_after_connection_close(
-                            receipt,
-                            writer_task=writer_task,
-                            timeout_seconds=self.post_close_handoff_timeout_seconds,
-                        )
-                    except IngressPostCloseHandoffTimeout:
-                        # Preserve the actual stop origin before the exception
-                        # reaches run(). A session retirement opens replacement
-                        # connections and is therefore an ADR-0027 boundary;
-                        # a true global stop is not.
-                        self._backpressure_boundary = receipt
-                        self._backpressure_boundary_handoff_succeeded = False
-                        self._post_close_handoff_outcome = post_close_outcome
-                        self._remember_boundary(connection_id)
-                        raise
-                    if self._recovery_flag_pending:
-                        self._recovery_marker_enqueued = True
-                    if post_close_outcome == "session_restart":
-                        return "session_restart"
-                    return "graceful_shutdown"
-
-                # Yield without creating a Task: already-buffered recv() may
-                # otherwise starve stop, the writer and connection rotation.
-                await asyncio.sleep(0)
-
-        try:
-            outcome = await run_connection_receiver(
-                receive_frames,
-                stop=stop,
-                writer_task=writer_task,
-                rotation_seconds=self.planned_rotation_seconds,
-                shutdown=self._server_shutdown,
-            )
-        except (WebSocketException, OSError, TimeoutError):
-            if self._is_session_restart(session_restart):
-                await websocket.close(code=1000, reason="collector shutdown")
-                return "session_restart"
-            if stop.is_set():
-                await websocket.close(code=1000, reason="collector shutdown")
-                return "graceful_shutdown"
-            raise
-
-        if outcome == "stopped":
-            await websocket.close(code=1000, reason="collector shutdown")
-            return (
-                "session_restart" if self._is_session_restart(session_restart)
-                else "graceful_shutdown"
-            )
-        if outcome == "planned_rotation":
-            await websocket.close(code=1000, reason="planned 24-hour rotation")
-        return outcome
-
-    @staticmethod
-    def _is_session_restart(session_restart: asyncio.Event | None) -> bool:
-        return session_restart is not None and session_restart.is_set()
-
-    def _remember_boundary(self, connection_id: str) -> None:
-        """Capture the closing connection identity before the generation seals."""
-        self._boundary_connection_id = connection_id
-        self._boundary_detected_at_utc_ns = self.utc_clock_ns()
-
-    async def _connection_loop(
-        self,
-        stop: asyncio.Event,
-        writer_task: asyncio.Task[None],
-        session_restart: asyncio.Event | None = None,
-    ) -> str:
-        failures = 0
-        while not stop.is_set():
-            connection_id = str(uuid4())
-            reason = "unexpected_disconnect"
-            connected_at: float | None = None
-            was_connected = False
-            self._connection_receipt_count = 0
-            try:
-                self._server_shutdown.clear()
-                async with self.opener(self.url) as websocket:
-                    connected_at = asyncio.get_running_loop().time()
-                    was_connected = True
-                    self._active_connection_id = connection_id
-                    if self.lifecycle_observer is not None:
-                        self.lifecycle_observer("connected")
-                    log_event(
-                        self.logger,
-                        logging.INFO,
-                        "usdm_websocket_connected",
-                        "Binance USD-M raw stream connected",
-                        **self.log_context,
-                        stream=self.stream_name,
-                        route=self.route,
-                        connection_id=connection_id,
-                    )
-                    reason = await self._receive_connection(
-                        websocket,
-                        connection_id,
-                        stop,
-                        writer_task,
-                        session_restart=session_restart,
-                    )
-            except asyncio.CancelledError:
-                raise
-            except (WebSocketException, OSError, TimeoutError) as exc:
-                if self.lifecycle_observer is not None:
-                    self.lifecycle_observer("unexpected_disconnect")
-                if self.failure_observer is not None:
-                    self.failure_observer(type(exc).__name__)
-                if (
-                    connected_at is not None
-                    and asyncio.get_running_loop().time() - connected_at >= 60
-                ):
-                    failures = 0
-                failures += 1
-                log_event(
-                    self.logger,
-                    logging.WARNING,
-                    "usdm_websocket_disconnected",
-                    "Binance USD-M stream disconnected unexpectedly",
-                    **self.log_context,
-                    stream=self.stream_name,
-                    connection_id=connection_id,
-                    error_type=type(exc).__name__,
-                    retry=failures,
-                    **websocket_disconnect_log_fields(
-                        exc,
-                        connected_at=connected_at,
-                        observed_at=asyncio.get_running_loop().time(),
-                    ),
-                )
-                if not was_connected or self._connection_receipt_count == 0:
-                    # The opener failed or the connection closed before
-                    # delivering any frame. Nothing from this connection can
-                    # reach Raw, so an open pending gap simply continues; no
-                    # new STARTED and no generation bump for this attempt.
-                    with suppress(TimeoutError):
-                        await asyncio.wait_for(
-                            stop.wait(),
-                            timeout=self.backoff.delay(max(1, failures)),
-                        )
-                    continue
-                self._remember_boundary(connection_id)
-                return "unexpected_disconnect"
-            finally:
-                if was_connected and self.lifecycle_observer is not None:
-                    self.lifecycle_observer("disconnected")
-            if reason in RECONNECT_REASONS:
-                if reason == "ingress_backpressure":
-                    if self.failure_observer is not None:
-                        self.failure_observer("IngressBackpressureTimeout")
-                    if self.lifecycle_observer is not None:
-                        self.lifecycle_observer("ingress_backpressure")
-                elif reason in {"planned_rotation", "server_shutdown"}:
-                    if self.lifecycle_observer is not None:
-                        self.lifecycle_observer(reason)
-                log_event(
-                    self.logger,
-                    logging.INFO,
-                    f"usdm_{reason}",
-                    "Binance USD-M connection will be replaced",
-                    **self.log_context,
-                    stream=self.stream_name,
-                    connection_id=connection_id,
-                )
-                self._remember_boundary(connection_id)
-                return reason
-            if stop.is_set() or reason == "graceful_shutdown":
-                return "stopped"
-            with suppress(TimeoutError):
-                await asyncio.wait_for(stop.wait(), timeout=self.backoff.delay(max(1, failures)))
-        return "stopped"
-
-    def _record_capture_startup(self) -> None:
-        self._capture_startup_recorded = True
-
-    async def run(
-        self,
-        stop: asyncio.Event,
-        session_restart: asyncio.Event | None = None,
-    ) -> None:
-        """Run one generation at a time; every reconnect boundary seals it.
-
-        Crash-durable ordering (M21.4.11-R1): the Catalog
-        STREAM_DISCONTINUITY_STARTED intent is persisted BEFORE the old
-        generation drains and seals. A crash at any persistence phase then
-        leaves the durable intent behind, and startup recovery seals the old
-        partial fail-closed (reconnect_gap) instead of claiming
-        complete=true.
-        """
-        if not stop.is_set() and not self._capture_startup_recorded:
-            await _run_owned_blocking_call(self._record_capture_startup)
-
-        while not stop.is_set():
-            producer_done = asyncio.Event()
-            self._forced_seal_flags = frozenset()
-            self._seal_intent = None
-            self._boundary_connection_id = None
-            self._boundary_detected_at_utc_ns = None
-            self._backpressure_boundary = None
-            self._backpressure_boundary_handoff_succeeded = None
-            self._post_close_handoff_outcome = None
-            self._active_connection_id = None
-            writer_task = asyncio.create_task(
-                self._writer_loop(producer_done),
-                name=f"raw-writer:{self.market}:{self.symbol}:{self.stream_name}",
-            )
-            outcome = "stopped"
-            gap_just_started = False
-            try:
-                outcome = await self._connection_loop(
-                    stop, writer_task, session_restart=session_restart
-                )
-            except IngressPostCloseHandoffTimeout as handoff_error:
-                # The exception class is shared by distinct post-close call
-                # sites. Only their preserved call-site context decides
-                # whether this is a reconnect boundary or a true global stop.
-                handoff_outcome = self._post_close_handoff_outcome
-                if handoff_outcome is None or (
-                    handoff_outcome != "stopped"
-                    and handoff_outcome not in RECONNECT_REASONS
-                ):
-                    raise RuntimeError(
-                        "USD-M post-close handoff timeout lost its boundary context"
-                    ) from handoff_error
-                outcome = handoff_outcome
-                raise
-            finally:
-                if outcome == "ingress_backpressure":
-                    # A successful handoff persists the in-frame sequence_gap.
-                    # A failed handoff must not claim that frame was persisted;
-                    # force only manifest-level reconnect_gap instead.
-                    self._forced_seal_flags = (
-                        frozenset()
-                        if self._backpressure_boundary_handoff_succeeded
-                        else frozenset({RECONNECT_GAP_FLAG})
-                    )
-                elif outcome in RECONNECT_REASONS:
-                    # No unpersisted last-old frame exists to carry the
-                    # marker; the sealed tail chunk gets the manifest-level
-                    # reconnect_gap flag. Persisted Raw frames stay untouched.
-                    self._forced_seal_flags = frozenset({RECONNECT_GAP_FLAG})
-                if outcome in RECONNECT_REASONS:
-                    # Build the durable seal intent BEFORE any storage
-                    # mutation whose crash recovery depends on it (INV-007,
-                    # P1-A): seal_partial persists it into the SEALING
-                    # transition evidence, so even if the STARTED event below
-                    # fails to commit, restart reconstruction still seals the
-                    # old generation fail-closed. The gap_id is minted once
-                    # per boundary and shared with STARTED/COMPLETED.
-                    boundary = (
-                        self._backpressure_boundary
-                        if self._backpressure_boundary_handoff_succeeded is not None
-                        else None
-                    )
-                    self._seal_intent = self._build_seal_intent(
-                        outcome, boundary
-                    )
-                if outcome in RECONNECT_REASONS and self._pending_gap is None:
-                    # Persist the reconnect intent BEFORE any storage mutation
-                    # whose correct recovery depends on it (INV-007): the
-                    # seal below is exactly such a mutation, because a crash
-                    # during it must not later seal complete=true.
-                    try:
-                        if (
-                            self._seal_intent is None
-                            or self._boundary_connection_id is None
-                            or self._boundary_detected_at_utc_ns is None
-                        ):
-                            raise RuntimeError(
-                                f"missing USD-M boundary identity for {outcome}"
-                            )
-                        await self._record_gap_started(
-                            boundary,
-                            outcome,
-                            gap_id=str(self._seal_intent["gap_id"]),
-                            started_at_utc_ns=(
-                                boundary.receive_time_utc_ns
-                                if boundary is not None
-                                else self._boundary_detected_at_utc_ns
-                            ),
-                            connection_id=self._boundary_connection_id,
-                            boundary_frame_persisted=(
-                                self._backpressure_boundary_handoff_succeeded
-                                if boundary is not None
-                                else None
-                            ),
-                        )
-                        gap_just_started = True
-                        self._generation += 1
-                        self._recovery_flag_pending = True
-                        self._recovery_marker_enqueued = False
-                    except BaseException as intent_error:
-                        # The durable intent could not be recorded. Release
-                        # the writer so no owned blocking work is abandoned:
-                        # it drains and seals the old generation with the
-                        # fail-closed flags and durable seal intent set
-                        # above. If the writer also fails, both causal facts
-                        # are preserved (REQ-109).
-                        producer_done.set()
-                        await release_writer_preserving_errors(
-                            writer_task, intent_error
-                        )
-                producer_done.set()
-                await writer_task
-                if (
-                    outcome in RECONNECT_REASONS
-                    and self._pending_gap is None
-                    and not gap_just_started
-                ):
-                    # The pre-seal intent decision above saw the pending gap's
-                    # first-new frame still in the writer queue, so it skipped
-                    # recording new intent; the drain then persisted that
-                    # frame and completed the gap (COMPLETED only after Raw
-                    # sync). This boundary therefore has no durable intent
-                    # yet: the replacement generation must not deliver frames
-                    # before STARTED is durable (INV-007/INV-009), so the
-                    # intent is recorded now, before the next connection
-                    # opens. The gap identity and any failed post-close frame
-                    # evidence are the same ones the durable seal intent
-                    # carried.
-                    if (
-                        self._seal_intent is None
-                        or self._boundary_connection_id is None
-                        or self._boundary_detected_at_utc_ns is None
-                    ):
-                        raise RuntimeError(
-                            f"missing USD-M boundary identity for {outcome}"
-                        )
-                    await self._record_gap_started(
-                        boundary,
-                        outcome,
-                        gap_id=str(self._seal_intent["gap_id"]),
-                        started_at_utc_ns=(
-                            boundary.receive_time_utc_ns
-                            if boundary is not None
-                            else self._boundary_detected_at_utc_ns
-                        ),
-                        connection_id=self._boundary_connection_id,
-                        boundary_frame_persisted=(
-                            self._backpressure_boundary_handoff_succeeded
-                            if boundary is not None
-                            else None
-                        ),
-                    )
-                    gap_just_started = True
-                    self._generation += 1
-                    self._recovery_flag_pending = True
-                    self._recovery_marker_enqueued = False
-            if outcome == "stopped":
-                return
-            if outcome == "ingress_backpressure":
-                boundary = self._backpressure_boundary
-                self._backpressure_boundary = None
-                if boundary is None:
-                    raise RuntimeError(
-                        "missing USD-M backpressure generation boundary"
-                    )
-            elif outcome in RECONNECT_REASONS:
-                boundary = None
-            else:
-                raise RuntimeError(f"unknown USD-M connection outcome: {outcome}")
-            if self._pending_gap is not None and not gap_just_started:
-                # A pending gap already covers this boundary (for example a
-                # connection that failed before its first frame); it continues
-                # until the first reliable new-generation frame is persisted.
-                # Generation identity and gap evidence are unchanged.
-                log_event(
-                    self.logger,
-                    logging.WARNING,
-                    "usdm_ingress_gap_extended",
-                    "USD-M reconnect boundary extends the pending discontinuity",
-                    **self.log_context,
-                    stream=self.stream_name,
-                    connection_id=self._boundary_connection_id or "unknown",
-                    generation=self._generation,
-                    gap_id=self._pending_gap["gap_id"],
-                    reason=outcome,
-                    outcome="GAP_EXTENDED",
-                    **self._queue_fields(),
-                )
-                if self.stream == UsdMStream.DIFF_DEPTH:
-                    return
-                continue
-            self._backpressure_active = False
-            self._receipts.note_consumer_progress()
-            self._log_ingress_state(
-                logging.WARNING,
-                "usdm_ingress_stream_recovery",
-                "USD-M stream is opening a new generation with persistent gap evidence",
-                connection_id=self._boundary_connection_id or "unknown",
-                outcome=(
-                    "DEPTH_RESYNC_REQUIRED"
-                    if self.stream == UsdMStream.DIFF_DEPTH
-                    else "STREAM_RECONNECT"
-                ),
-            )
-            if self.stream == UsdMStream.DIFF_DEPTH:
-                return
+__all__ = [
+    "USDM_WEBSOCKET_ROOT",
+    "CombinedWebSocketStream",
+    "ConnectionOpener",
+    "EnvelopeFactory",
+    "EnvelopeObserver",
+    "FailureObserver",
+    "LifecycleObserver",
+    "PublicWebSocketStream",
+    "ReceivedFrame",
+    "ReconnectBackoff",
+    "UsdMStreamCollector",
+    "WebSocketConnection",
+    "_CombinedWebSocketStream",
+    "_PublicWebSocketStream",
+    "_run_owned_blocking_call",
+    "open_usdm_websocket",
+]

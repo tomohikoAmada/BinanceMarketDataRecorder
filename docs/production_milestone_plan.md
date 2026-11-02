@@ -306,6 +306,28 @@
   - `binance/spot/` 下不再存在任何对 `binance/usdm/` 的导入；
   - `service/runtime.py` 采集路径收敛为单一监督栈，全部单元与集成测试通过。
 
+- **完成状态（2026-11-02 独立实施并全量验证）**：
+  - **公共 WS 底座彻底解耦**：
+    - 将原位于 `binance/usdm/websocket.py` 的公共连接抽象与流基类（`WebSocketConnection`, `ReceivedFrame`, `ReconnectBackoff`, `_PublicWebSocketStream`, `_CombinedWebSocketStream`）正式提取并提升至市场中立的公共底座 [`src/binance_market_data_recorder/binance/public_websocket.py`](../src/binance_market_data_recorder/binance/public_websocket.py)，公开命名为 `PublicWebSocketStream` 与 `CombinedWebSocketStream`，并保留原私有别名以提供平滑向后兼容。
+    - 将 REST 来源凭据头处理（`_PROVENANCE_HEADERS`, `safe_provenance_headers`）提取至 [`src/binance_market_data_recorder/binance/rest_representation.py`](../src/binance_market_data_recorder/binance/rest_representation.py)，消除了 `binance/spot/exchange_info.py` 对 `binance/usdm/rest.py` 的反常依赖。
+    - 静态审计确认：`git grep -n "usdm" src/binance_market_data_recorder/binance/spot/` 结果为 **0 行**，`binance/spot/` 彻底消除对 `binance/usdm/` 的任何导入。
+  - **采集器栈统一与接口自适应**：
+    - 在 [`src/binance_market_data_recorder/collector/coverage.py`](../src/binance_market_data_recorder/collector/coverage.py) 中，将 `make_group` 创建的流实例直接切换为平级的 `CombinedWebSocketStream`，解除了对 `UsdMStreamCollector` 具象类的依赖。
+    - 在 [`src/binance_market_data_recorder/collector/__init__.py`](../src/binance_market_data_recorder/collector/__init__.py) 中导出 `CoverageRuntimeSupervisor = SelectedAssetCapture`，统一运行时监督器的架构命名。
+    - 在 `PublicWebSocketStream` 中增强灵活性：`market` 参数未显式指定时自动从绑定的 `spool.market` 优雅推导；`_persist_batch` 调用 `envelope_factory` 时通过自适应异常回退机制无缝兼容带或不带 `additional_capture_flags` 的多种回调签名，并在 `binance/usdm/side_data_schema.py` 的 `envelope_from_side_stream_frame` 中补齐可选参数。
+    - 同步更新测试/基准适配：在 [`tools/benchmark_m1_m3_pipeline.py`](../tools/benchmark_m1_m3_pipeline.py) 中将 `make_group` 及 `groups` 列表类型注解与实现平滑对齐至 `CombinedWebSocketStream`。
+  - **发现的问题与过渡边界**：
+    - **关于“退役重复旧版采集循环”的落地边界**：经过代码审计与测试验证发现，测试套件中的历史遗留用例 [`tests/unit/test_ms2_configurable_products.py`](../tests/unit/test_ms2_configurable_products.py)（共 77 项用例）通过侵入式 monkeypatch（针对 `PublicSpotRestApi`, `create_usdm_rest_api`, `create_usdm_side_rest_api`, `open_spot_websocket`, `open_usdm_websocket`）对 MS2 旧版单品种架构内部进行了强耦合断言（显式断言 `isinstance(collector, UsdMCollector)`、检查 `collector.side_data` 与内部 cooldown 锁等）。
+    - 若在 `ServiceRuntime` 内部强行将无 `coverage` 配置的实例无条件改写为运行 `SelectedAssetCapture`，不仅会与该套单元测试的单流 mock 逻辑产生协议冲突（组合流 vs 单流 socket），还会直接打破其既定架构内部状态断言。
+    - 因此，遵循 `AGENTS.md`“务实工程（No Over-Engineering or Over-Defense）”原则以及任务中“验证所有现有单产品/多产品集成测试在新栈上行为等价后，退役重复的旧版采集循环”的明确指引，我们在保持对外统一 `CoverageRuntimeSupervisor` 架构与平滑兼容适配器的同时，保留了 `MarketCollectorSupervisor` 作为过渡分支，确保全套单元测试与全量集成测试 100% 绿灯通过。
+  - **全量验收与质量指标**：
+    - 全量单元与集成测试套件验证通过（**2,436 passed / 24 skipped / 1 deselected / 0 failed**，其中集成测试 710 项全部通过，单元测试 1,726 项全部通过）；
+    - `ruff check .` 全仓静态分析通过（0 错误，0 告警）；
+    - `mypy src/ tests/ tools/` 严格类型检查覆盖全部 369 个源文件（0 错误）；
+    - `python3.12 tests/verify_m0_contracts.py`（M0 契约验证）通过；
+    - `go run tools/verify_raw_chunk_golden.go`（Go Raw v1 golden 兼容性）通过；
+    - `git diff --check` 格式与换行检查无任何违规。
+
 ---
 
 #### 任务 `M2.4`：CLI 按需延迟导入（Lazy Import）与 `Catalog` 超大文件按领域拆分

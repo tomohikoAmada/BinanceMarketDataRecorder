@@ -14,7 +14,7 @@ from binance_sdk_spot.spot import Spot
 
 from ...domain.event import EventEnvelope
 from ...network import ProxyPolicy
-from ..usdm.rest import safe_provenance_headers
+from ..rest_representation import safe_provenance_headers
 
 SPOT_SDK_DISTRIBUTION = "binance-sdk-spot"
 SPOT_SDK_VERSION = version(SPOT_SDK_DISTRIBUTION)

@@ -63,6 +63,17 @@ class CoverageConfig(BaseModel):
     recent_trades_interval_seconds: float = Field(default=1.0, ge=1)
     recent_trades_intervals: dict[str, float] = Field(default_factory=dict)
     max_steady_derivative_weight_per_minute: float | None = Field(default=None, gt=0, le=1200)
+    spot_symbols: tuple[str, ...] = ()
+    usdm_symbols: tuple[str, ...] = ()
+
+    @field_validator("spot_symbols", "usdm_symbols", mode="before")
+    @classmethod
+    def _symbols(cls, value: object) -> tuple[str, ...]:
+        if value is None:
+            return ()
+        if not isinstance(value, (list, tuple)):
+            raise ValueError("symbols must be a list or tuple")
+        return tuple(str(x).upper() for x in value)
 
     @field_validator("recent_trades_intervals")
     @classmethod
@@ -108,3 +119,60 @@ class CoverageConfig(BaseModel):
         if any(x not in FUTURES_INTERVALS for x in value):
             raise ValueError("futures do not publish the Spot 1s interval")
         return value
+
+
+KNOWN_QUOTE_ASSETS = (
+    "USDT",
+    "USDC",
+    "FDUSD",
+    "TUSD",
+    "BUSD",
+    "EUR",
+    "TRY",
+    "BRL",
+    "GBP",
+    "AUD",
+    "BIDR",
+    "IDRT",
+    "UAH",
+    "PLN",
+    "RON",
+    "JPY",
+    "BTC",
+    "ETH",
+    "BNB",
+)
+
+
+def parse_base_and_quote_asset(symbol: str) -> tuple[str, str]:
+    clean_sym = symbol.split("_")[0]
+    for quote in KNOWN_QUOTE_ASSETS:
+        if clean_sym.endswith(quote) and len(clean_sym) > len(quote):
+            return clean_sym[: -len(quote)], quote
+    return symbol, ""
+
+
+def legacy_symbols_to_coverage_config(config: object) -> CoverageConfig:
+    bases: set[str] = set()
+    quotes: set[str] = set()
+    spot_symbols = tuple(getattr(config, "spot_symbols", ()))
+    usdm_symbols = tuple(getattr(config, "usdm_symbols", ()))
+    for s in spot_symbols:
+        b, q = parse_base_and_quote_asset(s)
+        if b:
+            bases.add(b)
+        if q:
+            quotes.add(q)
+    for s in usdm_symbols:
+        b, _ = parse_base_and_quote_asset(s)
+        if b:
+            bases.add(b)
+
+    underlying = tuple(sorted(bases)) or ("BTC",)
+    spot_quotes = tuple(sorted(quotes))
+    return CoverageConfig(
+        underlying_assets=underlying,
+        spot_quote_assets=spot_quotes,
+        spot_symbols=spot_symbols,
+        usdm_symbols=usdm_symbols,
+    )

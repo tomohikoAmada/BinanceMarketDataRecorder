@@ -36,12 +36,13 @@ from binance_market_data_recorder.binance.public_sources import (
     bar_period_seconds,
     source_plan,
 )
-from binance_market_data_recorder.binance.public_websocket import StreamGroup, stream_groups
-from binance_market_data_recorder.binance.request_budget import RECORDER_WINDOWS, RequestBudget
-from binance_market_data_recorder.binance.usdm.websocket import (
-    UsdMStreamCollector,
+from binance_market_data_recorder.binance.public_websocket import (
+    CombinedWebSocketStream,
+    StreamGroup,
     WebSocketConnection,
+    stream_groups,
 )
+from binance_market_data_recorder.binance.request_budget import RECORDER_WINDOWS, RequestBudget
 from binance_market_data_recorder.collector.availability import Availability, AvailabilityJournal
 from binance_market_data_recorder.collector.coverage import SelectedAssetCapture, SourceState
 from binance_market_data_recorder.config import RecorderConfig
@@ -463,7 +464,7 @@ class BenchmarkCapture(SelectedAssetCapture):
         self.availability = InstrumentedJournal(self.instance_id, stats)
         self.rest_remaining: dict[SourceKey, int] = {}
         self.rest_completed: Counter[SourceKey] = Counter()
-        self.groups: list[UsdMStreamCollector] = []
+        self.groups: list[CombinedWebSocketStream] = []
 
     def _parameters(self, source: Source) -> dict[str, Any]:
         # Freeze query windows; receive times remain real in Raw.
@@ -554,7 +555,7 @@ class BenchmarkCapture(SelectedAssetCapture):
         product: Product | None,
         observer: Callable[[EventEnvelope], None],
         lifecycle: Callable[[str], None],
-    ) -> UsdMStreamCollector:
+    ) -> CombinedWebSocketStream:
         collector = super().make_group(group, product, observer, lifecycle)
 
         @asynccontextmanager
