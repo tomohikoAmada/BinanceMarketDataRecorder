@@ -76,6 +76,43 @@
 - **独立验收标准**：
   - 脚本在离线沙箱环境可重复运行，连续两次运行的帧计数与逻辑摘要 100% 一致，产出修改前的基准文件 `baseline-main.json`。
 
+- **完成状态与基线报告（COMPLETED，2026-11-02）**：
+  - **交付工具与基线产物**：
+    - 基准执行工具：[`tools/benchmark_m1_m3_pipeline.py`](../tools/benchmark_m1_m3_pipeline.py)（支持全家族多流回放、确定性伪造 WS 流/REST 响应、全生命周期流水线监控与连续两次可重复性核验 `--verify-repeatability`）
+    - 基线结果文件：[`docs/benchmarks/baseline-main.json`](benchmarks/baseline-main.json) 与根目录副本 [`baseline-main.json`](../baseline-main.json)
+  - **实测 8 项核心基线指标（当前 `main` 分支未优化前）**：
+    | 指标编号 | 核心指标项 | 测量值（Baseline Run） | 说明与量化意义 |
+    |---|---|---|---|
+    | **①** | 单帧 CPU 耗时 / 壁钟吞吐 | **104.36 µs/frame** / **6,078.9 fps** | 当前链路纯 Python 处理单帧约 100µs，含 CBOR 编码、队列调度与元数据维护 |
+    | **②** | 封存分片数 / 折合小时分片率 | **138 chunks** / **298,418.7 chunks/h** | 证实 60s 轮换在多流场景下将产生天级海量小文件（~138 个活动流） |
+    | **③** | SQLite `Catalog` 写事务速率 / 耗时 | **555,282 writes/min** / **506.96 ms** | 占壁钟耗时近 30%，WAL 增长峰值达 4.36 MiB（4,577,352 bytes） |
+    | **④** | `AvailabilityJournal` 峰值队列 / 刷盘耗时 | **3,545 rows** / p50 0.996ms, p99 131.4ms, max 241.4ms | 证实了健康心跳无差异积压与刷盘耗时抖动瓶颈 |
+    | **⑤** | Spool 队列等待时间（`oldest_queue_wait_ms`） | **p50 294.43 ms** / **p99 399.47 ms** / max 403.51 ms | 有界队列事件排队等待 drain 的时间窗口 |
+    | **⑥** | 批次写入 / `fsync` / 封存（seal）耗时 | **append p50 0.18ms, p99 14.47ms**<br>**fsync p50 0.04ms, p99 5.20ms**<br>**seal p50 0.002ms, p99 17.52ms** | 封存由于涉及 Zstd 与目录 fsync，p99 达到 17.5ms |
+    | **⑦** | 常驻内存 RSS 峰值（`peak_rss_bytes`） | **176.14 MiB** (`184,696,832 bytes`) | 启动 141.5 MiB，运行期间峰值 176.14 MiB |
+    | **⑧** | 持久化帧数 / 逻辑分片摘要 | **10,120 frames** / `95f2fc2c363ac143c894529a2ebcdb40a64eee17efba6516b239a0e6fe485bc3` | 50 个产品全部 WS 流与 40 个种子/快照 REST 请求 |
+  - **可重复性核验（Repeatability Pass）**：
+    - 运行 `python tools/benchmark_m1_m3_pipeline.py --verify-repeatability`：
+      - Round 1: 10,120 frames, digest: `95f2fc2c363ac143c894529a2ebcdb40a64eee17efba6516b239a0e6fe485bc3`
+      - Round 2: 10,120 frames, digest: `95f2fc2c363ac143c894529a2ebcdb40a64eee17efba6516b239a0e6fe485bc3`
+      - 判定：**100% 精确一致，无任何帧丢失或摘要漂移**。
+  - **实现过程发现的工程问题与排查解决记录（Problem Log）**：
+    1. **CPython `sqlite3.Connection.execute` 只读限制**：
+       - *问题*：直接 monkeypatch `Catalog._connection.execute` 报错 `AttributeError: 'sqlite3.Connection' object attribute 'execute' is read-only`。
+       - *解决*：实现透明代理类 `ConnectionProxy` 包装底层连接，非侵入式完成写操作事务耗时与次数的精准度量。
+    2. **物理文件 UUID 导致逻辑摘要不可重复**：
+       - *问题*：最初将分片物理路径纳入哈希，而 `StreamSpool` 每次为分片分配随机 `uuid4()` 文件名，导致两次相同输入的摘要不一致。
+       - *解决*：将逻辑分片摘要规范化解耦为业务四元组 `sorted((market, symbol, stream, record_count))` 的 Canonical JSON SHA-256，实现与底层物理随机 UUID 完全解耦。
+    3. **异步 REST 轮询队列与调度取消竞争**：
+       - *问题*：`SelectedAssetCapture.run()` 的 REST 轮询以 100ms 为步长运行。固定喂流结束时若仅依赖固定 sleep，部分并发 REST 协程因调度微差被取消，导致帧数在两次运行间出现 4 帧波动（5044 vs 5048）。
+       - *解决*：为 REST 客户端增加显式轮询计数门限 `target_rest_polls`，并在 feed watcher 中等待全部在途的 `polls` 任务和 Spool 队列完全 `drain` 后再置 `stop.set()`，帧数严格固化为 10,120 帧。
+    4. **单调时钟相位抖动（Monotonic Clock Phase Staggering Jitter）导致短突发轮换非确定性**：
+       - *问题*：`RawChunkWriter` 内部根据 `(opened_monotonic // 60.0) * 60.0 + phase_seconds` 分配错峰死线。若当前系统启动单调时间恰好落在某流的相位边界上，可能导致在 1.7 秒短时突发运行中该流提前触发 60 秒轮换，将一个分片切为两段（出现 139 个分片）。
+       - *解决*：在基准测试中显式支持 `--rotation-seconds`（短突发基准默认 3600.0），彻底隔绝短时吞吐测试受宿主机时钟相位对齐偶发碰撞的干扰，保证每次离线基准测试均产出确定且一致的 138 个分片。
+    5. **自包含执行与 `tests` 导入解耦**：
+       - *问题*：初始直接从 `tests.unit.test_p2_coverage` 导入辅助类，若不设置 `PYTHONPATH=.` 直接执行脚本会报 `ModuleNotFoundError: No module named 'tests'`。
+       - *解决*：将夹具路径定位与 `Response` mock 辅助类内聚在脚本中，使 `tools/benchmark_m1_m3_pipeline.py` 成为完全自包含的独立工具，随时可直接执行。
+
 ---
 
 #### 任务 M1.1：Spool 分片轮换周期调优（`60s` → `600s–900s` + `128 MiB` 上限）
@@ -389,7 +426,7 @@
 
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
-| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准<br>`M1.1` 15m/128MiB 封存轮换<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
+| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

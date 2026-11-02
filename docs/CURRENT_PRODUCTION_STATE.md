@@ -2,8 +2,11 @@
 
 ## Active Status (2026-11-02)
 
-- **Production Readiness**: **NO** (awaiting execution of the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md)).
+- **Production Readiness**: **NO** (currently progressing through the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md); `M1.0` completed, baseline established in [`docs/benchmarks/baseline-main.json`](benchmarks/baseline-main.json)).
 - **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.
+- **Milestone Progress**:
+  - `M1.0` (Pre-M1 Baseline Pipeline Benchmark): **COMPLETED** (2026-11-02). Baseline tool `tools/benchmark_m1_m3_pipeline.py` created and frozen; verified 100% repeatability across consecutive identical runs (10,120 frames, 138 chunks, digest `95f2fc2c...`); recorded 8 core metrics prior to modifying runtime code.
+  - Next task: `M1.1` (Spool rotation policy tuning `60s` → `600s–900s` + `128 MiB` cap).
 - **GreenCloud VPS (`greencloud-tokyo-01`) State**:
   - Primary service `binance-market-data-recorder.service` remains `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
   - Temporary P4 diagnostic units (`p4-btc-recorder.service` and timers) were stopped cleanly after diagnostic runs; all 45, 337, and 874 sealed chunks across Runs A, B, and C passed independent `raw-independent.v2` verification with zero corruption.
