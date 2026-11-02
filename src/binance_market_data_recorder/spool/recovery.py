@@ -51,9 +51,10 @@ import stat
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
+from ..paths import LEGACY_CLASSIFICATION_FILENAME
 from ..storage.catalog import (
     ARCHIVE_CHUNK_STATES,
     ArchiveState,
@@ -65,15 +66,6 @@ from ..storage.catalog import (
 )
 from ..storage.layout import StorageLayout, fsync_directory
 from .format import ScanIssue, ScanResult, decode_chunk_header, scan_chunk
-from .legacy_reconnect import (
-    LEGACY_CLASSIFICATION_FILENAME,
-    LegacyClassificationAuthority,
-    LegacyDecisionReport,
-    LegacyReconnectConflictError,
-    evaluate_legacy_reconnect_decisions,
-    legacy_seal_intent_for_read,
-    validate_seal_intent,
-)
 from .seal import (
     RECONNECT_GAP_FLAG,
     SEAL_INTENT_EVIDENCE_KEY,
@@ -83,6 +75,8 @@ from .seal import (
     validate_sealed_artifact,
 )
 
+if TYPE_CHECKING:
+    from .legacy_reconnect import LegacyDecisionReport
 
 @dataclass(frozen=True)
 class RecoveryAction:
@@ -834,6 +828,8 @@ def _derived_seal_flags(
             f"RECOVERY_SEAL_FORCED_FLAGS_MALFORMED chunk={chunk_id}"
         ) from exc
     if intent is not None:
+        from .legacy_reconnect import legacy_seal_intent_for_read, validate_seal_intent
+
         intent = legacy_seal_intent_for_read(intent)
         validate_seal_intent(intent, chunk_id)
         flags = intent["required_forced_flags"]
@@ -985,20 +981,30 @@ def recover_storage(
         if authority_path is not None
         else layout.root / LEGACY_CLASSIFICATION_FILENAME
     )
-    try:
-        authority = LegacyClassificationAuthority.load(selected_authority_path)
-        report = evaluate_legacy_reconnect_decisions(
-            catalog=catalog, authority=authority
+    report = None
+    if selected_authority_path.exists() or catalog.has_reconnect_recovery_evidence():
+        from .legacy_reconnect import (
+            LegacyClassificationAuthority,
+            LegacyReconnectConflictError,
+            evaluate_legacy_reconnect_decisions,
         )
-    except LegacyReconnectConflictError as exc:
-        raise RecoveryConflictError(str(exc)) from exc
+
+        try:
+            authority = LegacyClassificationAuthority.load(selected_authority_path)
+            report = evaluate_legacy_reconnect_decisions(
+                catalog=catalog, authority=authority
+            )
+        except LegacyReconnectConflictError as exc:
+            raise RecoveryConflictError(str(exc)) from exc
+        if _stop_requested(stop_requested):
+            return []
+        if not report.first_corrected_startup_eligible:
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_PREDECISION_INELIGIBLE "
+                + report.blocker_summary()
+            )
     if _stop_requested(stop_requested):
         return []
-    if not report.first_corrected_startup_eligible:
-        raise RecoveryConflictError(
-            "RECOVERY_LEGACY_PREDECISION_INELIGIBLE "
-            + report.blocker_summary()
-        )
     _validate_remote_recovery_coverage(
         layout=layout,
         catalog=catalog,
@@ -1013,13 +1019,14 @@ def recover_storage(
     )
     if _stop_requested(stop_requested):
         return actions
-    actions.extend(
-        _apply_legacy_decisions(
-            catalog=catalog,
-            report=report,
-            stop_requested=stop_requested,
+    if report is not None:
+        actions.extend(
+            _apply_legacy_decisions(
+                catalog=catalog,
+                report=report,
+                stop_requested=stop_requested,
+            )
         )
-    )
     if _stop_requested(stop_requested):
         return actions
     for row in catalog.chunks_in_states(ChunkState.SEALING):

@@ -8,12 +8,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from threading import RLock
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from .types import _MS1_IDENTITY_FAULT_PHASES, CatalogStateError
-
-if TYPE_CHECKING:
-    pass
 
 
 class CatalogBase:

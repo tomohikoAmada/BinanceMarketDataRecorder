@@ -73,6 +73,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
+from ..paths import (
+    LEGACY_CLASSIFICATION_FILENAME as LEGACY_CLASSIFICATION_FILENAME,
+)
+from ..paths import classification_authority_path as classification_authority_path
 from ..storage.catalog import LEGACY_SINGLE_SYMBOL, Catalog, CatalogStateError
 from .seal import RECONNECT_INTENT_SCHEMA_V2
 
@@ -82,7 +86,6 @@ from .seal import RECONNECT_INTENT_SCHEMA_V2
 #: configuration file in production, never inside the service-writable
 #: data root (M21.4.11-R3.4).  Recovery and preflight only read it; the
 #: recorder never writes it.
-LEGACY_CLASSIFICATION_FILENAME = "legacy_reconnect_classifications.json"
 LEGACY_CLASSIFICATION_SCHEMA_V3 = "legacy-reconnect-classification.v3"
 LEGACY_CLASSIFICATION_KINDS = frozenset(
     {"extension_orphan", "legitimate_req103"}
@@ -112,27 +115,6 @@ CLASSIFICATION_AUTHORITY_MODE = 0o640
 CLASSIFICATION_AUTHORITY_PARENT_OWNER = "root"
 CLASSIFICATION_AUTHORITY_PARENT_GROUP = "orangepi"
 CLASSIFICATION_AUTHORITY_PARENT_MODE = 0o750
-
-
-def classification_authority_path(
-    *, config_file: Path | None, data_root: Path
-) -> Path:
-    """Resolve the classification authority location.
-
-    The authority lives alongside the loaded Recorder configuration
-    (``config_file.parent``), not alongside mutable service data: the
-    production config namespace ``/etc/binance-market-data-recorder`` is
-    root-controlled and not writable by the service principal, so the
-    service can read the authority but can never unlink/rename/replace
-    its pathname (M21.4.11-R3.4).  Interactive configs follow the same
-    rule next to their config file with their local ownership semantics.
-    Only when NO configuration file is loaded (interactive defaults,
-    test harnesses) does the authority fall back to the data root, whose
-    owner is the same interactive principal in that mode.
-    """
-    if config_file is not None:
-        return config_file.parent / LEGACY_CLASSIFICATION_FILENAME
-    return Path(data_root) / LEGACY_CLASSIFICATION_FILENAME
 
 
 def directory_permissions(

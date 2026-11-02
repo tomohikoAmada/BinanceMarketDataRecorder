@@ -349,6 +349,30 @@ class CatalogChunksMixin(CatalogBase):
             ).fetchone()
         return json.loads(row["evidence_json"]) if row else None
 
+    def has_reconnect_recovery_evidence(self) -> bool:
+        """Whether startup needs the frozen reconnect classification engine.
+
+        Include every lifecycle event, even malformed ones, so legacy blockers
+        remain checked before recovery mutates any artifacts.
+        """
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1 FROM chunk_transitions
+                    WHERE to_state = 'SEALING'
+                      AND json_type(evidence_json, '$.seal_intent') != 'null'
+                ) OR EXISTS (
+                    SELECT 1 FROM operational_events
+                    WHERE event_type IN (
+                        'STREAM_DISCONTINUITY_STARTED',
+                        'STREAM_DISCONTINUITY_COMPLETED'
+                    )
+                )
+                """
+            ).fetchone()
+        return bool(row[0])
+
     def sealing_transition_evidence(
         self,
     ) -> list[tuple[str, dict[str, object]]]:

@@ -16,7 +16,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, NoReturn, TextIO, cast
+from typing import TYPE_CHECKING, Any, NoReturn, TextIO, cast
 
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .domain.product import configured_products
@@ -28,6 +28,9 @@ from .storage.catalog import Catalog, CatalogStateError, RemoteArchiveState
 from .storage.layout import StorageLayout, ensure_storage_layout
 from .version import git_commit as current_git_commit
 from .version import version_string
+
+if TYPE_CHECKING:
+    from .service.acceptance import AcceptanceObserver
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -131,7 +134,7 @@ _LAZY_MODULE_EXPORTS: dict[str, tuple[str, str]] = {
     # spool
     "LegacyClassificationAuthority": (".spool.legacy_reconnect", "LegacyClassificationAuthority"),
     "LegacyReconnectConflictError": (".spool.legacy_reconnect", "LegacyReconnectConflictError"),
-    "classification_authority_path": (".spool.legacy_reconnect", "classification_authority_path"),
+    "classification_authority_path": (".paths", "classification_authority_path"),
     "evaluate_legacy_reconnect_decisions": (
         ".spool.legacy_reconnect",
         "evaluate_legacy_reconnect_decisions",
@@ -735,7 +738,7 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
 
 
 def _run_acceptance_stage(
-    observer: Any,
+    observer: AcceptanceObserver,
     *,
     sleep: Callable[[float], None] | None = None,
 ) -> tuple[Path, str, dict[str, object]]:
@@ -780,7 +783,7 @@ def _run_acceptance_stage(
         observer.sample()
         next_target_boottime_ns = sample_started_boottime_ns + SAMPLE_INTERVAL_NS
 
-    return cast(tuple[Path, str, dict[str, object]], observer.finalize())
+    return observer.finalize()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -972,7 +975,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         V4_SCHEMA_VERSION = _sym("V4_SCHEMA_VERSION")
         V5_SCHEMA_VERSION = _sym("V5_SCHEMA_VERSION")
         AcceptanceError = _sym("AcceptanceError")
-        AcceptanceObserver = _sym("AcceptanceObserver")
         V4AcceptanceObserver = _sym("V4AcceptanceObserver")
         create_identity_evidence = _sym("create_identity_evidence")
         create_readiness_evidence = _sym("create_readiness_evidence")

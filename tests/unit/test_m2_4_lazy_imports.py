@@ -19,14 +19,12 @@ import pytest
 FORBIDDEN_COLLECTOR_MODULES = [
     "pyarrow",
     "binance_market_data_recorder.service.acceptance",
-    "binance_market_data_recorder.service.acceptance_v5_corpus",
-    "binance_market_data_recorder.service.acceptance_v5_finalize",
-    "binance_market_data_recorder.service.acceptance_v5_online",
+    "binance_market_data_recorder.audit",
+    "binance_market_data_recorder.spool.legacy_reconnect",
     "binance_market_data_recorder.normalize",
     "binance_market_data_recorder.storage.macos",
-    "binance_market_data_recorder.archive.remote_authorization",
-    "binance_market_data_recorder.archive.remote_delete",
-    "binance_market_data_recorder.archive.remote_source",
+    "binance_market_data_recorder.storage.linux",
+    "binance_market_data_recorder.archive.remote_",
     "binance_market_data_recorder.archive.catalog_snapshot",
     "binance_market_data_recorder.backfill",
     "binance_market_data_recorder.metrics.report",
@@ -41,7 +39,8 @@ def _run_in_fresh_process(code: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
         check=True,
-        env={"PYTHONPATH": str(src_dir), "PATH": "/usr/bin:/bin"},
+        env={"PYTHONPATH": f"{src_dir}:{repo_root}", "PATH": "/usr/bin:/bin"},
+        timeout=45,
     )
 
 
@@ -51,7 +50,7 @@ import sys
 import binance_market_data_recorder.cli
 
 forbidden = {FORBIDDEN_COLLECTOR_MODULES!r}
-loaded = [m for m in forbidden if m in sys.modules]
+loaded = [m for m in sys.modules if m.startswith(tuple(forbidden))]
 assert not loaded, f"Forbidden modules loaded by cli.py: {{loaded}}"
 """
     result = _run_in_fresh_process(code)
@@ -64,7 +63,7 @@ import sys
 import binance_market_data_recorder.service.runtime
 
 forbidden = {FORBIDDEN_COLLECTOR_MODULES!r}
-loaded = [m for m in forbidden if m in sys.modules]
+loaded = [m for m in sys.modules if m.startswith(tuple(forbidden))]
 assert not loaded, f"Forbidden modules loaded by service.runtime: {{loaded}}"
 """
     result = _run_in_fresh_process(code)
@@ -77,7 +76,7 @@ import sys
 import binance_market_data_recorder.collector.coverage
 
 forbidden = {FORBIDDEN_COLLECTOR_MODULES!r}
-loaded = [m for m in forbidden if m in sys.modules]
+loaded = [m for m in sys.modules if m.startswith(tuple(forbidden))]
 assert not loaded, f"Forbidden modules loaded by collector.coverage: {{loaded}}"
 """
     result = _run_in_fresh_process(code)
@@ -89,18 +88,100 @@ assert not loaded, f"Forbidden modules loaded by collector.coverage: {{loaded}}"
     [
         ["config", "show"],
         ["doctor"],
+        ["status"],
     ],
 )
-def test_cli_subcommands_do_not_load_heavy_modules(subcommand: list[str]) -> None:
+def test_cli_subcommands_do_not_load_heavy_modules(subcommand: list[str], tmp_path: Path) -> None:
     code = f"""
 import sys
+import os
+from pathlib import Path
 from binance_market_data_recorder.cli import main
+from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
-main({subcommand!r})
+os.environ["BINANCE_MARKET_RECORDER_DATA_ROOT"] = {str(tmp_path)!r}
+layout = ensure_storage_layout(Path({str(tmp_path)!r}))
+with Catalog(layout.catalog):
+    pass
+assert main({subcommand!r}) == 0
 forbidden = {FORBIDDEN_COLLECTOR_MODULES!r}
-loaded = [m for m in forbidden if m in sys.modules]
+loaded = [m for m in sys.modules if m.startswith(tuple(forbidden))]
 assert not loaded, f"Forbidden modules loaded by {subcommand}: {{loaded}}"
 """
+    result = _run_in_fresh_process(code)
+    assert result.returncode == 0
+
+
+def test_service_entrypoint_start_capture_stop_and_restart_are_isolated(tmp_path: Path) -> None:
+    """Exercise CLI dispatch and actual service recovery, capture writes and seal.
+
+    Only network inputs and OS sleep notifications are replaced. The real
+    supervisor, Catalog, spool, metrics and service lifecycle run twice.
+    """
+    code = f'''
+import asyncio
+import os
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+from binance_market_data_recorder import cli
+from binance_market_data_recorder.collector.coverage import ProductCapture, SelectedAssetCapture
+from binance_market_data_recorder.service.power import NoopSleepObserver
+from binance_market_data_recorder.service.runtime import ServiceRuntime
+from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
+from binance_market_data_recorder.storage.layout import StorageLayout
+from tests.factories import event
+
+forbidden = {FORBIDDEN_COLLECTOR_MODULES!r}
+def assert_isolated():
+    loaded = [m for m in sys.modules if m.startswith(tuple(forbidden))]
+    assert not loaded, f"Forbidden modules loaded during capture: {{loaded}}"
+
+root = Path({str(tmp_path)!r})
+os.environ["BINANCE_MARKET_RECORDER_DATA_ROOT"] = str(root)
+config = root / "recorder.toml"
+config.write_text(
+    '[recorder]\\nspot_symbols = ["BTCUSDT"]\\n'
+    'usdm_symbols = []\\nprevent_sleep = false\\n'
+)
+
+async def offline_service(config, *, logger, authority_path, deployment_identity):
+    def supervisor_factory(*args):
+        owner = SelectedAssetCapture(*args, clients={{}})
+        owner._active_sources.clear()
+        return owner
+
+    async def receive_one(product, stop):
+        assert runtime._status == "RUNNING"
+        assert runtime._startup_recovery_complete
+        assert_isolated()
+        envelope = event().model_copy(update={{"stream": "test_observation"}})
+        await product.owner.persist_rest(envelope)
+        assert_isolated()
+        runtime.request_stop("M2_4_OFFLINE_TEST")
+        await stop.wait()
+
+    ProductCapture.run = receive_one
+    runtime = ServiceRuntime(
+        config=config, logger=logger, authority_path=authority_path,
+        deployment_identity=deployment_identity,
+        supervisor_factory=supervisor_factory, sleep_observer_factory=NoopSleepObserver,
+        disk_usage=lambda _: SimpleNamespace(total=500 << 30, free=400 << 30, used=100 << 30),
+    )
+    await asyncio.wait_for(runtime.run(), timeout=15)
+    assert runtime.state_store.read()["status"] == "STOPPED"
+
+cli.run_service = offline_service
+for iteration in range(2):
+    assert cli.main(["--config", str(config), "_service", "run"]) == 0
+    assert_isolated()
+    with Catalog(StorageLayout.from_root(root).catalog, read_only=True) as catalog:
+        assert len(catalog.chunks_in_states(ChunkState.SEALED)) == iteration + 1
+        assert len(catalog.operational_events(event_type="SERVICE_STARTED")) == iteration + 1
+        assert not catalog.has_reconnect_recovery_evidence()
+'''
     result = _run_in_fresh_process(code)
     assert result.returncode == 0
 
@@ -153,6 +234,35 @@ def test_catalog_modularization_backward_compatibility(tmp_path: Path) -> None:
     with Catalog.open_live_read_only(db_path) as read_catalog:
         assert read_catalog.integrity_check() == ("ok",)
         assert read_catalog.chunk("nonexistent") is None
+
+
+@pytest.mark.parametrize("blocker", ["authority_file", "lifecycle_event"])
+def test_lazy_recovery_keeps_blockers_without_any_chunks(tmp_path: Path, blocker: str) -> None:
+    """The lazy gate must preserve predecision checks even without seal intents."""
+    from binance_market_data_recorder.paths import classification_authority_path
+    from binance_market_data_recorder.spool.recovery import RecoveryConflictError, recover_storage
+    from binance_market_data_recorder.storage.catalog import Catalog
+    from binance_market_data_recorder.storage.layout import ensure_storage_layout
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        assert not catalog.has_reconnect_recovery_evidence()
+        if blocker == "authority_file":
+            authority = classification_authority_path(config_file=None, data_root=tmp_path)
+            authority.write_text("invalid JSON")
+            error = "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED"
+        else:
+            catalog.record_operational_event(
+                event_id="missing-gap-identity",
+                event_type="STREAM_DISCONTINUITY_STARTED",
+                occurred_at_utc_ns=1,
+                evidence={"market": "spot", "stream": "book_ticker"},
+                symbol="BTCUSDT",
+            )
+            assert catalog.has_reconnect_recovery_evidence()
+            error = "RECOVERY_LEGACY_DEGRADED_AUTHORITY"
+        with pytest.raises(RecoveryConflictError, match=error):
+            recover_storage(layout=layout, catalog=catalog)
 
 
 def test_catalog_submodules_exist() -> None:

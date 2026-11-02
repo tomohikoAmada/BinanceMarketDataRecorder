@@ -8,6 +8,16 @@ from pathlib import Path
 
 APPLICATION_DIRECTORY = "BinanceMarketDataRecorder"
 REPOSITORY_DIRECTORY = "BinanceMarketDataRecorder"
+LEGACY_CLASSIFICATION_FILENAME = "legacy_reconnect_classifications.json"
+
+
+def classification_authority_path(*, config_file: Path | None, data_root: Path) -> Path:
+    """Keep operator authority beside config, outside service-writable data.
+
+    Config-less interactive use falls back to the user's data root.
+    """
+    parent = config_file.parent if config_file is not None else Path(data_root)
+    return parent / LEGACY_CLASSIFICATION_FILENAME
 
 
 class UnsafeDataRootError(ValueError):

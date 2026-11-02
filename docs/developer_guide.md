@@ -54,10 +54,10 @@ Paths below are relative to `src/binance_market_data_recorder/`.
 | Configuration and CLI | `config.py`, `paths.py`, `cli.py` | Product selection, profiles, path validation, command routing |
 | Service assembly | `service/runtime.py`, `service/state.py` | One process, configured collectors, lifecycle and service state |
 | Public transport/schema | `binance/spot/`, `binance/usdm/`, `network/` | Market-specific schemas, SDK REST and WebSocket transport, proxy policy |
-| Collection | `collector/spot.py`, `collector/usdm.py`, `collector/resync.py`, `collector/supervisor.py` | Receive evidence, bounded ingress, core reconnect/resync and handoff |
-| Auxiliary capture | `collector/spot_side_data.py`, `collector/usdm_side_data.py` | Product-specific and shared public metadata/periodic datasets |
+| Collection | `collector/coverage.py`, `collector/explicit.py`, `binance/websocket_common.py` | Unified product/source supervision, explicit configuration mapping, bounded receive and reconnect |
+| Auxiliary capture | `collector/coverage.py`, `binance/public_rest.py`, `binance/public_sources.py` | Product-specific and shared public metadata/periodic datasets; older side-data collectors are frozen compatibility code |
 | Raw persistence | `spool/` | CBOR frames, CRC32C, writes, rotation, compression, seal/recovery |
-| Durable metadata | `storage/catalog.py`, `storage/layout.py`, `spool/seal.py` | SQLite lifecycle, paths, manifests and archive state |
+| Durable metadata | `storage/catalog/`, `storage/layout.py`, `spool/seal.py` | SQLite lifecycle, paths, manifests and archive state |
 | Capture continuity | `supervisor/depth_continuity.py`, `supervisor/readiness.py` | Bounded sequence bridge and capture health without a full book |
 | Order books | `orderbook/` | Offline Spot `U/u`, USD-M `U/u/pu`, full reconstruction and checkpoints |
 | Archive | `archive/manager.py`, `archive/remote_*.py`, `archive/archive_set.py` | Verified copy/retirement, receipts, remote transfer and custody |

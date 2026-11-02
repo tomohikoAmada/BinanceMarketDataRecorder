@@ -19,7 +19,6 @@ from .service.state import ServiceStateError, ServiceStateStore
 from .service.systemd import SystemdError, SystemdManager
 from .storage.catalog import Catalog, ChunkState
 from .storage.forecast import space_severity
-from .storage.macos import PlatformVolumeError, StorageRegistry
 from .storage.platform import volume_adapter
 
 
@@ -129,24 +128,27 @@ def service_status(
                     "remote_pending_source_bytes"
                 ],
             }
-            try:
-                targets = StorageRegistry(
-                    catalog=catalog, volumes=volume_adapter()
-                ).observe_statuses()
-                external_storage = {
-                    "status": (
-                        "LOW_SPACE"
-                        if any(target["state"] == "LOW_SPACE" for target in targets)
-                        else ("OK" if targets else "NO_REGISTERED_TARGETS")
-                    ),
-                    "targets": targets,
-                }
-            except (OSError, PlatformVolumeError) as exc:
-                external_storage = {
-                    "status": "PLATFORM_UNAVAILABLE",
-                    "targets": [],
-                    "reason": str(exc),
-                }
+            if catalog.storage_targets():
+                from .storage.macos import PlatformVolumeError, StorageRegistry
+
+                try:
+                    targets = StorageRegistry(
+                        catalog=catalog, volumes=volume_adapter()
+                    ).observe_statuses()
+                    external_storage = {
+                        "status": (
+                            "LOW_SPACE"
+                            if any(target["state"] == "LOW_SPACE" for target in targets)
+                            else ("OK" if targets else "NO_REGISTERED_TARGETS")
+                        ),
+                        "targets": targets,
+                    }
+                except (OSError, PlatformVolumeError) as exc:
+                    external_storage = {
+                        "status": "PLATFORM_UNAVAILABLE",
+                        "targets": [],
+                        "reason": str(exc),
+                    }
 
     reports = sorted((root / "data" / "reports" / "daily").glob("*.json"))
     disk = shutil.disk_usage(_nearest_existing(root))

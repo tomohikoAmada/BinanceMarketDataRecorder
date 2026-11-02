@@ -337,34 +337,14 @@
   - 新增单元测试验证：启动采集运行时后检查 `sys.modules`，确认未加载 `pyarrow`、`service.acceptance`、`storage.macos` 等非采集模块；
   - 拆分后的 `Catalog` 通过全部现有数据库、归档、回放与报告测试。
 
-- **完成状态（2026-11-02 独立验收并全面通过）**：
-  - **Part 1：CLI 子命令级按需延迟导入（Lazy Import）完成**：
-    - `src/binance_market_data_recorder/cli.py` 顶层不再无条件导入 `pyarrow`（通过 `normalize`）、`service/acceptance*.py`、`storage/macos/`、`archive/remote_*.py`、`service/launchd.py` 等非采集重型或外围模块。
-    - 建立 `_LAZY_MODULE_EXPORTS` 映射表与模块级 `__getattr__`，搭配 `_sym()` 动态解析机制。这不仅实现了守护进程启动与被动子命令（`doctor`、`status`、`config show`）零污染加载，还完美兼顾了现有单元/集成测试中大量的 `monkeypatch.setattr(cli, ...)` 动态插桩行为（如 `LaunchAgentManager`、`load_deployment_identity`、`v5_baseline` 等），未破坏任何外部或测试契约。
-    - 同步优化 `src/binance_market_data_recorder/storage/platform.py`（对 macOS `DiskArbitrationAdapter` 实行延迟导入）与 `src/binance_market_data_recorder/metrics/__init__.py`（对 `DailyReporter` 实行动态 `__getattr__` 懒加载，阻断采集热路径中 `MetricsRecorder` 触发 `DailyReporter` 的导入链穿透）。
-  - **Part 2：`Catalog` 超大单文件按领域子模块化拆分完成**：
-    - 原 5,203 行的庞大单文件 `src/binance_market_data_recorder/storage/catalog.py` 成功重构为职责清晰的模块化包 `src/binance_market_data_recorder/storage/catalog/`：
-      - `types.py`：定义分片状态机枚举（`ChunkState`, `ArchiveState`, `RemoteArchiveState` 等）、状态迁移规则表与异常定义；
-      - `base.py`：定义 `CatalogBase`，封装 SQLite 线程锁、WAL/NORMAL Pragmas 事务生命周期、一致性检查（`integrity_check`）、元数据字段查询等基础支撑；
-      - `schema.py`：`CatalogSchemaMixin`，封装 13 张核心数据表 DDL 建表脚本、数据表列字段演进与符号标识迁移校验；
-      - `chunks.py`：`CatalogChunksMixin`，封装分片从 `ACTIVE` 到 `SEALING`、`SEALED` 的状态流转、校验指纹登记与 manifest 查询；
-      - `availability.py`：`CatalogAvailabilityMixin`，封装断线事件标记、可用性区间追踪、Side Data 游标推进与健康水位更新；
-      - `archive_ops.py`：`CatalogArchiveMixin`，封装本地外置卷与远程安全归档事务状态流转、存储目标绑定与快照管理；
-      - `reports.py`：`CatalogReportsMixin`，封装容量预测指标聚合、每日报告 token 生成与部署身份追踪；
-      - `__init__.py`：将所有 Mixin 多继承组合为统一的 `Catalog` 类，同时 100% 导出所有历史公开与内部符号（保持如 `from ...storage.catalog import Catalog, ChunkState` 等路径完全不变）。
-  - **Part 3：专项测试与全量离线回归验收**：
-    - **新增独立验收单元测试** [`tests/unit/test_m2_4_lazy_imports.py`](../tests/unit/test_m2_4_lazy_imports.py)（7 项全部通过）：
-      1. 验证 `import binance_market_data_recorder.cli` 时 `sys.modules` 绝对不含 `pyarrow`, `service.acceptance`, `storage.macos`, `archive.remote_*`, `normalize`, `backfill`, `metrics.report` 等 13 个重型/外围模块；
-      2. 验证 `import binance_market_data_recorder.service.runtime` 时同样保持上述隔离；
-      3. 验证 `import binance_market_data_recorder.collector.coverage` 同样保持隔离；
-      4. 验证执行 `binance-market-recorder config show` 和 `doctor` 时上述模块零加载；
-      5. 验证拆分后的 `Catalog` 保持 100% 属性/方法与状态机枚举向后兼容，内存/磁盘 SQLite 实例读写与只读开启正常；
-      6. 验证 `storage.catalog` 内部 7 个子模块接口与基类结构规范完备。
-    - **通过现有测试套件验证**：
-      - 运行所有受影响的子系统测试（CLI、Launchd、Acceptance、Availability、Archive、M2 回归套件等）共 285 项全部通过；
-      - 全量离线回归测试通过，无任何回归问题。
-  - **复核记录与问题总结**：
-    - 详见 [`docs/benchmarks/m2.4-review-20261102.md`](benchmarks/m2.4-review-20261102.md)。
+- **完成状态（2026-11-02 复核后接续完成）**：
+  - 原提交 `cb4f074` 已完成 CLI 按需导入主体、指标报告隔离、平台适配器延迟导入和 `Catalog` 领域拆分；但**尚未通过完整退出门禁**：`spool.recovery` 顶层仍导入 `spool.legacy_reconnect`，`_service run` 的路径解析也加载该模块；原专项漏查此模块且没有真正启动服务。另有 Ruff 1 项、全量 mypy 2 项错误。
+  - `Catalog` 保留原导入路径与全部 130 个既有方法，分为 `types/base/schema/chunks/availability/archive_ops/reports`；原方法 AST 的差异仅为相对导入与 `Self` 类型注解，不改数据库状态机、DDL 或事务策略。
+  - 将操作员分类文件路径解析移至轻量 `paths.py`，旧路径继续重导出。恢复入口用只读 `EXISTS` 查询检查是否存在 reconnect seal intent 或断线生命周期记录；存在相关记录或操作员分类文件时才导入并执行原判定器。**历史恢复规则保持不变**，畸形生命周期与无匹配候选的分类文件仍走原检查，不因延迟加载跳过。
+  - `status` 在没有注册归档目标时不加载外设模块、不枚举卷；已有注册目标时仍按原逻辑显示外盘状态。`storage`、`archive`、归一化及旧验收功能和测试继续保留。
+  - 恢复 `_run_acceptance_stage` 的静态类型（`TYPE_CHECKING` 导入），移除冗余 cast 和未使用局部变量；保留既有 CLI 延迟解析与 monkeypatch 接口，不新增框架或兼容包装。
+  - 专项增至 **11 项**：检查整个模块前缀；覆盖 CLI/runtime/coverage 导入、`config show`、`doctor`、无外盘目标的 `status`，以及真实 `_service run` → 恢复 → 统一监督循环 → Raw 写入/封存 → 停机 → 再启动；另覆盖无分片时的历史分类文件/畸形生命周期阻断。
+  - 全量离线回归 **2537 passed / 24 skipped / 5 deselected / 0 failed**；随后追加的两项恢复阻断测试随最终 11 项专项通过。Ruff、全量 mypy（380 个源文件）、M0 契约、Go Raw golden 与 diff 检查均通过。13 条既有 fork 警告及具体边界见 [`M2.4 复核记录`](benchmarks/m2.4-review-20261102.md)。本次仅完成 M2.4，不替代 M3 的跨轮换基准、压力测试或 M4 VPS 在线验收。
 
 ---
 
@@ -494,6 +474,6 @@
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
-| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈 **`[COMPLETED]`**<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
+| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈 **`[COMPLETED]`**<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 **`[COMPLETED]`** | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |
