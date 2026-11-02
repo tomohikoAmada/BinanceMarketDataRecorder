@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import asyncio
+import io
 import json
-import logging
+import os
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -10,15 +10,41 @@ from uuid import UUID
 import pytest
 import zstandard
 
-from binance_market_data_recorder.config import RecorderConfig, load_config
 from binance_market_data_recorder.domain.event import EventEnvelope
-from binance_market_data_recorder.service.runtime import ServiceRuntime
 from binance_market_data_recorder.service.verification import verify_chunk, verify_new
 from binance_market_data_recorder.spool import seal as seal_module
 from binance_market_data_recorder.spool.seal import seal_partial
-from binance_market_data_recorder.spool.writer import RawChunkWriter
+from binance_market_data_recorder.spool.stream import StreamSpool
+from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
+
+
+def test_compression_handles_short_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class ShortWritingFile(io.FileIO):
+        def write(self, data: Any) -> int:
+            written = super().write(data[:7])
+            assert written is not None
+            return written
+
+    monkeypatch.setattr(
+        os, "fdopen",
+        lambda fd, mode, **kwargs: ShortWritingFile(fd, mode, closefd=kwargs["closefd"]),
+    )
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout, catalog=catalog, market="spot", symbol="BTCUSDT",
+            stream="diff_depth", collector_instance_id="collector-m2-1",
+            collector_version="0.1.0+test",
+        )
+        writer.append(_make_envelope(1))
+        manifest = writer.seal()
+        row = catalog.chunk(str(manifest["chunk_id"]))
+        assert row is not None
+        assert verify_chunk(layout, catalog, row, {})["result"] == "VERIFIED"
 
 
 def _make_envelope(ordinal: int, payload: bytes = b'{"msg": "test"}') -> EventEnvelope:
@@ -119,6 +145,43 @@ def test_seal_partial_zero_readback_by_default(
         assert manifest["record_count"] == 1
 
 
+def test_stream_rotation_and_stop_never_open_compressed_raw_for_reading(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    original_open = Path.open
+
+    def check_open(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        if ".zst" in path.name and ("r" in mode or "+" in mode):
+            raise AssertionError(f"live compressed Raw read: {path}")
+        return original_open(path, mode, *args, **kwargs)
+
+    manifests: list[dict[str, object]] = []
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout, catalog=catalog, market="spot", symbol="BTCUSDT",
+            stream="diff_depth", collector_instance_id="collector-m2-1",
+            collector_version="0.1.0+test", queue_capacity=10,
+            rotation=RotationPolicy(seconds=900, bytes=1024 * 1024),
+            durability_interval_seconds=1, max_frame_bytes=2 * 1024 * 1024,
+            seal_observer=manifests.append,
+        )
+        monkeypatch.setattr(Path, "open", check_open)
+        spool.enqueue(_make_envelope(1, payload=b"x" * (1024 * 1024)))
+        assert spool.drain_one()  # Size rotation.
+        assert len(manifests) == 1
+        spool.enqueue(_make_envelope(2))
+        assert spool.drain_one()
+        assert len(manifests) == 1
+        spool.close_and_seal()  # Graceful stop.
+        assert len(manifests) == 2
+        monkeypatch.undo()
+        for manifest in manifests:
+            row = catalog.chunk(str(manifest["chunk_id"]))
+            assert row is not None
+            assert verify_chunk(layout, catalog, row, {})["result"] == "VERIFIED"
+
+
 def test_verify_raw_cli_offline_detection(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -175,7 +238,7 @@ def test_cli_verify_raw_command(
             collector_version="0.1.0+test",
         )
         writer.append(_make_envelope(1))
-        writer.seal(layout=layout, catalog=catalog)
+        manifest = writer.seal(layout=layout, catalog=catalog)
 
     monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(tmp_path))
     exit_code = main(["verify-raw"])
@@ -186,48 +249,12 @@ def test_cli_verify_raw_command(
     assert output_data["verified_files"] == 1
     assert output_data["failed_files"] == 0
 
-
-def test_config_live_raw_verification_setting() -> None:
-    """Verify config defaults and environment toggle for live raw verification."""
-    fake_home = Path("/Users/config-test-user")
-    config = load_config(environ={}, home=fake_home).config
-    assert config.live_raw_verification_enabled is False
-
-    # Enabled via environment
-    env_config = load_config(
-        home=fake_home,
-        environ={"BINANCE_MARKET_RECORDER_LIVE_RAW_VERIFICATION_ENABLED": "1"},
-    ).config
-    assert env_config.live_raw_verification_enabled is True
-
-
-def test_runtime_does_not_spawn_verification_worker_by_default(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Verify ServiceRuntime does not launch verification task during capture by default."""
-    config = RecorderConfig(
-        data_root=tmp_path / "data",
-        spot_symbols=("BTCUSDT",),
-        usdm_symbols=(),
-        rotation_seconds=900.0,
-        durability_interval_seconds=1.0,
-    )
-    assert config.live_raw_verification_enabled is False
-
-    runtime = ServiceRuntime(config=config, logger=logging.getLogger("test.m2_1"))
-    tasks_created: list[str] = []
-    original_create_task = asyncio.create_task
-
-    def track_create_task(coro: Any, *, name: str | None = None, **kwargs: Any) -> Any:
-        if name:
-            tasks_created.append(name)
-        coro.close()
-        return original_create_task(asyncio.sleep(0), name=name or "mock")
-
-    monkeypatch.setattr(asyncio, "create_task", track_create_task)
-    runtime.request_stop("TEST_STOP")
-
-    with pytest.raises(RuntimeError):
-        asyncio.run(runtime.run())
-
-    assert "GLOBAL:raw-verification-owner" not in tasks_created
+    chunk_id = str(manifest["chunk_id"])
+    artifact = layout.sealed / f"{UUID(chunk_id).hex}.bmdr.zst"
+    corrupted = bytearray(artifact.read_bytes())
+    corrupted[-1] ^= 1
+    artifact.write_bytes(corrupted)
+    assert main(["verify-raw", "--chunk-id", chunk_id]) == 2
+    failure = json.loads(capsys.readouterr().out)
+    assert failure["processed_files"] == 1
+    assert failure["failed_this_batch"] == 1

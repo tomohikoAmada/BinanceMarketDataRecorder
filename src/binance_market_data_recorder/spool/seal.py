@@ -8,7 +8,7 @@ seal_partial() 与 live clean-writer 入口共享 ACTIVE/RECOVERED -> SEALING ->
 2. SEALING 转换:在 Catalog 中记录意图(幂等键防重放)。
 3. compress:Zstd level 3 带 content-size 和 checksum,写入 sealed 目录中的
    .partial 文件,然后 fsync。
-4. 解压回读:解压并哈希以验证压缩 artifact 与原始解压数据匹配。
+4. 流式哈希:压缩时计算源和目标 SHA-256,不重开新 artifact 解压回读。
 5. 原子重命名到 sealed/ 并 fsync 目录。
 6. manifest:JSON 文档,绑定 chunk 身份、统计信息、压缩参数和双重哈希
    (存储 + 解压)。
@@ -36,6 +36,7 @@ import os
 import re
 import time
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
@@ -214,43 +215,34 @@ class _HashingWriter:
         self.byte_count = 0
 
     def write(self, data: bytes) -> int:
+        view = memoryview(data)
+        while view:
+            written = self.target.write(view)
+            if written is None or written <= 0:
+                raise OSError("compressed write made no progress")
+            view = view[written:]
         self.digest.update(data)
         self.byte_count += len(data)
-        return self.target.write(data)
+        return len(data)
 
     def flush(self) -> None:
         self.target.flush()
 
 
-class _CompressionResult(tuple[int, int]):
-    """Tuple of (source_bytes, stored_bytes) carrying stored_sha256 and source_sha256."""
+@dataclass(frozen=True, slots=True)
+class _CompressionResult:
+    """Byte counts and hashes from the single compression pass."""
 
     source_bytes: int
     stored_bytes: int
     stored_sha256: str
     source_sha256: str
 
-    def __new__(
-        cls,
-        source_bytes: int,
-        stored_bytes: int,
-        stored_sha256: str,
-        source_sha256: str = "",
-    ) -> _CompressionResult:
-        obj = super().__new__(cls, (source_bytes, stored_bytes))
-        obj.source_bytes = source_bytes
-        obj.stored_bytes = stored_bytes
-        obj.stored_sha256 = stored_sha256
-        obj.source_sha256 = source_sha256
-        return obj
-
 
 def _compress(
     source_path: Path,
     target_partial: Path,
     source_size: int,
-    *,
-    expected_source_sha256: str | None = None,
 ) -> _CompressionResult:
     compressor = zstandard.ZstdCompressor(
         level=ZSTD_LEVEL,
@@ -290,14 +282,6 @@ def _compress(
     if source_bytes != source_size or hashing_source.byte_count != source_size:
         raise SealError("compressor source byte count mismatch")
     source_sha256 = hashing_source.digest.hexdigest()
-    if (
-        expected_source_sha256 is not None
-        and source_sha256 != expected_source_sha256
-    ):
-        raise SealError(
-            "compressor source hash/readback mismatch: "
-            f"expected {expected_source_sha256} but got {source_sha256}"
-        )
     if stored_bytes != stored_size or hashing_target.byte_count != stored_size:
         raise SealError("compressor stored byte count mismatch")
     return _CompressionResult(
@@ -361,23 +345,12 @@ def _manifest(
     layout: StorageLayout,
     sealed: Path,
     *,
-    stored_bytes: int | None = None,
-    stored_sha256: str | None = None,
-    readback: ArtifactReadback | None = None,
+    stored_bytes: int,
+    stored_sha256: str,
     recovery: dict[str, object] | None,
     forced_flags: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
     statistics = evidence.statistics.mutable_copy()
-    manifest_stored_bytes = (
-        stored_bytes
-        if stored_bytes is not None
-        else (readback.stored_bytes if readback is not None else 0)
-    )
-    manifest_stored_sha256 = (
-        stored_sha256
-        if stored_sha256 is not None
-        else (readback.stored_sha256 if readback is not None else "")
-    )
     capture_flags = set(statistics.capture_flags)
     if recovery is not None:
         capture_flags.add("recovered_tail")
@@ -441,8 +414,8 @@ def _manifest(
         "resync": "orderbook_resync" in capture_flags,
         "sealed_at_utc_ns": sealed_at,
         "sequence_ranges": statistics.sequence_ranges(),
-        "stored_bytes": manifest_stored_bytes,
-        "stored_sha256": manifest_stored_sha256,
+        "stored_bytes": stored_bytes,
+        "stored_sha256": stored_sha256,
         "stream": evidence.header.stream,
         "symbol": evidence.header.symbol,
         "uncompressed_bytes": evidence.file_size,
@@ -480,7 +453,6 @@ def seal_partial(
     catalog: Catalog,
     forced_flags: frozenset[str] = frozenset(),
     seal_intent: Mapping[str, object] | None = None,
-    verify_readback: bool = False,
 ) -> dict[str, object]:
     """Seal a closed partial idempotently; never delete it before Catalog commit.
 
@@ -510,7 +482,6 @@ def seal_partial(
         catalog=catalog,
         forced_flags=forced_flags,
         seal_intent=seal_intent,
-        verify_readback=verify_readback,
     )
 
 
@@ -521,7 +492,6 @@ def _seal_clean_writer(
     catalog: Catalog,
     forced_flags: frozenset[str] = frozenset(),
     seal_intent: Mapping[str, object] | None = None,
-    verify_readback: bool = False,
 ) -> dict[str, object]:
     """Consume one live writer's clean evidence and use the shared seal protocol."""
 
@@ -534,7 +504,6 @@ def _seal_clean_writer(
         catalog=catalog,
         forced_flags=forced_flags,
         seal_intent=seal_intent,
-        verify_readback=verify_readback,
     )
 
 
@@ -545,7 +514,6 @@ def _seal_verified(
     catalog: Catalog,
     forced_flags: frozenset[str],
     seal_intent: Mapping[str, object] | None,
-    verify_readback: bool = False,
 ) -> dict[str, object]:
     """The one durable ACTIVE/RECOVERED -> SEALING -> SEALED protocol."""
 
@@ -604,42 +572,13 @@ def _seal_verified(
     else:
         if target_partial.exists():
             target_partial.unlink()
-        try:
-            compress_result = _compress(
-                path,
-                target_partial,
-                verified.file_size,
-                expected_source_sha256=verified.uncompressed_sha256,
-            )
-        except TypeError:
-            compress_result = _compress(
-                path,
-                target_partial,
-                verified.file_size,
-            )
-        consumed_bytes, stored_bytes = compress_result
-        if consumed_bytes != verified.file_size:
+        compressed = _compress(path, target_partial, verified.file_size)
+        if compressed.source_bytes != verified.file_size:
             raise SealError("compressor source byte count mismatch")
-        source_sha256 = getattr(compress_result, "source_sha256", None)
-        if source_sha256 and source_sha256 != verified.uncompressed_sha256:
-            raise SealError(
-                "compressor source hash/readback mismatch: "
-                f"expected {verified.uncompressed_sha256} but got {source_sha256}"
-            )
-        stored_sha256_attr = getattr(compress_result, "stored_sha256", None)
-        stored_sha256 = (
-            str(stored_sha256_attr) if stored_sha256_attr is not None else ""
-        )
-        if verify_readback or not stored_sha256:
-            readback = _artifact_identity(target_partial)
-            decompressed_bytes = readback.uncompressed_bytes
-            decompressed_sha256 = readback.uncompressed_sha256
-            if decompressed_bytes != verified.file_size:
-                raise SealError("compressed readback size mismatch")
-            if decompressed_sha256 != verified.uncompressed_sha256:
-                raise SealError("compressed readback hash mismatch")
-            stored_bytes = readback.stored_bytes
-            stored_sha256 = readback.stored_sha256
+        if compressed.source_sha256 != verified.uncompressed_sha256:
+            raise SealError("compressor source hash mismatch")
+        stored_bytes = compressed.stored_bytes
+        stored_sha256 = compressed.stored_sha256
         os.replace(target_partial, sealed)
         fsync_directory(layout.sealed)
 

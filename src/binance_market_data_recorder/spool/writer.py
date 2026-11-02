@@ -16,7 +16,7 @@ RawChunkWriter 为单个 market/symbol/stream 元组持有一个 .partial 文件
   connection transition、SHA-256 与 verified byte count 只在完整写入后共同提交。
 - 任意不明确的 write/evidence/fsync/close 失败永久 poison clean evidence;
   final fsync + close 成功后 evidence 只能被 live seal 入口消费一次。
-- close() 是幂等的;密封转换由 StreamSpool 处理。
+- close() 是幂等的;seal() 与 StreamSpool 共用密封转换。
 """
 
 from __future__ import annotations
@@ -438,7 +438,6 @@ class RawChunkWriter:
         catalog: Catalog | None = None,
         forced_flags: frozenset[str] = frozenset(),
         seal_intent: Mapping[str, object] | None = None,
-        verify_readback: bool = False,
     ) -> dict[str, object]:
         """Seal this writer using the shared durable seal protocol."""
         from .seal import _seal_clean_writer
@@ -449,7 +448,6 @@ class RawChunkWriter:
             catalog=catalog or self.catalog,
             forced_flags=forced_flags,
             seal_intent=seal_intent,
-            verify_readback=verify_readback,
         )
 
     def abort(self) -> None:

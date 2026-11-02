@@ -1,4 +1,4 @@
-"""One bounded verification child, restarted by the service without stopping capture."""
+"""One bounded offline verification batch; the capture service does not schedule it."""
 
 from __future__ import annotations
 

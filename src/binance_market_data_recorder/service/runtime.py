@@ -882,7 +882,6 @@ class ServiceRuntime:
         supervisor_task: asyncio.Task[None] | None = None
         capacity_task: asyncio.Task[dict[str, object] | None] | None = None
         report_task: asyncio.Task[None] | None = None
-        verification_task: asyncio.Task[None] | None = None
         failure: BaseException | None = None
         try:
             self.started_at_utc_ns = self.utc_clock_ns()
@@ -996,25 +995,6 @@ class ServiceRuntime:
                 DailyReportWorker(self.layout.root, self.logger).run(stop),
                 name="GLOBAL:daily-report-owner",
             )
-            if self.config.live_raw_verification_enabled:
-                verification_budget = max(
-                    512 * 1024 * 1024,
-                    3 * (self.config.rotation_bytes + self.config.max_frame_bytes + 128 * 1024),
-                )
-                verification_task = asyncio.create_task(
-                    DailyReportWorker(
-                        self.layout.root,
-                        self.logger,
-                        interval_seconds=10,
-                        module="binance_market_data_recorder.service.verification_worker",
-                        operation="raw_verification",
-                        extra_arguments=(str(verification_budget),),
-                        report_timeout_seconds=max(
-                            300, verification_budget / (16 * 1024 * 1024) + 60
-                        ),
-                    ).run(stop),
-                    name="GLOBAL:raw-verification-owner",
-                )
             await asyncio.sleep(0)
             await self._write_state()
             required_tasks: set[asyncio.Task[Any]] = {supervisor_task, heartbeat_task}
@@ -1054,8 +1034,6 @@ class ServiceRuntime:
                 stop.set()
                 recovery_stop.set()
                 cleanup_failure: BaseException | None = None
-                if verification_task is not None:
-                    await asyncio.gather(verification_task, return_exceptions=True)
                 if report_task is not None:
                     await asyncio.gather(report_task, return_exceptions=True)
                 if heartbeat_task is not None:

@@ -30,6 +30,7 @@ from binance_market_data_recorder.service.lock import (
     ServiceProcessLock,
 )
 from binance_market_data_recorder.service.power import CaffeinateAssertion
+from binance_market_data_recorder.service.report_worker import DailyReportWorker
 from binance_market_data_recorder.service.runtime import (
     RuntimeCollector,
     ServiceRuntime,
@@ -203,6 +204,47 @@ def _vps_identity() -> RuntimeDeploymentIdentity:
         systemd_unit_sha256="e" * 64,
         capacity_profile_id="vps-production-v1",
     )
+
+
+def test_running_capture_has_no_background_raw_verifier(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        collectors = {ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot")}
+        report_started = asyncio.Event()
+        worker_modules: list[str] = []
+
+        async def report_run(
+            worker: DailyReportWorker, stop: asyncio.Event,
+        ) -> None:
+            worker_modules.append(worker.arguments[2])
+            report_started.set()
+            await stop.wait()
+
+        monkeypatch.setattr(DailyReportWorker, "run", report_run)
+        runtime = ServiceRuntime(
+            config=_config(tmp_path), logger=logging.getLogger("test.m2_1.runtime"),
+            collector_factory=lambda *args: collectors,
+            power_assertion=FakePowerAssertion(), sleep_observer_factory=FakeSleepObserver,
+        )
+        task = asyncio.create_task(runtime.run())
+        try:
+            async with asyncio.timeout(3):
+                await report_started.wait()
+                while not all(item.started for item in collectors.values()):
+                    await asyncio.sleep(0)
+                while (state := runtime.state_store.read()) is None or state["status"] != "RUNNING":
+                    await asyncio.sleep(0)
+            assert worker_modules == ["binance_market_data_recorder.metrics.maintenance"]
+            assert "GLOBAL:raw-verification-owner" not in {
+                item.get_name() for item in asyncio.all_tasks()
+            }
+        finally:
+            runtime.request_stop("test-complete")
+            await asyncio.wait_for(task, timeout=3)
+        assert all(item.stopped for item in collectors.values())
+
+    asyncio.run(exercise())
 
 
 @pytest.mark.parametrize("phase", ["startup", "recovery", "running"])

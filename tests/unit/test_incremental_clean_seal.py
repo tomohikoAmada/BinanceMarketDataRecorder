@@ -5,6 +5,7 @@ import os
 import random
 import struct
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
@@ -31,7 +32,6 @@ from binance_market_data_recorder.spool.format import (
     encode_chunk_header,
     scan_chunk,
 )
-from binance_market_data_recorder.spool.readback import ArtifactReadback
 from binance_market_data_recorder.spool.recovery import recover_partials, recover_storage
 from binance_market_data_recorder.spool.seal import (
     RECONNECT_GAP_FLAG,
@@ -522,7 +522,7 @@ def test_clean_seal_fails_closed_after_source_mutation(
 
         def mutate_then_compress(
             source_path: Path, target_path: Path, source_size: int
-        ) -> tuple[int, int]:
+        ) -> seal_module._CompressionResult:
             raw = bytearray(source_path.read_bytes())
             with source_path.open("rb", buffering=0) as source:
                 _header, header_bytes = decode_chunk_header(source)
@@ -540,7 +540,7 @@ def test_clean_seal_fails_closed_after_source_mutation(
             return real_compress(source_path, target_path, source_size)
 
         monkeypatch.setattr(seal_module, "_compress", mutate_then_compress)
-        with pytest.raises(SealError, match=r"(byte count|readback)"):
+        with pytest.raises(SealError, match=r"(byte count|hash mismatch)"):
             _seal_clean_writer(writer, layout=layout, catalog=catalog)
         assert catalog.state(str(writer.header.chunk_id)) is ChunkState.SEALING
         assert writer.path.exists()
@@ -717,7 +717,7 @@ def test_lost_clean_memory_after_close_is_recovered_only_by_scan(
 
 @pytest.mark.parametrize(
     "failure_phase",
-    ["sealing", "compression", "readback", "rename", "manifest", "catalog_sealed"],
+    ["sealing", "compression", "rename", "manifest", "catalog_sealed"],
 )
 def test_clean_seal_failure_boundaries_retain_source_and_never_false_seal(
     tmp_path: Path,
@@ -754,12 +754,6 @@ def test_clean_seal_failure_boundaries_retain_source_and_never_false_seal(
                     OSError("injected compression failure")
                 ),
             )
-        elif failure_phase == "readback":
-            monkeypatch.setattr(
-                seal_module,
-                "_artifact_identity",
-                lambda _path: ArtifactReadback(0, "0" * 64, 0, "0" * 64),
-            )
         elif failure_phase == "rename":
 
             def fail_replace(source: object, target: object) -> None:
@@ -782,7 +776,6 @@ def test_clean_seal_failure_boundaries_retain_source_and_never_false_seal(
                 writer,
                 layout=layout,
                 catalog=catalog,
-                verify_readback=(failure_phase == "readback"),
             )
         assert writer.path.exists()
         assert catalog.state(str(writer.header.chunk_id)) is not ChunkState.SEALED
@@ -829,9 +822,9 @@ def test_compressor_reported_source_count_is_an_explicit_gate(
 
         def wrong_count(
             source: Path, target: Path, source_size: int
-        ) -> tuple[int, int]:
-            consumed, stored = real_compress(source, target, source_size)
-            return consumed - 1, stored
+        ) -> seal_module._CompressionResult:
+            result = real_compress(source, target, source_size)
+            return replace(result, source_bytes=result.source_bytes - 1)
 
         monkeypatch.setattr(seal_module, "_compress", wrong_count)
         with pytest.raises(SealError, match="source byte count"):

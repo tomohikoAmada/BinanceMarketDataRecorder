@@ -248,12 +248,13 @@
   - 实时采集封存一个分片的磁盘全文件解压读取次数从 `2` 次直接降至 **`0` 次**（纯流式写盘 + `fsync`）；
   - 手动执行 `verify-raw` CLI 与崩溃 `.partial` 恢复测试依然 100% 检出任何损坏或截断帧。
 
-- **完成状态（2026-11-02 独立复核与执行完成）**：
-  - **实时封存零回读落地**：在 `spool/seal.py` 的 `_compress()` 中实现流式哈希读写包装类 `_HashingReader` 与 `_HashingWriter`，在将 `.partial` 压缩为 `.zst.partial` 的单次流式写入时，同步计算并校验未压缩 `SHA-256`（与内存证据对照）并计算压缩后 `stored_sha256` 与 `stored_bytes`；`_seal_verified` 默认设置 `verify_readback=False`，不再重新打开 `.zst` 文件做全文件解压回读，封存回读次数直接降至 **`0` 次**。
-  - **关闭后台重验循环**：在 `RecorderConfig` 增加 `live_raw_verification_enabled: bool = False`（默认关闭，支持环境变量 `BINANCE_MARKET_RECORDER_LIVE_RAW_VERIFICATION_ENABLED` 覆盖）；`ServiceRuntime.run()` 采集运行期默认不再创建 `GLOBAL:raw-verification-owner` 循环子进程，彻底消除每 10 秒对磁盘与 CPU 的争抢。
-  - **`RawChunkWriter.seal()` 与 CLI 支持**：在 `RawChunkWriter` 新增 `seal()` 方法桥接封存协议；在 CLI 正式提供 `binance-market-recorder verify-raw` 子命令，供运维人员手动执行离线批次校验。
-  - **非实时独立全文件校验保留**：崩溃恢复扫描与对账（`spool/recovery.py`）、跨盘归档拷贝后验证（`archive/manager.py`）及离线抽检命令行（`cli.py`）的逐帧全量回读与校验能力全部完好保留，并验证在分片损坏时 100% 检出。
-  - **专项与全量验证**：新增专项测试 [`tests/unit/test_m2_1_zero_readback.py`](../tests/unit/test_m2_1_zero_readback.py)（6 项通过）；全量回归 `pytest -q` **2,516 passed / 24 skipped / 5 deselected**；`ruff check .`、`mypy`（367 文件无错误）、`verify_m0_contracts.py`、Go Raw v1 golden 独立验证器与 `git diff --check` 全部绿灯通过。详见 [`M2.1 复核记录`](benchmarks/m2.1-review-20261102.md)。
+- **完成状态（2026-11-02 再次独立复核并补齐）**：
+  - 原 `b76eae6` 已实现正常封存零解压回读，并保留崩溃恢复、归档校验与 `verify-raw` CLI；但仍留有采集期后台重验配置开关、为旧测试模拟器保留的 `TypeError` 重试 / tuple 兼容 / 缺失哈希时回读，以及未真正跑到采集阶段的运行时测试，不能按“彻底移除”直接签收。
+  - 已删除 `live_raw_verification_enabled` 配置、环境变量及运行时后台重验任务；删除封存的 `verify_readback` 开关和兼容回退。压缩结果改为普通 dataclass，manifest 必须直接接收压缩时得到的大小与摘要，不再用空摘要或零大小作默认值。旧测试模拟器随内部接口更新。
+  - `_HashingReader` / `_HashingWriter` 在压缩所需的一次源读取和目标写入中计算 SHA-256；源摘要只与 Writer/恢复扫描证据比较一次。修复压缩目标短写：写满当前缓冲区后再累计摘要，写入无进展则保留源文件并报错；7 字节短写故障在原实现失败、修复后独立逐帧验证通过。正常封存新 `.zst` 的全文件解压读取次数为 **0**；压缩仍需读未压缩 `.partial`，不宣称所有磁盘读取为零。
+  - 现有 `.zst` 的幂等崩溃恢复核对、`.partial` 截断/校验和恢复、归档复制验证与手动独立校验保留。`verify-raw` 默认有界消费待校验队列；复查已经校验过的分片使用 `verify-raw --chunk-id <UUID>`，并按分片大小配置已有预算参数。
+  - 新验收直接拦截 `Path.open`：实际 `StreamSpool` 大小轮换与优雅停机期间不得打开压缩 Raw 读取，随后独立验证产物；运行时测试实际进入 `RUNNING` 并停止 FakeCollector，确认仅保留日报 worker、没有 Raw 重验任务；CLI 首次通过后损坏同一分片，再按 ID 复验必须检出并返回退出码 `2`。
+  - 本次全量离线回归 **2,516 passed / 24 skipped / 5 deselected**（13 条既有 fork 弃用警告）；Ruff、mypy（367 文件）、M0 契约、Go Raw v1 golden 与 `git diff --check` 全通过。定向 114 项及详细边界见 [`M2.1 复核记录`](benchmarks/m2.1-review-20261102.md)。本次仅补齐 M2.1；下一项为 M2.2，未进行 VPS 部署。
 
 ---
 
@@ -444,6 +445,6 @@
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
-| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
+| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |
