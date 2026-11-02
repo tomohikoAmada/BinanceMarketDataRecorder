@@ -9,27 +9,37 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import sqlite3
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
-from binance_market_data_recorder.archive.manager import ArchiveState
+import pytest
+
+from binance_market_data_recorder.archive.remote_authorization import RemoteAuthorizer
+from binance_market_data_recorder.archive.remote_delete import RemoteDeleter
 from binance_market_data_recorder.binance.coverage_config import CoverageConfig
 from binance_market_data_recorder.binance.public_sources import Source
 from binance_market_data_recorder.collector.availability import AvailabilityJournal
 from binance_market_data_recorder.collector.coverage import SelectedAssetCapture
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.metrics.continuity import continuity_report
-from binance_market_data_recorder.spool.recovery import recover_storage
+from binance_market_data_recorder.spool.recovery import reconcile_sealed, recover_storage
 from binance_market_data_recorder.spool.seal import seal_partial
 from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import (
+    ArchiveState,
     Catalog,
     ChunkState,
 )
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from tests.factories import event
 from tests.integration.test_p2_capture import Client
+from tests.remote_authorization_support import build_receipt, prepare_remote_authorization
+from tests.unit.test_p3_availability import owner_at
 
 BASE = 1_800_000_000_000_000_000
 SECOND = 1_000_000_000
@@ -124,12 +134,12 @@ def test_catalog_pragma_default_wal_normal_and_barrier_full(tmp_path: Path) -> N
             stored_sha256="def",
         )
         catalog.transition_archive(
-            tx["transaction_id"],
+            str(tx["transaction_id"]),
             ArchiveState.VERIFYING,
             idempotency_key="verifying:1",
         )
         catalog.transition_archive(
-            tx["transaction_id"],
+            str(tx["transaction_id"]),
             ArchiveState.VERIFIED,
             idempotency_key="verified:1",
             verified_at_utc_ns=BASE + 10,
@@ -141,7 +151,7 @@ def test_catalog_pragma_default_wal_normal_and_barrier_full(tmp_path: Path) -> N
 
         # Transition to LOCAL_DELETE_PENDING (irreversible authorization)
         catalog.transition_archive(
-            tx["transaction_id"],
+            str(tx["transaction_id"]),
             ArchiveState.LOCAL_DELETE_PENDING,
             idempotency_key="pending:1",
         )
@@ -152,7 +162,7 @@ def test_catalog_pragma_default_wal_normal_and_barrier_full(tmp_path: Path) -> N
         tracker.executed_pragmas.clear()
         # Transition to LOCAL_DELETED
         catalog.transition_archive(
-            tx["transaction_id"],
+            str(tx["transaction_id"]),
             ArchiveState.LOCAL_DELETED,
             idempotency_key="deleted:1",
             local_deleted_at_utc_ns=BASE + 20,
@@ -247,8 +257,8 @@ def test_shared_watermark_steady_state_reduction_and_restart(tmp_path: Path) -> 
             catalog=catalog,
             clients={"spot": Client(), "usdm": Client(), "coinm": Client()},
         )
-        # Create ~200 simulated sources
-        for i in range(200):
+        # Exercise the planned BTC + ETH source count without network traffic.
+        for i in range(4660):
             source = Source(
                 family="S01",
                 venue_market="spot",
@@ -267,7 +277,7 @@ def test_shared_watermark_steady_state_reduction_and_restart(tmp_path: Path) -> 
         assert len(capture.availability.pending) > 0
         asyncio.run(capture._flush_availability(all_pending=True))
         assert len(capture.availability.pending) == 0
-        assert len(catalog.source_availability()) == 203
+        assert len(catalog.source_availability()) == 4663
 
         # Track writes during steady-state health over 10 seconds
         persist_calls: list[int] = []
@@ -277,8 +287,10 @@ def test_shared_watermark_steady_state_reduction_and_restart(tmp_path: Path) -> 
             persist_calls.append(len(batch))
             return original_persist(batch, *args, **kwargs)
 
-        catalog.persist_source_availability = tracking_persist  # type: ignore[assignment]
+        catalog.persist_source_availability = tracking_persist  # type: ignore[method-assign]
 
+        statements: list[str] = []
+        catalog._connection.set_trace_callback(statements.append)
         # Simulate 10 one-second observation loops with steady health
         for sec in range(1, 11):
             now = BASE + sec * SECOND
@@ -291,6 +303,10 @@ def test_shared_watermark_steady_state_reduction_and_restart(tmp_path: Path) -> 
         # exactly 1 transaction writing 0 batch items + 1 watermark row
         assert len(persist_calls) == 1
         assert persist_calls[0] == 0  # 0 individual source rows!
+        writes = [sql for sql in statements if sql.startswith(("INSERT", "UPDATE", "DELETE"))]
+        assert len(writes) == 1
+        assert writes[0].startswith("INSERT INTO source_availability_watermark(")
+        catalog._connection.set_trace_callback(None)
         watermark = catalog.source_availability_watermark(capture.source_selection_id)
         assert watermark == BASE + 10 * SECOND
 
@@ -303,7 +319,7 @@ def test_shared_watermark_steady_state_reduction_and_restart(tmp_path: Path) -> 
             if state["unavailable_since_utc_ns"] is None:
                 assert state["observed_at_utc_ns"] == BASE + 10 * SECOND
                 healthy_count += 1
-        assert healthy_count == 200
+        assert healthy_count == 4660
 
         # Restarted journal ensures sources at T + 12s (2s restart window)
         restarted_journal = AvailabilityJournal("inst-2")
@@ -328,7 +344,7 @@ def test_shared_watermark_steady_state_reduction_and_restart(tmp_path: Path) -> 
         assert src_rep["unavailable_or_unknown_ns"] == 2 * SECOND
 
 
-def test_wal_rollback_recovery_reconcile_and_unknown_tail(tmp_path: Path) -> None:
+def test_catalog_state_reversion_reconcile_and_unknown_tail(tmp_path: Path) -> None:
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         # Record initial baseline availability for the source at BASE
@@ -361,7 +377,7 @@ def test_wal_rollback_recovery_reconcile_and_unknown_tail(tmp_path: Path) -> Non
         # Record a watermark at T1 = BASE + 5s
         catalog.persist_source_availability_watermark("assets:BTC", BASE + 5 * SECOND)
 
-        # 2. Simulate WAL rollback before crash:
+        # 2. Logical stale-state model; actual WAL truncation is tested separately below.
         # Revert the chunk state in Catalog back to ACTIVE and watermark to T0 = BASE
         with catalog._transaction() as connection:
             connection.execute(
@@ -391,3 +407,259 @@ def test_wal_rollback_recovery_reconcile_and_unknown_tail(tmp_path: Path) -> Non
         restarted.previous = avail
         s = restarted.ensure("spot/BTCUSDT/trade/ws", BASE + 10 * SECOND)
         assert s.unavailable_since == BASE
+
+
+def test_full_barrier_restores_normal_when_begin_fails(tmp_path: Path) -> None:
+    class BusyConnection(ConnectionTracker):
+        def execute(self, sql: str, *args: Any, **kwargs: Any) -> Any:
+            if sql == "BEGIN IMMEDIATE":
+                raise sqlite3.OperationalError("injected database is locked")
+            return super().execute(sql, *args, **kwargs)
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        connection = catalog._connection
+        catalog._connection = BusyConnection(connection)  # type: ignore[assignment]
+        try:
+            with (
+                pytest.raises(sqlite3.OperationalError, match="injected"),
+                catalog._transaction(force_sync=True),
+            ):
+                pytest.fail("BEGIN should have failed")
+            assert connection.execute("PRAGMA synchronous").fetchone()[0] == 1
+            assert not connection.in_transaction
+        finally:
+            catalog._connection = connection
+
+
+def test_remote_authorization_and_deletion_full_barrier_order(tmp_path: Path) -> None:
+    fixture = prepare_remote_authorization(tmp_path)
+    layout = fixture.prepared.layout
+    receipt = build_receipt(fixture)
+    with Catalog(layout.catalog) as catalog:
+        statements: list[str] = []
+        catalog._connection.set_trace_callback(statements.append)
+        RemoteAuthorizer(layout=layout, catalog=catalog).authorize(
+            receipt.canonical_bytes(), fixture.selections[0],
+        )
+        # The authorization is durable before any physical source deletion.
+        assert fixture.selections[0].sealed_path.exists()
+        for phase in ("authorize", "delete"):
+            if phase == "delete":
+                statements.clear()
+                RemoteDeleter(layout=layout, catalog=catalog).delete_authorized(receipt.receipt_id)
+            full = statements.index("PRAGMA synchronous = FULL")
+            begin = statements.index("BEGIN IMMEDIATE", full)
+            commit = statements.index("COMMIT", begin)
+            checkpoint = statements.index("PRAGMA wal_checkpoint(PASSIVE)", commit)
+            normal = statements.index("PRAGMA synchronous = NORMAL", checkpoint)
+            assert full < begin < commit < checkpoint < normal
+            assert catalog._connection.execute("PRAGMA synchronous").fetchone()[0] == 1
+        assert not fixture.selections[0].sealed_path.exists()
+
+
+@pytest.mark.parametrize("bound", ["batches", "deadline"])
+def test_watermark_waits_for_all_transitions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bound: str,
+) -> None:
+    async def scenario() -> None:
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = owner_at(tmp_path, catalog)
+            owner.sources.clear()
+            for i in range(200):
+                source = Source("S01", "spot", "spot", "BTCUSDT", f"stream-{i}", "ws", "/ws", 0)
+                owner.add_source(source)
+                owner.sources[source.key].connected = True
+            owner._observe_availability(BASE)
+            await owner._flush_availability(all_pending=True)
+            owner.availability.failure("spot/BTCUSDT/stream-0/ws", BASE + SECOND, "TimeoutError")
+            for sec in range(1, 11):
+                owner._observe_availability(BASE + sec * SECOND)
+            # Leave an outage beyond the first batch of pending checkpoints.
+            key = "/".join(source.key)
+            owner.availability.failure(key, BASE + 10 * SECOND, "TimeoutError")
+            if bound == "batches":
+                monkeypatch.setattr(
+                    "binance_market_data_recorder.collector.coverage."
+                    "AVAILABILITY_FLUSH_MAX_BATCHES", 1,
+                )
+            else:
+                monkeypatch.setattr(
+                    "binance_market_data_recorder.collector.coverage."
+                    "AVAILABILITY_FLUSH_SECONDS", 0,
+                )
+            await owner._flush_availability()
+            assert owner.availability.pending
+            assert catalog.source_availability_watermark(owner.source_selection_id) == BASE
+            assert owner._last_watermark_flush_utc_ns == BASE
+            await owner._flush_availability(all_pending=True)
+            assert not owner.availability.pending
+            assert catalog.source_availability_watermark(owner.source_selection_id) == (
+                BASE + 10 * SECOND
+            )
+            assert catalog.source_availability()[key]["unavailable_since_utc_ns"] == (
+                BASE + 10 * SECOND
+            )
+
+    asyncio.run(scenario())
+
+
+def test_failed_watermark_commit_is_retried(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def scenario() -> None:
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = owner_at(tmp_path, catalog)
+            owner._observe_availability(BASE)
+            persist = catalog.persist_source_availability
+
+            def fail(batch: list[dict[str, Any]], **kwargs: Any) -> None:
+                if kwargs.get("watermark") is not None:
+                    raise sqlite3.OperationalError("injected write failure")
+                persist(batch, **kwargs)
+
+            monkeypatch.setattr(catalog, "persist_source_availability", fail)
+            with pytest.raises(sqlite3.OperationalError, match="injected"):
+                await owner._flush_availability(all_pending=True)
+            assert owner._last_watermark_flush_utc_ns is None
+            assert owner.availability.pending
+            monkeypatch.setattr(catalog, "persist_source_availability", persist)
+            await owner._flush_availability(all_pending=True)
+            assert catalog.source_availability_watermark(owner.source_selection_id) == BASE
+
+    asyncio.run(scenario())
+
+
+def test_watermarks_only_cover_the_sources_observed_by_their_owner(tmp_path: Path) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        selections = (("old", "selection-old"), ("new", "selection-new"), ("legacy", None))
+        for key, selection in selections:
+            journal = AvailabilityJournal(key, selection_id=selection)
+            journal.valid(key, BASE)
+            flush(journal, catalog)
+        catalog.persist_source_availability_watermark("selection-old", BASE + SECOND)
+        catalog.persist_source_availability_watermark("selection-new", BASE + 10 * SECOND)
+        states = catalog.source_availability()
+        assert states["old"]["observed_at_utc_ns"] == BASE + SECOND
+        assert states["new"]["observed_at_utc_ns"] == BASE + 10 * SECOND
+        assert states["legacy"]["observed_at_utc_ns"] == BASE
+        # A monitor checkpoint does not manufacture a later payload receive time.
+        assert states["new"]["last_valid_utc_ns"] == BASE
+        report = continuity_report(catalog, start=BASE, end=BASE + 12 * SECOND)
+        assert {s["source_id"]: s["unavailable_or_unknown_ns"] for s in report["sources"]} == {
+            "old": 11 * SECOND, "new": 2 * SECOND, "legacy": 12 * SECOND,
+        }
+        restarted = AvailabilityJournal("restart", selection_id="selection-restart")
+        restarted.previous = states
+        assert restarted.ensure("old", BASE + 12 * SECOND).unavailable_since == BASE + SECOND
+
+
+def _wal_crash_child(root: str, state: str, retain_partial: bool) -> None:
+    """Leave an uncheckpointed WAL for the parent to truncate after SIGKILL."""
+    layout = ensure_storage_layout(Path(root))
+    catalog = Catalog(layout.catalog)
+    catalog._connection.execute("PRAGMA wal_autocheckpoint=0")
+    catalog._connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    journal = AvailabilityJournal("before-crash", selection_id="selection-crash")
+    journal.valid("spot/BTCUSDT/diff_depth/ws", BASE)
+    flush(journal, catalog)
+    catalog.persist_source_availability_watermark("selection-crash", BASE)
+    wal = Path(str(layout.catalog) + "-wal")
+    retained_bytes = wal.stat().st_size
+    writer = RawChunkWriter(
+        layout=layout, catalog=catalog, market="spot", symbol="BTCUSDT", stream="diff_depth",
+        collector_instance_id="before-crash", collector_version="test", created_at_utc_ns=BASE,
+    )
+    writer.append(event(1))
+    writer.close()
+    chunk_id = str(writer.header.chunk_id)
+    if state == "SEALING":
+        catalog.transition(chunk_id, ChunkState.SEALING, idempotency_key="pre-seal", evidence={})
+    if state != "missing":
+        retained_bytes = wal.stat().st_size
+    raw = writer.path.read_bytes()
+    seal_partial(writer.path, layout=layout, catalog=catalog)
+    if retain_partial:
+        writer.path.write_bytes(raw)
+    catalog.persist_source_availability_watermark("selection-crash", BASE + 10 * SECOND)
+    print(json.dumps({"chunk_id": chunk_id, "retained_bytes": retained_bytes,
+                      "wal_bytes": wal.stat().st_size}), flush=True)
+    sys.stdin.read(1)  # The parent kills us without closing/checkpointing SQLite.
+
+
+@pytest.mark.parametrize("state", ["missing", "ACTIVE", "SEALING"])
+@pytest.mark.parametrize("retain_partial", [False, True])
+def test_real_wal_tail_truncation(
+    tmp_path: Path, state: str, retain_partial: bool,
+) -> None:
+    child_code = (
+        "from tests.unit.test_m1_2_catalog_and_availability import _wal_crash_child; "
+        "import sys; _wal_crash_child(sys.argv[1], sys.argv[2], sys.argv[3] == 'True')"
+    )
+    child = subprocess.Popen(
+        [sys.executable, "-c", child_code, str(tmp_path), state, str(retain_partial)],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    )
+    try:
+        assert child.stdout is not None
+        line = child.stdout.readline()
+        if not line:
+            _, errors = child.communicate(timeout=30)
+            pytest.fail(errors)
+        evidence = json.loads(line)
+    finally:
+        child.kill()
+        child.communicate(timeout=30)
+    layout = ensure_storage_layout(tmp_path)
+    wal = Path(str(layout.catalog) + "-wal")
+    assert evidence["wal_bytes"] > evidence["retained_bytes"] > 32
+    with wal.open("r+b") as stream:
+        stream.truncate(evidence["retained_bytes"])
+    with Catalog(layout.catalog) as catalog:
+        chunk_id = evidence["chunk_id"]
+        assert catalog.state(chunk_id) == (None if state == "missing" else ChunkState(state))
+        assert catalog.source_availability_watermark("selection-crash") == BASE
+        actions = recover_storage(layout=layout, catalog=catalog)
+        assert not [a for a in actions if a.action == "reconcile_failed"]
+        assert catalog.state(chunk_id) is ChunkState.SEALED
+        assert not list(layout.active.glob("*.partial"))
+        row = catalog.chunk(chunk_id)
+        assert row is not None and row["record_count"] == 1
+        restarted = AvailabilityJournal("after-crash")
+        restarted.previous = catalog.source_availability()
+        key = "spot/BTCUSDT/diff_depth/ws"
+        assert restarted.ensure(key, BASE + 12 * SECOND).unavailable_since == BASE
+        restarted.valid(key, BASE + 12 * SECOND)
+        flush(restarted, catalog)
+        report = continuity_report(catalog, start=BASE, end=BASE + 12 * SECOND)
+        assert report["sources"][0]["unavailable_or_unknown_ns"] == 12 * SECOND
+        # Recovery is idempotent after the roll-forward.
+        assert not [a for a in recover_storage(layout=layout, catalog=catalog)
+                    if a.action == "reconcile_failed"]
+
+
+def test_reconcile_retained_partial_uses_raw_identity_not_catalog_path(tmp_path: Path) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout, catalog=catalog, market="spot", symbol="BTCUSDT", stream="diff_depth",
+            collector_instance_id="test", collector_version="test", created_at_utc_ns=BASE,
+        )
+        writer.append(event(1))
+        writer.close()
+        raw = writer.path.read_bytes()
+        seal_partial(writer.path, layout=layout, catalog=catalog)
+        writer.path.write_bytes(raw)
+        unrelated = layout.active / "unrelated-evidence"
+        unrelated.write_bytes(b"keep")
+        with catalog._transaction() as connection:
+            connection.execute(
+                "UPDATE chunks SET state=?, partial_path=? WHERE chunk_id=?",
+                (ChunkState.ACTIVE, layout.relative(unrelated), str(writer.header.chunk_id)),
+            )
+        reconcile_sealed(layout=layout, catalog=catalog)
+        assert not writer.path.exists()
+        assert unrelated.read_bytes() == b"keep"

@@ -52,6 +52,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
+from uuid import UUID
 
 from ..storage.catalog import (
     ARCHIVE_CHUNK_STATES,
@@ -681,14 +682,11 @@ def reconcile_sealed(
                         fields=fields,
                     )
                     if target is ChunkState.SEALED:
-                        partial_path_str = row.get("partial_path")
-                        for candidate in [
-                            layout.root / str(partial_path_str) if partial_path_str else None,
-                            layout.active / f"{chunk_id}.bmdr.partial",
-                        ]:
-                            if candidate is not None and candidate.exists():
-                                candidate.unlink()
-                                fsync_directory(layout.active)
+                        candidate = layout.active / f"{UUID(chunk_id).hex}.bmdr.partial"
+                        if candidate.exists():
+                            _cleanup_retained_source(
+                                path=candidate, layout=layout, catalog=catalog,
+                            )
                     catalog_changed = True
                 except CatalogStateError:
                     # Archive may atomically reserve the chunk immediately after

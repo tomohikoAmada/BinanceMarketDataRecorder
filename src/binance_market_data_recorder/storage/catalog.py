@@ -17,7 +17,7 @@ Catalog 是 Recorder 中所有状态转换的唯一持久协调点。它存储�
   访问,确保状态转换原子性。
 - chunk_transitions、archive_transaction_events 和 deployment_events 中的
   幂等键防止崩溃后重放同一转换。
-- WAL journal mode + synchronous=FULL + foreign_keys=ON。
+- WAL journal mode + synchronous=NORMAL + foreign_keys=ON。
 - Catalog 通过 RLock 保证单个实例内的线程安全。经认证的多进程边界是一个
   Recorder 写进程、一个 Archive 写进程和一个只读 Soak observer 共享
   Catalog:SQLite WAL、30 秒 busy timeout 和 BEGIN IMMEDIATE 负责两个写
@@ -450,16 +450,17 @@ class Catalog:
         with self._lock:
             if force_sync:
                 self._connection.execute("PRAGMA synchronous = FULL")
-            self._connection.execute("BEGIN IMMEDIATE")
             try:
-                yield self._connection
-            except Exception:
-                self._connection.execute("ROLLBACK")
-                raise
-            else:
-                self._connection.execute("COMMIT")
-                if force_sync:
-                    self._connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    yield self._connection
+                except Exception:
+                    self._connection.execute("ROLLBACK")
+                    raise
+                else:
+                    self._connection.execute("COMMIT")
+                    if force_sync:
+                        self._connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
             finally:
                 if force_sync:
                     self._connection.execute("PRAGMA synchronous = NORMAL")
@@ -4628,10 +4629,25 @@ class Catalog:
             ).fetchone() is None:
                 return {}
             rows = self._connection.execute("SELECT * FROM source_availability").fetchall()
-            watermark_ns = self.source_availability_watermark(selection_id)
+            watermarks: dict[str, int] = {}
+            if self._connection.execute(
+                "SELECT 1 FROM sqlite_master "
+                "WHERE type='table' AND name='source_availability_watermark'"
+            ).fetchone():
+                watermarks = {
+                    str(row[0]): int(row[1])
+                    for row in self._connection.execute(
+                        "SELECT selection_id, evaluated_through_utc_ns "
+                        "FROM source_availability_watermark"
+                    ).fetchall()
+                }
         result: dict[str, dict[str, Any]] = {}
         for row in rows:
             data = json.loads(row["state_json"])
+            membership = data.get("selection_id")
+            watermark_ns = watermarks.get(membership) if (
+                selection_id is None or membership == selection_id
+            ) else None
             if (
                 watermark_ns is not None
                 and data.get("unavailable_since_utc_ns") is None
@@ -4640,10 +4656,6 @@ class Catalog:
                 data["observed_at_utc_ns"] = max(
                     int(data.get("observed_at_utc_ns", 0)), watermark_ns
                 )
-                if data.get("last_valid_utc_ns") is not None:
-                    data["last_valid_utc_ns"] = max(
-                        int(data["last_valid_utc_ns"]), watermark_ns
-                    )
             result[str(row["source_id"])] = data
         return result
 

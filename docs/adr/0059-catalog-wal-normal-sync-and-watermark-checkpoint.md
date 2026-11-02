@@ -1,6 +1,7 @@
 # ADR-0059: SQLite Catalog WAL+NORMAL Synchronization and Shared Availability Watermark
 
-- **Status**: Implemented (Milestone M1.2, 2026-11-02).
+- **Status**: Implemented and independently corrected (Milestone M1.2, 2026-11-02).
+- **Review**: [M1.2 evidence and corrections](../benchmarks/m1.2-review-20261102.md).
 - **Deciders**: Binance Market Data Recorder Architecture Team.
 - **Supersedes / Extends**: Extends ADR-0010, ADR-0015, ADR-0051, and ADR-0056.
 
@@ -29,7 +30,7 @@ To resolve write amplification while strictly preserving data integrity, crash c
   PRAGMA journal_mode = WAL;
   PRAGMA synchronous = NORMAL;
   ```
-- **Crash Durability Guarantee**: Under SQLite WAL mode, `synchronous = NORMAL` guarantees full atomicity and ACID crash consistency against operating system and process crashes. Transactions committed before an OS crash are preserved. In the event of catastrophic physical power loss, only transactions committed after the last WAL checkpoint might roll back, but the database itself cannot be corrupted.
+- **Crash Durability Guarantee**: In WAL mode, `synchronous = NORMAL` retains database consistency, but recent committed metadata can roll back after an OS crash or power loss. A process crash alone does not discard OS-cached writes. This is not a zero-loss metadata guarantee; sealed Raw and manifests provide roll-forward authority, and missing monitoring tails remain unknown.
 
 ### 2.2 Synchronous FULL Barrier for Irreversible Deletion Operations
 
@@ -69,23 +70,27 @@ Rather than inserting/updating thousands of individual identical rows into `sour
        updated_at_utc_ns INTEGER NOT NULL
    );
    ```
-2. **Watermark Progression**:
+2. **Selection Membership**:
+   - The watermark key is `assets:<sorted assets>:<collector_instance_id>`. Each source state stores its owning `selection_id` in the existing JSON record, requiring no new per-source table or periodic membership writes.
+   - A new process uses a new key. Old or removed sources retain their old key and cannot inherit a new process's health. Newly observed sources register their state through ordered startup transitions before any watermark can cover them.
+   - Reads apply each healthy, non-dormant source's own watermark. Legacy records without membership retain their individual observation boundary. `last_valid_utc_ns` is not advanced by the read projection.
+3. **Watermark Progression**:
    - Each observation cycle in `SelectedAssetCapture` evaluates the full admitted source set for `source_selection_id`.
    - Transitions (unavailability / recoveries) are queued in `pending`.
-   - Routine healthy sources update memory timestamps (`observed_at_utc_ns`, `last_valid_utc_ns`) without emitting individual pending rows.
-   - When all state transitions up to time $T$ have been persisted in SQLite, `source_availability_watermark` is updated to $T$ (either alongside the last transition batch or as a single-row update every 10 seconds in steady state).
+   - Routine healthy sources update memory timestamps and coalesced in-memory checkpoints. The production flusher acknowledges these checkpoints without writing individual source rows, even when the next shared checkpoint is not yet due. Standalone Journal callers retain their per-source checkpoint interface.
+   - When all state transitions up to time $T$ have been persisted in SQLite, `source_availability_watermark` is updated to $T$ (either alongside the last transition batch or as a single-row update every 10 seconds in steady state). Hitting the batch/time bound with pending entries leaves the watermark unchanged. In-memory acknowledgement of the watermark occurs only after the transaction succeeds and uses the captured timestamp, so failed commits can be retried.
    - Steady-state SQLite writes drop from ~4,660 rows per 10 seconds to **1 row per 10 seconds**.
 
 ### 2.5 Restart Semantics and WAL Tail Rollback Reconciliation
 
 1. **Confirmed Healthy Lower Bound on Startup**:
-   When a service restarts and reads `catalog.source_availability(selection_id)`:
+   When a service restarts and reads `catalog.source_availability()` with each persisted source's own selection membership:
    For any active, healthy source (`unavailable_since_utc_ns IS NULL` and not dormant), the confirmed healthy lower bound is computed as:
    $$\text{confirmed\_healthy\_bound} = \max(\text{observed\_at\_utc\_ns}, \text{evaluated\_through\_utc\_ns})$$
-   The interval between $\text{confirmed\_healthy\_bound}$ and the new process's first successful observation is honestly recorded as `STARTUP_UNKNOWN` (bounded by at most one checkpoint interval + restart downtime).
+   The interval between $\text{confirmed\_healthy\_bound}$ and the new process's first successful observation is honestly recorded as `STARTUP_UNKNOWN` (normally one checkpoint interval + downtime in healthy steady state; a delayed flush or lost WAL tail conservatively extends this unknown window).
 2. **WAL Tail Rollback Recovery in `spool/recovery.py`**:
    - If a crash occurs and SQLite WAL rolls back uncheckpointed transactions:
-     - Any sealed chunk on disk with valid `.zst` + `.json` manifest whose Catalog row is missing or rolled back to `ACTIVE`, `RECOVERED`, or `SEALING` is automatically rolled forward to `SEALED`. Any duplicate active `.partial` is cleaned up.
+     - Any sealed chunk on disk with valid `.zst` + `.json` manifest whose Catalog row is missing or rolled back to `ACTIVE`, `RECOVERED`, or `SEALING` is automatically rolled forward to `SEALED`. An exact duplicate active `.partial` uses the Writer UUID-hex filename and the existing recovery identity/Raw validation before cleanup; an arbitrary Catalog path is not deletion authority.
      - The availability watermark in Catalog reflects only durable transactions up to the rollback point $T_{durable}$.
      - The restarted process honest-unknown gap begins at $T_{durable}$, ensuring zero silent omission of lost monitoring time.
 
@@ -95,7 +100,7 @@ Rather than inserting/updating thousands of individual identical rows into `sour
 
 - **Throughput & Disk I/O**:
   - Steady-state availability writes reduced by **99.98%** (from ~4,660 rows/10s to 1 row/10s for BTC+ETH).
-  - Queue backlog in `AvailabilityJournal.pending` remains 0 during steady health.
+  - Offline validation with 4,660 healthy simulated WS sources records one watermark write per 10 seconds and drains `AvailabilityJournal.pending` to 0 after each cycle; this does not claim long-run online qualification.
   - Routine write transactions do not incur per-commit disk `fsync` lock delays.
 - **Durability & Safety**:
   - Irreversible deletion paths remain strictly protected by synchronous `FULL` barriers.

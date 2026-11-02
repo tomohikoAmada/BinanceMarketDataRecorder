@@ -30,10 +30,12 @@ class Availability:
     eligible_since: int = 0
     eligibility_id: str | None = None
     dormant: bool = False
+    selection_id: str | None = None
 
     def public_dict(self, now: int) -> dict[str, object]:
         return {
             "source_id": self.source_id,
+            "selection_id": self.selection_id,
             "collector_instance_id": self.instance_id,
             "observed_at_utc_ns": self.observed_at,
             "last_valid_utc_ns": self.last_valid,
@@ -54,9 +56,12 @@ class Availability:
 
 
 class AvailabilityJournal:
-    def __init__(self, instance_id: str, *, capacity: int = 65536) -> None:
+    def __init__(
+        self, instance_id: str, *, capacity: int = 65536, selection_id: str | None = None
+    ) -> None:
         self.instance_id = instance_id
         self.capacity = capacity
+        self.selection_id = selection_id
         self.sources: dict[str, Availability] = {}
         self.pending: deque[dict[str, Any]] = deque()
         self._pending_checkpoints: dict[str, dict[str, Any]] = {}
@@ -104,7 +109,9 @@ class AvailabilityJournal:
     def ensure(self, key: str, now: int) -> Availability:
         if key not in self.sources:
             old = self.previous.get(key, {})
-            state = self.sources[key] = Availability(key, self.instance_id, now)
+            state = self.sources[key] = Availability(
+                key, self.instance_id, now, selection_id=self.selection_id
+            )
             state.failures = int(old.get("failure_count", 0))
             state.recoveries = int(old.get("recovery_count", 0))
             state.last_error = old.get("last_error_type")

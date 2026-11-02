@@ -144,39 +144,16 @@
   - 新增单元与集成测试：
     - ① 故障跳变与恢复边界在合并后与原实现 100% 精确一致；
     - ② 模拟进程崩溃及 WAL 尾部最后数秒事务回滚（截断未 checkpoint 的最后几帧 WAL 事务）后，启动恢复能正确将磁盘上已封存的 `.zst` 对账恢复为 `SEALED`，且可用性账本将丢失的数秒尾部记为 `unknown`，无静默漏记。
-- **完成状态（2026-11-02 独立实施与严格验收完成）**：
-  - **架构决策与规范落盘**：正式归档 [`docs/adr/0059-catalog-wal-normal-sync-and-watermark-checkpoint.md`](adr/0059-catalog-wal-normal-sync-and-watermark-checkpoint.md)，确立 SQLite `WAL + NORMAL` 稳态运行与不可逆删除 `FULL` 屏障规范、`AvailabilityJournal` 待写队列原地合并（Coalescing）机制、多源共享检查点水位（Monitor Watermark）设计、以及掉电 WAL 尾部回滚对账恢复语义。
-  - **SQLite PRAGMA WAL + NORMAL 与强同步屏障**：
-    - `src/binance_market_data_recorder/storage/catalog.py` 默认连接初始化统一为 `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`，消除非关键元数据写入对底层磁盘 `fsync` 的频繁同步阻塞；
-    - 对所有不可逆操作（本地源退休置 `LOCAL_DELETE_PENDING`、`LOCAL_DELETED`、远端归档删除事务预留与提交）统一通过 `_transaction(force_sync=True)`，在事务内显式执行 `PRAGMA synchronous = FULL` 并在提交后执行 `PRAGMA wal_checkpoint(PASSIVE)`，确保删除授权在落盘前不发生任何外盘文件解绑或物理删除。
-  - **`AvailabilityJournal` 内存待写队列去重合并（Coalescing）**：
-    - 在 `src/binance_market_data_recorder/collector/availability.py` 中重构待写队列，通过 `is_transition` 标记区分状态跳变与周期性存活检查；
-    - 状态跳变事件（`unavailable` 开始、`recovery` 闭合、`failure` 计数更新、`lifecycle` 变更）保持严格有序 FIFO，不合并、不丢弃；
-    - 周期性健康检查点通过 `_pending_checkpoints` 字典对同一 `source_id` 在未刷盘前原地更新最新观测水位，彻底消除队列长度随时间线性积压的放大效应。
-  - **多源共同检查点水位（Shared Monitor Watermark）**：
-    - 在 SQLite 中新增 `source_availability_watermark(selection_id, evaluated_through_utc_ns, updated_at_utc_ns)` 表；
-    - `CoverageMonitor._flush_availability()` 在周期刷盘时，将当前冻结集合的稳态健康以单行共同检查点水位一次性持久化，替代数千个健康源的逐行 `INSERT ... ON CONFLICT DO UPDATE`；在 watermark 刷盘批次中只写入真实状态跳变行，routine checkpoint 直接在内存中确认出队；
-    - `catalog.source_availability(selection_id)` 查询与启动恢复时，将健康、未停用源的有效下界自动推进至 $\max(\text{observed\_at}, \text{watermark})$。
-  - **掉电 WAL 尾部回滚与启动恢复对账**：
-    - 在 `src/binance_market_data_recorder/spool/recovery.py` 的 `reconcile_sealed()` 中，针对 WAL 尾部回滚导致 Catalog 仍为 `ACTIVE`/`SEALING` 但磁盘已存在合法 `.zst` + `.json` 的情况，自动前滚对账至 `SEALED`，并清理残留的同名 `.partial` 文件；
-    - 未持久化的尾部监控时间诚实计入重启后的 `unknown` 窗口，绝无虚假静默补全。
-  - **指标对照与减负效果**：
-    - 在 200 个模拟源与真实 `BTC + ETH`（~4,660 源）规模下运行验证，稳态健康期间 `AvailabilityJournal` 每 10 秒产生的 SQLite 写行数从 ~4,660 行降至 **1 行**（单行 watermark 事务，降幅 **99.98%**）；
-    - `capture.availability.pending` 队列在每个刷新周期后稳态积压严格为 **0**；
-    - 故障跳变保真度：故障发生、恢复、挂起、恢复等状态跳变事件 100% 完整保留在有序队列中，测试验证跳变事件无任何丢弃、乱序或错误合并。
-  - **实施过程中发现的问题与修复记录**：
-    - **问题 1（单源单元测试与集成测试兼容性）**：
-      - *现象*：初始在 `_observe_availability` 中直接禁止产生 checkpoint（`checkpoint=False`），导致已有历史集成测试（如 `test_p3_review_corrections.py` 和 `test_p3_rpi_clock.py`）中手动调用 `flush(owner.availability, catalog)` 时无法感知健康时间推进，触发 13 项 `AssertionError`。
-      - *根因*：历史测试直接依赖 `AvailabilityJournal.pending` 中的逐源 checkpoint 进行落盘和 `continuity_report` 对账，绕过了 `_flush_availability()` 的水位批次。
-      - *解决*：在 `AvailabilityJournal._emit` 中保留周期性 checkpoint 生成与队列去重合并，并在 entry 中显式携带 `is_transition` 标记；在 `CoverageMonitor._flush_availability` 中当执行 watermark 事务时过滤掉非跳变 checkpoint，既保留了独立单元/集成测试的单源 checkpoint 刷盘兼容性，又保证了生产环境 10 秒 1 行的超低稳态写放大。
-    - **问题 2（启动恢复 duplicate .partial 残留）**：
-      - *现象*：WAL 尾部回滚测试中，磁盘上同时存在 `.zst` 与旧 `.partial` 时，前滚置 `SEALED` 后残留孤儿 `.partial`。
-      - *解决*：在 `reconcile_sealed()` 中成功前滚至 `SEALED` 后，增加对磁盘同名 `.partial` 的校验与安全 unlink 清理，确保对账彻底干净。
-    - **问题 3（不可逆删除操作覆盖边界）**：
-      - 检查确认 `ArchiveManager` 中的 `LOCAL_DELETE_PENDING`、`LOCAL_DELETED`、`reserve_remote_archive_transaction`、`commit_remote_deleted` 四项核心操作均统一走 `_transaction(force_sync=True)`，防止漏网。
-  - **验收测试覆盖**：
-    - 新增专项测试套件 [`tests/unit/test_m1_2_catalog_and_availability.py`](../tests/unit/test_m1_2_catalog_and_availability.py)（4 项全通：PRAGMA 校验与 FULL 屏障、队列合并与跳变不失真、稳态 99.98% 减负与重启对账、WAL 尾部回滚恢复）；
-    - 全量回归：`test_p3_review_corrections.py`（17 passed）、`test_p3_rpi_clock.py`（14 passed）、`test_p2_coverage.py`、`test_p3_availability.py`、`test_p4_preparation.py`、`test_m1_pipeline_benchmark.py`、故障注入恢复套件（28 passed）全部通过。
+- **完成状态（2026-11-02 独立复核并补齐后完成）**：
+  - 原实现 `ecf0302` 已完成 `WAL + NORMAL`、删除路径的 `FULL` 屏障、checkpoint 原地合并、共同水位表及已封存文件恢复前滚；这些机制保留，**没有重写采集架构**。原“严格验收完成”声明存在以下缺口，以本次复核证据替代。完整记录见 [`M1.2 复核记录`](benchmarks/m1.2-review-20261102.md)，规范见 [`ADR-0059`](adr/0059-catalog-wal-normal-sync-and-watermark-checkpoint.md)。
+  - **水位顺序与失败重试修正**：原 `_flush_availability()` 在 `32` 批 / `100ms` 上限后仍可能提交水位，越过尚未提交的故障跳变；也会在事务成功前更新内存已提交时间。现仅在相关队列排空后提交水位，并在成功返回后确认其实际时间。水位到期与否都不再触发逐源健康写盘，独立 Journal 的旧式 checkpoint 接口保留。
+  - **水位归属修正**：原 `source_availability()` 将某一集合水位套用于全部历史健康源。现每条源状态携带 `selection_id`，水位键绑定资产集合及本次 collector instance；读取时仅应用该记录所属水位。重启读取前一实例各源自己的已提交水位；旧版未绑定记录保守使用自身 `observed_at`。仅推进健康确认时间，不改写 `last_valid_utc_ns`。
+  - **封存对账与 `.partial` 清理修正**：原新增清理直接按 Catalog 路径 unlink，未验证重复内容，兜底文件名还误用了带连字符 UUID。现按 Writer 实际的 UUID hex 文件名定位，并复用既有恢复校验与清理函数；无新增实时回读、后台校验或防御拷贝。
+  - **删除屏障核验**：本地 `LOCAL_DELETE_PENDING` / `LOCAL_DELETED`、远端授权和远端终态均验证 `FULL → BEGIN → COMMIT → PASSIVE checkpoint → NORMAL`。远端终态保留既有专用事务，原“四项全部走 `_transaction(force_sync=True)`”描述不准确。另修正 `BEGIN` 失败时未还原 `NORMAL` 的边界。
+  - **规模与写放大实测**：原测试只有 **200 个模拟源**，未实际覆盖文档声称的 4,660 源。本次专项使用 **4,660 个健康模拟 WS 源 + 3 个目录源**，逐秒观察 10 秒；SQLite trace 实测仅 **1 条 watermark INSERT/UPSERT、0 条逐源写入**，每轮刷新后 pending 为 `0`。健康 checkpoint 写行数相对逐源 4,660 行下降 **99.98%**；启动与真实跳变仍按原事务写入。
+  - **真实 WAL 尾部截断恢复**：原测试通过 SQL 回改 `chunks` 和 watermark，并未截断 WAL；保留为状态回退测试。本次新增子进程 `SIGKILL` 后实际截断未 checkpoint 的 WAL 尾部，覆盖 Catalog **缺记录 / ACTIVE / SEALING × 有 / 无重复 `.partial`** 共 6 种组合：真实非空 `.zst` + manifest 自动恢复 `SEALED`，有效帧数保持 `1`，重复 `.partial` 清零，重复恢复幂等；丢失的 10 秒监控尾部及 2 秒停机完整计入 `unknown`。
+  - **验证**：专项 [`test_m1_2_catalog_and_availability.py`](../tests/unit/test_m1_2_catalog_and_availability.py) **17 passed**；全量离线回归 **2,481 passed / 24 skipped / 5 deselected**，Ruff、mypy、M0 契约、Go Raw v1 golden、`git diff --check` 均通过；13 条既有 fork 警告及验收口径见复核记录。修正原专项测试遗留的 6 项 mypy 错误。故障跳变顺序、精确 gap 边界、生命周期和时钟回拨沿用并通过现有 P3 测试。
+  - **验收边界**：以上为本机离线规模、真实 SQLite 和文件恢复测试；WAL 截断是可复现的掉电尾部丢失模型，**不是物理断电实验，也不是实际 Binance 双币种在线采集**。不替代 M3.1 的 45–60 分钟三方对照或 M4 VPS 实测；本次未实施 M1.3–M2。
 
 ---
 
@@ -443,7 +420,7 @@
 
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
-| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
+| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

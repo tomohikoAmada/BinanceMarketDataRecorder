@@ -6,7 +6,9 @@
 - **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.
 - **Milestone Progress**:
   - `M1.0` (Pre-M1 Baseline Pipeline Benchmark): **COMPLETED after independent correction** (2026-11-02; [review](benchmarks/m1.0-review-20261102.md)). Corrected v2 tool and reports verify two identical inputs and 13,966 decoded Raw frames per run (content digest `cb65e4c7...`). Production `src/` remains unchanged from `f109ffc`; the 12s synthetic baseline includes startup/shutdown and makes no steady-state rotation/backlog claim. Original v1 reports are retained under `docs/benchmarks/archive/`.
-  - Next task: `M1.1` (Spool rotation policy tuning `60s` → `600s–900s` + `128 MiB` cap).
+  - `M1.1` (15m / 128 MiB rotation): **COMPLETED after independent correction** ([review](benchmarks/m1.1-review-20261102.md)).
+  - `M1.2` (Catalog WAL+NORMAL and shared availability watermark): **COMPLETED after independent correction** ([review](benchmarks/m1.2-review-20261102.md)); 4,660-source offline SQL validation and actual WAL tail truncation recovery. No new VPS deployment or host-state observation in this review.
+  - Next task: `M1.3` (closed-bar K-line persistence, REST gap backfill, S12 deduplication and seed retirement).
 - **GreenCloud VPS (`greencloud-tokyo-01`) State**:
   - Primary service `binance-market-data-recorder.service` remains `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
   - Temporary P4 diagnostic units (`p4-btc-recorder.service` and timers) were stopped cleanly after diagnostic runs; all 45, 337, and 874 sealed chunks across Runs A, B, and C passed independent `raw-independent.v2` verification with zero corruption.

@@ -342,7 +342,9 @@ class SelectedAssetCapture:
         self._changed = asyncio.Event()
         self._stop: asyncio.Event | None = None
         self._discovery_lock = asyncio.Lock()
-        self.availability = AvailabilityJournal(instance_id)
+        self.availability = AvailabilityJournal(
+            instance_id, selection_id=self.source_selection_id
+        )
         self._pending_watermark_utc_ns: int | None = None
         self._last_watermark_flush_utc_ns: int | None = None
         self._last_monitor_utc_ns: int | None = None
@@ -356,7 +358,8 @@ class SelectedAssetCapture:
     @property
     def source_selection_id(self) -> str:
         assets = ",".join(sorted(self.coverage.underlying_assets))
-        return f"assets:{assets}"
+        # A new owner must not extend health for sources left by an older run.
+        return f"assets:{assets}:{self.instance_id}"
 
     def add_source(self, source: Source) -> None:
         if source.key not in self.sources:
@@ -961,17 +964,15 @@ class SelectedAssetCapture:
 
         while self.availability.pending:
             batch = self.availability.batch()
-            to_persist: list[dict[str, Any]]
-            current_watermark: tuple[str, int] | None = None
-            if watermark_param is not None:
-                to_persist = [entry for entry in batch if entry.get("is_transition", False)]
-                if len(batch) == len(self.availability.pending):
-                    current_watermark = watermark_param
-                    self._last_watermark_flush_utc_ns = self._pending_watermark_utc_ns
-                    watermark_param = None
-            else:
-                to_persist = batch
-
+            # A monitor-backed journal uses the shared watermark for health.
+            # Standalone journal users retain ordinary per-source checkpoints.
+            to_persist = (
+                [entry for entry in batch if entry.get("is_transition", False)]
+                if self._pending_watermark_utc_ns is not None else batch
+            )
+            current_watermark = (
+                watermark_param if len(batch) == len(self.availability.pending) else None
+            )
             if to_persist or current_watermark is not None:
                 if current_watermark is not None:
                     await run_owned_blocking_call(
@@ -979,23 +980,26 @@ class SelectedAssetCapture:
                         to_persist,
                         watermark=current_watermark,
                     )
+                    self._last_watermark_flush_utc_ns = current_watermark[1]
+                    watermark_param = None
                 else:
                     await run_owned_blocking_call(
-                        self.catalog.persist_source_availability,
-                        to_persist,
+                        self.catalog.persist_source_availability, to_persist,
                     )
+                batches += 1
             self.availability.acknowledge(len(batch))
-            batches += 1
             if not all_pending and (
                 batches >= AVAILABILITY_FLUSH_MAX_BATCHES or time.monotonic() >= deadline
             ):
                 break
 
-        if watermark_param is not None:
+        # A bounded flush may leave transitions pending. Never certify their
+        # monitoring time until those transitions have committed.
+        if watermark_param is not None and not self.availability.pending:
             await run_owned_blocking_call(
                 self.catalog.persist_source_availability, [], watermark=watermark_param
             )
-            self._last_watermark_flush_utc_ns = self._pending_watermark_utc_ns
+            self._last_watermark_flush_utc_ns = watermark_param[1]
 
     def _writer_stalls(self, now: int) -> dict[tuple[str, str, str, str], int]:
         stalled: dict[tuple[str, str, str, str], int] = {}
@@ -1090,7 +1094,7 @@ class SelectedAssetCapture:
         terminal_error: BaseException | None = None
         try:
             self.availability.previous = await run_owned_blocking_call(
-                self.catalog.source_availability, self.source_selection_id
+                self.catalog.source_availability
             )
             while not stop.is_set():
                 self._changed.clear()
