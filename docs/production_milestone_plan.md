@@ -108,27 +108,15 @@
   - 单次封存（最大 `128 MiB`）在 drain 线程中的耗时不导致 WebSocket 有界接收队列溢出（`IngressQueueFull == 0`）；
   - 模拟 `SIGKILL` 截断恢复测试全部通过。
 
-- **完成状态（2026-11-02 独立复核后完成）**：
-  - **参数调优与默认配置更新**：
-    - `src/binance_market_data_recorder/config.py` 中 `RecorderConfig.rotation_seconds` 默认值调整为 `900.0` 秒（15 分钟），`load_recorder_config` 默认值同步更新为 `900.0`；
-    - `src/binance_market_data_recorder/spool/writer.py` 中 `RotationPolicy.seconds` 默认值调整为 `900.0`，保留未压缩单分片上限 `rotation_bytes = 128 * 1024 * 1024`（`128 MiB`）；
-    - `src/binance_market_data_recorder/collector/spot.py` 与 `collector/usdm.py` 采集器设置同步将 `rotation_seconds` 默认值更新为 `900.0`；
-    - `tests/unit/test_config.py` 断言同步更新为 `assert loaded.config.rotation_seconds == 900.0`。
-  - **流间错峰适配（Phase Staggering）**：
-    - `spool/writer.py` 的 `_rotation_deadline` 原生以 `period_seconds = 900.0` 为周期，基于各流稳定 identity 哈希将 deadline 均匀分布在 `(opened, opened + 900.0]` 区间内；
-    - 验证 BTC/ETH 跨市场（Spot、USD-M、COIN-M）各类型数据流在 15 分钟窗口内均具有确定且互不重叠的相位偏移（跨度平铺超过 300s+），避免活跃流在同一时刻突发集中封存。
-  - **持久化隔离保证**：
-    - 活跃 `.partial` 的独立刷盘周期（`durability_interval_seconds`，默认 1.0 秒）保持完全独立运行，拉长封存周期不影响秒级掉电崩溃保护窗口。
-  - **空间核算与 128 MiB 大文件恢复耗时实测**：
-    - **活跃区空间核算**：VPS 生产规格 `vps-production-v1` 的 `HARD_RESERVE_BYTES` 为 `10 GiB`。单个 128 MiB 未压缩 Raw 分片在封存期生成的临时 Zstd 压缩文件约 20–30 MiB，单流封存峰值临时开销约 158 MiB。由于错峰轮换，即使极端假设 5 个高流量流突发同时封存，峰值临时占用约 `790 MiB < 1 GiB`，远在 10 GiB 紧急安全预留边界内。
-    - **128 MiB 恢复与扫描实测**：在真实 128.93 MiB 的 `.partial` 分片上实测，`scan_chunk` 全量帧校验耗时仅 **113.29 ms**（吞吐 > 1.1 GB/s）；注入尾部截断故障后，`recover_partials` 在 **206.34 ms** 内完成截断修复（action: `tail_truncated`），Catalog 正确流转至 `RECOVERED` 状态，恢复后分片 100% clean。
-  - **背压与队列容量验证**：
-    - 在 128 MiB 分片封存与换流期间，Spool 入队缓冲区（容量 8192）平稳承接突发流入帧，未触发 `IngressQueueFull`。
-  - **轮换减负收益**：
-    - 理论与多流测试证明：对于中低频稳态数据流，从 60s 调整为 900s 轮换，15 分钟内的分片封存数与 Catalog 封存意图/完成事务数从每流 15 次直接降至 1 次，**降幅达 93.3%（> 90%）**。
-  - **发现的问题与口径标注**：
-    - ① **文档口径差异**：`AGENTS.md` 任务概述中曾写 `15m / 64 MiB chunk rotation`，但详细方案 `production_milestone_plan.md` 及代码库历史基线均明确采用 `128 MiB`（`128 * 1024 * 1024`）。经本次空间核算与实测验证，128 MiB 在 VPS 10 GiB 预留水位下余量充裕（峰值 < 1 GiB），且能提供更优的压缩率与更少的文件碎裂，因此统一锁定为 128 MiB，并在 `AGENTS.md` 与本计划中对齐。
-    - ② **基准脚本测量边界**：`tools/benchmark_m1_m3_pipeline.py` 为 12 秒固定突发离线基准（用于建立 pre-M1 baseline），不覆盖跨轮换稳态（稳态收益需在长时运行中体现）；M1.1 收益已通过新增回归套件 `tests/unit/test_m1_1_rotation_tuning.py` 完成数学与逻辑全覆盖，稳态整机综合收益将在 M3.1 的 45–60 分钟对照基准中完整体现。
+- **完成状态（2026-11-02 独立复核并补齐验收后完成）**：
+  - `5f32074` 已正确将 `RecorderConfig`、`load_config`、`RotationPolicy`、旧 Spot/USD-M settings 的默认值改为 **900s / 128 MiB**；原 identity 哈希错峰随周期缩放，**无需新增生产调度逻辑**。TOML `600.0` / `900.0` 和空闲流独立 `1s fsync` 已补测。
+  - **原验收缺口**：93.3% 降幅原来只是算式；队列测试没有实际封存 128 MiB 或覆盖封存期间接收；空间核算的 30 MiB 压缩产物、5 流并发假设不足。原“数学与逻辑全覆盖”声明撤回，以本次证据替代。详见 [`M1.1 复核记录`](benchmarks/m1.1-review-20261102.md)。
+  - **真实轮换对照**：新增 [`tools/benchmark_m1_1_rotation.py`](../tools/benchmark_m1_1_rotation.py)，复用 M1.0 的 13,966 条实际 WS/REST 输入并明确重复稀疏流观测；143 条物理流、两组各解码 **39,540 帧**，内容摘要完全相同。在 **2,700 秒逻辑 Writer 时间**中真实执行编码、fsync、压缩、Catalog 和归档预留：含停机的 `.zst` / manifest、SEALING / SEALED 提交、归档 COPYING 事务均由 **6,533 → 570（下降 91.28%）**，定时封存为 **6,435 → 429（下降 93.33%）**。报告：[`m1.1-rotation-20261102.json`](benchmarks/m1.1-rotation-20261102.json)。
+  - **封存期间并发接收**：本机 **134,274,303 bytes** 不可压缩 Raw 实际大小轮换封存 **221.74ms**；mock socket 通过真实 collector `_receive_once`、有界 receipt queue、`_writer_loop` 持续交接，期间接收 **632 帧**，队列高水位 **632 / 8,192**，`IngressQueueFull = 0`、等待计数 `0`，最终全部落盘。
+  - **恢复**：**135,194,321 bytes** `.partial` 扫描 **117.52ms**、截断恢复 **239.99ms**；新增实际子进程 `SIGKILL` 大文件半帧尾部恢复，保留全部 129 条有效帧、Catalog 为 `RECOVERED`。专项 13 项通过，原有故障恢复套件通过。数据与边界：[`m1.1-seal-recovery-20261102.json`](benchmarks/m1.1-seal-recovery-20261102.json)。
+  - **空间核算纠正**：活跃 `.partial` 已计入磁盘已用量；紧急预留覆盖新增压缩临时文件。现有 Python 3.12 默认 executor 至多 32 workers，每份按 `(128 MiB + 16 MiB 最大帧 + 12 bytes 前缀) × 2` 预算，无需依赖压缩收益，约 **9 GiB < 10 GiB**。哈希错峰不承诺零碰撞；128 MiB 为轮换阈值，允许末条完整帧越过阈值。本核算针对默认最大帧与线程池，参数扩大时重新核算。
+  - **验收边界**：跨轮换报告为测试时钟推进，非 45 分钟墙钟持续采集；启动空 marker 不计入轮换重放，归档只测真实预留次数，未测外盘拷贝/删除性能。封存/恢复时延与队列为本机离线负载结果，**不替代 M3.1 的 45–60 分钟三方整机对照或 M4 VPS 验收**。
+  - **回归**：全量离线 `pytest -q` **2,464 passed / 24 skipped / 5 deselected**，`ruff`、`mypy`、M0 契约、Go Raw v1 golden、`git diff --check` 通过；最终 collector 专项更新后另行重跑通过。本次未进一步修改生产 `src/`，未提前实施 M1.2–M2。
 
 ---
 

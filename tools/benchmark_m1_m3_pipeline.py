@@ -108,6 +108,7 @@ class StatsCollector:
         self.peak_rss = 0
         self.seals: list[dict[str, object]] = []
         self.total_frames = 0
+        self.event_sink: Callable[[EventEnvelope], None] | None = None
 
     def record(self, name: str, started: int) -> None:
         self.latencies[name].append((time.perf_counter_ns() - started) / 1e6)
@@ -505,6 +506,8 @@ class BenchmarkCapture(SelectedAssetCapture):
         seal_current = spool._seal_current
 
         def event(event: EventEnvelope, size: int, depth: int) -> None:
+            if self.stats.event_sink is not None:
+                self.stats.event_sink(event)
             if event_observer:
                 event_observer(event, size, depth)
             self.stats.total_frames += 1
@@ -597,6 +600,7 @@ async def run_benchmark(
     rest_rounds: int = 2,
     timeout_seconds: float = 120.0,
     monitor_seconds: float = 12.0,
+    event_sink: Callable[[EventEnvelope], None] | None = None,
 ) -> dict[str, Any]:
     if (
         events_per_stream < 4
@@ -620,6 +624,7 @@ async def run_benchmark(
     feed, fixture_manifest = build_fixture_frames(products, cfg, events_per_stream, seed)
     expected_ws = Counter(hashlib.sha256(f).hexdigest() for frames in feed.values() for f in frames)
     stats = StatsCollector()
+    stats.event_sink = event_sink
     # This is synthetic traffic, not requests to an IP. Keep limiter code, but
     # remove real-time network quotas so offline bursts do not sleep for minutes.
     budget = RequestBudget(

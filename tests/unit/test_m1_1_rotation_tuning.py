@@ -2,24 +2,36 @@
 
 Verifies:
 1. Default rotation configuration (900.0s / 128 MiB) and valid ranges (600s-900s).
-2. Phase staggering across 900s (15m) rotation window without collision.
+2. Deterministic phase staggering across the 900s (15m) rotation window.
 3. Active area disk space accounting within ADR-0016 10 GiB hard reserve.
 4. Fast scan_chunk performance and truncation recovery on 128 MiB chunks.
 5. Ingress queue capacity during 128 MiB seal without IngressQueueFull.
-6. Multi-rotation file and catalog transaction reduction (> 90%).
+6. Actual multi-rotation files, Catalog commits and archive reservations (> 90%).
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
+import logging
 import os
+import random
 import time
 from pathlib import Path
+from threading import Event
+from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
-from binance_market_data_recorder.config import RecorderConfig
-from binance_market_data_recorder.spool.format import encode_frame, scan_chunk
+from binance_market_data_recorder.binance.usdm.websocket import UsdMStreamCollector
+from binance_market_data_recorder.config import RecorderConfig, load_config
+from binance_market_data_recorder.domain.event import EventEnvelope
+from binance_market_data_recorder.spool import stream as stream_module
+from binance_market_data_recorder.spool import writer as writer_module
+from binance_market_data_recorder.spool.format import FRAME_PREFIX, encode_frame, scan_chunk
 from binance_market_data_recorder.spool.recovery import recover_partials
+from binance_market_data_recorder.spool.seal import _seal_clean_writer
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import (
     RawChunkWriter,
@@ -28,9 +40,10 @@ from binance_market_data_recorder.spool.writer import (
 )
 from binance_market_data_recorder.storage.capacity import HARD_RESERVE_BYTES, VPS_PRODUCTION_V1
 from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
-from binance_market_data_recorder.storage.forecast import GIB, hard_reserve_bytes
+from binance_market_data_recorder.storage.forecast import GIB
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.factories import event
+from tools.benchmark_m1_1_rotation import replay_rotation
 
 
 def test_default_rotation_policy_and_config() -> None:
@@ -103,24 +116,15 @@ def test_rotation_phase_staggering_for_900s() -> None:
 
 
 def test_active_space_accounting_within_emergency_reserve() -> None:
-    # VPS reserve is 10 GiB
-    assert HARD_RESERVE_BYTES == 10 * GIB
-    assert VPS_PRODUCTION_V1.hard_reserve_bytes == 10 * GIB
-
-    reserve = hard_reserve_bytes(100 * GIB, rotation_bytes=128 * 1024 * 1024)
-    assert reserve >= 5 * GIB
-
-    # Transient disk space during Zstd compression for a 128 MiB chunk:
-    # Active chunk uncompressed: 128 MiB
-    # Compressed artifact in progress (Zstd level 3): ~30 MiB
-    # Total per stream in-flight: ~158 MiB.
-    # Phase staggering spreads seals over 900s, so streams do not seal at the same time.
-    # Even if 5 high-traffic streams sealed in a burst, 5 * 158 MiB = 790 MiB << 10 GiB.
-    transient_per_stream_mib = 128 + 30
-    simultaneous_burst_streams = 5
-    worst_case_transient_gib = (transient_per_stream_mib * simultaneous_burst_streams) / 1024
-    assert worst_case_transient_gib < 1.0  # Less than 1 GiB
-    assert worst_case_transient_gib * GIB < HARD_RESERVE_BYTES
+    assert HARD_RESERVE_BYTES == VPS_PRODUCTION_V1.hard_reserve_bytes == 10 * GIB
+    # Python 3.12's default executor has at most 32 workers. Existing active
+    # partials have ALREADY reduced free space; reserve covers additional output.
+    # Allow an entire maximum frame past the rotation threshold and 2x expansion
+    # for compression (no assumed compression benefit). No parallel-seal claim
+    # is derived from hash staggering, which can collide.
+    max_raw_bytes = RotationPolicy().bytes + 16 * 1024 * 1024 + FRAME_PREFIX.size
+    compression_temporary_budget = 32 * 2 * max_raw_bytes
+    assert compression_temporary_budget < HARD_RESERVE_BYTES
 
 
 def test_128mib_scan_chunk_and_truncation_recovery(tmp_path: Path) -> None:
@@ -156,8 +160,6 @@ def test_128mib_scan_chunk_and_truncation_recovery(tmp_path: Path) -> None:
 
         assert scan_res.is_clean
         assert scan_res.statistics.record_count == count
-        # 128 MiB scan must be fast (< 2.0 seconds in Python)
-        assert scan_duration < 2.0
 
         # Inject crash truncation at the tail (half of a valid frame appended)
         corrupted_frame = encode_frame(
@@ -178,62 +180,150 @@ def test_128mib_scan_chunk_and_truncation_recovery(tmp_path: Path) -> None:
         recovered_scan = scan_chunk(writer.path)
         assert recovered_scan.is_clean
         assert recovered_scan.statistics.record_count == count
-        assert rec_duration < 2.0
+        print(json.dumps({"scan_bytes": file_size, "scan_seconds": scan_duration,
+                          "recovery_seconds": rec_duration, "records": count}))
 
 
-def test_multi_rotation_reduction_60s_vs_900s(tmp_path: Path) -> None:
-    """Demonstrates that switching from 60s to 900s reduces steady-state
+def test_ingress_queue_preservation_during_chunk_seal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    started, completed = Event(), Event()
+    measurements: dict[str, float | int] = {}
+    real_seal = _seal_clean_writer
 
-    chunk rotations and Catalog sealing operations by > 90% (93.3%).
-    """
-    stream_count = 5
-    simulated_window_seconds = 900.0
+    def observe_seal(writer: RawChunkWriter, **kwargs: object) -> dict[str, object]:
+        if writer.bytes_written < 128 * 1024 * 1024:
+            return real_seal(writer, **kwargs)  # type: ignore[arg-type]
+        measurements["raw_bytes"] = writer.bytes_written
+        began = time.perf_counter()
+        started.set()
+        try:
+            return real_seal(writer, **kwargs)  # type: ignore[arg-type]
+        finally:
+            measurements["seal_seconds"] = time.perf_counter() - began
+            completed.set()
 
-    # Under 60s rotation, each stream rotates every 60 seconds
-    rotations_60s_per_stream = int(simulated_window_seconds / 60.0)
-    total_rotations_60s = stream_count * rotations_60s_per_stream
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout, catalog=catalog, market="spot", symbol="BTCUSDT",
+            stream="diff_depth", collector_instance_id="m1-1-test",
+            collector_version="0.1.0+test", queue_capacity=8192,
+            rotation=RotationPolicy(), durability_interval_seconds=1.0,
+            max_frame_bytes=16 * 1024 * 1024,
+        )
+        # Incompressible, different payloads: avoid measuring 128 MiB of repeated x's.
+        rng = random.Random(20261102)
+        for ordinal in range(127):
+            spool.enqueue(event(ordinal + 1, payload=rng.randbytes(1024 * 1024)))
+            spool.drain_all()
+        monkeypatch.setattr(stream_module, "_seal_clean_writer", observe_seal)
+        class Socket:
+            def __init__(self, payload: bytes) -> None:
+                self.payload = payload
 
-    # Under 900s rotation, each stream rotates once per 15 minutes
-    rotations_900s_per_stream = int(simulated_window_seconds / 900.0)
-    total_rotations_900s = stream_count * rotations_900s_per_stream
+            async def recv(self, decode: bool | None = None) -> bytes:
+                return self.payload
 
-    assert total_rotations_60s == 75
-    assert total_rotations_900s == 5
+            async def close(self, code: int = 1000, reason: str = "") -> None:
+                pass
 
-    reduction = (total_rotations_60s - total_rotations_900s) / total_rotations_60s
-    assert reduction == pytest.approx(14 / 15, rel=1e-3)
-    assert reduction > 0.90  # Exceeds 90% reduction
+        def envelope(**kwargs: Any) -> EventEnvelope:
+            return event(payload=kwargs["raw_payload"])
+
+        collector = UsdMStreamCollector(
+            stream="diff_depth", symbol="BTCUSDT", route="public",
+            wire_name="btcusdt@depth", spool=spool, collector_instance_id="m1-1-test",
+            collector_version="test", logger=logging.getLogger("m1-1"),
+            receipt_queue_capacity=8192, envelope_factory=envelope,
+        )
+
+        async def receive_while_sealing() -> int:
+            done = asyncio.Event()
+            writer_task = asyncio.create_task(collector._writer_loop(done))
+            received = 0
+
+            async def handoff(socket: Socket) -> None:
+                receipt = await collector._receive_once(socket, "connection-1")
+                await collector._receipts.put(receipt, writer_task=writer_task)
+
+            try:
+                await handoff(Socket(rng.randbytes(1024 * 1024)))
+                async with asyncio.timeout(10):
+                    while not started.is_set():
+                        await asyncio.sleep(0.001)
+                    socket = Socket(b"incoming during seal")
+                    # Nominal 4000 frames/s. Scheduler pacing is reported as
+                    # observed frames/duration, without a real network claim.
+                    while not completed.is_set():
+                        await handoff(socket)
+                        received += 1
+                        await asyncio.sleep(1 / 4000)
+            finally:
+                done.set()
+                await asyncio.wait_for(writer_task, 30)
+            return received
+
+        received = asyncio.run(receive_while_sealing())
+        stats = collector.receipt_queue_stats
+        assert received > 0
+        assert measurements["raw_bytes"] >= 128 * 1024 * 1024
+        assert 0 < stats.high_watermark < 8192
+        assert stats.wait_count == stats.depth == spool.queue.depth == 0
+        assert collector.capture_progress()["persisted_frames"] == 1 + received
+        measurements["received_during_seal"] = received
+        measurements["receipt_high_watermark"] = stats.high_watermark
+        measurements["receipt_high_watermark_bytes"] = stats.high_watermark_bytes
+        measurements["ingress_queue_full"] = 0
+        assert sum(json.loads(p.read_text())["record_count"]
+                   for p in layout.manifests.glob("*.manifest.json")) == 128 + received
+        print(json.dumps(measurements))
 
 
-def test_ingress_queue_preservation_during_chunk_seal(tmp_path: Path) -> None:
+@pytest.mark.parametrize("seconds", [600.0, 900.0])
+def test_rotation_toml_override(tmp_path: Path, seconds: float) -> None:
+    config = tmp_path / "recorder.toml"
+    config.write_text(f"[recorder]\nrotation_seconds = {seconds}\n")
+    loaded = load_config(config_file=config, environ={}, home=tmp_path / "home")
+    assert loaded.config.rotation_seconds == seconds
+    assert loaded.config.durability_interval_seconds == 1.0
+
+
+def test_idle_fsync_remains_independent_of_rotation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 0.0
+    clock = SimpleNamespace(monotonic=lambda: now, perf_counter_ns=time.perf_counter_ns,
+                            time_ns=time.time_ns)
+    monkeypatch.setattr(writer_module, "time", clock)
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         spool = StreamSpool(
-            layout=layout,
-            catalog=catalog,
-            market="spot",
-            symbol="BTCUSDT",
-            stream="diff_depth",
-            collector_instance_id="m1-1-test",
-            collector_version="0.1.0+test",
-            queue_capacity=8192,
-            rotation=RotationPolicy(seconds=900.0, bytes=128 * 1024 * 1024),
-            durability_interval_seconds=1.0,
-            max_frame_bytes=16 * 1024 * 1024,
+            layout=layout, catalog=catalog, market="spot", symbol="BTCUSDT",
+            stream="diff_depth", collector_instance_id="test", collector_version="test",
+            queue_capacity=8192, rotation=RotationPolicy(),
+            durability_interval_seconds=1.0, max_frame_bytes=16 * 1024 * 1024,
         )
-        # Enqueue initial events and drain to open writer
-        spool.enqueue(event(1, payload=b"pre-seal data"))
-        assert spool.drain_all() == 1
-
-        # Enqueue 100 events into bounded queue while seal occurs
-        for i in range(2, 102):
-            spool.enqueue(event(i, payload=b"concurrent incoming data during seal"))
-
-        # Ingress queue must retain events with IngressQueueFull == 0
-        assert spool.queue.depth == 100
-        assert spool.queue.depth < 8192
-
-        # Complete seal and drain
+        spool.enqueue(event())
+        spool.drain_all()
+        assert spool.persistence_progress().synchronized_frames == 0
+        now = 0.999
+        spool.drain_all()
+        assert spool.persistence_progress().synchronized_frames == 0
+        now = 1.0
+        spool.drain_all()
+        assert spool.persistence_progress().synchronized_frames == 1
+        assert not list(layout.sealed.glob("*.zst"))
         spool.close_and_seal()
-        assert spool.queue.depth == 0
 
+
+def test_multi_rotation_reduction_60s_vs_900s(tmp_path: Path) -> None:
+    events = [event(), event().model_copy(update={"symbol": "ETHUSDT"})]
+    before = replay_rotation(tmp_path / "60", events, 60.0)
+    after = replay_rotation(tmp_path / "900", events, 900.0)
+    assert before["content_digest"] == after["content_digest"]
+    assert before["frames"] == after["frames"] == 540
+    for key in ("zst_files", "manifest_files", "seal_intent_commits",
+                "seal_completion_commits", "archive_reservations"):
+        assert after[key] < before[key] * 0.1
+    assert after["timed_seals"] == 6

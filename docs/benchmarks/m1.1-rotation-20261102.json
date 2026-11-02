@@ -1,0 +1,54 @@
+{
+  "archive_boundary": "actual COPYING reservations only; no copy/delete performance claim",
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.14 (main, Sep  1 2026, 14:09:38) [Clang 22.1.3 ]"
+  },
+  "m1_0_frames": 13966,
+  "m1_0_input_digest": "4d5980b842bfef1304b9555bb02514cb2ceeba186ba88a6acedb3abbe35eef74",
+  "measurement_boundary": "2700s logical writer time; real I/O; not a 45m wall-clock run",
+  "reductions_including_shutdown": {
+    "archive_reservations": 0.9127506505433951,
+    "manifest_files": 0.9127506505433951,
+    "seal_completion_commits": 0.9127506505433951,
+    "seal_intent_commits": 0.9127506505433951,
+    "zst_files": 0.9127506505433951
+  },
+  "runs": [
+    {
+      "archive_reservations": 6533,
+      "content_digest": "ed681b62829f63f71ea3574e8a8d079b20c890a130d64f4fd24910ceb86848d2",
+      "execution_wall_seconds": 16.902,
+      "frames": 39540,
+      "logical_duration_seconds": 2700,
+      "manifest_files": 6533,
+      "physical_streams": 143,
+      "rotation_seconds": 60.0,
+      "seal_completion_commits": 6533,
+      "seal_intent_commits": 6533,
+      "shutdown_seals": 98,
+      "tick_seconds": 10,
+      "timed_seals": 6435,
+      "zst_files": 6533
+    },
+    {
+      "archive_reservations": 570,
+      "content_digest": "ed681b62829f63f71ea3574e8a8d079b20c890a130d64f4fd24910ceb86848d2",
+      "execution_wall_seconds": 4.746,
+      "frames": 39540,
+      "logical_duration_seconds": 2700,
+      "manifest_files": 570,
+      "physical_streams": 143,
+      "rotation_seconds": 900.0,
+      "seal_completion_commits": 570,
+      "seal_intent_commits": 570,
+      "shutdown_seals": 141,
+      "tick_seconds": 10,
+      "timed_seals": 429,
+      "zst_files": 570
+    }
+  ],
+  "schema": "m1.1-rotation-probe.v1",
+  "script_sha256": "b1d4c5ec3a21be3c4ee27c6248d8e60f59c940a845fdf978bd27ece63fb9812b",
+  "source_commit": "5f320743ec4d5b2723a20d19f5be9939f4f91b22"
+}

@@ -44,9 +44,15 @@ writer = RawChunkWriter(
 )
 if mode in {'complete_frame', 'truncated_frame'}:
     writer.append(event(1))
-if mode == 'truncated_frame':
-    writer.close()
-    frame = encode_frame(event(2), max_frame_bytes=writer.header.max_frame_bytes)
+if mode == 'large_truncated_frame':
+    payload = b'x' * (1024 * 1024 - 1000)
+    while writer.bytes_written < 128 * 1024 * 1024:
+        writer.append(event(writer.record_count + 1, payload=payload))
+if mode in {'truncated_frame', 'large_truncated_frame'}:
+    # Leave the live writer open when killed, including an fsynced torn tail.
+    frame = encode_frame(
+        event(writer.record_count + 1), max_frame_bytes=writer.header.max_frame_bytes
+    )
     descriptor = os.open(writer.path, os.O_WRONLY | os.O_APPEND)
     os.write(descriptor, frame[:len(frame) // 2])
     os.fsync(descriptor)
@@ -62,6 +68,7 @@ while True:
         ("header_only", "unchanged", 0, ChunkState.ACTIVE),
         ("complete_frame", "unchanged", 1, ChunkState.ACTIVE),
         ("truncated_frame", "tail_truncated", 1, ChunkState.RECOVERED),
+        ("large_truncated_frame", "tail_truncated", 129, ChunkState.RECOVERED),
     ],
 )
 def test_kill9_matrix_recovers_without_false_seal(
@@ -96,5 +103,7 @@ def test_kill9_matrix_recovers_without_false_seal(
         recovered = scan_chunk(Path(evidence["path"]))
         assert recovered.is_clean
         assert recovered.statistics.record_count == expected_records
+        if mode == "large_truncated_frame":
+            assert recovered.valid_end >= 128 * 1024 * 1024
         assert not list(layout.sealed.iterdir())
         assert not list(layout.manifests.iterdir())
