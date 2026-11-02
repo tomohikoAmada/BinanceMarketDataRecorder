@@ -12,41 +12,19 @@ import threading
 import time
 from collections.abc import Callable, Mapping
 from contextlib import suppress
-from functools import partial
 from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
-from ..binance.spot.exchange_info import create_spot_exchange_info_api
-from ..binance.spot.rest import PublicSpotRestApi
-from ..binance.spot.websocket import SPOT_WEBSOCKET_BASE_URL, open_spot_websocket
-from ..binance.usdm.rest import create_usdm_rest_api
-from ..binance.usdm.side_data_rest import GLOBAL_SIDE_DATA_SYMBOL, create_usdm_side_rest_api
-from ..binance.usdm.websocket import USDM_WEBSOCKET_ROOT, open_usdm_websocket
-from ..collector import (
-    MarketCollectorSupervisor,
-    SpotCollector,
-    SpotCollectorSettings,
-    UsdMCollector,
-    UsdMCollectorSettings,
-)
-from ..collector.coverage import SelectedAssetCapture
-from ..collector.usdm_side_data import (
-    UsdMRestCooldown,
-    UsdMSideDataManager,
-    UsdMSideDataSettings,
-)
+from ..collector.coverage import CoverageRuntimeSupervisor, SelectedAssetCapture
 from ..config import RecorderConfig
 from ..domain.product import (
     ProductKey,
     configured_products,
-    global_log_fields,
     product_log_fields,
 )
 from ..logging import log_event
-from ..metrics.recorder import MetricsRecorder
 from ..spool import recover_storage
-from ..spool.writer import RotationPolicy
 from ..storage.capacity import VPS_PRODUCTION_V1, selected_capacity_profile
 from ..storage.catalog import Catalog, stream_discontinuity_event_id
 from ..storage.forecast import StorageForecaster, hard_reserve_bytes
@@ -79,130 +57,10 @@ class SleepObserver(Protocol):
     def stop(self) -> None: ...
 
 
-CollectorFactory = Callable[
-    [RecorderConfig, logging.Logger, str, str, asyncio.Lock | None, UsdMRestCooldown | None],
-    Mapping[ProductKey, RuntimeCollector],
+SupervisorFactory = Callable[
+    [RecorderConfig, logging.Logger, str, str, StorageLayout, Catalog], SelectedAssetCapture
 ]
 SleepObserverFactory = Callable[[Callable[[str, int], None]], SleepObserver]
-
-
-def _usdm_side_settings(config: RecorderConfig) -> UsdMSideDataSettings:
-    return UsdMSideDataSettings(
-        mark_price_enabled=config.side_mark_price_enabled,
-        liquidation_enabled=config.side_liquidation_enabled,
-        premium_index_enabled=config.side_premium_index_enabled,
-        funding_history_enabled=config.side_funding_history_enabled,
-        funding_info_enabled=config.side_funding_info_enabled,
-        open_interest_enabled=config.side_open_interest_enabled,
-        exchange_info_enabled=config.side_exchange_info_enabled,
-        premium_index_interval_seconds=config.side_premium_index_interval_seconds,
-        funding_history_interval_seconds=config.side_funding_history_interval_seconds,
-        funding_info_interval_seconds=config.side_funding_info_interval_seconds,
-        open_interest_interval_seconds=config.side_open_interest_interval_seconds,
-        exchange_info_interval_seconds=config.side_exchange_info_interval_seconds,
-        degraded_after_seconds=config.side_degraded_after_seconds,
-        open_interest_statistics_enabled=(config.side_open_interest_statistics_enabled),
-        taker_buy_sell_volume_enabled=(config.side_taker_buy_sell_volume_enabled),
-        global_long_short_ratio_enabled=(config.side_global_long_short_ratio_enabled),
-        top_long_short_account_ratio_enabled=(config.side_top_long_short_account_ratio_enabled),
-        top_long_short_position_ratio_enabled=(config.side_top_long_short_position_ratio_enabled),
-        basis_enabled=config.side_basis_enabled,
-        open_interest_statistics_interval_seconds=(
-            config.side_open_interest_statistics_interval_seconds
-        ),
-        taker_buy_sell_volume_interval_seconds=(config.side_taker_buy_sell_volume_interval_seconds),
-        global_long_short_ratio_interval_seconds=(
-            config.side_global_long_short_ratio_interval_seconds
-        ),
-        top_long_short_account_ratio_interval_seconds=(
-            config.side_top_long_short_account_ratio_interval_seconds
-        ),
-        top_long_short_position_ratio_interval_seconds=(
-            config.side_top_long_short_position_ratio_interval_seconds
-        ),
-        basis_interval_seconds=config.side_basis_interval_seconds,
-    )
-
-
-def _collector_factory(
-    config: RecorderConfig,
-    logger: logging.Logger,
-    collector_version: str,
-    service_instance_id: str,
-    request_lock: asyncio.Lock | None,
-    cooldown: UsdMRestCooldown | None,
-) -> Mapping[ProductKey, RuntimeCollector]:
-    proxy_policy = config.proxy_policy()
-    spot_websocket_opener = partial(
-        open_spot_websocket,
-        proxy=proxy_policy.websocket_proxy(SPOT_WEBSOCKET_BASE_URL),
-    )
-    usdm_websocket_opener = partial(
-        open_usdm_websocket,
-        proxy=proxy_policy.websocket_proxy(USDM_WEBSOCKET_ROOT),
-    )
-    timeout_ms = 10_000
-    collectors: dict[ProductKey, RuntimeCollector] = {}
-    for product in configured_products(config.spot_symbols, config.usdm_symbols):
-        if product.market == "spot":
-            collectors[product] = SpotCollector(
-                SpotCollectorSettings(
-                    data_root=config.data_root,
-                    symbol=product.symbol,
-                    collector_instance_id=f"{service_instance_id}:{product.market}:{product.symbol}",
-                    collector_version=collector_version,
-                    queue_capacity=config.ingress_queue_capacity,
-                    receipt_queue_capacity=config.ingress_queue_capacity,
-                    rotation_seconds=config.rotation_seconds,
-                    rotation_bytes=config.rotation_bytes,
-                    durability_interval_seconds=config.durability_interval_seconds,
-                    max_frame_bytes=config.max_frame_bytes,
-                    exchange_info_enabled=config.spot_exchange_info_enabled,
-                    exchange_info_interval_seconds=(config.spot_exchange_info_interval_seconds),
-                    side_data_degraded_after_seconds=config.side_degraded_after_seconds,
-                ),
-                logger=logger,
-                rest_api=PublicSpotRestApi(
-                    timeout_ms=timeout_ms,
-                    proxy_policy=proxy_policy,
-                ),
-                websocket_opener=spot_websocket_opener,
-                exchange_info_api=create_spot_exchange_info_api(
-                    timeout_ms=timeout_ms,
-                    proxy_policy=proxy_policy,
-                ),
-            )
-        else:
-            if request_lock is None or cooldown is None:
-                raise ValueError("USD-M products require process-owned REST authority")
-            collectors[product] = UsdMCollector(
-                UsdMCollectorSettings(
-                    data_root=config.data_root,
-                    symbol=product.symbol,
-                    collector_instance_id=f"{service_instance_id}:{product.market}:{product.symbol}",
-                    collector_version=collector_version,
-                    queue_capacity=config.ingress_queue_capacity,
-                    receipt_queue_capacity=config.ingress_queue_capacity,
-                    rotation_seconds=config.rotation_seconds,
-                    rotation_bytes=config.rotation_bytes,
-                    durability_interval_seconds=config.durability_interval_seconds,
-                    max_frame_bytes=config.max_frame_bytes,
-                    side_data=_usdm_side_settings(config),
-                ),
-                logger=logger,
-                request_lock=request_lock,
-                cooldown=cooldown,
-                rest_api=create_usdm_rest_api(
-                    timeout_ms=timeout_ms,
-                    proxy_policy=proxy_policy,
-                ),
-                side_rest_api=create_usdm_side_rest_api(
-                    timeout_ms=timeout_ms,
-                    proxy_policy=proxy_policy,
-                ),
-                websocket_opener=usdm_websocket_opener,
-            )
-    return collectors
 
 
 class ServiceRuntime:
@@ -214,7 +72,7 @@ class ServiceRuntime:
         config: RecorderConfig,
         logger: logging.Logger,
         authority_path: Path | None = None,
-        collector_factory: CollectorFactory = _collector_factory,
+        supervisor_factory: SupervisorFactory = CoverageRuntimeSupervisor,
         sleep_observer_factory: SleepObserverFactory | None = None,
         power_assertion: CaffeinateAssertion | None = None,
         utc_clock_ns: Callable[[], int] = time.time_ns,
@@ -226,7 +84,7 @@ class ServiceRuntime:
         self.config = config
         self.logger = logger
         self.authority_path = authority_path
-        self.collector_factory = collector_factory
+        self.supervisor_factory = supervisor_factory
         self.sleep_observer_factory = sleep_observer_factory or (
             MacSleepObserver if sys.platform == "darwin" else NoopSleepObserver
         )
@@ -267,15 +125,11 @@ class ServiceRuntime:
         self._stop: asyncio.Event | None = None
         self._recovery_stop: threading.Event | None = None
         self._catalog: Catalog | None = None
-        self._supervisor: MarketCollectorSupervisor | SelectedAssetCapture | None = None
+        self._supervisor: SelectedAssetCapture | None = None
         self._collectors: Mapping[ProductKey, RuntimeCollector] = {}
         self.expected_products = frozenset(
             configured_products(config.spot_symbols, config.usdm_symbols)
         )
-        self.usdm_request_lock = asyncio.Lock() if config.usdm_symbols else None
-        self.usdm_cooldown = UsdMRestCooldown() if config.usdm_symbols else None
-        self.global_side_data: UsdMSideDataManager | None = None
-        self._global_side_metrics: MetricsRecorder | None = None
         self._sleep_started_at_utc_ns: int | None = None
         self._last_sleep_gap: SleepGap | None = None
         self._detector = ClockDiscontinuityDetector(
@@ -289,51 +143,6 @@ class ServiceRuntime:
         self._heartbeat_failure: BaseException | None = None
         self._failure_task: str | None = None
         self._failure_type: str | None = None
-        self._global_side_failure: str | None = None
-
-    def _create_global_side_data(self) -> None:
-        if not self.config.usdm_symbols or not (
-            self.config.side_funding_info_enabled or self.config.side_exchange_info_enabled
-        ):
-            return
-        if self._catalog is None:
-            raise RuntimeError("global side-data owner requires the service Catalog")
-        policy = self.config.proxy_policy()
-        self._global_side_metrics = MetricsRecorder(
-            catalog=self._catalog,
-            data_root=self.layout.root,
-            collector_instance_id=f"{self.service_instance_id}:um_perpetual:global",
-            logger=self.logger,
-            log_context=global_log_fields(
-                "um_perpetual", owner="usdm_side_data"
-            ),
-        )
-        self.global_side_data = UsdMSideDataManager(
-            metrics=self._global_side_metrics,
-            scope="global",
-            symbol=GLOBAL_SIDE_DATA_SYMBOL,
-            settings=_usdm_side_settings(self.config),
-            layout=self.layout,
-            catalog=self._catalog,
-            collector_instance_id=f"{self.service_instance_id}:um_perpetual:global",
-            collector_version=self.collector_version,
-            logger=self.logger,
-            queue_capacity=self.config.ingress_queue_capacity,
-            receipt_queue_capacity=self.config.ingress_queue_capacity,
-            rotation=RotationPolicy(
-                seconds=self.config.rotation_seconds, bytes=self.config.rotation_bytes
-            ),
-            durability_interval_seconds=self.config.durability_interval_seconds,
-            max_frame_bytes=self.config.max_frame_bytes,
-            planned_rotation_seconds=23 * 60 * 60 + 50 * 60,
-            rest_timeout_ms=10_000,
-            rest_api=create_usdm_side_rest_api(timeout_ms=10_000, proxy_policy=policy),
-            websocket_opener=partial(
-                open_usdm_websocket, proxy=policy.websocket_proxy(USDM_WEBSOCKET_ROOT)
-            ),
-            request_lock=self.usdm_request_lock,
-            cooldown=self.usdm_cooldown,
-        )
 
     def request_stop(self, reason: str) -> None:
         if not reason:
@@ -443,7 +252,7 @@ class ServiceRuntime:
         return output
 
     def _state_document(self) -> dict[str, object]:
-        if isinstance(self._supervisor, SelectedAssetCapture):
+        if isinstance(self._supervisor, SelectedAssetCapture) and self.config.coverage is not None:
             self.expected_products = frozenset(self._collectors)
         products = self._product_state()
         states = [item for market in products.values() for item in market.values()]
@@ -458,7 +267,7 @@ class ServiceRuntime:
                 for item in [products[key.market][key.symbol]]
             )
         )
-        if isinstance(self._supervisor, SelectedAssetCapture):
+        if isinstance(self._supervisor, SelectedAssetCapture) and self.config.coverage is not None:
             core_ready = core_ready and self._supervisor.directory.observed_markets == {
                 "spot", "usdm", "coinm"
             }
@@ -508,15 +317,14 @@ class ServiceRuntime:
             side_data = product_state.get("side_data")
             if isinstance(side_data, dict):
                 side_items.extend(item for item in side_data.values() if isinstance(item, dict))
-        global_side_status = self.global_side_data.status() if self.global_side_data else {}
-        if self._global_side_failure is not None:
-            global_side_status = {
-                name: {**item, "status": "FAILED", "error_type": self._global_side_failure}
-                if item.get("enabled") else item
-                for name, item in global_side_status.items()
-            }
         shared_public_status = (self._supervisor.shared_source_status()
                                 if isinstance(self._supervisor, SelectedAssetCapture) else {})
+        global_side_status = {
+            state.source.stream: state.public_dict(self.utc_clock_ns())
+            for state in self._supervisor.sources.values()
+            if state.source.venue_market == "usdm"
+            and state.source.stream in {"funding_info", "exchange_info"}
+        } if self._supervisor is not None and self.config.coverage is None else {}
         side_items.extend(shared_public_status.values())
         side_items.extend(global_side_status.values())
         degraded_side_states = {"RETRYING", "STALE", "FAILED"}
@@ -525,7 +333,7 @@ class ServiceRuntime:
         if any(
             item.get("enabled") and item.get("status") in degraded_side_states
             for item in side_items
-        ) or self._global_side_failure is not None:
+        ):
             network_status = "DEGRADED"
         heartbeat = self.utc_clock_ns()
         return {
@@ -545,7 +353,7 @@ class ServiceRuntime:
             "spot_symbols": list(self.config.spot_symbols),
             "usdm_symbols": list(self.config.usdm_symbols),
             "selected_asset_coverage": self._supervisor.status(include_sources=False)
-            if isinstance(self._supervisor, SelectedAssetCapture) else None,
+            if self._supervisor is not None and self.config.coverage is not None else None,
             "expected_product_count": len(self.expected_products),
             "ready_product_count": ready_count,
             "core_ready": core_ready,
@@ -553,10 +361,8 @@ class ServiceRuntime:
                 "task": self._failure_task,
                 "error_type": self._failure_type,
             } if self._failure_type is not None else None,
-            "global_usdm_side_data_owner": {
-                "status": "FAILED" if self._global_side_failure else self._status,
-                "error_type": self._global_side_failure,
-            } if self.global_side_data is not None else None,
+            "global_usdm_side_data_owner": {"status": self._status, "error_type": None}
+            if global_side_status else None,
             "global_usdm_side_data": global_side_status,
             "shared_public_sources": shared_public_status,
             "shutdown_reason": self.shutdown_reason,
@@ -627,30 +433,6 @@ class ServiceRuntime:
         if self._heartbeat_failure is not None:
             self._failure_task = "service-heartbeat"
             raise self._heartbeat_failure
-
-    async def _run_global_side_data(self, stop: asyncio.Event) -> None:
-        assert self.global_side_data is not None
-        try:
-            await self.global_side_data.run(stop)
-            if not stop.is_set():
-                raise RuntimeError("global side-data owner returned before stop")
-        except (Exception, asyncio.CancelledError) as exc:
-            if isinstance(exc, asyncio.CancelledError) and stop.is_set():
-                raise
-            self._global_side_failure = type(exc).__name__
-            if self._catalog is not None:
-                occurred_at = self.utc_clock_ns()
-                self._catalog.record_operational_event(
-                    event_id=f"global-side-failed:{self.service_instance_id}:{occurred_at}",
-                    event_type="GLOBAL_SIDE_DATA_TERMINAL_FAILURE",
-                    occurred_at_utc_ns=occurred_at,
-                    evidence={"error_type": self._global_side_failure},
-                )
-            log_event(
-                self.logger, logging.ERROR, "global_side_data_terminal_failure",
-                "global side-data owner terminated; core capture continues degraded",
-                error_type=self._global_side_failure,
-            )
 
     async def _publish_failure(self, exc: BaseException) -> None:
         self._status = "FAILED"
@@ -878,7 +660,6 @@ class ServiceRuntime:
 
         observer = self.sleep_observer_factory(notify_sleep)
         heartbeat_task: asyncio.Task[None] | None = None
-        global_side_task: asyncio.Task[None] | None = None
         supervisor_task: asyncio.Task[None] | None = None
         capacity_task: asyncio.Task[dict[str, object] | None] | None = None
         report_task: asyncio.Task[None] | None = None
@@ -916,17 +697,6 @@ class ServiceRuntime:
                 self._status = "STOPPING"
                 self._record_hard_reserve_stop(capacity)
                 return
-            if self.config.coverage is None:
-                self._collectors = self.collector_factory(
-                    self.config,
-                    self.logger,
-                    self.collector_version,
-                    self.service_instance_id,
-                    self.usdm_request_lock,
-                    self.usdm_cooldown,
-                )
-                self._create_global_side_data()
-
             def observe_terminal(name: ProductKey, exc: BaseException) -> None:
                 if self._catalog is None:
                     return
@@ -959,16 +729,13 @@ class ServiceRuntime:
                     },
                 )
 
-            if self.config.coverage is not None:
-                self._supervisor = SelectedAssetCapture(
-                    self.config, self.logger, self.collector_version, self.service_instance_id,
-                    self.layout, self._catalog,
-                )
-                self._collectors = self._supervisor.collectors
-            else:
-                self._supervisor = MarketCollectorSupervisor(
-                    self._collectors, terminal_failure_observer=observe_terminal
-                )
+            self._supervisor = self.supervisor_factory(
+                self.config, self.logger, self.collector_version, self.service_instance_id,
+                self.layout, self._catalog,
+            )
+            if isinstance(self._supervisor, SelectedAssetCapture):
+                self._supervisor.terminal_failure_observer = observe_terminal
+            self._collectors = self._supervisor.collectors
             self.power_assertion.start()
             observer.start()
             self._status = "RUNNING"
@@ -983,11 +750,6 @@ class ServiceRuntime:
                     "prevent_sleep": self.config.prevent_sleep,
                 },
             )
-            if self.global_side_data is not None:
-                global_side_task = asyncio.create_task(
-                    self._run_global_side_data(stop),
-                    name="GLOBAL:usdm-side-data-owner",
-                )
             supervisor_task = asyncio.create_task(
                 self._supervisor.run(stop), name="GLOBAL:collector-supervisor"
             )
@@ -1048,10 +810,6 @@ class ServiceRuntime:
                     await asyncio.gather(capacity_task, return_exceptions=True)
                 if supervisor_task is not None and not supervisor_task.done():
                     await asyncio.gather(supervisor_task, return_exceptions=True)
-                if global_side_task is not None:
-                    await asyncio.gather(global_side_task, return_exceptions=True)
-                    if self._global_side_metrics is not None and self._catalog is not None:
-                        await asyncio.to_thread(self._global_side_metrics.safely_flush)
                 try:
                     observer.stop()
                 except RuntimeError as exc:

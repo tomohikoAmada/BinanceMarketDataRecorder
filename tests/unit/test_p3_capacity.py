@@ -11,6 +11,7 @@ import pytest
 from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service.runtime import RuntimeCollector, ServiceRuntime
 from binance_market_data_recorder.storage.catalog import Catalog
+from tests.runtime_support import with_collectors
 from tests.unit.test_service_runtime import (
     FakeCollector,
     FakePowerAssertion,
@@ -34,9 +35,9 @@ def test_ordinary_profile_enforces_real_reserve_without_deleting_raw(
         runtime = ServiceRuntime(
             config=_config(tmp_path),
             logger=logging.getLogger("p3.capacity"),
-            collector_factory=lambda *args: {
-                ProductKey("spot", "BTCUSDT"): cast(RuntimeCollector, collector)
-            },
+            supervisor_factory=with_collectors(
+                lambda *args: {ProductKey("spot", "BTCUSDT"): cast(RuntimeCollector, collector)}
+            ),
             sleep_observer_factory=FakeSleepObserver,
             power_assertion=FakePowerAssertion(),
             disk_usage=disk,

@@ -13,6 +13,7 @@ from typing import Any, cast
 import pytest
 from pydantic import ValidationError
 
+from binance_market_data_recorder.binance.public_websocket import stream_groups
 from binance_market_data_recorder.binance.spot.exchange_info import capture_spot_exchange_info
 from binance_market_data_recorder.binance.spot.rest import (
     SpotSnapshotRequester,
@@ -35,19 +36,15 @@ from binance_market_data_recorder.binance.usdm.schema import (
 )
 from binance_market_data_recorder.binance.usdm.side_data_rest import (
     FIVE_MINUTE_KINDS,
-    GLOBAL_SIDE_DATA_SYMBOL,
 )
 from binance_market_data_recorder.binance.usdm.side_data_schema import (
     UsdMSideStream,
     envelope_from_side_stream_frame,
 )
-from binance_market_data_recorder.collector.spot import SpotCollector
-from binance_market_data_recorder.collector.usdm import UsdMCollector
-from binance_market_data_recorder.collector.usdm_side_data import RestSideDataPoller
+from binance_market_data_recorder.collector.coverage import SelectedAssetCapture
 from binance_market_data_recorder.config import ConfigurationError, RecorderConfig, load_config
 from binance_market_data_recorder.domain.product import ProductKey, configured_products
-from binance_market_data_recorder.service import runtime as runtime_module
-from binance_market_data_recorder.service.runtime import ServiceRuntime, _collector_factory
+from binance_market_data_recorder.service.runtime import ServiceRuntime
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor.readiness import CORE_STREAMS, ReadinessSnapshot
 from tests.r3_support import R3_SYMBOLS
@@ -131,40 +128,61 @@ def constructed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Any
     calls: list[str] = []
     runtimes: list[ServiceRuntime] = []
 
-    def factory(market: str) -> Any:
-        def create(**kwargs: Any) -> Any:
-            calls.append(market)
-            return object()
+    class Client:
+        def __init__(self, venue: str, proxy: Any) -> None:
+            calls.append(venue)
 
-        return create
+        def request(self, source: Any, params: Any) -> Any:
+            raise AssertionError("construction must not perform network I/O")
 
-    monkeypatch.setattr(runtime_module, "PublicSpotRestApi", factory("spot_depth"))
-    monkeypatch.setattr(runtime_module, "create_spot_exchange_info_api", factory("spot_info"))
-    monkeypatch.setattr(runtime_module, "create_usdm_rest_api", factory("usdm_depth"))
-    monkeypatch.setattr(runtime_module, "create_usdm_side_rest_api", factory("usdm_side"))
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr("binance_market_data_recorder.collector.coverage.PublicRestClient", Client)
 
     def build(**values: Any) -> tuple[ServiceRuntime, list[str]]:
-        config = RecorderConfig(data_root=tmp_path, **values)
-        runtime = ServiceRuntime(config=config, logger=logging.getLogger("test.ms2"))
+        runtime = ServiceRuntime(
+            config=RecorderConfig(data_root=tmp_path, **values),
+            logger=logging.getLogger("test.ms2"),
+        )
         runtime._catalog = Catalog(runtime.layout.catalog)
-        runtime._collectors = _collector_factory(
-            config,
+        owner = runtime.supervisor_factory(
+            runtime.config,
             runtime.logger,
             "test",
             runtime.service_instance_id,
-            runtime.usdm_request_lock,
-            runtime.usdm_cooldown,
+            runtime.layout,
+            runtime._catalog,
         )
-        runtime._create_global_side_data()
+        runtime._supervisor = owner
+        runtime._collectors = owner.collectors
         runtimes.append(runtime)
         return runtime, calls
 
     yield build
     for runtime in runtimes:
-        for collector in runtime._collectors.values():
-            cast(Any, collector).catalog.close()
         assert runtime._catalog is not None
         runtime._catalog.close()
+
+
+def make_groups(owner: SelectedAssetCapture) -> None:
+    for collector in owner.collectors.values():
+        sources = tuple(
+            state.source
+            for state in collector.source_states.values()
+            if state.source.transport == "ws"
+        )
+        for group in stream_groups(sources, owner.coverage.streams_per_connection):
+            from functools import partial
+
+            collector.groups.append(
+                owner.make_group(
+                    group,
+                    collector.product,
+                    collector.persisted,
+                    partial(collector.lifecycle, group),
+                )
+            )
 
 
 @pytest.mark.parametrize(
@@ -175,70 +193,53 @@ def constructed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Any
         {"usdm_symbols": ["SOLUSDT"]},
         {"spot_symbols": ["SOLUSDT", "BTCUSDT", "ETHUSDT"], "usdm_symbols": ["ETHUSDT", "SOLUSDT"]},
         {"spot_symbols": ["ETHUSDT"], "usdm_symbols": ["ETHUSDT"]},
+        {"spot_symbols": ["UNUSUALQUOTE"]},
     ],
 )
 def test_exact_assembly_routes_and_zero_market_ownership(constructed: Any, values: Any) -> None:
     runtime, calls = constructed(**values)
-    expected = configured_products(runtime.config.spot_symbols, runtime.config.usdm_symbols)
-    assert tuple(runtime._collectors) == expected
-    ids = []
-    for key, collector in runtime._collectors.items():
-        assert collector.settings.symbol == key.symbol
-        assert isinstance(collector, SpotCollector if key.market == "spot" else UsdMCollector)
-        ids.append(collector.settings.collector_instance_id)
-        assert ids[-1] == f"{runtime.service_instance_id}:{key.market}:{key.symbol}"
-        for stream in collector.streams:
+    owner = runtime._supervisor
+    assert isinstance(owner, SelectedAssetCapture)
+    assert tuple(owner.collectors) == configured_products(
+        runtime.config.spot_symbols, runtime.config.usdm_symbols
+    )
+    make_groups(owner)
+    for key, collector in owner.collectors.items():
+        assert collector.product.key == key
+        assert collector.readiness_snapshot().symbol == key.symbol
+        for stream in collector.groups:
             assert stream.symbol == stream.spool.symbol == key.symbol
-            assert f"/{key.symbol.lower()}@" in stream.url
-        assert (
-            collector.snapshot_spool.symbol == collector.readiness_snapshot().symbol == key.symbol
-        )
-    assert len(ids) == len(set(ids))
-    if not runtime.config.spot_symbols:
-        assert not any(call.startswith("spot") for call in calls)
-        assert not any(isinstance(c, SpotCollector) for c in runtime._collectors.values())
-    if not runtime.config.usdm_symbols:
-        assert not any(call.startswith("usdm") for call in calls)
-        assert runtime.global_side_data is None
-        assert runtime.usdm_request_lock is runtime.usdm_cooldown is None
-    else:
-        assert runtime.global_side_data is not None
-        assert set(runtime.global_side_data.supervisor.factories) == {
-            "funding_info",
-            "exchange_info",
-        }
-        assert runtime.global_side_data.cursor_state == {}
-        assert runtime.global_side_data.symbol == GLOBAL_SIDE_DATA_SYMBOL == "BTCUSDT"
-        for collector in runtime._collectors.values():
-            if isinstance(collector, UsdMCollector):
-                assert collector.public_rest_request_lock is runtime.usdm_request_lock
-                assert collector.public_rest_cooldown is runtime.usdm_cooldown
-                assert collector.side_data is not None
-                assert collector.side_data.rest_request_lock is runtime.usdm_request_lock
-                assert collector.side_data.rest_cooldown is runtime.usdm_cooldown
-                assert not {"funding_info", "exchange_info"} & set(
-                    collector.side_data.supervisor.factories
-                )
-        assert runtime.global_side_data.rest_request_lock is runtime.usdm_request_lock
-        assert runtime.global_side_data.rest_cooldown is runtime.usdm_cooldown
+            assert all(
+                name.startswith(key.symbol.lower() + "@") for name in stream.combined_streams
+            )
+    assert set(calls) == ({"spot"} if runtime.config.spot_symbols else set()) | (
+        {"usdm"} if runtime.config.usdm_symbols else set()
+    )
+    sources = [state.source for state in owner.sources.values()]
+    assert not any("kline" in source.stream or source.venue_market == "coinm" for source in sources)
+    for logical_stream in ("exchange_info", "funding_info"):
+        assert sum(
+            source.stream == logical_stream and source.venue_market == "usdm" for source in sources
+        ) == bool(runtime.config.usdm_symbols)
 
 
-def test_global_owner_disabled_and_shared_spot_limiter(constructed: Any) -> None:
-    async def exercise() -> None:
-        runtime, _ = constructed(
-            spot_symbols=["BTCUSDT", "ETHUSDT"],
-            usdm_symbols=["ETHUSDT"],
-            side_funding_info_enabled=False,
-            side_exchange_info_enabled=False,
-        )
-        assert runtime.global_side_data is None
-        collectors = [c for c in runtime._collectors.values() if isinstance(c, SpotCollector)]
-        assert (
-            collectors[0].snapshot_requester.rate_limiter
-            is collectors[1].snapshot_requester.rate_limiter
-        )
-
-    asyncio.run(exercise())
+def test_auxiliary_switches_and_intervals_map_without_scope_expansion(constructed: Any) -> None:
+    runtime, _ = constructed(
+        spot_symbols=["BTCUSDT", "ETHUSDT"],
+        usdm_symbols=["ETHUSDT"],
+        side_funding_info_enabled=False,
+        side_exchange_info_enabled=False,
+        side_mark_price_enabled=False,
+        side_open_interest_interval_seconds=37.0,
+        spot_exchange_info_interval_seconds=73.0,
+    )
+    owner = runtime._supervisor
+    assert isinstance(owner, SelectedAssetCapture)
+    sources = [state.source for state in owner.sources.values()]
+    assert not {"funding_info", "mark_price"} & {s.stream for s in sources}
+    assert not any(s.stream == "exchange_info" and s.venue_market == "usdm" for s in sources)
+    assert [s.cadence_seconds for s in sources if s.stream == "open_interest"] == [37.0]
+    assert [s.cadence_seconds for s in sources if s.stream == "exchange_info"] == [73.0, 73.0]
 
 
 @pytest.mark.parametrize("market", ["spot", "usdm"])
@@ -457,148 +458,96 @@ def test_product_local_resync_readiness_queues_and_hard_reserve(constructed: Any
     runtime, _ = constructed(
         spot_symbols=["BTCUSDT", "ETHUSDT", "SOLUSDT"], usdm_symbols=["ETHUSDT"]
     )
-    target = runtime._collectors[ProductKey("spot", "ETHUSDT")]
-    siblings = [c for c in runtime._collectors.values() if c is not target]
+    owner = runtime._supervisor
+    assert isinstance(owner, SelectedAssetCapture)
+    make_groups(owner)
+    target = owner.collectors[ProductKey("spot", "ETHUSDT")]
+    siblings = [c for c in owner.collectors.values() if c is not target]
     before = [c.readiness_snapshot() for c in siblings]
-    target.streams[0].lifecycle_observer("unexpected_disconnect")
-    assert target.resync.requested.is_set()
-    assert target.readiness_snapshot().failure == "unexpected_disconnect"
-    assert all(not c.resync.requested.is_set() for c in siblings)
+    target.snapshot = cast(Any, object())
+    assert target.groups[0].lifecycle_observer is not None
+    target.groups[0].lifecycle_observer("unexpected_disconnect")
+    assert target.snapshot is None
     assert before == [c.readiness_snapshot() for c in siblings]
-    assert len({id(c.resync) for c in runtime._collectors.values()}) == 4
-    assert (
-        len({id(stream._receipts) for c in runtime._collectors.values() for stream in c.streams})
-        == 12
-    )
-    assert (
-        len({id(stream.spool) for c in runtime._collectors.values() for stream in c.streams}) == 12
-    )
+    groups = [g for c in owner.collectors.values() for g in c.groups]
+    assert len({id(g._receipts) for g in groups}) == len(groups)
+    assert len({id(g.spool) for g in groups}) == len(groups)
     runtime._record_hard_reserve_stop({"observed_at_utc_ns": 100})
-    catalog = runtime._catalog
-    gaps = catalog.unclosed_stream_discontinuities_by_stream()
-    assert set(gaps) == {
+    assert set(runtime._catalog.unclosed_stream_discontinuities_by_stream()) == {
         (key.market, key.symbol, stream)
         for key in runtime.expected_products
         for stream in CORE_STREAMS
     }
-    rows_before = catalog.operational_events(event_type="STREAM_DISCONTINUITY_STARTED")
-    # Removed products retain historical evidence; re-added products restore only their own gap.
-    changed, _ = constructed(spot_symbols=["ETHUSDT"])
-    restored = changed._collectors[ProductKey("spot", "ETHUSDT")]
-    assert all(stream._pending_gap is not None for stream in restored.streams)
-    assert rows_before == catalog.operational_events(event_type="STREAM_DISCONTINUITY_STARTED")
 
 
-def test_product_side_factories_and_independent_cursors(constructed: Any) -> None:
+def test_product_side_sources_and_independent_cursors(constructed: Any) -> None:
     runtime, _ = constructed(usdm_symbols=["ETHUSDT", "SOLUSDT"])
-    assert ProductKey("um_perpetual", "BTCUSDT") not in runtime.expected_products
-    for key, collector in runtime._collectors.items():
-        manager = collector.side_data
-        assert manager.symbol == key.symbol and manager.scope == "product"
-        for factory in manager.supervisor.factories.values():
-            extension = factory()
-            if isinstance(extension, RestSideDataPoller):
-                assert extension.symbol == extension.spool.symbol == key.symbol
-                assert extension.request_lock is runtime.usdm_request_lock
-                assert extension.cooldown is runtime.usdm_cooldown
-            else:
-                assert extension.collector.symbol == key.symbol
-                assert f"/{key.symbol.lower()}@" in extension.collector.url
+    owner = runtime._supervisor
+    assert isinstance(owner, SelectedAssetCapture)
+    for key, collector in owner.collectors.items():
+        assert ProductKey("um_perpetual", "BTCUSDT") not in owner.collectors
         for kind in FIVE_MINUTE_KINDS:
-            assert kind.value in manager.cursor_state
-    catalog = runtime._catalog
-    for kind in FIVE_MINUTE_KINDS:
-        catalog.advance_side_data_cursor(
-            kind=kind.value,
-            symbol="ETHUSDT",
-            last_persisted_period_timestamp=300000,
-            updated_at_utc_ns=1,
-            source_retention_window="latest_30_days",
-            retention_window_ms=2592000000,
-        )
-        assert catalog.side_data_cursor(kind.value, "ETHUSDT") is not None
-        assert catalog.side_data_cursor(kind.value, "SOLUSDT") is None
-        assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+            source = collector.source_states[kind.value].source
+            assert source.symbol == key.symbol
+            assert (
+                dict(source.parameters).get("symbol", dict(source.parameters).get("pair"))
+                == key.symbol
+            )
+            runtime._catalog.advance_side_data_cursor(
+                kind=kind.value,
+                symbol="ETHUSDT",
+                last_persisted_period_timestamp=300000,
+                updated_at_utc_ns=1,
+                source_retention_window="latest_30_days",
+                retention_window_ms=2592000000,
+            )
+            assert runtime._catalog.side_data_cursor(kind.value, "ETHUSDT") is not None
+            assert runtime._catalog.side_data_cursor(kind.value, "SOLUSDT") is None
 
 
 @pytest.mark.parametrize("status", [418, 429])
-@pytest.mark.parametrize("origin", ["core", "product_side", "global_side"])
+@pytest.mark.parametrize("origin", ["depth_snapshot", "open_interest", "funding_info"])
 def test_observed_rate_limit_blocks_sibling_core_and_side_paths(
     constructed: Any,
     monkeypatch: pytest.MonkeyPatch,
     status: int,
     origin: str,
 ) -> None:
-    from binance_common.errors import RateLimitBanError, TooManyRequestsError
+    import time
 
-    from tests.unit.test_usdm_shared_rest_gate import ObservedCooldown
+    from binance_market_data_recorder.binance.public_rest import RestObservation
+    from binance_market_data_recorder.binance.request_budget import shared_request_budget
+    from tests.factories import event
 
     async def exercise() -> None:
-        cooldown = ObservedCooldown()
-        monkeypatch.setattr(runtime_module, "UsdMRestCooldown", lambda: cooldown)
         runtime, _ = constructed(usdm_symbols=["ETHUSDT", "SOLUSDT"])
-        eth = runtime._collectors[ProductKey("um_perpetual", "ETHUSDT")]
-        sol = runtime._collectors[ProductKey("um_perpetual", "SOLUSDT")]
-        assert eth.side_data is not None and sol.side_data is not None
-        assert runtime.global_side_data is not None
-        eth_side = eth.side_data.supervisor.factories["open_interest"]()
-        sol_side = sol.side_data.supervisor.factories["open_interest"]()
-        global_side = runtime.global_side_data.supervisor.factories["funding_info"]()
-        called: list[str] = []
-        error = (
-            RateLimitBanError(status_code=418)
-            if status == 418
-            else TooManyRequestsError(status_code=429)
+        owner = runtime._supervisor
+        assert isinstance(owner, SelectedAssetCapture)
+        source = next(s for s in owner.sources.values() if s.source.stream == origin)
+        result = RestObservation(
+            event().model_copy(update={"receive_time_utc_ns": time.time_ns()}),
+            None,
+            False,
+            status,
+            "HTTP" + str(status),
+            {"retry-after": "60"},
         )
+        blocked_before_persist = False
 
-        class Api:
-            def __init__(self, name: str) -> None:
-                self.name = name
+        async def persist(event: Any) -> None:
+            nonlocal blocked_before_persist
+            blocked_before_persist = shared_request_budget().delay({"usdm_weight": 1}) > 50
 
-            def order_book(self, symbol: str, limit: int) -> Any:
-                assert symbol == ("ETHUSDT" if self.name == "core" else "SOLUSDT")
-                called.append(self.name)
-                raise error
-
-            def open_interest(self, symbol: str) -> Any:
-                assert symbol == ("ETHUSDT" if self.name == "product_side" else "SOLUSDT")
-                called.append(self.name)
-                raise error
-
-            def get_funding_rate_info(self) -> Any:
-                called.append(self.name)
-                raise error
-
-        eth.rest_api = Api("core")
-        sol.rest_api = Api("sibling_core")
-        eth_side.rest_api = Api("product_side")
-        sol_side.rest_api = Api("sibling_side")
-        global_side.rest_api = Api("global_side")
-        stop = asyncio.Event()
-        source = {"core": eth, "product_side": eth_side, "global_side": global_side}[origin]
-        source_task = asyncio.create_task(
-            source._capture_snapshot(stop) if origin == "core" else source.run(stop)
+        monkeypatch.setattr(owner, "persist_rest", persist)
+        monkeypatch.setattr(
+            "binance_market_data_recorder.collector.coverage.capture_public_response",
+            lambda *args, **kwargs: result,
         )
-        await asyncio.wait_for(cooldown.install_finished.wait(), 1)
-        assert called == [origin] and cooldown.status == status
-        blocked_tasks = []
-        for target in [sol, sol_side, global_side] if origin != "global_side" else [sol, sol_side]:
-            cooldown.arm_next_wait()
-            if isinstance(target, UsdMCollector):
-                task = asyncio.create_task(target._capture_snapshot(stop))
-            else:
-                target._active_stop = stop
-                task = asyncio.create_task(target._request())
-            blocked_tasks.append(task)
-            await asyncio.wait_for(cooldown.next_wait_started.wait(), 1)
-            assert called == [origin]
-        stop.set()
-        await asyncio.wait_for(
-            asyncio.gather(source_task, *blocked_tasks, return_exceptions=True), 1
-        )
-        assert called == [origin]
-        for poller in [eth_side, sol_side, global_side]:
-            poller.spool.close_and_seal()
+        await owner.poll_once(source)
+        assert blocked_before_persist
+        for state in owner.sources.values():
+            if state.source.transport == "rest":
+                assert shared_request_budget().delay(state.source.charges) > 50
 
     asyncio.run(exercise())
 
@@ -673,164 +622,102 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
     monkeypatch: pytest.MonkeyPatch,
     values: Any,
 ) -> None:
-    from collections.abc import AsyncIterator
-    from contextlib import asynccontextmanager
+    from urllib.parse import unquote
 
+    from binance_market_data_recorder.collector import coverage as coverage_module
+    from binance_market_data_recorder.normalize.raw import SourceChunk, iter_source_records
     from binance_market_data_recorder.service.power import NoopSleepObserver
+    from tests.unit.test_p2_coverage import Response as PublicResponse
 
     all_enabled = values.get("all_enabled", False)
     values = {k: v for k, v in values.items() if k != "all_enabled"}
-    synced: set[tuple[str, str, str]] = set()
-    from binance_market_data_recorder.spool.stream import StreamSpool
-
-    original_sync = StreamSpool.sync
-
-    def observe_sync(spool: StreamSpool) -> None:
-        original_sync(spool)
-        synced.add((spool.market, spool.symbol, spool.stream))
-
-    monkeypatch.setattr(StreamSpool, "sync", observe_sync)
     opened: set[tuple[str, str]] = set()
     requested: list[tuple[str, str]] = []
-
-    class Api:
-        def depth(self, symbol: str, limit: int) -> Any:
-            requested.append(("spot", symbol))
-            return self.response()
-
-        def order_book(self, symbol: str, limit: int) -> Any:
-            requested.append(("um_perpetual", symbol))
-            return self.response()
-
-        def response(self) -> Any:
-            model = Model({"lastUpdateId": 157, "bids": [], "asks": []})
-            model.last_update_id = 157
-
-            class SnapshotResponse(Response):
-                def data(self) -> Any:
-                    return model
-
-            return SnapshotResponse()
+    received: dict[tuple[str, str], bytes] = {}
 
     class Socket:
-        def __init__(self, payload: bytes) -> None:
-            self.payload = payload
-            self.sent = False
+        def __init__(self, payloads: list[bytes]) -> None:
+            self.payloads = iter(payloads)
 
         async def recv(self, decode: bool | None = None) -> bytes:
-            if not self.sent:
-                self.sent = True
-                return self.payload
+            value = next(self.payloads, None)
+            if value is not None:
+                return value
             await asyncio.Future[None]()
             raise AssertionError("unreachable")
 
         async def close(self, **kwargs: Any) -> None:
             pass
 
-    @asynccontextmanager
-    async def opener(url: str, **kwargs: Any) -> AsyncIterator[Any]:
-        market = "um_perpetual" if "fstream" in url else "spot"
-        wire = url.rsplit("/", 1)[-1]
-        symbol, suffix = wire.split("@", 1)
-        stream = {
-            "depth@100ms": "diff_depth",
-            "aggTrade": "agg_trade",
-            "bookTicker": "book_ticker",
-            "markPrice@1s": "mark_price",
-            "forceOrder": "liquidation",
-        }[suffix]
-        opened.add((market, wire))
-        fixture_market = "usdm" if market == "um_perpetual" else "spot"
-        payload = (FIXTURES / fixture_market / f"{stream}.json").read_bytes()
-        yield Socket(payload.replace(b"BTCUSDT", symbol.upper().encode()))
+    class Connection:
+        def __init__(self, url: str, **kwargs: Any) -> None:
+            self.url = url
 
-    monkeypatch.setattr(runtime_module, "open_spot_websocket", opener)
-    monkeypatch.setattr(runtime_module, "open_usdm_websocket", opener)
-    monkeypatch.setattr(runtime_module, "PublicSpotRestApi", lambda **_: Api())
-    monkeypatch.setattr(runtime_module, "create_usdm_rest_api", lambda **_: Api())
+        async def __aenter__(self) -> Socket:
+            market = "um_perpetual" if "fstream" in self.url else "spot"
+            payloads = []
+            for wire in unquote(self.url.split("streams=", 1)[1]).split("/"):
+                symbol, suffix = wire.split("@", 1)
+                stream = {
+                    "depth@100ms": "diff_depth",
+                    "aggTrade": "agg_trade",
+                    "bookTicker": "book_ticker",
+                    "markPrice@1s": "mark_price",
+                    "forceOrder": "liquidation",
+                }[suffix]
+                fixture_market = "usdm" if market == "um_perpetual" else "spot"
+                data = json.loads(
+                    (FIXTURES / fixture_market / f"{stream}.json")
+                    .read_bytes()
+                    .replace(b"BTCUSDT", symbol.upper().encode())
+                )
+                payload = json.dumps({"stream": wire, "data": data}).encode()
+                received[market, wire] = payload
+                payloads.append(payload)
+                opened.add((market, wire))
+            return Socket(payloads)
 
-    class SideApi:
-        def exchange_info(self, symbol: str) -> Any:
-            return Response(
-                {
-                    "symbols": [
-                        {"symbol": symbol, "filters": [], "orderTypes": [], "status": "TRADING"}
-                    ]
-                }
-            )
+        async def __aexit__(self, *args: Any) -> None:
+            pass
 
-        def exchange_information(self) -> Any:
-            return Response(json.loads((FIXTURES / "usdm" / "exchange_info.json").read_text()))
+    class Client:
+        def __init__(self, venue: str, proxy: Any) -> None:
+            self.venue = venue
 
-        def get_funding_rate_info(self) -> Any:
-            return Response([])  # A successful empty adjustment list is valid.
+        def request(self, source: Any, params: Any) -> Any:
+            symbol = params.get("symbol", params.get("pair", source.symbol))
+            if source.stream == "depth_snapshot":
+                requested.append((source.market, source.symbol))
+                return PublicResponse({"lastUpdateId": 157, "bids": [], "asks": []})
+            if source.stream == "exchange_info":
+                return PublicResponse({"symbols": [{"symbol": symbol}], "rateLimits": []})
+            if source.stream == "funding_info":
+                return PublicResponse([])
+            if source.stream.endswith("_5m"):
+                from tests.unit.test_usdm_side_data_collector import _cursor_model
 
-        def mark_price(self, symbol: str) -> Any:
-            return self.fixture("premium_index", symbol)
-
-        def open_interest(self, symbol: str) -> Any:
-            return self.fixture("open_interest", symbol)
-
-        def get_funding_rate_history(self, symbol: str, *args: Any, **kwargs: Any) -> Any:
-            return self.fixture("funding_history", symbol)
-
-        def fixture(self, name: str, symbol: str) -> Any:
-            return Response(
+                if source.stream == "open_interest_statistics_5m" and symbol == "LTCUSDT":
+                    return PublicResponse([])
+                kind = next(k for k in FIVE_MINUTE_KINDS if k.value == source.stream)
+                end = params["endTime"] - (300_000 if source.family == "D16" else 0)
+                rows = []
+                for timestamp in range(params["startTime"], end + 1, 300_000):
+                    row = _cursor_model(kind, timestamp)
+                    row["symbol"] = row["pair"] = symbol
+                    rows.append(row)
+                return PublicResponse(rows)
+            fixture = {"premium_index_snapshot": "premium_index"}.get(source.stream, source.stream)
+            return PublicResponse(
                 json.loads(
-                    (FIXTURES / "usdm" / f"{name}.json").read_text().replace("BTCUSDT", symbol)
+                    (FIXTURES / "usdm" / f"{fixture}.json").read_text().replace("BTCUSDT", symbol)
                 )
             )
 
-        def periods(self, kind: Any, symbol: str, *args: Any) -> Any:
-            from tests.unit.test_usdm_side_data_collector import _cursor_model
+        def close(self) -> None:
+            pass
 
-            start = int(args[-2])
-            # One low-activity product has legitimate empty OI windows; its
-            # saved empty response/range cursor must not fail global readiness.
-            if symbol == "LTCUSDT" and kind.value == "open_interest_statistics_5m":
-                return Response([])
-            model = _cursor_model(kind, start)
-            model["symbol"] = symbol
-            if "pair" in model:
-                model["pair"] = symbol
-            return Response([model])
-
-        def open_interest_statistics(self, symbol: str, *args: Any) -> Any:
-            return self.periods(
-                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("open_")), symbol, *args
-            )
-
-        def taker_buy_sell_volume(self, symbol: str, *args: Any) -> Any:
-            return self.periods(
-                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("taker_")), symbol, *args
-            )
-
-        def long_short_ratio(self, symbol: str, *args: Any) -> Any:
-            return self.periods(
-                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("global_")), symbol, *args
-            )
-
-        def top_trader_long_short_ratio_accounts(self, symbol: str, *args: Any) -> Any:
-            return self.periods(
-                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("top_long_short_account")),
-                symbol,
-                *args,
-            )
-
-        def top_trader_long_short_ratio_positions(self, symbol: str, *args: Any) -> Any:
-            return self.periods(
-                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("top_long_short_position")),
-                symbol,
-                *args,
-            )
-
-        def basis(self, symbol: str, *args: Any) -> Any:
-            return self.periods(
-                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("basis_")), symbol, *args
-            )
-
-    monkeypatch.setattr(runtime_module, "create_usdm_side_rest_api", lambda **_: SideApi())
-    monkeypatch.setattr(runtime_module, "create_spot_exchange_info_api", lambda **_: SideApi())
+    monkeypatch.setattr(coverage_module, "connect", Connection)
+    monkeypatch.setattr(coverage_module, "PublicRestClient", Client)
     disabled: dict[str, Any] = {
         name: all_enabled
         for name in RecorderConfig.model_fields
@@ -844,113 +731,80 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
         logger=logging.getLogger("test.ms2"),
         sleep_observer_factory=NoopSleepObserver,
     )
-    expected_auxiliary = len(config.spot_symbols) + 11 * len(config.usdm_symbols) + 2
 
     async def exercise() -> None:
         task = asyncio.create_task(runtime.run())
         try:
-            # Ten Spot snapshots (weight 50) plus metadata use the real 6000/min
-            # pacer: the old four-product 5s fixture wait is too short for 20.
-            for _ in range(2000):
-                auxiliary = [
-                    item
-                    for collector in runtime._collectors.values()
-                    for item in cast(Any, collector).side_data_status().values()
-                ]
-                if runtime.global_side_data is not None:
-                    auxiliary += list(runtime.global_side_data.status().values())
-                if runtime._state_document()["core_ready"] and (
-                    not all_enabled
-                    or (
-                        len(auxiliary) == expected_auxiliary
-                        and all(item["accepted"] >= 1 for item in auxiliary)
-                    )
-                ):
-                    break
-                if task.done():
-                    await task
-                await asyncio.sleep(0.01)
-            assert runtime._state_document()["core_ready"] is True, json.dumps(
-                runtime._state_document(), indent=2
-            )
-            assert len(opened) == (
-                3 * len(runtime.expected_products)
-                + (2 * len(config.usdm_symbols) if all_enabled else 0)
-            )
-            if all_enabled:
-                assert len(auxiliary) == expected_auxiliary
-                assert all(item["accepted"] >= 1 and item["failures"] == 0 for item in auxiliary), (
-                    auxiliary,
-                    {
-                        str(k): repr(cast(Any, v.side_data).supervisor.failures)
-                        for k, v in runtime._collectors.items()
-                        if isinstance(v, UsdMCollector)
-                    },
-                )
-                assert runtime.global_side_data is not None
-                assert set(runtime.global_side_data.supervisor.factories) == {
-                    "funding_info",
-                    "exchange_info",
-                }
-                for collector in runtime._collectors.values():
-                    if isinstance(collector, UsdMCollector):
-                        assert collector.side_data is not None
-                        assert collector.side_data.rest_request_lock is runtime.usdm_request_lock
-                        assert collector.side_data.rest_cooldown is runtime.usdm_cooldown
-                        assert all(collector.side_data.cursor_state.values())
+            async with asyncio.timeout(20):
+                while True:
+                    if task.done():
+                        task.result()
+                    owner = runtime._supervisor
+                    if (
+                        isinstance(owner, SelectedAssetCapture)
+                        and runtime._state_document()["core_ready"]
+                    ):
+                        rest = [s for s in owner.sources.values() if s.source.transport == "rest"]
+                        if all(s.count > 0 and s.error is None for s in rest):
+                            break
+                    await asyncio.sleep(0.01)
+            assert isinstance(runtime._supervisor, SelectedAssetCapture)
+            assert set(runtime._collectors) == runtime.expected_products
             assert set(requested) == {(key.market, key.symbol) for key in runtime.expected_products}
+            assert len(opened) == 3 * len(runtime.expected_products) + (
+                2 * len(config.usdm_symbols) if all_enabled else 0
+            )
+            sources = [s.source for s in runtime._supervisor.sources.values()]
+            assert sum(s.stream == "funding_info" for s in sources) == bool(
+                all_enabled and config.usdm_symbols
+            )
         finally:
             runtime.request_stop("test-complete")
             await asyncio.wait_for(task, 5)
 
     asyncio.run(exercise())
-    assert runtime.state_store.read()["status"] == "STOPPED"  # type: ignore[index]
+    final = runtime.state_store.read()
+    assert final is not None and final["status"] == "STOPPED"
     manifests = [json.loads(path.read_text()) for path in runtime.layout.manifests.glob("*.json")]
-    actual = {(doc["market"], doc["symbol"], doc["stream"]) for doc in manifests}
-    core = {
+    saved = [
+        record.envelope
+        for doc in manifests
+        for record in iter_source_records(
+            SourceChunk(
+                doc["chunk_id"],
+                runtime.layout.root / doc["relative_path"],
+                runtime.layout.manifests / (doc["chunk_id"] + ".json"),
+                "test",
+                doc,
+            )
+        )
+    ]
+    ws = [e for e in saved if e.payload_encoding == "utf-8-json-combined.v1"]
+    assert {e.raw_payload for e in ws} == set(received.values())
+    assert {
+        (e.market, e.symbol, e.source_sequence["sourceStream"])
+        for e in saved
+        if e.source_sequence.get("sourceStream") in {*CORE_STREAMS, "depth_snapshot"}
+    } == {
         (key.market, key.symbol, stream)
         for key in runtime.expected_products
-        for stream in (*CORE_STREAMS, "depth_snapshot")
+        for stream in {*CORE_STREAMS, "depth_snapshot"}
     }
-    assert core <= actual
-    if all_enabled:
-        from binance_market_data_recorder.binance.usdm.side_data_rest import RestSideDataKind
-
-        product_kinds = {kind.value for kind in RestSideDataKind} - {
-            "exchange_info",
-            "funding_info",
-        }
-        expected = core | {("spot", symbol, "exchange_info") for symbol in config.spot_symbols}
-        expected |= {
-            ("um_perpetual", symbol, stream)
-            for symbol in config.usdm_symbols
-            for stream in product_kinds | {"mark_price", "liquidation"}
-        }
-        expected |= {
-            ("um_perpetual", GLOBAL_SIDE_DATA_SYMBOL, kind)
-            for kind in ("exchange_info", "funding_info")
-        }
-        assert actual == expected
-        if "LTCUSDT" in config.usdm_symbols:
-            with Catalog(runtime.layout.catalog) as catalog:
-                sparse = [
-                    row
-                    for row in catalog.operational_events(event_type="SIDE_DATA_RANGE_EVALUATED")
-                    if cast(dict[str, Any], row["evidence"]).get("symbol") == "LTCUSDT"
-                ]
-                assert sparse
-                assert all(
-                    cast(dict[str, Any], row["evidence"])["range_complete"]
-                    and cast(dict[str, Any], row["evidence"])["response_record_count"] == 0
-                    for row in sparse
-                )
-        assert len(actual) == 5 * len(config.spot_symbols) + 15 * len(config.usdm_symbols) + 2
-        assert {
-            item for item in expected if item[2] not in {*CORE_STREAMS, "mark_price", "liquidation"}
-        } <= synced
-        assert not list(runtime.layout.active.rglob("*.partial"))
-    else:
-        assert actual == core
+    assert all(e.symbol in (*config.spot_symbols, *config.usdm_symbols, "BTCUSDT") for e in saved)
+    assert not list(runtime.layout.active.rglob("*.partial"))
+    if all_enabled and "LTCUSDT" in config.usdm_symbols:
+        with Catalog(runtime.layout.catalog) as catalog:
+            sparse = [
+                row["evidence"]
+                for row in catalog.operational_events(event_type="SIDE_DATA_RANGE_EVALUATED")
+                if cast(dict[str, Any], row["evidence"])["symbol"] == "LTCUSDT"
+            ]
+            assert sparse
+            assert all(
+                cast(dict[str, Any], row)["range_complete"]
+                and cast(dict[str, Any], row)["response_record_count"] == 0
+                for row in sparse
+            )
 
 
 def test_wrong_symbol_frames_cannot_satisfy_readiness() -> None:

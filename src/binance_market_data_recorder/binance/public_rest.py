@@ -97,17 +97,12 @@ class PublicRestClient:
                 "takerlongshortRatio",
                 "takerBuySellVol",
                 "globalLongShortAccountRatio",
+                "topLongShortAccountRatio",
+                "topLongShortPositionRatio",
                 "basis",
                 "delivery-price",
             )
         }
-        if self.venue_market == "coinm":
-            public_paths.update(
-                {
-                    "/futures/data/topLongShortAccountRatio",
-                    "/futures/data/topLongShortPositionRatio",
-                }
-            )
         if source.endpoint not in public_paths or any(
             key.lower() in {"apikey", "signature", "timestamp", "listenkey"} for key in parameters
         ):
@@ -178,6 +173,7 @@ RestCaptureResult = RestObservation
 
 def _validate(source: Source, model: Any) -> None:
     rows = model if isinstance(model, list) else [model]
+    expected_symbol = dict(source.parameters).get("symbol")
     # Kline rows are native positional arrays, preserved without float/Decimal conversion.
     if "kline" in source.stream or "bars_" in source.stream or "_seed_" in source.stream:
         for row in rows:
@@ -199,6 +195,13 @@ def _validate(source: Source, model: Any) -> None:
             raise ValueError("public response row is not an object")
         if any(key not in row for key in source.required_fields):
             raise ValueError("public response missing a required field")
+        if expected_symbol is not None:
+            if "symbol" in row and row["symbol"] != expected_symbol:
+                raise ValueError("public response symbol differs from request")
+            if source.stream == "exchange_info" and not any(
+                symbol.get("symbol") == expected_symbol for symbol in row["symbols"]
+            ):
+                raise ValueError("public exchange directory omits requested symbol")
         for key in (
             "price",
             "qty",

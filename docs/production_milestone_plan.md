@@ -306,27 +306,14 @@
   - `binance/spot/` 下不再存在任何对 `binance/usdm/` 的导入；
   - `service/runtime.py` 采集路径收敛为单一监督栈，全部单元与集成测试通过。
 
-- **完成状态（2026-11-02 独立实施并全量验证）**：
-  - **公共 WS 底座彻底解耦**：
-    - 将原位于 `binance/usdm/websocket.py` 的公共连接抽象与流基类（`WebSocketConnection`, `ReceivedFrame`, `ReconnectBackoff`, `_PublicWebSocketStream`, `_CombinedWebSocketStream`）正式提取并提升至市场中立的公共底座 [`src/binance_market_data_recorder/binance/public_websocket.py`](../src/binance_market_data_recorder/binance/public_websocket.py)，公开命名为 `PublicWebSocketStream` 与 `CombinedWebSocketStream`，并保留原私有别名以提供平滑向后兼容。
-    - 将 REST 来源凭据头处理（`_PROVENANCE_HEADERS`, `safe_provenance_headers`）提取至 [`src/binance_market_data_recorder/binance/rest_representation.py`](../src/binance_market_data_recorder/binance/rest_representation.py)，消除了 `binance/spot/exchange_info.py` 对 `binance/usdm/rest.py` 的反常依赖。
-    - 静态审计确认：`git grep -n "usdm" src/binance_market_data_recorder/binance/spot/` 结果为 **0 行**，`binance/spot/` 彻底消除对 `binance/usdm/` 的任何导入。
-  - **采集器栈统一与接口自适应**：
-    - 在 [`src/binance_market_data_recorder/collector/coverage.py`](../src/binance_market_data_recorder/collector/coverage.py) 中，将 `make_group` 创建的流实例直接切换为平级的 `CombinedWebSocketStream`，解除了对 `UsdMStreamCollector` 具象类的依赖。
-    - 在 [`src/binance_market_data_recorder/collector/__init__.py`](../src/binance_market_data_recorder/collector/__init__.py) 中导出 `CoverageRuntimeSupervisor = SelectedAssetCapture`，统一运行时监督器的架构命名。
-    - 在 `PublicWebSocketStream` 中增强灵活性：`market` 参数未显式指定时自动从绑定的 `spool.market` 优雅推导；`_persist_batch` 调用 `envelope_factory` 时通过自适应异常回退机制无缝兼容带或不带 `additional_capture_flags` 的多种回调签名，并在 `binance/usdm/side_data_schema.py` 的 `envelope_from_side_stream_frame` 中补齐可选参数。
-    - 同步更新测试/基准适配：在 [`tools/benchmark_m1_m3_pipeline.py`](../tools/benchmark_m1_m3_pipeline.py) 中将 `make_group` 及 `groups` 列表类型注解与实现平滑对齐至 `CombinedWebSocketStream`。
-  - **发现的问题与过渡边界**：
-    - **关于“退役重复旧版采集循环”的落地边界**：经过代码审计与测试验证发现，测试套件中的历史遗留用例 [`tests/unit/test_ms2_configurable_products.py`](../tests/unit/test_ms2_configurable_products.py)（共 77 项用例）通过侵入式 monkeypatch（针对 `PublicSpotRestApi`, `create_usdm_rest_api`, `create_usdm_side_rest_api`, `open_spot_websocket`, `open_usdm_websocket`）对 MS2 旧版单品种架构内部进行了强耦合断言（显式断言 `isinstance(collector, UsdMCollector)`、检查 `collector.side_data` 与内部 cooldown 锁等）。
-    - 若在 `ServiceRuntime` 内部强行将无 `coverage` 配置的实例无条件改写为运行 `SelectedAssetCapture`，不仅会与该套单元测试的单流 mock 逻辑产生协议冲突（组合流 vs 单流 socket），还会直接打破其既定架构内部状态断言。
-    - 因此，遵循 `AGENTS.md`“务实工程（No Over-Engineering or Over-Defense）”原则以及任务中“验证所有现有单产品/多产品集成测试在新栈上行为等价后，退役重复的旧版采集循环”的明确指引，我们在保持对外统一 `CoverageRuntimeSupervisor` 架构与平滑兼容适配器的同时，保留了 `MarketCollectorSupervisor` 作为过渡分支，确保全套单元测试与全量集成测试 100% 绿灯通过。
-  - **全量验收与质量指标**：
-    - 全量单元与集成测试套件验证通过（**2,436 passed / 24 skipped / 1 deselected / 0 failed**，其中集成测试 710 项全部通过，单元测试 1,726 项全部通过）；
-    - `ruff check .` 全仓静态分析通过（0 错误，0 告警）；
-    - `mypy src/ tests/ tools/` 严格类型检查覆盖全部 369 个源文件（0 错误）；
-    - `python3.12 tests/verify_m0_contracts.py`（M0 契约验证）通过；
-    - `go run tools/verify_raw_chunk_golden.go`（Go Raw v1 golden 兼容性）通过；
-    - `git diff --check` 格式与换行检查无任何违规。
+- **完成状态（2026-11-02 二次独立复核并接续补齐）**：
+  - 原 `8ca9f40` 已抽出公共 WS 底座并清理 Spot 对 USD-M 的反向导入；但仍保留按配置选择的旧采集监督分支，**当时未满足 M2.3 的单栈退出门禁**。历史测试对内部类的依赖不构成该门禁的豁免。
+  - 服务现在统一运行 `CoverageRuntimeSupervisor`。新增 `collector/explicit.py`，将传统显式币种配置及辅助源开关/间隔映射为受限 source plan；不扩大到全量 coverage，不增加未配置市场。删除服务中的旧采集器工厂与独立全局辅助管理任务。
+  - 保留显式配置的精确产品就绪、单市场零额外市场请求、每进程全局源去重、5m 统计游标续采和稀疏 OI 语义、共享 `418/429` 冷却门、停机同步封存和故障原因传播。coverage 配置仍沿用原动态发现规则。
+  - 公共 WS 回调改为一次明确调用，在公共层合入 receipt flags；取消捕获任意 `TypeError` 再试一次的热路径兼容逻辑。
+  - 历史单/多产品用例迁移至统一栈的行为验证；服务生命周期故障注入同样运行生产监督循环。旧采集器类仅保留为直接调用的兼容/历史测试模块，服务、工具和示例不再实例化；延迟导入与模块隔离留给 M2.4。
+  - 最终全量离线回归 **2528 passed / 24 skipped / 5 deselected / 0 failed**；`ruff`、`mypy`（372 个源文件）、M0 契约、Go Raw golden 与 diff 检查通过。13 条既有故障注入 fork 警告及在线/压力验收边界已列入复核记录。
+  - 完整发现、修正和最终验证结果见 [`M2.3 复核记录`](benchmarks/m2.3-review-20261102.md)。本次为本机离线验收，不替代 M3 基准或 M4 VPS 在线资格验证。
 
 ---
 
@@ -478,6 +465,6 @@
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
-| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
+| **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈 **`[COMPLETED]`**<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

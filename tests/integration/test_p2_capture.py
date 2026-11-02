@@ -535,9 +535,6 @@ def test_service_selects_discovery_owner_and_reports_all_physical_markets(
     async def offline_shared(self: SelectedAssetCapture) -> None:
         pass
 
-    def legacy_factory(*args: Any) -> Any:
-        raise AssertionError("discovery mode must not start the legacy fixed-symbol owner")
-
     monkeypatch.setattr(ProductCapture, "run", idle_product)
     monkeypatch.setattr(SelectedAssetCapture, "_reconcile_shared", offline_shared)
 
@@ -545,7 +542,6 @@ def test_service_selects_discovery_owner_and_reports_all_physical_markets(
         runtime = ServiceRuntime(
             config=RecorderConfig(data_root=tmp_path, coverage=SMALL, prevent_sleep=False),
             logger=logging.getLogger("p2.runtime"),
-            collector_factory=legacy_factory,
             sleep_observer_factory=FakeSleepObserver,
             power_assertion=FakePowerAssertion(),
         )
@@ -576,7 +572,6 @@ def test_service_selects_discovery_owner_and_reports_all_physical_markets(
                 "cm_delivery",
             }
             assert state["core_ready"] is False  # No fixture WS was received.
-            assert runtime.global_side_data is None
         finally:
             runtime.request_stop("TEST_STOP")
             await asyncio.wait_for(task, 5)

@@ -68,8 +68,13 @@ Paths below are relative to `src/binance_market_data_recorder/`.
 ## Runtime and storage
 
 `ProductKey = (market, symbol)`. A single process assembles one Collector per
-configured product. Empty markets create no collectors or network traffic.
-Shared USD-M REST/global side data is not duplicated for every product.
+configured product through `CoverageRuntimeSupervisor` (`collector/coverage.py`).
+`collector/explicit.py` maps original `spot_symbols` / `usdm_symbols` and side-data
+settings to the same source/WS/REST pipeline; discovery configuration uses that
+supervisor's directory reconciliation. Empty explicit markets create no collectors
+or network traffic. Shared USD-M REST/global side data is not duplicated for every
+product. The old standalone Spot/USD-M collector assembly is retired from the
+service path. See [M2.3 review](benchmarks/m2.3-review-20261102.md).
 
 Capture produces original bytes plus provenance, then writes framed Raw to
 `data/active/*.partial`. Sealing publishes compressed immutable Raw, a manifest,

@@ -19,6 +19,7 @@ from binance_market_data_recorder.service.runtime import RuntimeCollector, Servi
 from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor import ReadinessSnapshot
+from tests.runtime_support import with_collectors
 
 
 class ProcessCollector:
@@ -91,7 +92,7 @@ def _service_process(data_root: str) -> None:
             sleep_gap_threshold_seconds=5.0,
         ),
         logger=configure_logging(),
-        collector_factory=factory,
+        supervisor_factory=with_collectors(factory),
         sleep_observer_factory=ProcessSleepObserver,
         power_assertion=ProcessPowerAssertion(),
     )
@@ -133,9 +134,7 @@ def test_sigterm_seals_service_and_sigkill_lock_is_restartable(
 
     restarted = context.Process(target=_service_process, args=(str(tmp_path),))
     restarted.start()
-    restarted_instance = _wait_running(
-        state_path, previous_instance=first_instance
-    )
+    restarted_instance = _wait_running(state_path, previous_instance=first_instance)
     assert restarted_instance != first_instance
     assert restarted.pid is not None
     os.kill(restarted.pid, signal.SIGTERM)

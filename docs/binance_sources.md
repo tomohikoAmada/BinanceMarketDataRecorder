@@ -866,3 +866,15 @@ The catalog's direct HTTP retrieval at 2026-11-02T00:14:38.862053Z returned zero
 - [Official USD-M REST market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data): native/continuous/mark/index K-line routing and parameters. Repair requests use limit 100 and charge weight 2.
 
 Reviewed documentation only; no live collection or production qualification was run.
+
+
+## M2.3 explicit-configuration compatibility review — 2026-11-02
+
+The existing explicit USD-M side-data configuration includes two public top-trader
+statistics routes. Their original adapters already use these endpoints. The unified
+unsigned client now allows the same routes so stack migration does not silently
+drop those configured sources.
+
+- [Official USD-M market-data catalog](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data): Top Trader Long/Short Account Ratio (`GET /futures/data/topLongShortAccountRatio`) and Top Trader Long/Short Position Ratio (`GET /futures/data/topLongShortPositionRatio`). Both original documentation URLs redirect to this catalog.
+
+Documentation review only; no account/order endpoints or live market requests were used.

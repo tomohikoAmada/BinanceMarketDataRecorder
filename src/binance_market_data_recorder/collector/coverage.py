@@ -15,12 +15,13 @@ from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from websockets.asyncio.client import connect
 from websockets.exceptions import InvalidStatus
 
+from ..binance.coverage_config import legacy_symbols_to_coverage_config
 from ..binance.products import TERMINAL_STATUSES, ProductDirectory
 from ..binance.public_rest import PublicRestClient, RestObservation, capture_public_response
 from ..binance.public_sources import (
@@ -53,6 +54,8 @@ from ..storage.layout import StorageLayout
 from ..supervisor.depth_continuity import DepthContinuity
 from ..supervisor.readiness import CORE_STREAMS, CollectorReadiness, ReadinessSnapshot
 from .availability import AvailabilityJournal
+from .explicit import explicit_source_plan
+from .supervisor import CoreMarketTerminalFailure
 
 AVAILABILITY_FLUSH_MAX_BATCHES = 32
 AVAILABILITY_FLUSH_SECONDS = 0.1
@@ -83,12 +86,19 @@ class SourceState:
     backfill_start_ms: int | None = None
     backfill_end_ms: int = 0
     backfill_due: float = 0
+    next_period_ms: int | None = None
+    period_limit: int = 499
+    degraded_after_seconds: float | None = None
 
     def public_dict(self, now: int) -> dict[str, object]:
         source = self.source
         deadline = self.response_deadline_utc_ns or (
             (self.last_success or self.first_due) + int((source.cadence_seconds + 10) * 1e9)
         )
+        if self.degraded_after_seconds is not None:
+            deadline = (self.last_success or self.first_due) + int(
+                (self.degraded_after_seconds + source.cadence_seconds) * 1e9
+            )
         status = (
             "DORMANT_LIFECYCLE"
             if self.dormant
@@ -165,6 +175,14 @@ class ProductCapture:
         return self.readiness.snapshot()
 
     def side_data_status(self) -> dict[str, dict[str, object]]:
+        if self.owner.config.coverage is None:
+            return {
+                name: state.public_dict(time.time_ns())
+                for name, state in self.source_states.items()
+                if name not in {"diff_depth", "agg_trade", "book_ticker", "depth_snapshot"}
+                and not (self.product.venue_market == "usdm"
+                         and name in {"funding_info", "exchange_info"})
+            }
         return {
             "/".join(state.source.key): state.public_dict(time.time_ns())
             for state in self.source_states.values()
@@ -315,8 +333,8 @@ class SelectedAssetCapture:
         catalog: Catalog,
         *,
         clients: dict[str, Any] | None = None,
+        terminal_failure_observer: Callable[[ProductKey, BaseException], None] | None = None,
     ) -> None:
-        assert config.coverage is not None
         self.config, self.logger, self.version, self.instance_id = (
             config,
             logger,
@@ -324,6 +342,15 @@ class SelectedAssetCapture:
             instance_id,
         )
         self.layout, self.catalog = layout, catalog
+        self._empty_stats_starts: dict[tuple[str, str], int] = {}
+        if config.coverage is None:
+            for row in catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE"):
+                evidence = cast(dict[str, Any], row["evidence"])
+                identity = str(evidence["kind"]), str(evidence["symbol"])
+                start = int(evidence["requested_start_timestamp"])
+                self._empty_stats_starts[identity] = min(
+                    start, self._empty_stats_starts.get(identity, start)
+                )
         self.metrics = MetricsRecorder(
             catalog=catalog,
             data_root=layout.root,
@@ -331,13 +358,11 @@ class SelectedAssetCapture:
             logger=logger,
         )
         self._last_metrics_flush = time.monotonic()
-        self.coverage = config.coverage
+        self.coverage = config.coverage or legacy_symbols_to_coverage_config(config)
+        self.terminal_failure_observer = terminal_failure_observer
         self.selection_started_utc_ns = time.time_ns()
         self._source_selection = source_selection_report((), self.coverage, ())
         self.directory = ProductDirectory(self.coverage)
-        self.clients = clients or {
-            v: PublicRestClient(v, config.proxy_policy()) for v in ("spot", "usdm", "coinm")
-        }
         self.collectors: dict[ProductKey, ProductCapture] = {}
         self.failures: dict[ProductKey, BaseException] = {}
         self._active_sources: dict[tuple[str, str, str, str], SourceState] = {}
@@ -367,14 +392,27 @@ class SelectedAssetCapture:
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
         self._rest_drain_waiters: dict[tuple[str, str, str], list[asyncio.Future[None]]] = {}
         self._rest_drain_in_progress: set[tuple[str, str, str]] = set()
-        for venue in ("spot", "usdm", "coinm"):
-            if venue == "spot" and self.coverage.usdm_symbols and not self.coverage.spot_symbols:
-                continue
-            if venue == "usdm" and self.coverage.spot_symbols and not self.coverage.usdm_symbols:
-                continue
-            if venue == "coinm" and (self.coverage.spot_symbols or self.coverage.usdm_symbols):
-                continue
-            self.add_source(directory_source(venue, self.coverage))
+        if config.coverage is None:
+            products, sources = explicit_source_plan(config)
+            for source in sources:
+                self.add_source(source)
+            for product in products:
+                key = product.key
+                self.directory.products[key] = product
+                self.collectors[key] = ProductCapture(self, product)
+                self.admission[key] = "ADMITTED"
+            self._source_selection = {
+                **source_selection_report(products, self.coverage, sources),
+                "policy": "explicit_symbols",
+                "directory_source_count": sum(s.stream == "exchange_info" for s in sources),
+            }
+        else:
+            for venue in ("spot", "usdm", "coinm"):
+                self.add_source(directory_source(venue, self.coverage))
+        venues = {state.source.venue_market for state in self.sources.values()}
+        self.clients: dict[str, Any] = clients if clients is not None else {
+            v: PublicRestClient(v, config.proxy_policy()) for v in sorted(venues)
+        }
 
     @property
     def source_selection_id(self) -> str:
@@ -399,6 +437,46 @@ class SelectedAssetCapture:
                 else None,
             )
             self.sources[source.key] = state
+            if self.config.coverage is None and source.stream not in CORE_STREAMS:
+                state.degraded_after_seconds = self.config.side_degraded_after_seconds
+                if source.stream.endswith("_5m"):
+                    cursor = self.catalog.side_data_cursor(source.stream, source.symbol)
+                    saved_period = (
+                        cursor["last_persisted_period_timestamp"] if cursor is not None
+                        else self._empty_stats_starts.get((source.stream, source.symbol))
+                    )
+                    if saved_period is not None:
+                        # Re-evaluate the saved period once, including sparse OI.
+                        assert isinstance(saved_period, int)
+                        if cursor is not None and source.family != "D15":
+                            saved_period += 300_000
+                        state.next_period_ms = saved_period
+                    last_closed = time.time_ns() // 1_000_000 // 300_000 * 300_000 - 300_000
+                    earliest = max(0, last_closed - 30 * 86400_000 + 600_000)
+                    if saved_period is None:
+                        state.next_period_ms = earliest
+                    else:
+                        if saved_period < earliest:
+                            self.catalog.record_operational_event(
+                                event_id=f"side-data-retention:{self.instance_id}:{source.key}",
+                                event_type="SIDE_DATA_UNRECOVERABLE_GAP",
+                                occurred_at_utc_ns=time.time_ns(),
+                                evidence={
+                                    "kind": source.stream, "symbol": source.symbol,
+                                    "gap_start_timestamp": saved_period,
+                                    "gap_end_timestamp": earliest - 300_000,
+                                    "source_retention_window": "latest_1_month"
+                                    if source.family == "D15" else "latest_30_days",
+                                    "retention_window_ms": 30 * 86400_000,
+                                },
+                                symbol=source.symbol,
+                            )
+                            state.next_period_ms = earliest
+                    assert state.next_period_ms is not None
+                    if state.next_period_ms > last_closed:
+                        state.next_due = time.monotonic() + (
+                            state.next_period_ms - last_closed
+                        ) / 1000
         if source.key not in self._completed_seed_sources:
             self._active_sources[source.key] = state
         self._changed.set()
@@ -455,6 +533,13 @@ class SelectedAssetCapture:
         spool = self.spool(*spool_key)
         spool.enqueue(grouped)
 
+        def drain_batch() -> None:
+            spool.drain_all()
+            if self.config.coverage is None:
+                progress = spool.persistence_progress()
+                if progress.synchronized_frames < progress.written_frames:
+                    spool.sync()
+
         if spool_key not in self._rest_drain_in_progress:
             self._rest_drain_in_progress.add(spool_key)
             try:
@@ -462,7 +547,7 @@ class SelectedAssetCapture:
                     batch_waiters = self._rest_drain_waiters.pop(spool_key, [])
                     try:
                         async with self._spool_locks[spool_key]:
-                            await run_owned_blocking_call(spool.drain_all)
+                            await run_owned_blocking_call(drain_batch)
                         for w in batch_waiters:
                             if not w.done():
                                 w.set_result(None)
@@ -972,11 +1057,23 @@ class SelectedAssetCapture:
         if source.endpoint.startswith("/futures/data/") and source.family != "D31":
             end = (time.time_ns() // 1_000_000 // 300_000) * 300_000 - 1
             params.update(startTime=end - 600_000 + 1, endTime=end)
+            if self.config.coverage is None:
+                state = self.sources[source.key]
+                # Resume each original 5m source independently, in bounded pages.
+                # Stay one closed period inside the published 30-day retention.
+                start = max(state.next_period_ms if state.next_period_ms is not None
+                            else end - 299_999,
+                            end - 30 * 86400_000 + 600_001)
+                state.next_period_ms = start
+                params.update(startTime=start,
+                              endTime=min(end, start + state.period_limit * 300_000 - 1),
+                              limit=500)
             if source.family == "D16":
                 # Match the existing side_data_rest taker boundary policy. The
                 # endpoint can include the preceding period and needs the next
                 # boundary to return both requested closed periods.
-                params.update(endTime=end + 300_000, limit=3)
+                params.update(endTime=params["endTime"] + 300_000,
+                              limit=500 if self.config.coverage is None else 3)
         if source.family == "D23":
             from datetime import UTC, datetime
 
@@ -1087,7 +1184,8 @@ class SelectedAssetCapture:
                     since=previous_success or state.first_due,
                 )
             state.last_success = result.envelope.receive_time_utc_ns
-            state.failures = 0
+            if self.config.coverage is not None:
+                state.failures = 0
             state.next_due = (
                 time.monotonic() + source.cadence_seconds
                 if source.cadence_seconds
@@ -1156,6 +1254,69 @@ class SelectedAssetCapture:
                             "EMPTY_EVALUATED_QUERY_WINDOW" if not rows else "CURRENT"
                         )
                     state.publication_time_ms = max(evaluated, default=None)
+                    if self.config.coverage is None and state.error is None:
+                        if source.family == "D15" and len(rows) >= parameters["limit"]:
+                            state.error = "DataResponseLimitReached"
+                            state.period_limit = max(1, state.period_limit // 2)
+                        elif source.family != "D15" and not evaluated:
+                            state.error = "DataPublicationPending"
+                        elif source.family != "D15" and sorted(evaluated) != list(
+                            range(period_start, period_end + 1, 300_000)
+                        ):
+                            state.error = "DataPeriodGap"
+                        else:
+                            evaluated_through = period_end - 299_999
+                            await run_owned_blocking_call(
+                                self.catalog.advance_side_data_cursor,
+                                kind=source.stream, symbol=source.symbol,
+                                last_persisted_period_timestamp=evaluated_through,
+                                updated_at_utc_ns=result.envelope.receive_time_utc_ns,
+                                source_retention_window="latest_1_month"
+                                if source.family == "D15" else "latest_30_days",
+                                retention_window_ms=30 * 86400_000,
+                            )
+                            state.next_period_ms = evaluated_through + 300_000
+                            now_ms = time.time_ns() // 1_000_000
+                            if state.next_period_ms < (now_ms // 300_000) * 300_000:
+                                state.next_due = time.monotonic()
+                            else:
+                                state.next_due = time.monotonic() + max(
+                                    source.cadence_seconds,
+                                    (state.next_period_ms + 300_000 - now_ms) / 1000,
+                                )
+                if self.config.coverage is None and source.family == "D15":
+                    await run_owned_blocking_call(
+                        self.catalog.record_operational_event,
+                        event_id=(f"side-data-range:{source.stream}:{source.symbol}:"
+                                  f"{result.envelope.receive_time_utc_ns}"),
+                        event_type="SIDE_DATA_RANGE_EVALUATED",
+                        occurred_at_utc_ns=result.envelope.receive_time_utc_ns,
+                        evidence={
+                            "kind": source.stream, "symbol": source.symbol,
+                            "requested_start_timestamp": period_start,
+                            "requested_end_timestamp": period_end,
+                            "response_record_count": len(rows) if isinstance(rows, list) else 0,
+                            "response_limit": parameters["limit"],
+                            "range_complete": state.error is None,
+                            "cursor_semantics": "evaluated_closed_query_windows.v1",
+                            "raw_connection_id": result.envelope.connection_id,
+                        },
+                        symbol=source.symbol,
+                    )
+                if self.config.coverage is None and rows == []:
+                    await run_owned_blocking_call(
+                        self.catalog.record_operational_event,
+                        event_id=(f"side-data-empty:{source.stream}:{source.symbol}:"
+                                  f"{result.envelope.receive_time_utc_ns}"),
+                        event_type="SIDE_DATA_EMPTY_RESPONSE",
+                        occurred_at_utc_ns=result.envelope.receive_time_utc_ns,
+                        evidence={
+                            "kind": source.stream, "symbol": source.symbol,
+                            "requested_start_timestamp": period_start,
+                            "requested_end_timestamp": period_end,
+                        },
+                        symbol=source.symbol,
+                    )
             if source.cadence_seconds:
                 state.response_deadline_utc_ns = (
                     time.time_ns() + int((max(0, state.next_due - time.monotonic()) + 10) * 1e9)
@@ -1195,7 +1356,13 @@ class SelectedAssetCapture:
                     state.error,
                     since=previous_success or state.first_due,
                 )
-            if source.stream == "exchange_info":
+            if self.config.coverage is None:
+                if state.error is None:
+                    state.failures = 0
+                else:
+                    state.failures += 1
+                    state.next_due = time.monotonic() + min(60, 2 ** min(state.failures, 6))
+            if source.stream == "exchange_info" and self.config.coverage is not None:
                 await self.reconcile(source.venue_market, result.document)
             if source.cadence_seconds == 0 and state.error is None:
                 self._active_sources.pop(source.key, None)
@@ -1416,6 +1583,14 @@ class SelectedAssetCapture:
             self.availability.previous = await run_owned_blocking_call(
                 self.catalog.source_availability
             )
+            for initial_key, collector in self.collectors.items():
+                if initial_key in self.product_tasks:
+                    continue
+                self.product_stops[initial_key] = asyncio.Event()
+                self.product_tasks[initial_key] = asyncio.create_task(
+                    collector.run(self.product_stops[initial_key]),
+                    name=f"collector:{initial_key.market}:{initial_key.symbol}",
+                )
             while not stop.is_set():
                 self._changed.clear()
                 now = time.time_ns()
@@ -1440,8 +1615,16 @@ class SelectedAssetCapture:
                             product_task.result()
                         except BaseException as exc:
                             self.failures[product_key] = exc
-                            raise
-                        raise RuntimeError("product capture returned before retirement")
+                        else:
+                            self.failures[product_key] = RuntimeError(
+                                "product capture returned before retirement"
+                            )
+                        failure = self.failures[product_key]
+                        if self.terminal_failure_observer is not None:
+                            self.terminal_failure_observer(product_key, failure)
+                        raise CoreMarketTerminalFailure(
+                            f"core market Collector terminated: {product_key}"
+                        ) from failure
                 for shared_task in self.shared_tasks.values():
                     if shared_task.done():
                         shared_task.result()
@@ -1524,12 +1707,23 @@ class SelectedAssetCapture:
                 cleanup_error = exc
             for client in self.clients.values():
                 client.close()
-            for result in results:
+            product_keys = tuple(self.product_tasks)
+            for index, result in enumerate(results):
                 if isinstance(result, BaseException) and not isinstance(
                     result, asyncio.CancelledError
                 ):
-                    cleanup_error = result
-            if cleanup_error is not None:
+                    if index < len(product_keys):
+                        failed_product = product_keys[index]
+                        self.failures[failed_product] = result
+                        if terminal_error is None:
+                            if self.terminal_failure_observer is not None:
+                                self.terminal_failure_observer(failed_product, result)
+                            raise CoreMarketTerminalFailure(
+                                f"core market Collector failed while draining: {failed_product}"
+                            ) from result
+                    elif cleanup_error is None:
+                        cleanup_error = result
+            if cleanup_error is not None and terminal_error is None:
                 raise cleanup_error
 
 

@@ -632,25 +632,14 @@ class PublicWebSocketStream:
         for receipt in batch:
             envelope: EventEnvelope | None = None
             if self.envelope_factory is not None:
-                try:
-                    envelope = self.envelope_factory(
-                        raw_payload=receipt.raw_payload,
-                        connection_id=receipt.connection_id,
-                        collector_instance_id=self.collector_instance_id,
-                        collector_version=self.collector_version,
-                        receive_time_utc_ns=receipt.receive_time_utc_ns,
-                        receive_monotonic_ns=receipt.receive_monotonic_ns,
-                        additional_capture_flags=receipt.capture_flags,
-                    )
-                except TypeError:
-                    envelope = self.envelope_factory(
-                        raw_payload=receipt.raw_payload,
-                        connection_id=receipt.connection_id,
-                        collector_instance_id=self.collector_instance_id,
-                        collector_version=self.collector_version,
-                        receive_time_utc_ns=receipt.receive_time_utc_ns,
-                        receive_monotonic_ns=receipt.receive_monotonic_ns,
-                    )
+                envelope = self.envelope_factory(
+                    raw_payload=receipt.raw_payload,
+                    connection_id=receipt.connection_id,
+                    collector_instance_id=self.collector_instance_id,
+                    collector_version=self.collector_version,
+                    receive_time_utc_ns=receipt.receive_time_utc_ns,
+                    receive_monotonic_ns=receipt.receive_monotonic_ns,
+                )
                 if envelope is not None and receipt.capture_flags:
                     envelope = envelope.model_copy(
                         update={
