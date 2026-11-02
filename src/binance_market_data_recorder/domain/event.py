@@ -41,4 +41,23 @@ class EventEnvelope(BaseModel):
     def canonical_mapping(self) -> dict[str, object]:
         """Return the language-neutral mapping encoded in Raw frames."""
 
-        return self.model_dump(mode="python", exclude_none=False)
+        return {
+            "schema_version": self.schema_version,
+            "venue": self.venue,
+            "market": self.market,
+            "symbol": self.symbol,
+            "stream": self.stream,
+            "module": self.module,
+            "connection_id": self.connection_id,
+            "collector_instance_id": self.collector_instance_id,
+            "collector_version": self.collector_version,
+            "receive_time_utc_ns": self.receive_time_utc_ns,
+            "receive_monotonic_ns": self.receive_monotonic_ns,
+            "exchange_event_time": self.exchange_event_time,
+            "exchange_transaction_time": self.exchange_transaction_time,
+            "exchange_trade_time": self.exchange_trade_time,
+            "source_sequence": self.source_sequence,
+            "payload_encoding": self.payload_encoding,
+            "raw_payload": self.raw_payload,
+            "capture_flags": self.capture_flags,
+        }

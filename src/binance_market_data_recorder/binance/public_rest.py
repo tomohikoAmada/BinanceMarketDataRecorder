@@ -11,8 +11,8 @@ import base64
 import json
 import threading
 import time
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import uuid4
 
@@ -170,6 +170,10 @@ class RestObservation:
     valid: bool
     status: int | None
     error: str | None
+    response_headers: Mapping[str, str] = field(default_factory=dict)
+
+
+RestCaptureResult = RestObservation
 
 
 def _validate(source: Source, model: Any) -> None:
@@ -243,6 +247,7 @@ def capture_public_response(
     additional_capture_flags: tuple[str, ...] = (),
     utc_clock_ns: Callable[[], int] = time.time_ns,
     monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
+    evaluated_period: Mapping[str, Any] | None = None,
 ) -> RestObservation:
     params = dict(source.parameters) if parameters is None else parameters
     requested, requested_mono = utc_clock_ns(), monotonic_clock_ns()
@@ -317,6 +322,8 @@ def capture_public_response(
             "connection_identity": "logical_collector_venue_polling_session_not_tcp",
         },
     }
+    if evaluated_period is not None:
+        record["request"]["evaluated_period"] = dict(evaluated_period)
     if raw_body is not None:
         # D31 publishes numeric JSON prices. The common SDK's float parser is
         # insufficient for that precision contract; its already-received body
@@ -364,4 +371,4 @@ def capture_public_response(
         + additional_capture_flags
         + (() if valid else ("source_failed", "malformed")),
     )
-    return RestObservation(envelope, document, valid, status, error)
+    return RestObservation(envelope, document, valid, status, error, response_headers=headers)

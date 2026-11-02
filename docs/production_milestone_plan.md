@@ -212,6 +212,15 @@
   - `418/429` 冷却顺序回归测试通过；
   - `tools/verify_raw_chunk_golden.go` 校验生成的 `.zst` 分片与 Raw v1 规范 100% 兼容。
 
+- **完成状态（2026-11-02 独立复核并完成）**：
+  - 彻底删除 `spool/writer.py` 中的 `_ImmutableEnvelopeSnapshot` 及 `MappingProxyType` 防御包装，`RawChunkWriter` 直接基于 `EventEnvelope` 编码 CBOR 并累加统计；
+  - 优化 `EventEnvelope.canonical_mapping()` 字典构造路径，实测提速约 3.7x，经 Go 独立校验器验证保持 100% Raw v1 规范二进制兼容；
+  - `capture_public_response()` 支持前置传入 `evaluated_period` 参数，在构造单份 REST provenance 时一次性完成序列化，彻底消除 `D16` 路径上的二次 `json.loads` 与 `json.dumps`；
+  - `RestObservation`（及别名 `RestCaptureResult`）直接保留 `response_headers` 映射，使 `_observe_rest_rejection()` 无需解析 `raw_payload` 即可直接读取 `Retry-After`，消除 418/429 路径上的二次 JSON 解析；
+  - 保持 418/429 冷却门在进入存储等待前在事件循环中同步生效，确保防穿透保护；在 `persist_rest()` 中引入基于事件循环的协同合并机制，使同属一个分片的并发 REST 写入共享单次线程池 `spool.drain_all` 批处理，大幅降低线程池上下文切换开销；
+  - 澄清并修正原计划假设：WebSocket 分片按物理组名 `group.name`（形如 `ws_market_<id>`）聚合，分片头与帧内流标识必须严格一致以保持 Raw v1 契约；保留 Raw 分片内 `envelope.stream == group.name` 满足 ADR-0010 不变，将下游消费端（`persisted`、`readiness.observe_persisted`、`DepthContinuity`）优化为直接读取 `source_sequence["sourceStream"]`，彻底移除了热路径上对 `logical_envelope()` 和 `.model_copy()` 的调用；
+  - 验证记录见 [`M1.4 复核记录`](benchmarks/m1.4-review-20261102.md)，新增专项 [`test_m1_4_zero_copy_and_rest_batching.py`](../tests/unit/test_m1_4_zero_copy_and_rest_batching.py) 与全量测试均通过。
+
 
 ---
 
@@ -427,7 +436,7 @@
 
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
-| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
+| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

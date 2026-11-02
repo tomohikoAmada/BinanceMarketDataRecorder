@@ -23,11 +23,10 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from hashlib import sha256
-from types import MappingProxyType
 from uuid import UUID, uuid4
 
 from ..domain.event import EventEnvelope
@@ -63,79 +62,71 @@ class _WriterState(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
-class _ImmutableEnvelopeSnapshot:
-    schema_version: str
-    venue: str
-    market: str
-    symbol: str
-    stream: str
-    module: str
-    connection_id: str
-    collector_instance_id: str
-    collector_version: str
-    receive_time_utc_ns: int
-    receive_monotonic_ns: int
-    exchange_event_time: int | None
-    exchange_transaction_time: int | None
-    exchange_trade_time: int | None
-    source_sequence: Mapping[str, int | str]
-    payload_encoding: str
-    raw_payload: bytes
-    capture_flags: tuple[str, ...]
+class _PreparedFrame:
+    envelope: EventEnvelope
+    source_sequence: dict[str, int | str]
+    exact_bytes: bytes
+    capture_flags_set: frozenset[str]
+    connection_transition: ConnectionTransition | None
+    expected_ordinal: int
 
-    @classmethod
-    def from_envelope(cls, envelope: EventEnvelope) -> _ImmutableEnvelopeSnapshot:
-        return cls(
-            schema_version=envelope.schema_version,
-            venue=envelope.venue,
-            market=envelope.market,
-            symbol=envelope.symbol,
-            stream=envelope.stream,
-            module=envelope.module,
-            connection_id=envelope.connection_id,
-            collector_instance_id=envelope.collector_instance_id,
-            collector_version=envelope.collector_version,
-            receive_time_utc_ns=envelope.receive_time_utc_ns,
-            receive_monotonic_ns=envelope.receive_monotonic_ns,
-            exchange_event_time=envelope.exchange_event_time,
-            exchange_transaction_time=envelope.exchange_transaction_time,
-            exchange_trade_time=envelope.exchange_trade_time,
-            source_sequence=MappingProxyType(dict(envelope.source_sequence)),
-            payload_encoding=envelope.payload_encoding,
-            raw_payload=bytes(envelope.raw_payload),
-            capture_flags=tuple(envelope.capture_flags),
-        )
+    @property
+    def capture_flags(self) -> tuple[str, ...]:
+        return self.envelope.capture_flags
+
+    @property
+    def receive_time_utc_ns(self) -> int:
+        return self.envelope.receive_time_utc_ns
+
+    @property
+    def receive_monotonic_ns(self) -> int:
+        return self.envelope.receive_monotonic_ns
+
+    @property
+    def exchange_event_time(self) -> int | None:
+        return self.envelope.exchange_event_time
+
+    @property
+    def exchange_transaction_time(self) -> int | None:
+        return self.envelope.exchange_transaction_time
+
+    @property
+    def exchange_trade_time(self) -> int | None:
+        return self.envelope.exchange_trade_time
+
+    @property
+    def connection_id(self) -> str:
+        return self.envelope.connection_id
+
+    @property
+    def collector_instance_id(self) -> str:
+        return self.envelope.collector_instance_id
+
+    @property
+    def raw_payload(self) -> bytes:
+        return self.envelope.raw_payload
 
     def canonical_mapping(self) -> dict[str, object]:
         return {
-            "schema_version": self.schema_version,
-            "venue": self.venue,
-            "market": self.market,
-            "symbol": self.symbol,
-            "stream": self.stream,
-            "module": self.module,
-            "connection_id": self.connection_id,
-            "collector_instance_id": self.collector_instance_id,
-            "collector_version": self.collector_version,
-            "receive_time_utc_ns": self.receive_time_utc_ns,
-            "receive_monotonic_ns": self.receive_monotonic_ns,
-            "exchange_event_time": self.exchange_event_time,
-            "exchange_transaction_time": self.exchange_transaction_time,
-            "exchange_trade_time": self.exchange_trade_time,
-            "source_sequence": dict(self.source_sequence),
-            "payload_encoding": self.payload_encoding,
-            "raw_payload": self.raw_payload,
-            "capture_flags": self.capture_flags,
+            "schema_version": self.envelope.schema_version,
+            "venue": self.envelope.venue,
+            "market": self.envelope.market,
+            "symbol": self.envelope.symbol,
+            "stream": self.envelope.stream,
+            "module": self.envelope.module,
+            "connection_id": self.envelope.connection_id,
+            "collector_instance_id": self.envelope.collector_instance_id,
+            "collector_version": self.envelope.collector_version,
+            "receive_time_utc_ns": self.envelope.receive_time_utc_ns,
+            "receive_monotonic_ns": self.envelope.receive_monotonic_ns,
+            "exchange_event_time": self.envelope.exchange_event_time,
+            "exchange_transaction_time": self.envelope.exchange_transaction_time,
+            "exchange_trade_time": self.envelope.exchange_trade_time,
+            "source_sequence": self.source_sequence,
+            "payload_encoding": self.envelope.payload_encoding,
+            "raw_payload": self.envelope.raw_payload,
+            "capture_flags": self.envelope.capture_flags,
         }
-
-
-@dataclass(frozen=True, slots=True)
-class _PreparedFrame:
-    snapshot: _ImmutableEnvelopeSnapshot
-    exact_bytes: bytes
-    capture_flags: frozenset[str]
-    connection_transition: ConnectionTransition | None
-    expected_ordinal: int
 
 
 class RawChunkWriter:
@@ -269,47 +260,51 @@ class RawChunkWriter:
             raise
 
     def _prepare_frame(self, envelope: EventEnvelope) -> _PreparedFrame:
-        snapshot = _ImmutableEnvelopeSnapshot.from_envelope(envelope)
         if (
-            snapshot.market != self.header.market
-            or snapshot.symbol != self.header.symbol
-            or snapshot.stream != self.header.stream
+            envelope.market != self.header.market
+            or envelope.symbol != self.header.symbol
+            or envelope.stream != self.header.stream
         ):
             raise ValueError("envelope identity differs from chunk identity")
-        capture_flags = frozenset(snapshot.capture_flags)
+        capture_flags = frozenset(envelope.capture_flags)
         transition: ConnectionTransition | None = None
         if (
             self._previous_connection_id is not None
-            and snapshot.connection_id != self._previous_connection_id
+            and envelope.connection_id != self._previous_connection_id
         ):
             transition = (
                 self._previous_connection_id,
-                snapshot.connection_id,
+                envelope.connection_id,
                 self._previous_capture_flags,
                 capture_flags,
             )
-        return _PreparedFrame(
-            snapshot=snapshot,
-            exact_bytes=encode_frame(
-                snapshot, max_frame_bytes=self.header.max_frame_bytes
-            ),
-            capture_flags=capture_flags,
+        source_seq = dict(envelope.source_sequence)
+        prepared = _PreparedFrame(
+            envelope=envelope,
+            source_sequence=source_seq,
+            exact_bytes=b"",
+            capture_flags_set=capture_flags,
             connection_transition=transition,
             expected_ordinal=self._record_count,
         )
+        return replace(
+            prepared,
+            exact_bytes=encode_frame(
+                prepared, max_frame_bytes=self.header.max_frame_bytes
+            ),
+        )
 
     def _commit_prepared_frame(self, prepared: _PreparedFrame) -> None:
-        snapshot = prepared.snapshot
         if prepared.expected_ordinal != self._record_count:
             raise RuntimeError("prepared Raw frame ordinal is stale")
         if prepared.connection_transition is not None:
             self._connection_transitions.append(prepared.connection_transition)
-        self._statistics.add(snapshot)
+        self._statistics.add(prepared)
         self._raw_digest.update(prepared.exact_bytes)
         self._verified_bytes += len(prepared.exact_bytes)
         self._record_count += 1
-        self._previous_connection_id = snapshot.connection_id
-        self._previous_capture_flags = prepared.capture_flags
+        self._previous_connection_id = prepared.envelope.connection_id
+        self._previous_capture_flags = prepared.capture_flags_set
         if (
             self._statistics.record_count != self._record_count
             or self._verified_bytes > self._bytes_written
@@ -366,12 +361,12 @@ class RawChunkWriter:
                     expected_ordinal=self._record_count + len(prepared),
                     connection_transition=(
                         (
-                            previous.snapshot.connection_id,
-                            frame.snapshot.connection_id,
-                            previous.capture_flags,
-                            frame.capture_flags,
+                            previous.envelope.connection_id,
+                            frame.envelope.connection_id,
+                            previous.capture_flags_set,
+                            frame.capture_flags_set,
                         )
-                        if previous.snapshot.connection_id != frame.snapshot.connection_id
+                        if previous.envelope.connection_id != frame.envelope.connection_id
                         else None
                     ),
                 )

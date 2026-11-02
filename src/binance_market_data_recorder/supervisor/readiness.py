@@ -114,17 +114,18 @@ class CollectorReadiness:
 
     def observe_persisted(self, envelope: EventEnvelope) -> None:
         self._check_identity(envelope)
-        if envelope.stream not in CORE_STREAMS:
+        stream = str(envelope.source_sequence.get("sourceStream", envelope.stream))
+        if stream not in CORE_STREAMS:
             return
         with self._lock:
             if "malformed" in envelope.capture_flags:
-                if envelope.stream == "diff_depth":
+                if stream == "diff_depth":
                     self._book.invalidate(envelope.receive_time_utc_ns)
                 return
-            self._persisted.add(envelope.stream)
+            self._persisted.add(stream)
             self._event_count += 1
             self._last_receive_time_utc_ns = envelope.receive_time_utc_ns
-            if envelope.stream == "diff_depth":
+            if stream == "diff_depth":
                 try:
                     self._book.offer(envelope)
                 except OrderBookDataError:

@@ -172,48 +172,43 @@ class ProductCapture:
 
     def persisted(self, envelope: EventEnvelope) -> None:
         stream = envelope.source_sequence.get("sourceStream", envelope.stream)
-        logical = (
-            logical_envelope(envelope)
-            if stream in CORE_STREAMS or stream == "rpi_depth"
-            else envelope
-        )
         state = self.source_states.get(stream) if isinstance(stream, str) else None
         if state is not None:
             state.count += 1
-            if "malformed" not in logical.capture_flags:
-                state.last_success = logical.receive_time_utc_ns
+            if "malformed" not in envelope.capture_flags:
+                state.last_success = envelope.receive_time_utc_ns
             state.error = (
-                "MalformedWebSocketPayload" if "malformed" in logical.capture_flags else None
+                "MalformedWebSocketPayload" if "malformed" in envelope.capture_flags else None
             )
         if state is not None and state.error is not None:
             self.owner.availability.failure(
-                "/".join(state.source.key), logical.receive_time_utc_ns, state.error
+                "/".join(state.source.key), envelope.receive_time_utc_ns, state.error
             )
-        if logical.stream in CORE_STREAMS:
-            self.readiness.observe_persisted(logical)
+        if isinstance(stream, str) and stream in CORE_STREAMS:
+            self.readiness.observe_persisted(envelope)
             if (
-                logical.stream == "diff_depth"
+                stream == "diff_depth"
                 and not self.readiness.snapshot().orderbook_synchronized
             ):
                 if self.snapshot is not None:
                     self.readiness.observe_snapshot_persisted(self.snapshot)
                 if not self.readiness.snapshot().orderbook_synchronized:
                     self.owner.request_snapshot(self.product)
-            if (logical.stream == "diff_depth" and state is not None
+            if (stream == "diff_depth" and state is not None
                     and not self.readiness.snapshot().orderbook_synchronized):
                 self.owner.availability.unavailable(
-                    "/".join(state.source.key), logical.receive_time_utc_ns,
+                    "/".join(state.source.key), envelope.receive_time_utc_ns,
                     "DEPTH_RESYNC_PENDING",
                 )
-        if logical.stream == "rpi_depth":
-            if "malformed" in logical.capture_flags:
-                self.rpi.invalidate(logical.receive_time_utc_ns)
+        if stream == "rpi_depth":
+            if "malformed" in envelope.capture_flags:
+                self.rpi.invalidate(envelope.receive_time_utc_ns)
             else:
-                self.rpi.offer(logical.model_copy(update={"stream": "diff_depth"}))
+                self.rpi.offer(envelope)
             # Observe the known fault before a cached/new snapshot can bridge it.
             if not self.rpi.is_reliable and state is not None:
                 self.owner.availability.unavailable(
-                    "/".join(state.source.key), logical.receive_time_utc_ns, "DEPTH_RESYNC_PENDING"
+                    "/".join(state.source.key), envelope.receive_time_utc_ns, "DEPTH_RESYNC_PENDING"
                 )
             if self.rpi.bootstrap_buffer_overflowed:
                 self.rpi = DepthContinuity(
@@ -226,8 +221,8 @@ class ProductCapture:
                 self.rpi.synchronize(self.rpi_snapshot)
             if not self.rpi.is_reliable:
                 self.owner.request_snapshot(self.product, rpi=True)
-            self._observe_rpi_health(logical.receive_time_utc_ns)
-        if logical.source_sequence.get("sourceStream") == "server_shutdown":
+            self._observe_rpi_health(envelope.receive_time_utc_ns)
+        if envelope.source_sequence.get("sourceStream") == "server_shutdown":
             self.owner.request_snapshot(self.product)
 
     def snapshot_persisted(self, envelope: EventEnvelope) -> None:
@@ -369,6 +364,8 @@ class SelectedAssetCapture:
         self._group_sources: dict[UsdMStreamCollector, StreamGroup] = {}
         self._wire_started: set[tuple[str, str, str, str]] = set()
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
+        self._rest_drain_waiters: dict[tuple[str, str, str], list[asyncio.Future[None]]] = {}
+        self._rest_drain_in_progress: set[tuple[str, str, str]] = set()
         for venue in ("spot", "usdm", "coinm"):
             self.add_source(directory_source(venue, self.coverage))
 
@@ -441,14 +438,40 @@ class SelectedAssetCapture:
         grouped = envelope.model_copy(
             update={"stream": "rest_observations", "source_sequence": sequence}
         )
-        spool = self.spool(grouped.market, grouped.symbol, grouped.stream)
-        async with self._spool_locks[(grouped.market, grouped.symbol, grouped.stream)]:
+        spool_key = (grouped.market, grouped.symbol, grouped.stream)
+        spool = self.spool(*spool_key)
+        spool.enqueue(grouped)
 
-            def write() -> None:
-                spool.enqueue(grouped)
-                spool.drain_all()
+        loop = asyncio.get_running_loop()
+        waiter: asyncio.Future[None] = loop.create_future()
+        self._rest_drain_waiters.setdefault(spool_key, []).append(waiter)
 
-            await run_owned_blocking_call(write)
+        if spool_key not in self._rest_drain_in_progress:
+            self._rest_drain_in_progress.add(spool_key)
+            try:
+                while True:
+                    batch_waiters = self._rest_drain_waiters.pop(spool_key, None)
+                    if not batch_waiters:
+                        break
+                    try:
+                        async with self._spool_locks[spool_key]:
+                            await run_owned_blocking_call(spool.drain_all)
+                        for w in batch_waiters:
+                            if not w.done():
+                                w.set_result(None)
+                    except BaseException as exc:
+                        for w in batch_waiters:
+                            if not w.done():
+                                w.set_exception(exc)
+                        for remaining in self._rest_drain_waiters.pop(spool_key, []):
+                            if not remaining.done():
+                                remaining.set_exception(exc)
+                        raise
+            finally:
+                self._rest_drain_in_progress.discard(spool_key)
+        else:
+            await waiter
+
         source_stream = envelope.stream
         if (
             source_stream in {"depth_snapshot", "rpi_depth_snapshot"}
@@ -968,14 +991,14 @@ class SelectedAssetCapture:
         }:
             from ..binance.spot.rate_limit import _retry_at_utc_ns
 
-            saved = json.loads(result.envelope.raw_payload)
             received = result.envelope.receive_time_utc_ns
             status = result.status or (418 if result.error == "RateLimitBanError" else 429)
-            body_text = json.dumps(result.document)
+            body_text = json.dumps(result.document) if result.document is not None else ""
+            headers = dict(result.response_headers)
             try:
                 until = _retry_at_utc_ns(
                     status=status,
-                    headers=saved["response"]["headers"],
+                    headers=headers,
                     body_text=body_text,
                     now_utc_ns=received,
                 )
@@ -1012,6 +1035,15 @@ class SelectedAssetCapture:
         self.availability.ensure("/".join(source.key), eligible_since)
         self._wire_started.add(source.key)
         parameters = self._parameters(source)
+        evaluated_period = (
+            {
+                "start_time_ms": parameters["startTime"],
+                "end_time_ms": parameters["endTime"] - 300_000,
+                "allowed_preceding_overlap_ms": 300_000,
+            }
+            if source.family == "D16"
+            else None
+        )
         result = await run_owned_blocking_call(
             capture_public_response,
             source,
@@ -1020,22 +1052,8 @@ class SelectedAssetCapture:
             collector_version=self.version,
             parameters=parameters,
             recent_trades=state.recent_trades,
+            evaluated_period=evaluated_period,
         )
-        if source.family == "D16":
-            saved = json.loads(result.envelope.raw_payload)
-            saved["request"]["evaluated_period"] = {
-                "start_time_ms": parameters["startTime"],
-                "end_time_ms": parameters["endTime"] - 300_000,
-                "allowed_preceding_overlap_ms": 300_000,
-            }
-            result = replace(
-                result,
-                envelope=result.envelope.model_copy(
-                    update={
-                        "raw_payload": json.dumps(saved, separators=(",", ":")).encode(),
-                    }
-                ),
-            )
         self._observe_rest_rejection(source, result)
         # Persistence exceptions propagate; they are never reclassified as network retries.
         await self.persist_rest(result.envelope)
@@ -1449,6 +1467,7 @@ class SelectedAssetCapture:
                     if (
                         spool_key[2] == "rest_observations"
                         and not self._spool_locks[spool_key].locked()
+                        and spool_key not in self._rest_drain_in_progress
                     ):
                         async with self._spool_locks[spool_key]:
                             await run_owned_blocking_call(spool.drain_all)
