@@ -1,173 +1,3869 @@
 {
-  "schema_version": "bmdr-m1-baseline.v1",
-  "timestamp_utc": "2026-11-02T03:15:17Z",
+  "schema_version": "bmdr-m1-baseline.v2",
+  "timestamp_utc": "2026-11-02T04:23:58.500675+00:00",
+  "source_git_sha": "884dcdd9574c1e7840b197bdbf362cf1ff497bed",
+  "runtime_matches_pre_m1": true,
+  "runtime_source_tree_sha": "4751ff351343b77a0e49212035ba9c6eb4e4ee73",
+  "benchmark_script_sha256": "86d5853f2e628ffcd913b45bfeb8a66cf4ca318fb9d7672aa1a44db7a7c79b67",
+  "environment": {
+    "python": "3.12.14 (main, Sep  1 2026, 14:09:38) [Clang 22.1.3 ]",
+    "platform": "macOS-27.0.1-arm64-arm-64bit"
+  },
+  "repeatability": {
+    "verified": true,
+    "runs": [
+      {
+        "frames": 13966,
+        "input_digest": "4d5980b842bfef1304b9555bb02514cb2ceeba186ba88a6acedb3abbe35eef74",
+        "content_digest": "cb65e4c771ef3ed0d3f5a3f810774e5cbb4b14eceed6a6d8b7c98a8eb29ae9b5"
+      },
+      {
+        "frames": 13966,
+        "input_digest": "4d5980b842bfef1304b9555bb02514cb2ceeba186ba88a6acedb3abbe35eef74",
+        "content_digest": "cb65e4c771ef3ed0d3f5a3f810774e5cbb4b14eceed6a6d8b7c98a8eb29ae9b5"
+      }
+    ]
+  },
   "configuration": {
     "seed": 20261102,
     "events_per_stream": 20,
-    "target_rest_polls": 40,
-    "underlying_assets": [
-      "BTC",
-      "ETH"
-    ]
+    "rest_rounds": 2,
+    "monitor_seconds": 12,
+    "coverage": {
+      "underlying_assets": [
+        "BTC",
+        "ETH"
+      ],
+      "spot_quote_assets": [],
+      "max_products": 256,
+      "max_streams": 32768,
+      "streams_per_connection": 128,
+      "rest_concurrency": 4,
+      "directory_interval_seconds": 3600.0,
+      "spot_intervals": [
+        "1m",
+        "5m"
+      ],
+      "futures_intervals": [
+        "1m",
+        "5m"
+      ],
+      "capture_dated_premium_klines": true,
+      "capture_dated_adl_risk": true,
+      "recent_trades_compact": true,
+      "recent_trades_interval_seconds": 1.0,
+      "recent_trades_intervals": {},
+      "max_steady_derivative_weight_per_minute": null
+    },
+    "rotation_seconds": 60.0,
+    "rotation_bytes": 134217728,
+    "first_rotation": "full period from writer open (benchmark only)",
+    "sqlite_pragmas": {
+      "journal_mode": "wal",
+      "synchronous": 2
+    },
+    "offline_budget_capacity": 1000000
+  },
+  "workload": {
+    "products": 50,
+    "ws_groups": 85,
+    "ws_frames": 13760,
+    "rest_polls": 206,
+    "rest_sources": [
+      {
+        "key": [
+          "coinm",
+          "BTCUSD",
+          "global_long_short_ratio_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD",
+          "index_constituents",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD",
+          "index_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD",
+          "index_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD",
+          "top_long_short_account_ratio_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD",
+          "top_long_short_position_ratio_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "kline_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "kline_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "mark_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "mark_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "open_interest",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "premium_index_snapshot",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "premium_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "premium_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_261225",
+          "recent_trades",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_270326",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_CURRENT_QUARTER",
+          "basis_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_CURRENT_QUARTER",
+          "continuous_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_CURRENT_QUARTER",
+          "continuous_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_CURRENT_QUARTER",
+          "open_interest_statistics_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_CURRENT_QUARTER",
+          "taker_buy_sell_volume_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "funding_history",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "kline_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "kline_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "mark_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "mark_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "open_interest",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "premium_index_snapshot",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "premium_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "premium_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "BTCUSD_PERP",
+          "recent_trades",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "ETHUSD_261225",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "ETHUSD_270326",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "ETHUSD_PERP",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "coinm",
+          "__GLOBAL__",
+          "exchange_info",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "coinm",
+          "__GLOBAL__",
+          "funding_info",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "kline_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "kline_seed_1m_utc8",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "kline_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "kline_seed_5m_utc8",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "reference_price_calculation",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "reference_price_seed",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCARS",
+          "trading_day",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "spot",
+          "BTCBRL",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCEUR",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCFDUSD",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCIDR",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCJPY",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCMXN",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCTHB",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCTRY",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCU",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCUSD",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCUSD1",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCUSDC",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCUSDS",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "BTCUSDT",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHARS",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHBRL",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHBTC",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHEUR",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHFDUSD",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHIDR",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHJPY",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHMXN",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHTHB",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHTRY",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHU",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHUSD",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHUSD1",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHUSDC",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHUSDS",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "ETHUSDT",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "spot",
+          "__BATCH_0__",
+          "execution_rules",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "spot",
+          "__GLOBAL__",
+          "exchange_info",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "adl_risk",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "funding_history",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "global_long_short_ratio_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "index_constituents",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "index_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "index_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "kline_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "kline_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "mark_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "mark_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "open_interest",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "open_interest_statistics_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "premium_index_snapshot",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "premium_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "premium_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "recent_trades",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCU",
+          "taker_buy_sell_volume_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSD1",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSD1",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSD1_PERPETUAL",
+          "basis_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSD1_PERPETUAL",
+          "continuous_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSD1_PERPETUAL",
+          "continuous_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDC",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDC",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT",
+          "index_constituents",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT",
+          "index_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT",
+          "index_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "adl_risk",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "global_long_short_ratio_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "kline_seed_1m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "kline_seed_5m",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "mark_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "mark_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "open_interest",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "open_interest_statistics_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "premium_index_snapshot",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "premium_price_bars_1m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "premium_price_bars_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "recent_trades",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_261225",
+          "taker_buy_sell_volume_5m",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_270326",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "BTCUSDT_270326",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHBTC",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHBTC",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHU",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHU",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSD1",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSD1",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDC",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDC",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDT",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDT",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDT_261225",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDT_261225",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDT_270326",
+          "depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "ETHUSDT_270326",
+          "rpi_depth_snapshot",
+          "rest"
+        ],
+        "polls": 1
+      },
+      {
+        "key": [
+          "usdm",
+          "__GLOBAL__",
+          "exchange_info",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "__GLOBAL__",
+          "funding_info",
+          "rest"
+        ],
+        "polls": 2
+      },
+      {
+        "key": [
+          "usdm",
+          "__GLOBAL__",
+          "insurance_balance",
+          "rest"
+        ],
+        "polls": 2
+      }
+    ],
+    "ws_fixture_manifest": {
+      "ws_market_9821ec2351865bcc": {
+        "frames": 60,
+        "sha256": "e655ce40bb5db1a06a488dabe0b141041b6db7cee60f21e613b05fa80a891398"
+      },
+      "ws_market_babb622560b87423": {
+        "frames": 200,
+        "sha256": "41a7ce002da3b0c07e113b997bbb4e9ce9ca4d3e3e2a901dbabb9d728d84e439"
+      },
+      "ws_market_9a6e6212237cd66a": {
+        "frames": 200,
+        "sha256": "bba51f9ec2a54a77af07529a3d558fd46d8c84c07ab2261113b02f6e2d76832d"
+      },
+      "ws_market_e08cc361d42f0b81": {
+        "frames": 40,
+        "sha256": "eaaaaa9fded1d2f50e93ab6461dc010bb93e0e31a54806e409c2f5370215ed9a"
+      },
+      "ws_market_a2f71b6550663a02": {
+        "frames": 40,
+        "sha256": "0572d59c414224e94ca8f405e2040698f74b52c97a424a63d6cdf4383eaaf0d7"
+      },
+      "ws_market_2e6a22463d17a8a1": {
+        "frames": 200,
+        "sha256": "ff98f0d37ca477021d5e6abd03e89a69a8f608c296d0d29a4fb90b5e28db4a71"
+      },
+      "ws_market_cc00047204ea7c13": {
+        "frames": 40,
+        "sha256": "421606aec0c6effba40b06a88f6cb1b42cd2de966d4ab2fff6f02f5464cfec32"
+      },
+      "ws_market_d5a4c5fbaf0a9978": {
+        "frames": 60,
+        "sha256": "67804c5688955de7d2f528ee4c3509c1d63f978f5cdb8422c1ac6f6480837d81"
+      },
+      "ws_market_509fe2db0c71023e": {
+        "frames": 200,
+        "sha256": "77b5770046abf2bb881ea05e1e969cb76a07a70e207fbea9eaf138417c9f1746"
+      },
+      "ws_market_db258fe0ab98c5bb": {
+        "frames": 200,
+        "sha256": "5314f0c5f166893da84174bb275f46bdff1ab0f3e0e6c76f138ebc7e10f83a25"
+      },
+      "ws_market_98c83d1917f7fdc4": {
+        "frames": 40,
+        "sha256": "ceb4d71a51f1367f1763839e785cfc3af5ec51172ad8de187a53ffa421d38136"
+      },
+      "ws_market_816103f0fd015ffa": {
+        "frames": 40,
+        "sha256": "0cb7237c3203da0b4cb2832c3a18888f156af4ef2982978d7c58908e516e48cc"
+      },
+      "ws_market_339d4a99a1ae5675": {
+        "frames": 200,
+        "sha256": "a42b33d92f0e782d2bb4e0b5ef17192149c230653fc3bba4ed77ead0eacb1c36"
+      },
+      "ws_market_e00aeb33012d5ccb": {
+        "frames": 40,
+        "sha256": "c93bdfc1848d363b42fa2523fd6896b76b762b4f009fbe661f4e4309744918d8"
+      },
+      "ws_market_8bfaae6d775495d4": {
+        "frames": 300,
+        "sha256": "0f6b7b548801dac0ff0621451dc09d0e549de8b46008e3c5e119b59fad4c8dc8"
+      },
+      "ws_market_554ef6e746b6ed16": {
+        "frames": 300,
+        "sha256": "ec709335406e27c6f6c5d043c9d08384162ab666609ed631533a88996966eaa4"
+      },
+      "ws_market_a4a3174e8f2d1835": {
+        "frames": 300,
+        "sha256": "b5268064be5f9cc5167202e7197c5721cecffa840d9dd5381393f280cdb5854f"
+      },
+      "ws_market_3150822b70544dd0": {
+        "frames": 300,
+        "sha256": "a47c2511439be26a1ec93a0c6718b5d94eb6e02cef36a827c313b262ef5e5d71"
+      },
+      "ws_market_596c999afaf16770": {
+        "frames": 300,
+        "sha256": "30430779f61127cdff5b3a8ca5e9fc29700ab82967df5753fd0981e0058d59ab"
+      },
+      "ws_market_60e6e1012efb29c6": {
+        "frames": 300,
+        "sha256": "c85bf86d8b0a922571490a80fc1a1002bf883341640e9be6cdf8cd435343ae47"
+      },
+      "ws_market_7587dbb9e2d9149d": {
+        "frames": 300,
+        "sha256": "1a93b6c02815919e080892c0027af43de1cbe62366a000659cc7932a4f9531ef"
+      },
+      "ws_market_80d96e112e665e33": {
+        "frames": 300,
+        "sha256": "58ead6d1138b5a749d641f51185625cb6755aced02791f0bc41dd2481c2a49f7"
+      },
+      "ws_market_2cf3d0901b2d22ef": {
+        "frames": 300,
+        "sha256": "8d85627cd92f3b1793e0a241231339048424bfb838a2b855df2197af73ec666a"
+      },
+      "ws_market_b0f922456a09c7a2": {
+        "frames": 300,
+        "sha256": "f3c383a3ac18d352769bb88b37616a9abf7e42942ec52e96f736ede488912e52"
+      },
+      "ws_market_e800dcb6d69b9a6c": {
+        "frames": 300,
+        "sha256": "488836ee44f21eee7fbba924503e73607ef40d66df8134f1c6f94e0201773419"
+      },
+      "ws_market_5029b4bcf3ccafcb": {
+        "frames": 300,
+        "sha256": "2300f0a341009f478995a6b8c5a83ff2586065efecc341cba7348556df6d4f38"
+      },
+      "ws_market_ec7cfdaaf254ab59": {
+        "frames": 300,
+        "sha256": "bb1f5bf275b9a6a097a4f0a6756df4655f39e355a8f4eb9baa24d99d609c469c"
+      },
+      "ws_market_635ad296ed9bc847": {
+        "frames": 300,
+        "sha256": "ea5385103a8bc694514e64131223529dfeab891e160415fff512bfdf622657a5"
+      },
+      "ws_market_f7558b67c364d007": {
+        "frames": 300,
+        "sha256": "8392d5e7e00648dff02cf1a390a6099671d0b6f86a2cd3b71838dbb2785bdcd6"
+      },
+      "ws_market_c64396e817d21432": {
+        "frames": 300,
+        "sha256": "21a5a0ce6c3bd793e3f9d6c0e506c6b449565155c423b589052c480c3ec81c18"
+      },
+      "ws_market_a580ec71884ae359": {
+        "frames": 300,
+        "sha256": "4f86a6e9aa37b1a40efdd0659e19ec061f90339bb123c3eb42f624808d5c2eb9"
+      },
+      "ws_market_6382cfebc48ab339": {
+        "frames": 300,
+        "sha256": "1640b4bb163d018bd9c0c8648d89677e29a165f4c332e054d775c75631f1ff1c"
+      },
+      "ws_market_7eced3f99e6c6465": {
+        "frames": 300,
+        "sha256": "314ffe777e3bdb8314c4cb8b9fb2e8f1372c1e54d8da49e464202705dda22fcb"
+      },
+      "ws_market_1069045030d22fe6": {
+        "frames": 300,
+        "sha256": "dec25e8b853963b519307eec2046783d01a5718d3a400c720fa1678dd583cdef"
+      },
+      "ws_market_0208761503444455": {
+        "frames": 300,
+        "sha256": "2071d52362b7cbb31650d05229643ff0063861a33badfcb373462a8c0bf67a1f"
+      },
+      "ws_market_906a8b8d09af03d6": {
+        "frames": 300,
+        "sha256": "9528dcab0aaca4684ec5b24be87227b55bc4cf45cdfa4374590f42367f99db97"
+      },
+      "ws_market_11eca2bbd7f31e6b": {
+        "frames": 300,
+        "sha256": "0565199143c20fa07edb8a5efac352a3ce822a62178f43202c51235f7a80a59e"
+      },
+      "ws_market_83d7d75e9d455307": {
+        "frames": 300,
+        "sha256": "d1d50ba2866a679d36305ff92e8ccd15015d57811745a5b3cc67fa82d688b525"
+      },
+      "ws_market_2375afd2a5c36097": {
+        "frames": 300,
+        "sha256": "808ea5cb0744b1759aa0492ea32e5c7bae84a3c6510686cc3ad40ae1d599e650"
+      },
+      "ws_market_3428d8f073350471": {
+        "frames": 300,
+        "sha256": "41ee86604101dc38eda42e5114e6e3792313fe11e0a9288224425592a96feb2b"
+      },
+      "ws_market_99e46145da9faa2b": {
+        "frames": 300,
+        "sha256": "6cda1f2156d325cd781b17449e9675e5c74cb861b571fd94c771be89d789f42b"
+      },
+      "ws_market_8e19f7df1d2bd9af": {
+        "frames": 300,
+        "sha256": "ae0a3bb7d2a86aa0baa69292e1ac233b9a175c6e943ce325f36fa64eee708b8a"
+      },
+      "ws_market_7aa436c1e7669d64": {
+        "frames": 300,
+        "sha256": "1197a7bd5fa0828d4d149c812ac6567e3b1077db18c218fd86770f77296d2c29"
+      },
+      "ws_market_8a3524b8728fca7e": {
+        "frames": 300,
+        "sha256": "121b056da949cbaed07da269a87b6edd2a3745021fd77d3b15185802de530ca8"
+      },
+      "ws_market_c33b55fe42aaf0c5": {
+        "frames": 300,
+        "sha256": "e08de701ec145fab671688825b68ba46db212b8a07ce6925dabf6eea2b9a71cf"
+      },
+      "ws_market_b9d94c6c75acf4bf": {
+        "frames": 120,
+        "sha256": "bf28ef5ddc2342c9b45e9fbf6601587baaf1363281078c9c22b081b0571f5afe"
+      },
+      "ws_public_21561778141cc499": {
+        "frames": 60,
+        "sha256": "000e4bbfa2963d9118b2f268fd9977bac84c371512696da87ba56ba9a42c6ff4"
+      },
+      "ws_market_6d9c32de57747648": {
+        "frames": 120,
+        "sha256": "43335041bfb3b528177729813688632e917a01516a0731fb46e63adc4c4b1d13"
+      },
+      "ws_public_acd6ad7499e27ce7": {
+        "frames": 60,
+        "sha256": "fb8559416b540bfd9f88d5cef0e54551cf7b9ebdf0106bc0a3934c34aed2f55f"
+      },
+      "ws_market_b6244020dda2e723": {
+        "frames": 40,
+        "sha256": "ff06c9dee513f75ffdcd2301f653d4e54646f153b8d7dfa77d5f3b6b2b2cc15c"
+      },
+      "ws_market_3b857b0c9fcf6627": {
+        "frames": 120,
+        "sha256": "d8506c882f1f5a1b090b5a39e782c3f729be5091193049ca508ae24a6c11658b"
+      },
+      "ws_public_800b8074b10f7f95": {
+        "frames": 60,
+        "sha256": "38d4c522616c24f37ce23819f187a5fc930bdaea136f3715b6c099f25afcc31f"
+      },
+      "ws_market_aebd4ae3c7de67d3": {
+        "frames": 40,
+        "sha256": "620462223bacead16a3f58faabcd06e58d97573247a71cdc3ea3a42cede98124"
+      },
+      "ws_market_ee786c048812e774": {
+        "frames": 120,
+        "sha256": "79b12358a17c1fcc6489f742f87cde33d6dbe092ff4f7a3fa922881e09c72c09"
+      },
+      "ws_public_24448f8a0d676853": {
+        "frames": 60,
+        "sha256": "4fb8aa433810d1d296c2e336868e127509e3497985f46585f13b3e38f913da27"
+      },
+      "ws_market_d929d5dc95d595f2": {
+        "frames": 120,
+        "sha256": "2c857b7f4b7879216c76ac71e382414aa4cbed635f84970bf479a1775848d98b"
+      },
+      "ws_public_a05a1e5538a01ee0": {
+        "frames": 60,
+        "sha256": "a6d4c7e9cdc68a3633f8111a9c5ccbbd76bd2435840f09be612352f02c1354a2"
+      },
+      "ws_market_555094e0b0891d48": {
+        "frames": 120,
+        "sha256": "8704d08147a8b590788a899666c4d994ac3ade99bac35a9e55510794ee3490a8"
+      },
+      "ws_public_4d36169c95093a2e": {
+        "frames": 60,
+        "sha256": "c96da2163b370d034855c26994119c631f1979f236d3d6f352354f12737a1973"
+      },
+      "ws_market_5082eff2bf09d233": {
+        "frames": 40,
+        "sha256": "2cdaf34b9187ca6c375fe436aaf536a6e9751f150f4d7e8be2d848aefa11abde"
+      },
+      "ws_market_3ecdcc479c703a22": {
+        "frames": 40,
+        "sha256": "3a6d31a516a5ccae6c44bb0947dd7869323a6a0951514306da6a18284b842e40"
+      },
+      "ws_market_7eaed9ce1e5f2360": {
+        "frames": 40,
+        "sha256": "d9752825995010e9f0ed8ce89ea5ed050bb5f9e58a558e03ced3cbfeb59e93a3"
+      },
+      "ws_market_8061b3e56c4ee5b7": {
+        "frames": 40,
+        "sha256": "569c0d7fc0751e2e3f6bc89745e9ee0b020b237b9fc83643322821dd03cb5506"
+      },
+      "ws_market_561a826c16eadbfa": {
+        "frames": 120,
+        "sha256": "a335ee66ceee5804db1c34a1d9106bb87d5abcca033590bf8ed7ba24923dcbad"
+      },
+      "ws_public_2f7201daa92cbfaf": {
+        "frames": 60,
+        "sha256": "da64eb08f453e65f6a619b3b4dc186affeb8cfb663056b13f543fdce868360c7"
+      },
+      "ws_market_dc5e4970b3a814a6": {
+        "frames": 40,
+        "sha256": "160cef9c99f8db4d880bfa2bc5c5b861e0ba8ef3bd7507238fcd3a73f6d21f9d"
+      },
+      "ws_market_38a37ed38bbe3ffd": {
+        "frames": 120,
+        "sha256": "3a8427d8c214ea32a6171bf2f8009bee69fafcf76257adf4d8a62dc7d8e9c654"
+      },
+      "ws_public_f8d43cf19b01e0b4": {
+        "frames": 60,
+        "sha256": "b9227a77769857ed74fcaf13f9d060cc87cad5e82587ec1c6a3c7b92e0e3fb53"
+      },
+      "ws_market_04b6179f641d9e53": {
+        "frames": 120,
+        "sha256": "a59644c32f6d6d5e58694d879363fb60bb540b58c998d49b8324642dddd6294a"
+      },
+      "ws_public_052967181dba4bd7": {
+        "frames": 60,
+        "sha256": "82ca5768eb79bef314f079609cf1f506dea6c62532fe8cadb21a290506ae51f7"
+      },
+      "ws_market_c19b270ecac3b545": {
+        "frames": 40,
+        "sha256": "d59059d24360299012ef2aa7fa4d0e0f54e7c3ac7111ab294672c446ee8c60b2"
+      },
+      "ws_market_d797bd7e928bc599": {
+        "frames": 120,
+        "sha256": "5e7b9612f9fb4cd740c0335cafaea7d9263971fd2ceb2c0f918e974095cd985a"
+      },
+      "ws_public_e453fcc8c6e4884e": {
+        "frames": 60,
+        "sha256": "5445cdf8e06d8d6e217da28c4d652c645876ddff65b9e5701323221157a523fa"
+      },
+      "ws_market_b5f7944c7b81071e": {
+        "frames": 40,
+        "sha256": "94f4736315d4b00ccbd740ce2d9b18f2b83348ed7feb4767e1544854148f5d9e"
+      },
+      "ws_market_642410a0aa241385": {
+        "frames": 120,
+        "sha256": "009117f485536b80d23544b43d58cb10823d8840039e7506e4235e43bf22cd48"
+      },
+      "ws_public_83e38cac486145da": {
+        "frames": 60,
+        "sha256": "ede1084409e338a235c2f90320c4a9913df5085ae9f9816360ff7f8f4f4ec825"
+      },
+      "ws_market_13d7e2f405673ac7": {
+        "frames": 120,
+        "sha256": "aa4503a8aa30163c289436197287d5660a8f265574db9c2e6709a10bf038f21a"
+      },
+      "ws_public_8c3a79cea0d7fb69": {
+        "frames": 60,
+        "sha256": "c15c7409db4e773dc45f5f7fd54173587f262bbe5595c7ee4ded34e89e938fa2"
+      },
+      "ws_market_9b5097d8c442f2d0": {
+        "frames": 120,
+        "sha256": "12c4f400ba4d88c5bf122bee31cbb400a3e58d640c9227f771087d504118d2bf"
+      },
+      "ws_public_b8628959a3205ec6": {
+        "frames": 60,
+        "sha256": "ddd925303d7b3cb906d96f28f5963ee7b7278af7fee55267be536c435a41ccf9"
+      },
+      "ws_market_fe15312808a5fcff": {
+        "frames": 40,
+        "sha256": "223c4229fc7b491096dfd3bb5bac2783f4374a8b2fea55e9828bf6a1d9dec5de"
+      },
+      "ws_market_d8abfd4ac18ba438": {
+        "frames": 40,
+        "sha256": "e4f2df0c0b66918a9c1039f5fa4606e0ee6239b31f6a16787a32df1af3ed8281"
+      },
+      "ws_market_5aebc5fbba645fbe": {
+        "frames": 40,
+        "sha256": "d19485e546633a7b04be71697086f8f8aa5f092846f29c7ccc0bcad75bc1c001"
+      },
+      "ws_market_96cce2aa053fc47a": {
+        "frames": 40,
+        "sha256": "b011b758a7fbd003a9303660b94eea00cde79fff1ae3a296035bc9dc8f46c485"
+      },
+      "ws_market_8dd3dec8f21b6a06": {
+        "frames": 40,
+        "sha256": "e9aa11f376ad776f336e93659f8e5f304ebd5d421342852e3bdb0a16b71692ee"
+      }
+    },
+    "input_digest": "4d5980b842bfef1304b9555bb02514cb2ceeba186ba88a6acedb3abbe35eef74"
   },
   "summary": {
-    "wall_seconds": 1.7,
-    "cpu_seconds": 1.046,
-    "total_frames": 10120,
-    "cpu_us_per_frame": 103.33,
-    "wall_throughput_fps": 5951.42
+    "wall_seconds": 12.275289541925304,
+    "cpu_seconds": 3.987634,
+    "total_frames": 13966,
+    "cpu_us_per_frame": 285.5244164399255,
+    "wall_throughput_fps": 1137.7328373640562
   },
   "metrics": {
-    "cpu_us_per_frame": 103.33,
-    "wall_throughput_fps": 5951.42,
-    "sealed_chunks_count": 138,
-    "sealed_chunks_per_hour": 292160.4,
-    "manifest_files_per_hour": 292160.4,
-    "sqlite_catalog_write_transactions_per_min": 543637.1,
-    "sqlite_catalog_write_total_ms": 477.36,
-    "sqlite_catalog_wal_bytes": 4527912,
-    "availability_journal_pending_peak": 3545,
-    "availability_journal_flush_p50_ms": 0.917,
-    "availability_journal_flush_p99_ms": 124.951,
-    "availability_journal_flush_max_ms": 240.078,
-    "oldest_queue_wait_ms_p50": 299.081,
-    "oldest_queue_wait_ms_p99": 394.322,
-    "oldest_queue_wait_ms_max": 400.935,
-    "append_batch_ms_p50": 0.175,
-    "append_batch_ms_p99": 31.34,
-    "append_batch_ms_max": 42.409,
-    "fsync_ms_p50": 0.038,
-    "fsync_ms_p99": 7.55,
-    "fsync_ms_max": 28.173,
-    "seal_ms_p50": 0.003,
-    "seal_ms_p99": 18.114,
-    "seal_ms_max": 21.002,
-    "start_rss_bytes": 122159104,
-    "peak_rss_bytes": 157466624,
-    "raw_chunk_count": 138,
-    "total_persisted_frames": 10120,
-    "logical_chunks_digest": "95f2fc2c363ac143c894529a2ebcdb40a64eee17efba6516b239a0e6fe485bc3"
+    "sealed_chunks_count": 228,
+    "manifest_files_count": 228,
+    "empty_chunks_count": 85,
+    "sealed_chunks_per_hour": 66866.0398760144,
+    "manifest_files_per_hour": 66866.0398760144,
+    "rate_note": "startup/shutdown rates normalized per hour; not steady-state rotation",
+    "sqlite_catalog_write_transactions_per_min": 3739.2193351718583,
+    "sqlite_catalog_write_statements": 13429,
+    "sqlite_catalog_wal_start_bytes": 498552,
+    "sqlite_catalog_wal_peak_bytes": 4878112,
+    "sqlite_catalog_wal_growth_peak_bytes": 4379560,
+    "availability_journal_pending_peak": 1519,
+    "latencies_ms": {
+      "queue_wait": {
+        "count": 13966,
+        "p50": 180.19,
+        "p99": 287.703,
+        "max": 293.204,
+        "total": 2626884.277
+      },
+      "persist_lag": {
+        "count": 13966,
+        "p50": 413.066,
+        "p99": 599.156,
+        "max": 604.182,
+        "total": 5861647.676
+      },
+      "append_batch": {
+        "count": 407,
+        "p50": 0.207,
+        "p99": 9.489,
+        "max": 54.089,
+        "total": 744.933
+      },
+      "write": {
+        "count": 407,
+        "p50": 0.097,
+        "p99": 8.413,
+        "max": 39.432,
+        "total": 465.704
+      },
+      "fsync": {
+        "count": 1926,
+        "p50": 0.006,
+        "p99": 2.426,
+        "max": 36.16,
+        "total": 297.136
+      },
+      "seal": {
+        "count": 228,
+        "p50": 11.239,
+        "p99": 24.763,
+        "max": 98.823,
+        "total": 2469.923
+      },
+      "availability_flush": {
+        "count": 100,
+        "p50": 0.008,
+        "p99": 147.081,
+        "max": 429.148,
+        "total": 804.269
+      },
+      "sql_statement": {
+        "count": 13245,
+        "p50": 0.002,
+        "p99": 0.197,
+        "max": 41.896,
+        "total": 361.747
+      },
+      "sql_batch": {
+        "count": 2,
+        "p50": 0.177,
+        "p99": 0.177,
+        "max": 2.315,
+        "total": 2.492
+      },
+      "sql_transaction": {
+        "count": 765,
+        "p50": 0.283,
+        "p99": 10.736,
+        "max": 74.401,
+        "total": 807.726
+      }
+    },
+    "start_rss_bytes": 135954432,
+    "peak_rss_bytes": 194347008,
+    "process_lifetime_peak_rss_bytes": 194592768,
+    "raw_chunk_count": 228,
+    "total_persisted_frames": 13966,
+    "logical_content_digest": "cb65e4c771ef3ed0d3f5a3f810774e5cbb4b14eceed6a6d8b7c98a8eb29ae9b5"
   },
-  "manifest_items_sample": [
-    [
-      "cm_delivery",
-      "BTCUSD_261225",
-      "ws_market_babb622560b87423",
-      0
-    ],
-    [
-      "cm_delivery",
-      "BTCUSD_270326",
-      "ws_market_9a6e6212237cd66a",
-      0
-    ],
-    [
-      "cm_delivery",
-      "ETHUSD_261225",
-      "ws_market_509fe2db0c71023e",
-      0
-    ],
-    [
-      "cm_delivery",
-      "ETHUSD_270326",
-      "ws_market_db258fe0ab98c5bb",
-      0
-    ],
-    [
-      "cm_perpetual",
-      "BTCUSD_PERP",
-      "ws_market_2e6a22463d17a8a1",
-      0
-    ],
-    [
-      "cm_perpetual",
-      "ETHUSD_PERP",
-      "ws_market_339d4a99a1ae5675",
-      0
-    ],
-    [
-      "cm_shared",
-      "BTCUSD",
-      "ws_market_9821ec2351865bcc",
-      0
-    ],
-    [
-      "cm_shared",
-      "BTCUSD_CURRENT_QUARTER",
-      "ws_market_e08cc361d42f0b81",
-      0
-    ],
-    [
-      "cm_shared",
-      "BTCUSD_NEXT_QUARTER",
-      "ws_market_a2f71b6550663a02",
-      0
-    ],
-    [
-      "cm_shared",
-      "BTCUSD_PERPETUAL",
-      "ws_market_cc00047204ea7c13",
-      0
-    ],
-    [
-      "cm_shared",
-      "ETHUSD",
-      "ws_market_d5a4c5fbaf0a9978",
-      0
-    ],
-    [
-      "cm_shared",
-      "ETHUSD_CURRENT_QUARTER",
-      "ws_market_98c83d1917f7fdc4",
-      0
-    ],
-    [
-      "cm_shared",
-      "ETHUSD_NEXT_QUARTER",
-      "ws_market_816103f0fd015ffa",
-      0
-    ],
-    [
-      "cm_shared",
-      "ETHUSD_PERPETUAL",
-      "ws_market_e00aeb33012d5ccb",
-      0
-    ],
-    [
-      "cm_shared",
-      "__GLOBAL__",
-      "rest_observations",
-      1
-    ],
-    [
-      "spot",
-      "BTCARS",
-      "rest_observations",
-      8
-    ],
-    [
-      "spot",
-      "BTCARS",
-      "ws_market_8bfaae6d775495d4",
-      0
-    ],
-    [
-      "spot",
-      "BTCARS",
-      "ws_market_8bfaae6d775495d4",
-      300
-    ],
-    [
-      "spot",
-      "BTCBRL",
-      "rest_observations",
-      8
-    ],
-    [
-      "spot",
-      "BTCBRL",
-      "ws_market_554ef6e746b6ed16",
-      0
-    ]
-  ]
+  "chunks": [
+    {
+      "chunk_id": "3af7a844-f738-415e-b690-d7e75f3d1d4f",
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_261225",
+      "stream": "rest_observations",
+      "record_count": 17,
+      "stored_sha256": "d3702f83126e2dc6942b0ca496718024f6d946053e3678f810698407b5ca585e",
+      "uncompressed_sha256": "7ba6c90d0e75942a6e82b8718c39e23e7aeecc00604220ef740fb65ed58be8db"
+    },
+    {
+      "chunk_id": "1f2762e8-4b00-4e64-a974-717570d0f540",
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_261225",
+      "stream": "ws_market_babb622560b87423",
+      "record_count": 200,
+      "stored_sha256": "3d2d7fa6b1b89da4140824075ec3b8413d2af6bdbde3ac62781dba639801f626",
+      "uncompressed_sha256": "17ca21dd9d9d7e21e017386bc970767bfd729ee309c53aecba2727728fa3db82"
+    },
+    {
+      "chunk_id": "768de3d9-e31c-4b33-902f-76617175ec23",
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_261225",
+      "stream": "ws_market_babb622560b87423",
+      "record_count": 0,
+      "stored_sha256": "2cbaa149ab838ebdf5f847912ec186eb3501db9947878265f5333e44a05882cc",
+      "uncompressed_sha256": "3cfb76a8b684bb9ac04cc5daea5cbf11656383ce28ff2519b2d76b3315427ec9"
+    },
+    {
+      "chunk_id": "a897f1bd-ea94-4766-b303-d18efc8f99e6",
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_270326",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "d95b8028820556842842c446fc0760556d5e830bb324d1cd88447a0559306f7c",
+      "uncompressed_sha256": "c4684ca72e1ba13e23711edf40b91c88d8d0316de8bb40eed9c66cd078c08aab"
+    },
+    {
+      "chunk_id": "07e939d5-05c3-4dc7-8323-1c1969af4832",
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_270326",
+      "stream": "ws_market_9a6e6212237cd66a",
+      "record_count": 200,
+      "stored_sha256": "9a799f27f205e2972c06e7f00f5e3f35bc290e6cc5cc778e4189f2d78e5260a1",
+      "uncompressed_sha256": "0379f8f1e29c1d122df83b9acb5c35c7116fec00225608d388395f1679b8f03a"
+    },
+    {
+      "chunk_id": "6d9810e0-82d6-452f-ac4a-745f2c0f36d1",
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_270326",
+      "stream": "ws_market_9a6e6212237cd66a",
+      "record_count": 0,
+      "stored_sha256": "2ff906229c55dc34e1d2bb49692a232f8e288c06b95845089a42af33307ecf0b",
+      "uncompressed_sha256": "cfba2212673765bf219ba874e49950d38973e15e61887116b9e042912b2140fe"
+    },
+    {
+      "chunk_id": "235501ec-ffcb-4c57-9cde-78d4d944937f",
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_261225",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "33bc5b297e230bbea637fdd50f88affb1f1884b5d0f34ec6d7d0e8e21d546991",
+      "uncompressed_sha256": "032a217d758eb1bd9863ade77e94a73fba0331b45dd17f2c85ff22e03bf4fd9f"
+    },
+    {
+      "chunk_id": "937adbbf-1382-496d-90dd-7f9c183f312b",
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_261225",
+      "stream": "ws_market_509fe2db0c71023e",
+      "record_count": 200,
+      "stored_sha256": "d9057326e976d46317ded519af2c2adb87766a72892cc3ddc784fd28fe6be109",
+      "uncompressed_sha256": "2b7feb37bb237934cf605d8ec46d47ab0385991fa90bdc491912533e23099e90"
+    },
+    {
+      "chunk_id": "ed32caaf-f2aa-44e3-8c57-c89eed2e6884",
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_261225",
+      "stream": "ws_market_509fe2db0c71023e",
+      "record_count": 0,
+      "stored_sha256": "ef8712e3a9e4ca7bedc27264ad246413ab438c75ebfb18f9b7034dd837353e93",
+      "uncompressed_sha256": "c246d4c4743b88697cbe5b4db3edac820d968ebb65108f1aebe01767bdd092a8"
+    },
+    {
+      "chunk_id": "02fb4462-135c-4bcf-87b5-1a39d10c0876",
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_270326",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "9e603144dd5ed18f12d71decb3b8f12e8537a16b51b31010595e73e94d1e5177",
+      "uncompressed_sha256": "519c3c0cc48b77e1cba71d93cf23bdee6ef5d02122c8631d7e4a64fc293cda90"
+    },
+    {
+      "chunk_id": "2127b56e-0741-4e71-9925-5d3f9418503f",
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_270326",
+      "stream": "ws_market_db258fe0ab98c5bb",
+      "record_count": 200,
+      "stored_sha256": "e031bfff15f48c1e520f866e128b9454a0c2cf49fecd9dbfda27507dcc00b60e",
+      "uncompressed_sha256": "7c20bd7089c38b6bc0f63c31f4a254ccfef9cba999e6d411d7d30831e1c22c49"
+    },
+    {
+      "chunk_id": "6d3f8392-232c-411b-8dbc-aad9d5240d53",
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_270326",
+      "stream": "ws_market_db258fe0ab98c5bb",
+      "record_count": 0,
+      "stored_sha256": "40d48c2321150a1ff01de1f8bc2688d65aa75ceb55dc23d410c3844f3d7bb585",
+      "uncompressed_sha256": "39d3f500a171af70897f101c6392f0aed49efe612ab61056c43b4a37c932e280"
+    },
+    {
+      "chunk_id": "1f380c2b-f52c-4776-bb6d-b5b7cd22e99e",
+      "market": "cm_perpetual",
+      "symbol": "BTCUSD_PERP",
+      "stream": "rest_observations",
+      "record_count": 19,
+      "stored_sha256": "61f36705629041efd94950c6d20757e5bae2f48a137da64d6779c2c260fd82ec",
+      "uncompressed_sha256": "4b7857ad2f23098491fc2d96891fd6b95d618387842da7f503e9481760689e48"
+    },
+    {
+      "chunk_id": "173f2628-945b-4213-be19-56a0b25de578",
+      "market": "cm_perpetual",
+      "symbol": "BTCUSD_PERP",
+      "stream": "ws_market_2e6a22463d17a8a1",
+      "record_count": 0,
+      "stored_sha256": "337aed0c0ef915cd16b27049f0a784a9da66fb48a660c54267701a3a80004fc7",
+      "uncompressed_sha256": "b13533266b4bbb4f01157b5533fa043f8dabd99949af63d5eb901abcbbde34d1"
+    },
+    {
+      "chunk_id": "4cdecf0e-cc65-4584-af49-a280a2bb8728",
+      "market": "cm_perpetual",
+      "symbol": "BTCUSD_PERP",
+      "stream": "ws_market_2e6a22463d17a8a1",
+      "record_count": 200,
+      "stored_sha256": "f0644cb8b7f943940ecd586e3fe55e750cc69b0e9a5e1a5bf3c876d6f095e6fb",
+      "uncompressed_sha256": "d214adb705cf8359a352ac9a116429f183d1f83a85d72a49362a5058df29f02c"
+    },
+    {
+      "chunk_id": "69e9b7c9-525c-4a5f-8662-4fd3d3b89ca7",
+      "market": "cm_perpetual",
+      "symbol": "ETHUSD_PERP",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "a8c00ea98795a41ea38772716b2f1bfcd2cfc00a55793a251e3284c714fcac0c",
+      "uncompressed_sha256": "bd0fcba3da777646a709100aa914154d293f9871b0e39e48c9890aa26170488b"
+    },
+    {
+      "chunk_id": "3a78ce3c-4018-449a-aa05-f30e693aa729",
+      "market": "cm_perpetual",
+      "symbol": "ETHUSD_PERP",
+      "stream": "ws_market_339d4a99a1ae5675",
+      "record_count": 200,
+      "stored_sha256": "7afa3695343bb994b1085e2118ea248aeccfb53c935418f99339e48db04a318f",
+      "uncompressed_sha256": "4ced31720af678a8d2cd5bd1ccb9ae4317f66bd1f3ea0d26268cd8add7adaac3"
+    },
+    {
+      "chunk_id": "62b7a2b5-9fd8-4d25-aae8-80de2b2954c9",
+      "market": "cm_perpetual",
+      "symbol": "ETHUSD_PERP",
+      "stream": "ws_market_339d4a99a1ae5675",
+      "record_count": 0,
+      "stored_sha256": "f16328c9a1374e3d71edb59fbf3acdf66251d4836168e00f7f0b5c8d20974bda",
+      "uncompressed_sha256": "b6c11d38e9589d331906d38c07fd787a4770111f648aff9ca96f499586ec0382"
+    },
+    {
+      "chunk_id": "3fa58ad8-ca08-43bd-9b8c-2256f8ac70fd",
+      "market": "cm_shared",
+      "symbol": "BTCUSD",
+      "stream": "rest_observations",
+      "record_count": 12,
+      "stored_sha256": "163ac3f77e4071116845b8c51a43f95a2df3c25ef17d3fc95289c37d15734380",
+      "uncompressed_sha256": "e28dcb4519f6641442fa9e90a3017a6b6423c55e0ce39d254a20595cc631137a"
+    },
+    {
+      "chunk_id": "c65e36ed-c2b9-4f62-8875-2f533e317952",
+      "market": "cm_shared",
+      "symbol": "BTCUSD",
+      "stream": "ws_market_9821ec2351865bcc",
+      "record_count": 60,
+      "stored_sha256": "44fc9942b3be8574342c839a1a01fafbb82568cf00c7a629fddc8e64a60b9304",
+      "uncompressed_sha256": "ecdd8be4b3a09b2c5aea06d306fcd987809d13ef2c6edbfada76706ba291b587"
+    },
+    {
+      "chunk_id": "f7753628-cdbf-4536-abf2-d1dbfe7cc40b",
+      "market": "cm_shared",
+      "symbol": "BTCUSD",
+      "stream": "ws_market_9821ec2351865bcc",
+      "record_count": 0,
+      "stored_sha256": "c5ed646ade5c579b4c7d9aa3903740d6c6ec932d46e4a14cb06cecf35db5e95d",
+      "uncompressed_sha256": "6f0e7e87ffc2383051ab9d324119a734ff4b8460c17d793e96c6a39672194850"
+    },
+    {
+      "chunk_id": "d2286789-e708-4416-925e-7d4c6945cbf3",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_CURRENT_QUARTER",
+      "stream": "rest_observations",
+      "record_count": 8,
+      "stored_sha256": "70a8044408b29b0e7b90fed4347b5673f44399b54122a0fa4c6dd18b689b1b3c",
+      "uncompressed_sha256": "1dccae497cd71b5d72b8bd79939323e78920d92c7609e3a0b381ec104035342b"
+    },
+    {
+      "chunk_id": "79410c08-27fa-4552-93a8-105109c9e299",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_CURRENT_QUARTER",
+      "stream": "ws_market_e08cc361d42f0b81",
+      "record_count": 0,
+      "stored_sha256": "b1aa4f5b8d64f37ae838aac67846656567e64dd739924bb3eb20b7ee3a0ed1bc",
+      "uncompressed_sha256": "ac7c38e826804180456aa01a425f7633b35f317c6f4d520098eb4c9dc6765e31"
+    },
+    {
+      "chunk_id": "b7704fdf-7a77-475c-a0a9-2122d0a19469",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_CURRENT_QUARTER",
+      "stream": "ws_market_e08cc361d42f0b81",
+      "record_count": 40,
+      "stored_sha256": "27ec256e091f6dfe8e4b18e64afb60e58333ebdeda607f514798fa811ebdf845",
+      "uncompressed_sha256": "15ccaad379fdd9a7c8161c46eef6bfc20bcae3eb8f8af44f699aafab3d0c1767"
+    },
+    {
+      "chunk_id": "66e8a4cb-d903-45bf-aaed-0e701f423a48",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_NEXT_QUARTER",
+      "stream": "ws_market_a2f71b6550663a02",
+      "record_count": 0,
+      "stored_sha256": "4423197b19ce24fcad3c5acd1309d2014266fe715f0891809837eee608e36eb5",
+      "uncompressed_sha256": "248cecfa5f19f49502d2e08324f5fd3d036174fd60cffd8e463c7d2814fa69b0"
+    },
+    {
+      "chunk_id": "7b08cfc3-5d1b-4829-a693-1069f642de6e",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_NEXT_QUARTER",
+      "stream": "ws_market_a2f71b6550663a02",
+      "record_count": 40,
+      "stored_sha256": "c33dff77a4efb98049b316531f7229136dad4c95b1f9b030963e19797e12304b",
+      "uncompressed_sha256": "6505632d5aab637ba3d9c8f0615d35b66843d7efba5b8944ae2a6e38254a76ce"
+    },
+    {
+      "chunk_id": "42c7662b-33de-4f13-9da7-7ec84110b207",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_PERPETUAL",
+      "stream": "ws_market_cc00047204ea7c13",
+      "record_count": 40,
+      "stored_sha256": "6fee5487b18ba093e3efacbeb6557c99c8a98ab73f2795dc49d6f5cf8f4cf9d0",
+      "uncompressed_sha256": "8e3ea62cb887f7fcd1d412e87865ef53745411865cbae3357316c4a4a41962b2"
+    },
+    {
+      "chunk_id": "7a0a7a46-d53c-474b-9f4f-eb7f9d91ddae",
+      "market": "cm_shared",
+      "symbol": "BTCUSD_PERPETUAL",
+      "stream": "ws_market_cc00047204ea7c13",
+      "record_count": 0,
+      "stored_sha256": "b709ad49914871a36ddff91e8b063e2e5fe2763c856e4c41f314cc8e09b7950d",
+      "uncompressed_sha256": "e2c2874147c8264e3c0f532e790d14dc77c53bd3b8b524cc4e798e6b8fa938a1"
+    },
+    {
+      "chunk_id": "9a275a95-a6e1-47b8-964f-e2d0f16e77a6",
+      "market": "cm_shared",
+      "symbol": "ETHUSD",
+      "stream": "ws_market_d5a4c5fbaf0a9978",
+      "record_count": 60,
+      "stored_sha256": "9871e39c4ce5983a2aec3f7a6a02855c14815d8e796b413d46aa28744613f1f5",
+      "uncompressed_sha256": "b29a8e8dd510dd0f7dc702f23c806ac2f9a6b96fff752b85f6947e447dd529f0"
+    },
+    {
+      "chunk_id": "fff6d112-c53c-46e7-80f2-6c8268091263",
+      "market": "cm_shared",
+      "symbol": "ETHUSD",
+      "stream": "ws_market_d5a4c5fbaf0a9978",
+      "record_count": 0,
+      "stored_sha256": "4c1a85e347672df5052cd8dd4bc46ebc07ffb5893513394dff5665dcdb06c006",
+      "uncompressed_sha256": "6d482212e55d0b0169cee0646da860c67891df7dadc61f26cb8763446e61beb2"
+    },
+    {
+      "chunk_id": "5a475541-48ea-476e-92f2-63104cb500f9",
+      "market": "cm_shared",
+      "symbol": "ETHUSD_CURRENT_QUARTER",
+      "stream": "ws_market_98c83d1917f7fdc4",
+      "record_count": 40,
+      "stored_sha256": "e8144e90f90e79b44df83e79d2e1966cd007574b736229933de3c505a71e851f",
+      "uncompressed_sha256": "2d809f64dc7b2cb86a666dbc24905a99800bd67bc7d6c673004556e88f1c5adc"
+    },
+    {
+      "chunk_id": "8862b407-c1cd-414c-9f0e-ce1375614b7f",
+      "market": "cm_shared",
+      "symbol": "ETHUSD_CURRENT_QUARTER",
+      "stream": "ws_market_98c83d1917f7fdc4",
+      "record_count": 0,
+      "stored_sha256": "e860387d3e4905162449d7ff2c05b7e4bc45d32c2f653495502498462f22cb36",
+      "uncompressed_sha256": "a64abb55f938ba4b15b8138b7f43597b07f2af8d2750887dd83730c550d09a2b"
+    },
+    {
+      "chunk_id": "1195b078-5b1f-464a-9d93-67dea386c9d5",
+      "market": "cm_shared",
+      "symbol": "ETHUSD_NEXT_QUARTER",
+      "stream": "ws_market_816103f0fd015ffa",
+      "record_count": 40,
+      "stored_sha256": "8fee608f82d063290c64d2d5624e815369e8baf6ced3311c6788001549c70426",
+      "uncompressed_sha256": "596bf8c268c53d99061a1f0a9dfa7e8172a6cda157e8687f2d08ce55bd6d501e"
+    },
+    {
+      "chunk_id": "517cb35d-4f2f-4931-80f9-3e8d86f0b01a",
+      "market": "cm_shared",
+      "symbol": "ETHUSD_NEXT_QUARTER",
+      "stream": "ws_market_816103f0fd015ffa",
+      "record_count": 0,
+      "stored_sha256": "3592598e438c3fddb4d2d3bb01e069d5c9ced67ac3ddd2f8d60446adeaddb266",
+      "uncompressed_sha256": "8e1ee0e748e86625cc6cf905f1534fd47a8f07e7327969612825cdce7dd38a39"
+    },
+    {
+      "chunk_id": "b8fc3c4e-7e1c-4b4f-8677-29ef509780fb",
+      "market": "cm_shared",
+      "symbol": "ETHUSD_PERPETUAL",
+      "stream": "ws_market_e00aeb33012d5ccb",
+      "record_count": 40,
+      "stored_sha256": "853302603c9dfb48142551aad89a4bb708d4e4718f687f93ee853949f02e905a",
+      "uncompressed_sha256": "bfc5a49468392ddfb4d19225f295d1f10cd22f732d6a0ca9ca5c52198728bb68"
+    },
+    {
+      "chunk_id": "cfab1a98-ed8e-439c-91f7-1ed7a035db39",
+      "market": "cm_shared",
+      "symbol": "ETHUSD_PERPETUAL",
+      "stream": "ws_market_e00aeb33012d5ccb",
+      "record_count": 0,
+      "stored_sha256": "10fb4402b0813d8bb180ba3668ddd0b2025244f53a6301045daed9264ea8b2e4",
+      "uncompressed_sha256": "a84453e7b90c39b2940b84717e30b69d1c7408b3e4cb26138bdeb1d1680094b6"
+    },
+    {
+      "chunk_id": "d8a9b586-ad38-40fc-95e6-99a0ff0f1cf8",
+      "market": "cm_shared",
+      "symbol": "__GLOBAL__",
+      "stream": "rest_observations",
+      "record_count": 4,
+      "stored_sha256": "1c9b430ed020e3cf287a6815cf3af4ad27819b6e68190fc0526dea7d38af1980",
+      "uncompressed_sha256": "b64ce97ca94f842f9b3d6f016442a0c539a84653765d2fe135615862cce2a48d"
+    },
+    {
+      "chunk_id": "8af3c419-22f4-47a9-b5b3-c4110c14ce03",
+      "market": "spot",
+      "symbol": "BTCARS",
+      "stream": "rest_observations",
+      "record_count": 10,
+      "stored_sha256": "815f722f5b4af6ed3c88bb2f1631c73777750dcc794532e6b4e1f9276b9b0984",
+      "uncompressed_sha256": "f5a382ad44b237433cef5ecc58075cc0b4adf370a7a2e6a9ea98a36cab930691"
+    },
+    {
+      "chunk_id": "27f81166-9e05-45bd-800d-a20c637a1cef",
+      "market": "spot",
+      "symbol": "BTCARS",
+      "stream": "ws_market_8bfaae6d775495d4",
+      "record_count": 300,
+      "stored_sha256": "821b2e5684604336b17f004f1f6de2d2440ca15de2c281c369604c1f5f251212",
+      "uncompressed_sha256": "f339bbbc43a37edb22bc6c240ae8c93f7e94dc98c815126ffabf8da0502bc48f"
+    },
+    {
+      "chunk_id": "acb58cb9-8651-411a-aa8b-2615e988f719",
+      "market": "spot",
+      "symbol": "BTCARS",
+      "stream": "ws_market_8bfaae6d775495d4",
+      "record_count": 0,
+      "stored_sha256": "aa5c8226a44961e348eb028a47cced232ab5628bd7a2797f3c6b07096dc876b0",
+      "uncompressed_sha256": "d33611e13e0fd06d30d762e215bf4285daad21a609672dfb8903748c99c1aee6"
+    },
+    {
+      "chunk_id": "973bc54b-acf8-4146-8784-19ce895b2372",
+      "market": "spot",
+      "symbol": "BTCBRL",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "262e8712065dc97c97599150ce2d42208ef86509eccc0cc1ff8df83a2c1b20d4",
+      "uncompressed_sha256": "91512836fb638d97f600d85055174f454db1ad8aa2c17e88063263406340aaa9"
+    },
+    {
+      "chunk_id": "26b1a8ab-7809-4b26-949b-211e973f66a3",
+      "market": "spot",
+      "symbol": "BTCBRL",
+      "stream": "ws_market_554ef6e746b6ed16",
+      "record_count": 300,
+      "stored_sha256": "5578ba584ac86859b8399aa9b5f137816c4c1b93ac8a782c0147ac6e2e080911",
+      "uncompressed_sha256": "75233e03ce564c5f95d1e7650008757e585453991a6e93fc61a7223629ec7f0b"
+    },
+    {
+      "chunk_id": "5f0cd39f-854a-46aa-9350-e406ff8c1402",
+      "market": "spot",
+      "symbol": "BTCBRL",
+      "stream": "ws_market_554ef6e746b6ed16",
+      "record_count": 0,
+      "stored_sha256": "b5d958c2baa8aba19ca8cc1c456cb9e178ad52dcc75848c690eeba096d8caa75",
+      "uncompressed_sha256": "61efefa7f666aae89a9c093109b06af273479d910ffcf481e6f6cbf8bea56c4c"
+    },
+    {
+      "chunk_id": "fd9d172c-4a21-4fa8-9268-d4cc5effbd2d",
+      "market": "spot",
+      "symbol": "BTCEUR",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "0468412438d454ed7c1309f29e88deffb3f4596d420706632067ffe0983a2858",
+      "uncompressed_sha256": "e540fdd9f687de948907eacaf102bdf3d8c7d46ecb203afcbab8162ed513c37a"
+    },
+    {
+      "chunk_id": "7235717a-3c4c-4fc7-a085-7564db1aac75",
+      "market": "spot",
+      "symbol": "BTCEUR",
+      "stream": "ws_market_a4a3174e8f2d1835",
+      "record_count": 0,
+      "stored_sha256": "31827804183b3830619ac56465690ccf26e5ff429408bae5dabeee5699554507",
+      "uncompressed_sha256": "752384c0342c7ebb7da7056a4ace757eefb190876a2a06ff8d6890cda7b9635e"
+    },
+    {
+      "chunk_id": "8d32e90b-78e4-4920-85ef-8e20a65c39ba",
+      "market": "spot",
+      "symbol": "BTCEUR",
+      "stream": "ws_market_a4a3174e8f2d1835",
+      "record_count": 300,
+      "stored_sha256": "341c1cf085caa4aa6e28d9df060469b241f09299e1e169de85538e3463ba51ae",
+      "uncompressed_sha256": "bf686542b244c7ca5eabf7499be7fb7990a7a8ac288740a5e77df533ea7640d7"
+    },
+    {
+      "chunk_id": "7c75b4da-b488-4fe2-b301-f8b3461fd75c",
+      "market": "spot",
+      "symbol": "BTCFDUSD",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "57055957ffebd0df67ed3eb5788615b851e05373b1817d906c1c62268ea24c55",
+      "uncompressed_sha256": "93db065e27278cceab9b8bb6c096e86f87f5d3efcc3d2e00db492772ab1270fb"
+    },
+    {
+      "chunk_id": "5e7a9848-4fc7-41af-8233-bf496a4b4ce5",
+      "market": "spot",
+      "symbol": "BTCFDUSD",
+      "stream": "ws_market_3150822b70544dd0",
+      "record_count": 300,
+      "stored_sha256": "9012fa678516a5e9d56748e26b6b63736b04d525df51c4f6184f12ccbbe1a889",
+      "uncompressed_sha256": "5fbe40494d0a64cc77c755063f3b514644a74ba96da38eb9adb2a24366fbcda0"
+    },
+    {
+      "chunk_id": "822c11ea-f0d9-41fa-8464-79678d91fd23",
+      "market": "spot",
+      "symbol": "BTCFDUSD",
+      "stream": "ws_market_3150822b70544dd0",
+      "record_count": 0,
+      "stored_sha256": "5e2952c5b3ad83d766cc6f61b11d2c1fe420dbd4b7cf005e3e98825927466cbe",
+      "uncompressed_sha256": "bd84c852bb8ac616caf7cf33018aefcd100676881bdcc3301ce6b6ef17d5cfd2"
+    },
+    {
+      "chunk_id": "df10882f-38ed-46e3-854c-bcedf3821fbb",
+      "market": "spot",
+      "symbol": "BTCIDR",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "5f281665f5f168cb75cf31c33b50d386d4b2220565eb3fc8054f5a23dcfb01e7",
+      "uncompressed_sha256": "e75d36ae63c7beca7e9476d5f1c4a0d95feb3bdb0210b769516badf5be423b47"
+    },
+    {
+      "chunk_id": "327ff2b6-cc2a-476f-8a8d-3d1fb5139418",
+      "market": "spot",
+      "symbol": "BTCIDR",
+      "stream": "ws_market_596c999afaf16770",
+      "record_count": 0,
+      "stored_sha256": "10e84ed5d344e474252cca16a9cd1cbdde875f7376228f7e4c3bc2e7aa47a4d5",
+      "uncompressed_sha256": "772fb4b44964cd27924b5c0f5c1118ea48dca257ae16e7816469361464c417d4"
+    },
+    {
+      "chunk_id": "a3569371-c0c7-4fed-ba7a-1ecc90d79e09",
+      "market": "spot",
+      "symbol": "BTCIDR",
+      "stream": "ws_market_596c999afaf16770",
+      "record_count": 300,
+      "stored_sha256": "a4591f8a891aa2142c2ff8474aab761a829454c65714e28b97966aab197bebf4",
+      "uncompressed_sha256": "40865685e57fad77e6fab3bd897c7282e9d2484c26f582be580e4a1b05c81fe6"
+    },
+    {
+      "chunk_id": "9010123a-3e6c-49d8-96e0-58dea1fbd448",
+      "market": "spot",
+      "symbol": "BTCJPY",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "d2e778a71ff92746a8cdb7e924353a7c01e13c976532b969906daa54063c57d7",
+      "uncompressed_sha256": "0949ed0461b0fcbe1089368a2d704fe9619614d2d4286b1b05873de4e97de401"
+    },
+    {
+      "chunk_id": "4c99f62e-1c72-4fc0-b360-636a409e90d6",
+      "market": "spot",
+      "symbol": "BTCJPY",
+      "stream": "ws_market_60e6e1012efb29c6",
+      "record_count": 300,
+      "stored_sha256": "e4851b608e8885b8ca952bf78a998d01dae120c7925910e823fd9239704c41e4",
+      "uncompressed_sha256": "95fadaf1170dec22754d0d0613851c153e851fe16556d3b2cb16e5ae6fbb6a34"
+    },
+    {
+      "chunk_id": "b02ab54d-37df-46e7-b70b-588a5c1ac35e",
+      "market": "spot",
+      "symbol": "BTCJPY",
+      "stream": "ws_market_60e6e1012efb29c6",
+      "record_count": 0,
+      "stored_sha256": "3d720bdf307201583509b24f4a508f648d96d07fe0d5c2b8884efb99c5caf52f",
+      "uncompressed_sha256": "8c3e3fdc555d9638f3cc7968fe276bc980ee632b3f13dea4f5817a7c276eb2fe"
+    },
+    {
+      "chunk_id": "2eb7d692-b98c-446d-bbc6-0d855b30d344",
+      "market": "spot",
+      "symbol": "BTCMXN",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "c9381b2802798794d8b5af9ecf531af69ac1a5adb3ce3cd95e67d8e52dd25acb",
+      "uncompressed_sha256": "c3918e021f84b354624450eb7c50ef030119e22f44478736b38e47f100d6bcb7"
+    },
+    {
+      "chunk_id": "117ebd3a-f3c0-4e28-96da-913459134f64",
+      "market": "spot",
+      "symbol": "BTCMXN",
+      "stream": "ws_market_7587dbb9e2d9149d",
+      "record_count": 300,
+      "stored_sha256": "03a72e68d59c83b214b90cb53762e59bee4bd5fdfe931c3ed653291a0734cbcb",
+      "uncompressed_sha256": "f0ead8eeaee9ddb3ce460bdca0728b466f04178bef060a5c4e7a81d0fe392d74"
+    },
+    {
+      "chunk_id": "b1f8652e-4f24-48ba-8c57-438caedf786e",
+      "market": "spot",
+      "symbol": "BTCMXN",
+      "stream": "ws_market_7587dbb9e2d9149d",
+      "record_count": 0,
+      "stored_sha256": "d7e2c57b13f678b1133cfd3849a789ba36cb0b874e97bceea432d4ebdc3c3753",
+      "uncompressed_sha256": "3e7bb1b01a5d5a7e92a5ca92f6fae2ba6b7e7f26a36e9979bc90d5889f2db79c"
+    },
+    {
+      "chunk_id": "90a6c4ac-e7f8-48f1-b15b-0842d244153e",
+      "market": "spot",
+      "symbol": "BTCTHB",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "e858e9070d3c91519dcac966343897a65e3af515c6d55582c36f2390db9193fa",
+      "uncompressed_sha256": "253bac35bd63e847b7627e1830ca9ab9adca61b5bd225712097b93c1a2062385"
+    },
+    {
+      "chunk_id": "5c4358c6-bb04-40ee-adb1-32593fe18530",
+      "market": "spot",
+      "symbol": "BTCTHB",
+      "stream": "ws_market_80d96e112e665e33",
+      "record_count": 300,
+      "stored_sha256": "8eaf1234957397758f32181098417a8d995bf7c34a8b809a49c098b4b4c1a0e1",
+      "uncompressed_sha256": "6026c6f37268d678bfc25f8a96bd448efe05a5025fa2c2e3af3ccd5a24586f59"
+    },
+    {
+      "chunk_id": "eed9c2bd-615a-4ea6-9585-638c76373bec",
+      "market": "spot",
+      "symbol": "BTCTHB",
+      "stream": "ws_market_80d96e112e665e33",
+      "record_count": 0,
+      "stored_sha256": "9b222efb05c19434c3d544c5e6833ed81dad5aa18050786c66e40c8c4d9d867d",
+      "uncompressed_sha256": "2e9d48c24cacf133b65a2843a461791e6677e90a7ae99e1fe9b18d2a912e0d12"
+    },
+    {
+      "chunk_id": "b93ad0d7-2cfd-42d0-ab00-53a87ff9c74b",
+      "market": "spot",
+      "symbol": "BTCTRY",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "cb3de9988f9dcadab7b343a74542b5bd782782d708d76c58052a4f287b3fed32",
+      "uncompressed_sha256": "f7e4c9ed1213e1dce7701858be4b8271b7c07c4b8df5488b422d9c902449b9f5"
+    },
+    {
+      "chunk_id": "9cf4abef-53c4-4d61-83ee-7baad8b5d79b",
+      "market": "spot",
+      "symbol": "BTCTRY",
+      "stream": "ws_market_2cf3d0901b2d22ef",
+      "record_count": 0,
+      "stored_sha256": "7cb2456ec9f66e2334b395c36ccc58978a321160d77858638cda97e6721ccb4c",
+      "uncompressed_sha256": "0a7e59b5cf7d232a29bee3427b02bdb5bb0fe6de9638a5bb2b0d872c6d32fd61"
+    },
+    {
+      "chunk_id": "e362e802-f219-40fb-8819-fc701b2970bb",
+      "market": "spot",
+      "symbol": "BTCTRY",
+      "stream": "ws_market_2cf3d0901b2d22ef",
+      "record_count": 300,
+      "stored_sha256": "2eddfd03d64b70eeba97f1339a190241379546554ba2e8062922260b250eb293",
+      "uncompressed_sha256": "fd5a8209a15587cf4a349d55340174146d08a54e09782d24c6f9c697427dbd5f"
+    },
+    {
+      "chunk_id": "dff9b407-2c72-4a34-a5de-084d8005e007",
+      "market": "spot",
+      "symbol": "BTCU",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "e6bfa7e6c63a686c8b7ddc52b2b4a8b1e89f1032893538ee2d702a452aea8d1a",
+      "uncompressed_sha256": "2eaa0484539293d6f83bc9093ed42aab40a8b55ebef4dda8ca848377fae69842"
+    },
+    {
+      "chunk_id": "2b460ae7-3121-4f73-af6f-326d1ade7819",
+      "market": "spot",
+      "symbol": "BTCU",
+      "stream": "ws_market_b0f922456a09c7a2",
+      "record_count": 300,
+      "stored_sha256": "7285a81d485c8e4f80cfbc5ee80e804bfba21adcf3c5734fe6c7b07d2de73165",
+      "uncompressed_sha256": "d3da4262db792b6b5fceeca92d776f94ee2d1cbdeedb6b11ca17e321739d6dbf"
+    },
+    {
+      "chunk_id": "5bfc36ab-5d72-400a-82f5-5e797e703182",
+      "market": "spot",
+      "symbol": "BTCU",
+      "stream": "ws_market_b0f922456a09c7a2",
+      "record_count": 0,
+      "stored_sha256": "e5e6e9628c5c4b3d0d09ca6fb4df6143758a95e574c795cf336bd8e746ff0d3a",
+      "uncompressed_sha256": "95358b0f00c2f99705b315599c4574f0b4223ef70aa7d4d02b896e14adafd24a"
+    },
+    {
+      "chunk_id": "02f1344b-c7ae-408b-b349-01b0db241f38",
+      "market": "spot",
+      "symbol": "BTCUSD",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "d695e19942e56425223963291c4d8cb92077ce7fd38d86e2ba5f7563b3405dfb",
+      "uncompressed_sha256": "b5ad39de218aa64a3578b234057af101b6c83c68e88b9fa32b1cfaa11c714e5d"
+    },
+    {
+      "chunk_id": "14adc61f-e423-45e2-b9c4-43053d958d68",
+      "market": "spot",
+      "symbol": "BTCUSD",
+      "stream": "ws_market_e800dcb6d69b9a6c",
+      "record_count": 300,
+      "stored_sha256": "57c658109318238d190c0ba84df55c69ef56a86000ae73b2a5ba05b423c9839f",
+      "uncompressed_sha256": "77dc72e2e9d7f72682c42c8e0b7ec83d6b45590ee8314e098da0b84a1ead6142"
+    },
+    {
+      "chunk_id": "46698676-efd4-4fd7-82ca-a93e759d2ff6",
+      "market": "spot",
+      "symbol": "BTCUSD",
+      "stream": "ws_market_e800dcb6d69b9a6c",
+      "record_count": 0,
+      "stored_sha256": "c99d22ea97d619ed182a9a5e41d4221037c088808c2c3484e6c3d54d1f488ee3",
+      "uncompressed_sha256": "700ccb2eecde9c061b3a47550b4273d4865063dbc095866e7875cdf5fb075312"
+    },
+    {
+      "chunk_id": "d622232e-14b2-4938-8aa6-b9ea83a188ff",
+      "market": "spot",
+      "symbol": "BTCUSD1",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "62e8f7d3aefc3d7c6ce2da5c2c7d44fa7018c9643db0eb893ee8648276ec7174",
+      "uncompressed_sha256": "7358908689dbe3a9079960ec949506a2775f2a997a559f855ac69f29d5aeb4fe"
+    },
+    {
+      "chunk_id": "00fbf75c-846f-409a-ada9-f8b98777e380",
+      "market": "spot",
+      "symbol": "BTCUSD1",
+      "stream": "ws_market_5029b4bcf3ccafcb",
+      "record_count": 300,
+      "stored_sha256": "f9d04a2262f080908c2df1f35f3b3679839e7213acd059b93631922404e97e90",
+      "uncompressed_sha256": "db65369a76c4e1f5f96dbc8b554d62e99841db9b289e7ecf02b3304369f03516"
+    },
+    {
+      "chunk_id": "337f445d-1c39-4e89-81ee-29fed39d02bb",
+      "market": "spot",
+      "symbol": "BTCUSD1",
+      "stream": "ws_market_5029b4bcf3ccafcb",
+      "record_count": 0,
+      "stored_sha256": "9362ce47ea1a359ae57fdfcae9499afaf1be5ac53bd208967221428ca95e9813",
+      "uncompressed_sha256": "55e84e7e48893e6ee2863f77873c23646d4e1c081fb09f7ae2b17392c3b645e0"
+    },
+    {
+      "chunk_id": "e3f01101-f9e8-43e0-a410-107eca6df928",
+      "market": "spot",
+      "symbol": "BTCUSDC",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "950f8a2061af1d52b769150387e4015b1ad67c8efd8cd4f429b4f697ade3c9b8",
+      "uncompressed_sha256": "5b1964315b077a2576f0dc9852771f29caae4d624a4bb7e18109d9e73e5a4176"
+    },
+    {
+      "chunk_id": "a5f7a9c5-9030-40ed-bfbd-188c56a91f2c",
+      "market": "spot",
+      "symbol": "BTCUSDC",
+      "stream": "ws_market_ec7cfdaaf254ab59",
+      "record_count": 0,
+      "stored_sha256": "4af7effb8fd19c1477b71b0e16dba0aa832b34317c9f8fcc7b46759c1ab373a5",
+      "uncompressed_sha256": "bf0afac745ddccd7c508756013c773c3d4755fb3a82e437494c29ea3de4d1321"
+    },
+    {
+      "chunk_id": "b8439076-7857-4d5b-b756-d1612627a29d",
+      "market": "spot",
+      "symbol": "BTCUSDC",
+      "stream": "ws_market_ec7cfdaaf254ab59",
+      "record_count": 300,
+      "stored_sha256": "1f9745d0c459d859fb7e352e6e10d5868be3385812fad9ad7bbecd5a90aed5d9",
+      "uncompressed_sha256": "d6d771673bce155064c8aa33b3fd9b6c175f516434500ea48d6ffc3ca528d3a8"
+    },
+    {
+      "chunk_id": "891fc518-3cd7-42f7-be30-5b3c09f24159",
+      "market": "spot",
+      "symbol": "BTCUSDS",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "37c1ec82851ee0916a0e15cd1ac80d19d443dcbe4f3625a8e690154a05dd2a85",
+      "uncompressed_sha256": "28390e737ace238db39ed17d7164978fdbce95d578bc76111783b587bdcb3769"
+    },
+    {
+      "chunk_id": "125ab353-1b6a-4df2-a806-692757b4ef1d",
+      "market": "spot",
+      "symbol": "BTCUSDS",
+      "stream": "ws_market_635ad296ed9bc847",
+      "record_count": 300,
+      "stored_sha256": "830ed3b0b23cf601260703fddad1097abce1dbb9fa93e1eea51dca626ade7fd9",
+      "uncompressed_sha256": "c060c2f998024bca2aa5b51dfbdaf642645bae875c9cb987ffdf2d44e5679071"
+    },
+    {
+      "chunk_id": "5d0bb150-ab50-4f74-bd5f-7aca01757874",
+      "market": "spot",
+      "symbol": "BTCUSDS",
+      "stream": "ws_market_635ad296ed9bc847",
+      "record_count": 0,
+      "stored_sha256": "caf38ed9dd62bd85ce43484c0da6bc6789b3fdd89bcccf67cb93df1698c46106",
+      "uncompressed_sha256": "5c919ba2f3bc6a185ae0ff2b1da7000a9db77a659eb5a1ee9e5ab49473865ade"
+    },
+    {
+      "chunk_id": "3f6b1eed-0898-476e-a2dc-e5b32f293540",
+      "market": "spot",
+      "symbol": "BTCUSDT",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "fbd04f03029bce05839e04c936ad9d8689422fd1e338d2b6f34fb0f5176abab3",
+      "uncompressed_sha256": "21a3447c641578243f95dc891b405f111135291b4c02542778847495a490c5a9"
+    },
+    {
+      "chunk_id": "4a99b8ec-2025-42db-ba4c-5c928291cfac",
+      "market": "spot",
+      "symbol": "BTCUSDT",
+      "stream": "ws_market_f7558b67c364d007",
+      "record_count": 300,
+      "stored_sha256": "dc33eff5e908cb831e739396095cc99fcf1f8d0b6cee7a7c5124ee80138dccc5",
+      "uncompressed_sha256": "8d2b7511fa377aac8f692346a152704261efab887a9be23709bf4602bf679915"
+    },
+    {
+      "chunk_id": "d9c114b4-5f77-4e7a-88de-1385a6ed3385",
+      "market": "spot",
+      "symbol": "BTCUSDT",
+      "stream": "ws_market_f7558b67c364d007",
+      "record_count": 0,
+      "stored_sha256": "c7ef008391156e4a3312dd8eb31b7f6288f5779ee89f5e8609fe2555f8221d65",
+      "uncompressed_sha256": "719e5fa2bff7d7570788feeb1a96d856a8593a978e8012ff1ce79f59f75af4d3"
+    },
+    {
+      "chunk_id": "32fc7efc-4344-4362-86c1-6132ac2675e8",
+      "market": "spot",
+      "symbol": "ETHARS",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "75568ed0ea95532255abddba09a3bba9f528e779b26e5e8be0af3deebe8548d4",
+      "uncompressed_sha256": "c30d4083b14e7c68391a3b982691a7604b95ee1cb6ffc4abb008b7d712be9a50"
+    },
+    {
+      "chunk_id": "45c5f358-acb5-411b-8285-10189e9ee447",
+      "market": "spot",
+      "symbol": "ETHARS",
+      "stream": "ws_market_c64396e817d21432",
+      "record_count": 300,
+      "stored_sha256": "9445c2c5bc262e8af69e79d58a784a140e3092b09b02cda247123e319744fd30",
+      "uncompressed_sha256": "dc6b02fa33d900fd3473f0e740f1f2c3f5ea965579fa3c92a4cca2a11d19a10e"
+    },
+    {
+      "chunk_id": "f4cd0abb-b663-4eea-a866-930cc03db19e",
+      "market": "spot",
+      "symbol": "ETHARS",
+      "stream": "ws_market_c64396e817d21432",
+      "record_count": 0,
+      "stored_sha256": "2c83e900b778aa6a810e9dabb50ca10d5e056dacfe66bce322c53066035f1b3e",
+      "uncompressed_sha256": "98a64fe1c58c2e08a353a101f78ec10c7d57a6faa4347376cfe363b8ac9871ff"
+    },
+    {
+      "chunk_id": "ec72722c-e253-4770-81a0-4dbb5a9dcea3",
+      "market": "spot",
+      "symbol": "ETHBRL",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "a4177250e114810199e7bb5988897acd684fcf4a2f3e836433a1115de1d9bfb2",
+      "uncompressed_sha256": "c490d7757147136a28e51b23e91b2734fd01a16a5160b008416f1a8d10e061e0"
+    },
+    {
+      "chunk_id": "71b04f6d-aabb-4f80-b995-31bb754b3dc4",
+      "market": "spot",
+      "symbol": "ETHBRL",
+      "stream": "ws_market_a580ec71884ae359",
+      "record_count": 300,
+      "stored_sha256": "c7b24df6bd84bfb86905d35c42f86215867203048c77533cb2cbbf45da94a036",
+      "uncompressed_sha256": "395e1b4180abe3836ad24831e1b564b9c35c2b27363c2a88983ecb52998590b6"
+    },
+    {
+      "chunk_id": "d4168fad-9006-44b5-93e2-3f3c982c6746",
+      "market": "spot",
+      "symbol": "ETHBRL",
+      "stream": "ws_market_a580ec71884ae359",
+      "record_count": 0,
+      "stored_sha256": "f4e4be9cffb5f520c4052dc5a5c5fb8f2a8f47f3a2847b18040b430bd62a4ff2",
+      "uncompressed_sha256": "93e491d0df343feea99b0f93630476022e4cd38599be5e1fc603199a1ed8a65e"
+    },
+    {
+      "chunk_id": "502ca5e2-1caf-4615-a14d-4414e4b0c73c",
+      "market": "spot",
+      "symbol": "ETHBTC",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "4774d709d98da3e7fcabc7157643968b03de178029e98d986c030d112460639b",
+      "uncompressed_sha256": "7d670b8dbb3e7941472294f1428257363daa630428c1ca1ddf793e6b9345a73f"
+    },
+    {
+      "chunk_id": "25293b18-674b-4130-9682-9145a440349b",
+      "market": "spot",
+      "symbol": "ETHBTC",
+      "stream": "ws_market_6382cfebc48ab339",
+      "record_count": 300,
+      "stored_sha256": "e60752b977f1764a562a005256418d86dd33ecedd9592410473815e31e68cb0a",
+      "uncompressed_sha256": "0d3a7aeeb7e7c4e2362623ec60d850e2667f2a050dd84c2b7505330fc6ec8d11"
+    },
+    {
+      "chunk_id": "47a4f98c-4814-47e1-b461-8e862fa9c9a6",
+      "market": "spot",
+      "symbol": "ETHBTC",
+      "stream": "ws_market_6382cfebc48ab339",
+      "record_count": 0,
+      "stored_sha256": "bdde4049bae66697a2858d9442464fd0e82f6d66fc0eb670aa41e28fcd3c6306",
+      "uncompressed_sha256": "8f0e0566b183202362c4856788c5e67badf854f03d71ef6402fd3085c382ebcb"
+    },
+    {
+      "chunk_id": "028f5120-7f10-4fa7-9b77-bf8fb5ed8965",
+      "market": "spot",
+      "symbol": "ETHEUR",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "1d24e7b98afe91c291daa579010286f4d27f8fc379b345fd549b1e792f435ecd",
+      "uncompressed_sha256": "cdd194cb1beee332050c635e1752d2595b2984dd285ee9085d3a57021c40e43e"
+    },
+    {
+      "chunk_id": "a23bed3c-e784-4cc4-b25b-d6b19d828f6b",
+      "market": "spot",
+      "symbol": "ETHEUR",
+      "stream": "ws_market_7eced3f99e6c6465",
+      "record_count": 300,
+      "stored_sha256": "23f39fe151d7978409fc1689f3265387f6fd576958f2b645d5131e2f79e25a35",
+      "uncompressed_sha256": "2252c06b7451f0d4e9695d7cf6f07d70fcbc9d12666df4637a720e64d86bf278"
+    },
+    {
+      "chunk_id": "c09ebfc6-455b-446b-8632-af404631101c",
+      "market": "spot",
+      "symbol": "ETHEUR",
+      "stream": "ws_market_7eced3f99e6c6465",
+      "record_count": 0,
+      "stored_sha256": "db97cdcfee67d6ce9daf47b84a81dae496344ac8827c0b3d01dfca2ad5d6fe93",
+      "uncompressed_sha256": "e75e16fa3ce2f842c97d9829e33868a22cb47cd1ee1f7459679ee071875d4c57"
+    },
+    {
+      "chunk_id": "c348ed38-ba34-4bdb-b202-09019c6faa24",
+      "market": "spot",
+      "symbol": "ETHFDUSD",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "b3745f285c798fd7db0b38e91c6ed1b37229e0b4409264cce7b326b7002d173d",
+      "uncompressed_sha256": "0791fbc77f5225f3f2f084b7db127f87cec4ea01c1da0cf408a9aaab326b3811"
+    },
+    {
+      "chunk_id": "3f6a3dcc-8ee6-4ac9-9928-362b6840f175",
+      "market": "spot",
+      "symbol": "ETHFDUSD",
+      "stream": "ws_market_1069045030d22fe6",
+      "record_count": 300,
+      "stored_sha256": "ce65ddf734010fa687e82c7d3afccd1c4f5e6f280d7067055b74ce990b275606",
+      "uncompressed_sha256": "8550409e0b02df8936b0a4d21eaf08b498fd9c39316152ade079087beeb3b348"
+    },
+    {
+      "chunk_id": "b1b5605d-67b1-4776-adaf-cb85d2bdd2bb",
+      "market": "spot",
+      "symbol": "ETHFDUSD",
+      "stream": "ws_market_1069045030d22fe6",
+      "record_count": 0,
+      "stored_sha256": "f3532a0d8116ed5935f553c2e057a5d3f875d5a2a2d08d14b9d2d2696a1ee816",
+      "uncompressed_sha256": "51086025570bf1c910f0a443c634ca108bab11c95cd44b53696a75f0ccccc84e"
+    },
+    {
+      "chunk_id": "dcba4e91-b4c5-4270-a0ca-2e6ecd0efca7",
+      "market": "spot",
+      "symbol": "ETHIDR",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "570e9ee56c7f82a8e1b6c8621544d01eb84f3d0cfd3e10acea7f6834a804b679",
+      "uncompressed_sha256": "5f3aebfed1e85b5683e9b2f08c50af476d8c986e80e052d0a44eac06649e976e"
+    },
+    {
+      "chunk_id": "4a0b780b-2970-49d4-8321-c6530b72bbae",
+      "market": "spot",
+      "symbol": "ETHIDR",
+      "stream": "ws_market_0208761503444455",
+      "record_count": 0,
+      "stored_sha256": "3f11624032193fc51277382ebbd26527d4d0531f2eed7d744a1514753bbf3610",
+      "uncompressed_sha256": "f4d81581ff7b7f6ac1ea9b5b9b3a83904c19fb4afee0e271715d442dd5b44c55"
+    },
+    {
+      "chunk_id": "7629cebd-940c-455e-a22f-4b0b21d94543",
+      "market": "spot",
+      "symbol": "ETHIDR",
+      "stream": "ws_market_0208761503444455",
+      "record_count": 300,
+      "stored_sha256": "c2d01022aee59f48a78c87dea2ab5391586d8e225908cf60e9ac7ed7cc7af994",
+      "uncompressed_sha256": "aed1dde20b1b43f20640514c0254d54ed6030f951c345267da480c076ec2db16"
+    },
+    {
+      "chunk_id": "380c2cc6-7dac-4907-8e22-5e777b8f4fda",
+      "market": "spot",
+      "symbol": "ETHJPY",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "74889f78a4104a68e74ab2399729b697b7ec353798c9c3df2acf42c9ab6fb7e6",
+      "uncompressed_sha256": "03385910ddb4a9e2369a80bb92d30e5751159c6bd1be068dfaeae2256d45cf2f"
+    },
+    {
+      "chunk_id": "053b31df-204a-4458-b249-3ec1b95b402f",
+      "market": "spot",
+      "symbol": "ETHJPY",
+      "stream": "ws_market_906a8b8d09af03d6",
+      "record_count": 300,
+      "stored_sha256": "42de6f6022f471e01b6fa7d9c0590f2f3063b15bcd3c8985411f0db779310649",
+      "uncompressed_sha256": "9fc68e7f69e87a2aa53d1279c15a97a36166605147a480a16aeba65b026bb044"
+    },
+    {
+      "chunk_id": "b0daa94a-044e-4dab-97b2-25ec47889e2f",
+      "market": "spot",
+      "symbol": "ETHJPY",
+      "stream": "ws_market_906a8b8d09af03d6",
+      "record_count": 0,
+      "stored_sha256": "bd68caf4a39d19b64c7d847121646d9a9d446ed059bc2b4dc97ff1b62756b3c3",
+      "uncompressed_sha256": "da505cfe52ec659f47c48c842ec5b20cbdbae18c27827be363df0a7610e18709"
+    },
+    {
+      "chunk_id": "7f281c16-3dfe-4d37-8da8-049592eb88b4",
+      "market": "spot",
+      "symbol": "ETHMXN",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "1043674c81e44c4a8cc23751e1655be42e166ff9b516da4754b60464c73a6aef",
+      "uncompressed_sha256": "1dc238c40f2350006681edf8a4977160f7a16d2a28b2135adb0b43d55538a7b0"
+    },
+    {
+      "chunk_id": "919109b9-0c8c-46bb-ab09-0ecf8f715f8f",
+      "market": "spot",
+      "symbol": "ETHMXN",
+      "stream": "ws_market_11eca2bbd7f31e6b",
+      "record_count": 300,
+      "stored_sha256": "98d925bee76e2716a7d4fbe5e6846063a875d0ba7cd7252ee30454e0949862f1",
+      "uncompressed_sha256": "9f6751bcd97c76fb274a0894ad16a5ea5cad7fc87f05e62f5a4443ae84d51395"
+    },
+    {
+      "chunk_id": "c18473c6-6b67-4347-8076-5ccf2d0a38cb",
+      "market": "spot",
+      "symbol": "ETHMXN",
+      "stream": "ws_market_11eca2bbd7f31e6b",
+      "record_count": 0,
+      "stored_sha256": "a2ca824032a07aec37a8f38d918d8bb6ea95da003caa7950fe40ad3b7e8eff66",
+      "uncompressed_sha256": "629d45fc24a426b998cd54478a3f556cb5e3f23ef8b48755d6b7fd6363f5e161"
+    },
+    {
+      "chunk_id": "697ee622-8a7a-480d-ac5c-61985e55ab7e",
+      "market": "spot",
+      "symbol": "ETHTHB",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "0c86b990d856e69f42cbbe50a662c6fe2ab7b76bd9c3eb560271bf16cf655984",
+      "uncompressed_sha256": "cec63561539432d668022fa20489cc1fea356baaffd6f054fc87a59eb51291f3"
+    },
+    {
+      "chunk_id": "d42d42d6-b3cc-4b1d-a705-b3cd340833b7",
+      "market": "spot",
+      "symbol": "ETHTHB",
+      "stream": "ws_market_83d7d75e9d455307",
+      "record_count": 300,
+      "stored_sha256": "bc7fe0eb31159d1cc3ebc74069fe8e001776c767f33987aef3001d867bda9dac",
+      "uncompressed_sha256": "8d7a5f11d5cecaa9d9e1048c865d2e5157b27180382078999df1634db0b942e6"
+    },
+    {
+      "chunk_id": "fa36a2aa-b544-44ca-b2d5-5bfbe7959081",
+      "market": "spot",
+      "symbol": "ETHTHB",
+      "stream": "ws_market_83d7d75e9d455307",
+      "record_count": 0,
+      "stored_sha256": "365bf62d3a3865bfdda5de211333c1bcd05ec1171902d4531c30145e7940f0b7",
+      "uncompressed_sha256": "4a7ab8d6cc6979f9950067eb0e4f7175df033685714ced6f50d5f3793ef07424"
+    },
+    {
+      "chunk_id": "23661036-cc54-4e0c-9ff3-d64f568f6730",
+      "market": "spot",
+      "symbol": "ETHTRY",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "501cb465939fcf92d1b8bfdafcea80dc17d88b80dce2ce4f06f8fe7ee7202b12",
+      "uncompressed_sha256": "17ba525200dadad799cfd1680bccee56796b5667a52673163e00b79a2be97eb5"
+    },
+    {
+      "chunk_id": "e35855e3-934e-4eda-8a51-0ba3f63cef5a",
+      "market": "spot",
+      "symbol": "ETHTRY",
+      "stream": "ws_market_2375afd2a5c36097",
+      "record_count": 300,
+      "stored_sha256": "0199153912102725eb8901b47ee36723a35820c27b359a27514628599ec672dc",
+      "uncompressed_sha256": "bb329d43661bf528d17a2d7fbbcfc3c59751847d1e6d2e117913bd262bea8924"
+    },
+    {
+      "chunk_id": "e862c70e-3db0-4573-a024-69f8a1226743",
+      "market": "spot",
+      "symbol": "ETHTRY",
+      "stream": "ws_market_2375afd2a5c36097",
+      "record_count": 0,
+      "stored_sha256": "68a15ca970766f99036665774e9e51646f4763eff53b03c35b6d529ff1e49e31",
+      "uncompressed_sha256": "398c4b837d3f60553b801f377f30245a9d473851d4c5d5e17343fee91a94b64f"
+    },
+    {
+      "chunk_id": "c87eb908-6e52-42ae-a841-1f6d87aea289",
+      "market": "spot",
+      "symbol": "ETHU",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "627ca6d2ba454bd44d1148a35e7cd69e6b5332a1a2874fd5f8ae8001d09f251d",
+      "uncompressed_sha256": "8364ad02b77ad26835511f483426b20f08059182d431cbc7b1813ddd21bf66e4"
+    },
+    {
+      "chunk_id": "57917af8-b1a4-44d2-8b6c-189c0f9e419a",
+      "market": "spot",
+      "symbol": "ETHU",
+      "stream": "ws_market_3428d8f073350471",
+      "record_count": 0,
+      "stored_sha256": "6da523e86868e961d274c37e6ed2758e1d0b4186d2c72c016762d2e9a7fcd010",
+      "uncompressed_sha256": "50afb242464d38ac7ad368f0e0c83136941242772fafaa589f0e54b6ce619420"
+    },
+    {
+      "chunk_id": "fefc6424-eb8a-4714-ab02-6ed5c2170646",
+      "market": "spot",
+      "symbol": "ETHU",
+      "stream": "ws_market_3428d8f073350471",
+      "record_count": 300,
+      "stored_sha256": "902dddd439443a27f85a178606dd9353e85acbdbb0cb949594cc4d975eceec3f",
+      "uncompressed_sha256": "58cf918230d08eb9a3b7c7f23d9f1e232a50757961dd53e4450020f4ef1dcb30"
+    },
+    {
+      "chunk_id": "1c9aa74d-fd14-4fed-ab54-d5d28e40994b",
+      "market": "spot",
+      "symbol": "ETHUSD",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "cdf3c03a25d29af16a079421a86199e1fb382c340ecc8969786fcbf8fff8d624",
+      "uncompressed_sha256": "bfbf4fb3aa01899795addc6926a6e53b4c994d946c02acb793fa25749ee54d72"
+    },
+    {
+      "chunk_id": "59da7d78-d34e-4d09-8ebe-e4ac54220bae",
+      "market": "spot",
+      "symbol": "ETHUSD",
+      "stream": "ws_market_99e46145da9faa2b",
+      "record_count": 0,
+      "stored_sha256": "daaba53d8ac1e8fbcba60fc02949596070f27ea6321f91991c34c2cc45fb75f4",
+      "uncompressed_sha256": "880034144d4477140d13b663c980b4367fb7e6817200ca42eb9aefa11a2a4cb2"
+    },
+    {
+      "chunk_id": "9c24ed97-ddaf-4eaa-800e-c5b7c4d138e8",
+      "market": "spot",
+      "symbol": "ETHUSD",
+      "stream": "ws_market_99e46145da9faa2b",
+      "record_count": 300,
+      "stored_sha256": "63ed21b41f74f85a291aac30168436f50425a3a19940c9d171daf9d16ff382cd",
+      "uncompressed_sha256": "1ab6f114b204e5f42da38abaab76f4daf0d202017a2fbc08d42d9d19e86738ee"
+    },
+    {
+      "chunk_id": "1df2d83e-e577-4236-bd57-e20237073131",
+      "market": "spot",
+      "symbol": "ETHUSD1",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "8b0ec42c53dae50aa114910a8900e16b5496910ee802f8ee693e095749a21192",
+      "uncompressed_sha256": "f29655b42c0f0c6beedd540770b8d78a15d65b38c087a948b173399bb6a9fc91"
+    },
+    {
+      "chunk_id": "1ee0663e-1977-48c5-9e85-9ee761f76c11",
+      "market": "spot",
+      "symbol": "ETHUSD1",
+      "stream": "ws_market_8e19f7df1d2bd9af",
+      "record_count": 0,
+      "stored_sha256": "f4e3440725b7a13d1c9b97e5bee5ea32db8a77406c70fb08ec5e89006508a9fe",
+      "uncompressed_sha256": "004e319d8478c3d3aaed50b0b080598fc759ff497b821dd5e5d087529676c150"
+    },
+    {
+      "chunk_id": "db4d07c6-b64c-4754-97da-32240c867ff5",
+      "market": "spot",
+      "symbol": "ETHUSD1",
+      "stream": "ws_market_8e19f7df1d2bd9af",
+      "record_count": 300,
+      "stored_sha256": "2428bd29d041b04eb6781b1b43ccbeca3dca62336c606041bcf57d3106c3b3a3",
+      "uncompressed_sha256": "4b1a516d11eefd181d24a0858168c8c982607253f3ca06ce5d0bbf71b29a7229"
+    },
+    {
+      "chunk_id": "5adf2d2a-0954-44ea-8bce-d66f861a5a8c",
+      "market": "spot",
+      "symbol": "ETHUSDC",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "6fa1639e823d92f440eb32a238c71cf2ee94e6efb55eb002b00b3a427fe7284d",
+      "uncompressed_sha256": "aef90e8a19995378a61eacc221508eba4c8324c62a5c37e644eb1e86d4aa3f34"
+    },
+    {
+      "chunk_id": "2f8e0a7a-ec73-4192-85f3-ab0ca9508b23",
+      "market": "spot",
+      "symbol": "ETHUSDC",
+      "stream": "ws_market_7aa436c1e7669d64",
+      "record_count": 0,
+      "stored_sha256": "1e0554d16613438a9067dcb601332c58062740a3b35348204d66ad701c5c516d",
+      "uncompressed_sha256": "03af8274afd9571b1effdf35689df63e2a98c1ac23347be259050d34894ea8fe"
+    },
+    {
+      "chunk_id": "a9a0919b-72ea-4e47-ad9d-cb4506177d92",
+      "market": "spot",
+      "symbol": "ETHUSDC",
+      "stream": "ws_market_7aa436c1e7669d64",
+      "record_count": 300,
+      "stored_sha256": "2f13e9ebf96f5c6a7ac6ff2a8ba7e5b721b2ca2621dc8c69d1ad2f41120081c1",
+      "uncompressed_sha256": "97ed58f3412214c9ba4cd15265b1265a7202abe4b3617bbb3e660403d28bb09c"
+    },
+    {
+      "chunk_id": "75914907-9d0c-4a51-9053-cb9b8b6408cb",
+      "market": "spot",
+      "symbol": "ETHUSDS",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "0662335e81024a63cb5c813caa9ca9f76bab22cf6778f263b3d5ac9f1584cf3d",
+      "uncompressed_sha256": "93bf7efcb96c4007c16a54775c6ebe9720c8405325872de9fbcaf2e1932c643d"
+    },
+    {
+      "chunk_id": "974ca6c9-32ba-4d7f-b7ca-a2193ee3b964",
+      "market": "spot",
+      "symbol": "ETHUSDS",
+      "stream": "ws_market_8a3524b8728fca7e",
+      "record_count": 0,
+      "stored_sha256": "a0c038150d79173ac89581fe4fb3daf277ad83e5d8e1f1f48b0e43750ba59955",
+      "uncompressed_sha256": "cebe290646ecf24d04f9d69f4bb9347811cda6760b0931763e2195a1a06cd50e"
+    },
+    {
+      "chunk_id": "a0fccf49-d1ad-41fe-887e-e4db356aa404",
+      "market": "spot",
+      "symbol": "ETHUSDS",
+      "stream": "ws_market_8a3524b8728fca7e",
+      "record_count": 300,
+      "stored_sha256": "678130b4f43e18289bf3b829ff8f7077131f9694c892480eaac7b7eaa5f204e0",
+      "uncompressed_sha256": "a348ab2bf0d0daf1fd3aec9889745297988e9cf8013f3854c7eb67bd80b642e9"
+    },
+    {
+      "chunk_id": "c114cb46-d6ed-4308-86a1-a77379d1d720",
+      "market": "spot",
+      "symbol": "ETHUSDT",
+      "stream": "rest_observations",
+      "record_count": 1,
+      "stored_sha256": "facbb7aca3477e21829fdc9133c1486591cbb0963154565b2ea1b50253ee84f9",
+      "uncompressed_sha256": "45855a88309a5735617eb7a11101c3bb748a9da752908cbe9e452c45c1b099c0"
+    },
+    {
+      "chunk_id": "86d15241-6e57-4229-bc6a-ed43daca122d",
+      "market": "spot",
+      "symbol": "ETHUSDT",
+      "stream": "ws_market_c33b55fe42aaf0c5",
+      "record_count": 0,
+      "stored_sha256": "0011410892b5518a8cc7fe2fe0e4639fb6e8ac2f2a7a0c833264735b329420ff",
+      "uncompressed_sha256": "6d965610291914a5dc30561e767d9183eb3f6b56a078c5549d960c9f7ce102a0"
+    },
+    {
+      "chunk_id": "ffc2a7fd-5cd8-4571-9652-071fa4185670",
+      "market": "spot",
+      "symbol": "ETHUSDT",
+      "stream": "ws_market_c33b55fe42aaf0c5",
+      "record_count": 300,
+      "stored_sha256": "ccc3d4d2403f07210b399955f35717a12718e2cc3443e7a55d6fad8a4cde511e",
+      "uncompressed_sha256": "2483c426720374bbd4afcd5c72090010bf1f9f0c801ab6128e75adea7cea245d"
+    },
+    {
+      "chunk_id": "403ab863-c26b-4610-add5-39988d1d0945",
+      "market": "spot",
+      "symbol": "__BATCH_0__",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "7dd170b5fe2291acdee0dd05068b583fce2b4e7000fa53f5906a51a20b65c01e",
+      "uncompressed_sha256": "aad43ff2c41e656a52099028e6df84e670bc792ef67bb824a462a94df9950b52"
+    },
+    {
+      "chunk_id": "e26e7c44-5d2b-41c7-b5a5-37a59792f227",
+      "market": "spot",
+      "symbol": "__GLOBAL__",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "54b20f962cbf6fcb50e402f48134102010a3fd10525de76ac1cb4639283eeed5",
+      "uncompressed_sha256": "eab7993bac301e68f62ca178ed82bcee90ce831eba7efe27f220cfba752c1c6b"
+    },
+    {
+      "chunk_id": "89031be3-b0f5-4fa3-97ad-dca2acb196eb",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "stream": "rest_observations",
+      "record_count": 26,
+      "stored_sha256": "aa98f9ea6aeeaacac7180729cb157fda936738441c72db772007bba20e1c5e72",
+      "uncompressed_sha256": "6f776a9ee106dfb3433220dda08cf4ecbe774fa8e97ba954c37d85c80754d3e5"
+    },
+    {
+      "chunk_id": "4cd5297d-46eb-423b-a5da-ba3fc142b1e1",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "stream": "ws_market_d929d5dc95d595f2",
+      "record_count": 0,
+      "stored_sha256": "a84d2a13aaa86634193414d40c4b09d921843261b47f19cf74dcbda3d7d6a7c7",
+      "uncompressed_sha256": "7f8c06e9301782a1681e75afe147cbaf33f4142ef633bcb19e0a74668037b807"
+    },
+    {
+      "chunk_id": "dd0cd1e9-8547-404c-82c1-680c86464210",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "stream": "ws_market_d929d5dc95d595f2",
+      "record_count": 120,
+      "stored_sha256": "ee5141edc02e0a1d3e5691174880e3c56ad124f7a7043cdda3605c211afcb074",
+      "uncompressed_sha256": "830ffac4322e9e904d88b27151ca3bc342d619c9f1fc6319a3645ee6297e22a7"
+    },
+    {
+      "chunk_id": "5e6653ca-513f-40b3-b9c9-820c46156b55",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "stream": "ws_public_a05a1e5538a01ee0",
+      "record_count": 0,
+      "stored_sha256": "c6861fbda376e9c2e0b261b37e7750d9356d849ef4dc72583aa294a1f5d04e93",
+      "uncompressed_sha256": "b79c397b9e86ee3d92261b70100dd50893348153be5cdcc3310bef4779b12324"
+    },
+    {
+      "chunk_id": "9bbe26fe-7cf4-48f7-b32b-1fc266b892a6",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "stream": "ws_public_a05a1e5538a01ee0",
+      "record_count": 60,
+      "stored_sha256": "26dda48adc44c0407795f5091b3c1d79beb3d8683b59296d59f26c41cc8d5d02",
+      "uncompressed_sha256": "ccea9e1ab87c313c4d959d6a1de545d8803c12b6bcb19e390387524b8b0a7c95"
+    },
+    {
+      "chunk_id": "30d8cdd3-14d7-44c9-81ee-954a9def3598",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "b9acced78fb4a25ac9b312afd774ca5bfa39101defa37be75aa6785e6bc04822",
+      "uncompressed_sha256": "f97193a92b1367417b431c488f9b760adfad6c3ac30f7b004aac474603ea31dd"
+    },
+    {
+      "chunk_id": "0098790c-cc1f-4061-b706-7d31e0d5a656",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "stream": "ws_market_555094e0b0891d48",
+      "record_count": 120,
+      "stored_sha256": "d13f11d8007284e9ab98e9a9efcc84b4366f6283903edad90aebf0b399b3cdcd",
+      "uncompressed_sha256": "802da028a5cb3572e5fcc6aadaef031e7f49e5d8195df627139640395393ac7b"
+    },
+    {
+      "chunk_id": "4fd079ec-56c7-48db-bac6-2039f24c607d",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "stream": "ws_market_555094e0b0891d48",
+      "record_count": 0,
+      "stored_sha256": "9df6dac9bd6a0695e4933a3350f173aace6cc38a8dfd22c7bab8b8e086e8009e",
+      "uncompressed_sha256": "b3f31d6cb9b9b05903e7895be08970fdf310559212d0d9e728863f98594ac350"
+    },
+    {
+      "chunk_id": "3f20cd00-03cc-4439-bb06-e84959a855da",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "stream": "ws_public_4d36169c95093a2e",
+      "record_count": 60,
+      "stored_sha256": "7b75d6923d1e862539468f211c21616ca41a6729849f4a7c2020e6e3b586523b",
+      "uncompressed_sha256": "04eb099bbfa5446d552f269e9091334862c9a9f8e85360e815db5f360dc6bb0b"
+    },
+    {
+      "chunk_id": "f782aab7-76bf-4ee9-9580-4d52bf84e126",
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "stream": "ws_public_4d36169c95093a2e",
+      "record_count": 0,
+      "stored_sha256": "333ca7e0a1b44328e55cec6a2394d715cafae96b087c7f3b2ad81ea302aecd34",
+      "uncompressed_sha256": "910d4d1e6ea6cca36808ac21a0820c33ce14551f48c26f9ba67e0d17b6776bb8"
+    },
+    {
+      "chunk_id": "acffeffa-2229-433e-b789-9634bcb1085e",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "f78e106af4f4e96b6d23f99192bff74b90547463c2bed10e70c3ae505f17c35d",
+      "uncompressed_sha256": "1f5b8c51e080869f0672832f95119685f8f97cc59feca3078fc23ecca109f6c5"
+    },
+    {
+      "chunk_id": "10972565-dad1-4383-ae85-8edea41ce1a9",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "stream": "ws_market_13d7e2f405673ac7",
+      "record_count": 0,
+      "stored_sha256": "45f70eda2398c4d6898a92e052c5e914258054c2387edb441c2020fe65425152",
+      "uncompressed_sha256": "25207d1534ba28ff626ea6a6bbbb3170a9dc0b32c8ab859efa1da7ddffa390f3"
+    },
+    {
+      "chunk_id": "55a5506e-2449-49ec-9649-2659a9770157",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "stream": "ws_market_13d7e2f405673ac7",
+      "record_count": 120,
+      "stored_sha256": "97b6397eb8f9d1e8545ed8a5f1ed3f881ab89e047dd3e23165bc205b3ca95bbf",
+      "uncompressed_sha256": "65a66f5de0b053f8e67fa7c0dddc78184c19a718fdc4b66197983528730b0da2"
+    },
+    {
+      "chunk_id": "92868cfb-4ec8-4e56-bd59-f052f30694fe",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "stream": "ws_public_8c3a79cea0d7fb69",
+      "record_count": 0,
+      "stored_sha256": "5814adc4d965c6f47f5553e0eb4b61db39d85497414598f9a11f0f022437af32",
+      "uncompressed_sha256": "ab6ec250cf74715e92d2f27ea61f4dc3768de1871ec49c176554791cd3b67fbc"
+    },
+    {
+      "chunk_id": "eb7036e8-bd4c-4a71-ba38-b4ed8e400916",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "stream": "ws_public_8c3a79cea0d7fb69",
+      "record_count": 60,
+      "stored_sha256": "ffbf107fea95e70e5e8a36473cd035b51b4fcb42206ec9ea20b0a21ce2c02382",
+      "uncompressed_sha256": "8ff13157adf41d40880d3aacb22d733ae15093c39c37ad996c2bd4d1717c0b1d"
+    },
+    {
+      "chunk_id": "241dac5d-234f-4496-a458-891f42a13f3a",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "58d8708d58f94e92a3c3d66299c220584c0ea21c77a738a94240d2889eb02e73",
+      "uncompressed_sha256": "b33c723e577b054317e033d4e0aae6d4d08f7e3bcf4e6eae5ae67f277f406a3e"
+    },
+    {
+      "chunk_id": "3758f253-1943-48df-a02c-f25e4857400b",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "stream": "ws_market_9b5097d8c442f2d0",
+      "record_count": 0,
+      "stored_sha256": "8fdb97d7530086896467844489d85fedde04c87a1f25ce2a90e605f5d2ab5926",
+      "uncompressed_sha256": "f33af25edcdd82bc06f0bb5b1aec2802049b351f532105a89618ed7137af6ffe"
+    },
+    {
+      "chunk_id": "c9cfa024-0143-4d28-bb3d-00f195f4b116",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "stream": "ws_market_9b5097d8c442f2d0",
+      "record_count": 120,
+      "stored_sha256": "28c30a348f4d98d3c8648e0f73525e5c9c57c1d465b5b735f7d69c4ca0a6f37f",
+      "uncompressed_sha256": "bde867c7e8ba2a8aead009d324ca41c349ba04f5adada0d562b7240d036c612b"
+    },
+    {
+      "chunk_id": "91a9884b-26a8-4cd8-b331-b46a11f2e92f",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "stream": "ws_public_b8628959a3205ec6",
+      "record_count": 0,
+      "stored_sha256": "59c8c6a7e903f694036656a8f18961e8aea3e1fb3f81c40461c3c02b6015a518",
+      "uncompressed_sha256": "dea16ba06e2cbe267e5fda74aa1a8ae86e8f65f611cc43e735664c8fa4b640ad"
+    },
+    {
+      "chunk_id": "f7490ec2-8ce7-4982-9c14-e0c05054de22",
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "stream": "ws_public_b8628959a3205ec6",
+      "record_count": 60,
+      "stored_sha256": "191ba98e7dcd51ae1401d493fea4be1c0b52f6ce32316c33c11c9fc0e932cfb4",
+      "uncompressed_sha256": "1338f97720451b68d7c323cb9bfae4f87086e101dada42efe9b745d7c0ae44ae"
+    },
+    {
+      "chunk_id": "801b18aa-1fb9-41f8-8f8b-ac67fbffbec4",
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "stream": "rest_observations",
+      "record_count": 34,
+      "stored_sha256": "6d67aefe107f81a72f1cb8ac88c97467e31e61903e3b0d4e819a8fe60d0e8e93",
+      "uncompressed_sha256": "6e4cc7c40d9cbb656be9b2d4a36fe28ba373d8be433d7ea0f1d02f57e0bd2a70"
+    },
+    {
+      "chunk_id": "4bdc683c-707e-44c0-a6fe-c244f95693d5",
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "stream": "ws_market_b9d94c6c75acf4bf",
+      "record_count": 0,
+      "stored_sha256": "95c6f1f3513661b006ef780265af5d05649cdf4b223acb3f6057a77e1277b859",
+      "uncompressed_sha256": "1faaf66f53410c0ed9f77791b4b108ac64e6c5afe8fb5d24e912377c9ae86ebf"
+    },
+    {
+      "chunk_id": "ecae7be2-dede-4dc8-bf40-dd95e3348453",
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "stream": "ws_market_b9d94c6c75acf4bf",
+      "record_count": 120,
+      "stored_sha256": "ccbd385c587d312d81ba5179dc637c58209857af613867b44a5c8b74266cfb02",
+      "uncompressed_sha256": "dc98d83e15e1004790f23be6f93abf5a6994cf06a53f5bd6350cc69ca493c710"
+    },
+    {
+      "chunk_id": "de66ef7d-b3b7-4204-b5dd-4d01f2596a07",
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "stream": "ws_public_21561778141cc499",
+      "record_count": 0,
+      "stored_sha256": "b51acd8079db57bacccb6467246244f6a506dab094e575f422c985c5ed3cd253",
+      "uncompressed_sha256": "6f16858d7df0ab98734db6f31d0eed76423735397a13a1c42e24653440b833b9"
+    },
+    {
+      "chunk_id": "f5a8ee73-188e-4f3d-836d-071c7fe23b4a",
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "stream": "ws_public_21561778141cc499",
+      "record_count": 60,
+      "stored_sha256": "83d79d2eaac63653bc3da5f39e4bc8d53f64a816e713f61bc2ebd8e0bd4448a8",
+      "uncompressed_sha256": "1513e64e0d39f5a20ba2986ef55ab8ded46611d2143912360b1730bf79892f98"
+    },
+    {
+      "chunk_id": "560b08bb-4f2c-44ee-9c5f-1372dd20a9cb",
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "3c709f087880b235b3650dfe762ff56df31c065607ee84c5035bcccd2a2de6c3",
+      "uncompressed_sha256": "4b71e6d75a8863fc27f7f87943ccbab00e58de75ceef9b9f0db350735bce9162"
+    },
+    {
+      "chunk_id": "6b6e7180-b0dc-48e6-aac7-301c432e29d4",
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "stream": "ws_market_6d9c32de57747648",
+      "record_count": 0,
+      "stored_sha256": "2d7d82c83fbed3b0d21912edb585cdf228e6338793b0b2a8898f34dd10490c91",
+      "uncompressed_sha256": "d62ecedbbaa4050ee347cdcb798e1061afb0f679511aede9f0c6a72679446e03"
+    },
+    {
+      "chunk_id": "ee9022cb-4fe8-4308-b59a-05f93d5b74e0",
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "stream": "ws_market_6d9c32de57747648",
+      "record_count": 120,
+      "stored_sha256": "039a60713e7ac7f0e156854ba131d6651a883a55d84e9fc17c124559a6cb7a26",
+      "uncompressed_sha256": "4851b51a105bb9a39c7c384325c6c6b08ae5f8d280e4a0d539bd23af13ff490a"
+    },
+    {
+      "chunk_id": "3f584c9e-b755-4f39-a61c-7d21ea16661f",
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "stream": "ws_public_acd6ad7499e27ce7",
+      "record_count": 0,
+      "stored_sha256": "65ca90d15d1940a1ff92a6670e89a2e020410d1dba8561a0818a2f1b6c427e59",
+      "uncompressed_sha256": "084a82f53d5429a7481459521fcb545ff55e3cffdc9ec7887452a2d0f28798bd"
+    },
+    {
+      "chunk_id": "a8e98439-b581-4507-a7d3-375e0c4e493b",
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "stream": "ws_public_acd6ad7499e27ce7",
+      "record_count": 60,
+      "stored_sha256": "e12872ad8e1cc186ef492304b90b46ea0f3e075fd0b3e5c5e769336eaee1768b",
+      "uncompressed_sha256": "8f6f2e29809830fe04d61b529eb92abafbac049c0f2067d04d81160adef4b55c"
+    },
+    {
+      "chunk_id": "9575d73b-feba-468c-bf35-57254bbe7aeb",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "2e2d96500c868ac5f9c1c87accd0dd1d0cec5f62991da49803b0672f6187ce17",
+      "uncompressed_sha256": "07a382869f0834c4678441e5751ffb938dbd0b8e4449ffac7bbbfbfb61f8f474"
+    },
+    {
+      "chunk_id": "714edaf6-5b29-4e19-9590-67619497fea8",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "stream": "ws_market_3b857b0c9fcf6627",
+      "record_count": 0,
+      "stored_sha256": "d618f2ae7cce96896e617485e371badf78dbaf86e09d741c4f3aee779b4085a3",
+      "uncompressed_sha256": "2ddaed8577bb41ebf62b901488c1947526ac212b46c2c07cc1b8fb3fafbc3c66"
+    },
+    {
+      "chunk_id": "b8a89639-b475-44fc-937f-49358aa45479",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "stream": "ws_market_3b857b0c9fcf6627",
+      "record_count": 120,
+      "stored_sha256": "faacfc773865c8a5107d5e3f46f104644b4dd1468f3e6f3cb93e86a5fee62a1e",
+      "uncompressed_sha256": "7b2a81bd0a7df8802ed15a8e2062905f0138448753f2e3c7a91791b17817b94c"
+    },
+    {
+      "chunk_id": "834a217d-b753-4509-bec6-84a6f3f7eddc",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "stream": "ws_public_800b8074b10f7f95",
+      "record_count": 60,
+      "stored_sha256": "908b0594cf3735e108cbc7180bc3bb8fcc020b3f58057b773250dc5caeb272f8",
+      "uncompressed_sha256": "8ab8aff90e0864e5ea76f824a3b0d585e4a35dbd80f9e404db71d380a1ef9b64"
+    },
+    {
+      "chunk_id": "bf0188c0-846c-482c-ad61-198c49333487",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "stream": "ws_public_800b8074b10f7f95",
+      "record_count": 0,
+      "stored_sha256": "1f91c866bf9117104524fc5a2f10cdb8c04f9783d53e8bd76591e0e5b6efc0e0",
+      "uncompressed_sha256": "6285f16996752bb69b18406d9605b991ba3f9dd28014abac61054e9e067bd6dc"
+    },
+    {
+      "chunk_id": "4ed2b8f5-a630-4927-a8d6-83523b52ebd4",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "5e8dbab67b725a6c068d44e261bcae768141925e710982bd40a0b8b774b3be6a",
+      "uncompressed_sha256": "48934ba73380bfdb59d84456d16ce7c13f691067e1a34577eb0959591c2fc9e2"
+    },
+    {
+      "chunk_id": "896bef39-d25f-4087-8239-696b3c0552a0",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "stream": "ws_market_ee786c048812e774",
+      "record_count": 120,
+      "stored_sha256": "a0a234de82c98df414ebea32ad414f5e38ad0e1e4406d675762884c72d70d3f1",
+      "uncompressed_sha256": "77f6e5f5a60355180d3ec34a70be0fdbe6445cb7cfff67eddb1f9510d2b2df87"
+    },
+    {
+      "chunk_id": "f5a5ecdc-f79e-4974-8c7d-cd49be21a3e7",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "stream": "ws_market_ee786c048812e774",
+      "record_count": 0,
+      "stored_sha256": "ea39626fe830f03bef2ed8fa2b413108b8fdaf24ae41e478f25923bac908fccf",
+      "uncompressed_sha256": "e66f7071b3e8af10bda67337721505a6626a187315351883fdaeb1c251f7dcac"
+    },
+    {
+      "chunk_id": "00c79d14-f8d6-4c72-83ab-894b38fa9aa7",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "stream": "ws_public_24448f8a0d676853",
+      "record_count": 0,
+      "stored_sha256": "09e39ef201d8ce8d7f5dd2b9a4b531b9216fa7c757afbab5829448f455cbe737",
+      "uncompressed_sha256": "f45ad7d6ce2af9b36e22ba05a8f581376630995cf6eb3fa516fe6e12d5666263"
+    },
+    {
+      "chunk_id": "b4c8738d-e7e7-4823-a7c7-0002e5ee356b",
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "stream": "ws_public_24448f8a0d676853",
+      "record_count": 60,
+      "stored_sha256": "5255065bbfd552465d0087cf1fe90c4b675495ff2ec4295678886fd2811de908",
+      "uncompressed_sha256": "383d2c076444441c1214ef21f8ecfc31a24e6f776aab4c761c32c77d9f87ea87"
+    },
+    {
+      "chunk_id": "2ef896d2-ca40-44e2-8180-17c15573a799",
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "4c9698b3945dc40e1efb79184adf3fda319b9a89663eb41f1069e0c650131f2f",
+      "uncompressed_sha256": "b5d095378b3d2dd254ded253a4aa0d24bdf14f1d6d682433d77894bbd453bd36"
+    },
+    {
+      "chunk_id": "574243fb-d9cf-4596-a17b-30aa249fba4b",
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "stream": "ws_market_561a826c16eadbfa",
+      "record_count": 120,
+      "stored_sha256": "9cbbcfcef6fbd7a4e02354d1b2dc5be1d1daf7571f0b7cd9d4838ab8ad924daa",
+      "uncompressed_sha256": "d3acdf52096cb8091e647449c6d1bab70b07702161937891b736bfd737107532"
+    },
+    {
+      "chunk_id": "58915628-3fa3-4359-aae1-b4aa4d34cdaa",
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "stream": "ws_market_561a826c16eadbfa",
+      "record_count": 0,
+      "stored_sha256": "2ed987bccbd8c722395ae6e2d1839d1d94657aa513ed7ab5e33a3eeb2b320e3d",
+      "uncompressed_sha256": "f31f67a6bba4152ef68bb201fcaf0d46491b4c91e5afebf798276e92320485f1"
+    },
+    {
+      "chunk_id": "1e2c5bb5-ba81-4d7c-a7fb-9293d6408404",
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "stream": "ws_public_2f7201daa92cbfaf",
+      "record_count": 60,
+      "stored_sha256": "00533c656f3be34998a092577afdbaab4b51393d048b620398e0d4a65a816e5a",
+      "uncompressed_sha256": "9ffc6fbd11cf923934d6f0d31f2026245594bb1b906e497801fd2d1810422327"
+    },
+    {
+      "chunk_id": "2ea54269-0343-4d39-86ad-568e42cda28a",
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "stream": "ws_public_2f7201daa92cbfaf",
+      "record_count": 0,
+      "stored_sha256": "7d09f73824ef8edc7c25c4056c101ce7810fdbe7b7f2713b775a28acb93cb301",
+      "uncompressed_sha256": "5ccb4a018bc1f5b57b6beb9233a1c7f9154e29c07a46ab434027d84ec1cf1636"
+    },
+    {
+      "chunk_id": "88a45112-0298-4e11-ad62-49fc5fa7533d",
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "d9d3b4c393c670581298b75e6cbf927965ee74868c1b8357a45b39950ed9448b",
+      "uncompressed_sha256": "77d55cd7362406db9009ac9a47b3d43984c7d83c86b2650bff6f372dce30f58c"
+    },
+    {
+      "chunk_id": "3b698de5-2720-4b77-bc68-04739a22cc5b",
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "stream": "ws_market_38a37ed38bbe3ffd",
+      "record_count": 0,
+      "stored_sha256": "f6bad87d2cd3ac045fee4259bb2c2cab4ceedfa0b7c0f5109cd7df9e3d8d2764",
+      "uncompressed_sha256": "26770ca225f822af8b142c2dc4b3fd6490e0418776810c2a3a4519dbb13aa20b"
+    },
+    {
+      "chunk_id": "82539ac7-d320-429c-9cc4-1a79051e94fb",
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "stream": "ws_market_38a37ed38bbe3ffd",
+      "record_count": 120,
+      "stored_sha256": "0936eb5c60e68de48545178abed1c444637feb4cda0fe248571dc303f3ef4999",
+      "uncompressed_sha256": "cb1d39ee0de62012bc04e5d7b474980fe6a2a3cd3b416e52c7f4a491b914e992"
+    },
+    {
+      "chunk_id": "8a7c4fce-17f3-44c7-8b89-e776006e30c4",
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "stream": "ws_public_f8d43cf19b01e0b4",
+      "record_count": 0,
+      "stored_sha256": "7be855c5685b38b78641aede62f30179a2ca4fb1397e94b49c641babff30ee44",
+      "uncompressed_sha256": "a2f1c3960430890c705f00e6507e317648424f5c5ca1b68aea938e7c7133a78c"
+    },
+    {
+      "chunk_id": "da2fab28-18a2-4082-9930-944ea47bf0c5",
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "stream": "ws_public_f8d43cf19b01e0b4",
+      "record_count": 60,
+      "stored_sha256": "e5b43d6aafcb37974c36c8fcdb3c1ff4d305a8708a6f03683e49cde7f434ceeb",
+      "uncompressed_sha256": "40fc08450b780da78c15fa9ec665232091561922bfcccefb413dee4e72e3794a"
+    },
+    {
+      "chunk_id": "ceb86024-3235-4e84-af21-7090b97cc541",
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "ac5841b7eb68debb9447180b43c48811a3380667d7cdf82513b381bd47086e91",
+      "uncompressed_sha256": "4e6f3a5e8215bea91aca9f9a78ef77a2f0b0b75f910acba90fdbb4a983bea51d"
+    },
+    {
+      "chunk_id": "6b89fcf2-c45e-44ba-b835-3bde97ace03f",
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "stream": "ws_market_04b6179f641d9e53",
+      "record_count": 120,
+      "stored_sha256": "62c2af90456c334a94eced051e08a1a0ed5ea58c8fbea87183931cdb29a1b972",
+      "uncompressed_sha256": "7551457c27f47182f28d46c4f2ba17b98d9fb543c94e146f4735a67d1aeda570"
+    },
+    {
+      "chunk_id": "a227e188-d8c0-4a98-ac4a-06877c755594",
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "stream": "ws_market_04b6179f641d9e53",
+      "record_count": 0,
+      "stored_sha256": "0473c84b63a7d7ded1cf3e4e0262e043d0a0505e948cd0774bbeec27a58d6e3c",
+      "uncompressed_sha256": "9a81a08568e655d9e6d9a9bc086182eeda9c3a57247ee056f25faa92e39a98a8"
+    },
+    {
+      "chunk_id": "68bc912b-fe49-4588-b175-271ad9a09566",
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "stream": "ws_public_052967181dba4bd7",
+      "record_count": 0,
+      "stored_sha256": "04622c5417d72a2febf913245d36db77d8ac65463494df6296884f7fc2edda7b",
+      "uncompressed_sha256": "9592101ef5c8390e2432a678898243db11673ceb2aa6003b0611f70cf52a5404"
+    },
+    {
+      "chunk_id": "acb5152c-a025-4312-b796-47669246e04e",
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "stream": "ws_public_052967181dba4bd7",
+      "record_count": 60,
+      "stored_sha256": "454eeca1a2cc72fec05957bbff23d023fea03669098ceed9c264fc6764f34dd8",
+      "uncompressed_sha256": "1903fe19e8c887aae92ab06532ae8651ace6496b9d0c3f9eb120579cf9e1c48f"
+    },
+    {
+      "chunk_id": "af47d9c1-8175-4bcd-bf55-b6993375d9d3",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "4cd6b9b78011bdaaae2dc7684bb4ccabbc4e3e8a5a23802083df50791d7eced3",
+      "uncompressed_sha256": "52731b443bdb35f99694960398c30bb21f4db727c6a17332d4a31114fabb1ab8"
+    },
+    {
+      "chunk_id": "2ac41a84-b7e8-4905-9390-9fbe2bdf2a46",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "stream": "ws_market_d797bd7e928bc599",
+      "record_count": 120,
+      "stored_sha256": "8890d2e64c0908745ea11c949888b572aa7d747550d06d0e024bc397596d5726",
+      "uncompressed_sha256": "4e9c61a6704cfb0eecbf44eb3a97ab67dc5339dcea11e89b39887ba0b79ad745"
+    },
+    {
+      "chunk_id": "af18ecda-5d5b-48d9-a6da-1302a1861be0",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "stream": "ws_market_d797bd7e928bc599",
+      "record_count": 0,
+      "stored_sha256": "e152f4e4599880f894f91d8a1ac3ca55a522d2c909032e61254a82e265ea4547",
+      "uncompressed_sha256": "1ec3f9bc6979287a331116180dcb6c90537f1eaac3a59dc3690b598077c64d95"
+    },
+    {
+      "chunk_id": "ac530138-ca51-457b-8ecd-c3ff1d7c3e27",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "stream": "ws_public_e453fcc8c6e4884e",
+      "record_count": 0,
+      "stored_sha256": "52fb54b428aa37c099dea69d69557f2b75f762f73581509ce6407a5644bfb9ba",
+      "uncompressed_sha256": "4d41bbe1a6dc137f16006878cd1b464391b081353e3d90564e7743f8a01a7d88"
+    },
+    {
+      "chunk_id": "c1f3fde5-a879-4a25-98d9-153e3aca5aa1",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "stream": "ws_public_e453fcc8c6e4884e",
+      "record_count": 60,
+      "stored_sha256": "af8908694eeaa74548123b4d70b7a7eb4bf1bc5651dc00fab2f32176c3750fd3",
+      "uncompressed_sha256": "da7e45086c822aeb25660c8aebec8a05d3241c3165280522e11dcae94717a96a"
+    },
+    {
+      "chunk_id": "69844322-6b01-4c1d-9ddc-996134e1870c",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "stream": "rest_observations",
+      "record_count": 2,
+      "stored_sha256": "60b878cb78f923ca89de90bdf8bf463f1e0e627ae8b32b45f122020a0fb3306c",
+      "uncompressed_sha256": "6b2846cf35061479e8ef7a960857c3cfbdb8b2d68317166c1ee8b842aa347245"
+    },
+    {
+      "chunk_id": "addba5d7-2825-4e10-84d2-271251191785",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "stream": "ws_market_642410a0aa241385",
+      "record_count": 0,
+      "stored_sha256": "d26682b2b278eebc51ed8da889b0a5b6b8bbce8e290477fba034c7ce3d6e403e",
+      "uncompressed_sha256": "f5aecd6b60ab7791dad9e0515625a595ad63d062d86972eb38a568df625aa012"
+    },
+    {
+      "chunk_id": "af4945d4-b7ef-4f77-a651-3e7983eb3bc2",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "stream": "ws_market_642410a0aa241385",
+      "record_count": 120,
+      "stored_sha256": "62052487dd22d4c7fbbb59ce8dcf0ff24befc69e0c82e043e14b6ea48d0d6e89",
+      "uncompressed_sha256": "57d4a3b4e1f59dc4c7fd081a56dabd84e8d3ba3b4fb07a0942a6618f09a4ecde"
+    },
+    {
+      "chunk_id": "578f249d-79ea-4c4a-a8eb-c966dcd60500",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "stream": "ws_public_83e38cac486145da",
+      "record_count": 0,
+      "stored_sha256": "975991a51922c85380c47cc0492babaa36bd776c6ee8c60921a3b4cef5b6347e",
+      "uncompressed_sha256": "12d22bf0a0c61b15a035369f58ea5a03f2f779cbb791d06d2ceb7cfc5ff126e1"
+    },
+    {
+      "chunk_id": "7b67b557-f17c-47e3-9ef1-e9ebaccdcde7",
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "stream": "ws_public_83e38cac486145da",
+      "record_count": 60,
+      "stored_sha256": "1ed20032e08e5962b2f1433cfc0f3951d7b7896275cb359d85836529ceacae2a",
+      "uncompressed_sha256": "4788406078ed7142c67769704c57242702a2d3ea84535719c705a2b4edf53087"
+    },
+    {
+      "chunk_id": "b49cd235-6b0e-43e5-8fe3-6a7efe7c26d3",
+      "market": "um_shared",
+      "symbol": "BTCUSD1_PERPETUAL",
+      "stream": "rest_observations",
+      "record_count": 4,
+      "stored_sha256": "e9fffffb89f23f3f00f3167c9034e73d86f742192103dfb480c77bbbc9b2ffdf",
+      "uncompressed_sha256": "037cda748b2bfb7a07d484d03ab464990a95c626d3db619f3cce97a5ac9b717e"
+    },
+    {
+      "chunk_id": "c1310ca9-50a4-4362-a545-8e67ee466827",
+      "market": "um_shared",
+      "symbol": "BTCUSD1_PERPETUAL",
+      "stream": "ws_market_b6244020dda2e723",
+      "record_count": 40,
+      "stored_sha256": "aac5a456679e9e29715ec5d0f8b740a43644c801159766dcaf183c6ba3630176",
+      "uncompressed_sha256": "e18e6488d6dd7ee602799e12ee6db623b4e1f643396b9e9e4cecc58523359b10"
+    },
+    {
+      "chunk_id": "ea202b14-bcb7-42c2-af32-bd284254bf70",
+      "market": "um_shared",
+      "symbol": "BTCUSD1_PERPETUAL",
+      "stream": "ws_market_b6244020dda2e723",
+      "record_count": 0,
+      "stored_sha256": "a49e5d93e2653053a752b5675715dbc384c4feea925ce1823f6719e281dc65a5",
+      "uncompressed_sha256": "42564367b2173c86f10c1e4cc958bf30a07b67fe9bdce29bdcd96ccba356e8f9"
+    },
+    {
+      "chunk_id": "0e1562ac-2a6f-4692-8fc5-0cae4c22b142",
+      "market": "um_shared",
+      "symbol": "BTCUSDC_PERPETUAL",
+      "stream": "ws_market_aebd4ae3c7de67d3",
+      "record_count": 40,
+      "stored_sha256": "98297b654cad6fcc98d8dd93e2ee3b0b9b7addf8bbe143fe3a128b255104f16c",
+      "uncompressed_sha256": "9435bf436bc34a4702fcd617f8e00a8037fcf2898802949848888c1536ebbcf4"
+    },
+    {
+      "chunk_id": "5b85a8a5-c6b2-48fd-bd60-5f7c3b196e20",
+      "market": "um_shared",
+      "symbol": "BTCUSDC_PERPETUAL",
+      "stream": "ws_market_aebd4ae3c7de67d3",
+      "record_count": 0,
+      "stored_sha256": "ad5e061d98e2897ceec6880335e330c09eb441f55f389ee133d19b96d9c04edd",
+      "uncompressed_sha256": "42e63fc495e59328391ca7dca080bacc0d46a883a04aa78b24d5e50d481f38cc"
+    },
+    {
+      "chunk_id": "50da7a5b-1d29-4027-a376-dbffff609633",
+      "market": "um_shared",
+      "symbol": "BTCUSDT",
+      "stream": "rest_observations",
+      "record_count": 6,
+      "stored_sha256": "7a1e38f3c6264a1dd2d4d1e69afcd38d28337d061ed5605ec99d3635aada4fec",
+      "uncompressed_sha256": "158de7f458177b7b4aa56e7fa9d7d6e23911d1acacc6b95ffcab29a3a0aa75d5"
+    },
+    {
+      "chunk_id": "01c7a6d3-9728-452b-9973-b2042ac35c70",
+      "market": "um_shared",
+      "symbol": "BTCUSDT_CURRENT_QUARTER",
+      "stream": "ws_market_5082eff2bf09d233",
+      "record_count": 0,
+      "stored_sha256": "2b77c6390422265557e1cc63508bdf3ccd4de1f0ec832a44c904394350684b74",
+      "uncompressed_sha256": "167326e5d4fd94e8eed8811d19966d348431a265472042483b204a0159e508e9"
+    },
+    {
+      "chunk_id": "7692c1ed-938a-4a42-8b3b-5b0d3f6a7c30",
+      "market": "um_shared",
+      "symbol": "BTCUSDT_CURRENT_QUARTER",
+      "stream": "ws_market_5082eff2bf09d233",
+      "record_count": 40,
+      "stored_sha256": "e0267ce686bdb9fcf8e37cc277f775d6965113d1c2aea480ca42319abe630524",
+      "uncompressed_sha256": "0f48b1d25eaf021580ceab779682149ae89ec5803b223e7135e650a70564cb11"
+    },
+    {
+      "chunk_id": "0162a2c7-b6bd-4887-8882-75473fe1cb5f",
+      "market": "um_shared",
+      "symbol": "BTCUSDT_NEXT_QUARTER",
+      "stream": "ws_market_3ecdcc479c703a22",
+      "record_count": 40,
+      "stored_sha256": "dc2984e964d07dff06087f4b4d2c3b2eb0d3298debf1f6e6da903a84a76a858c",
+      "uncompressed_sha256": "879e31c9189e45c3cf05bd2491ad23f8c8170926efc3ed406181a0c8807b19fb"
+    },
+    {
+      "chunk_id": "fef12bb8-6364-4d87-a017-585ecd4ce4a3",
+      "market": "um_shared",
+      "symbol": "BTCUSDT_NEXT_QUARTER",
+      "stream": "ws_market_3ecdcc479c703a22",
+      "record_count": 0,
+      "stored_sha256": "7791c394aaf71978109b2d28a7813915d9f2ed315f082a3d2d02cc54a30e64a0",
+      "uncompressed_sha256": "95c1c2fef4b956469c0ddedc36f01819ddeca8f2d4201809daf464996b12fad3"
+    },
+    {
+      "chunk_id": "98b15b5c-a3d2-40dc-b1e0-768b4a8853cc",
+      "market": "um_shared",
+      "symbol": "BTCUSDT_PERPETUAL",
+      "stream": "ws_market_7eaed9ce1e5f2360",
+      "record_count": 40,
+      "stored_sha256": "9d989a0c427cafeee1687266600fd33be15c2de78ac71f8da62365137d8b69b7",
+      "uncompressed_sha256": "4ec2b10910cc4761e8d655c4a9ce0374c173db4be9eeb19ea23f473950beed9c"
+    },
+    {
+      "chunk_id": "fdd0b3d2-0b86-4045-9c6e-ae27c0ecebc2",
+      "market": "um_shared",
+      "symbol": "BTCUSDT_PERPETUAL",
+      "stream": "ws_market_7eaed9ce1e5f2360",
+      "record_count": 0,
+      "stored_sha256": "c9127fb23accc2004db34a035fab2d4f0563d58007db84683be8d84b4f5f7a1f",
+      "uncompressed_sha256": "6caeb3367587fe3e5831b76ec1ef91bb00c18ad7a1e335f29e49ff4d55b6f194"
+    },
+    {
+      "chunk_id": "547e4cf3-bac5-4870-baf1-2018eb4a7b84",
+      "market": "um_shared",
+      "symbol": "BTCU_PERPETUAL",
+      "stream": "ws_market_8061b3e56c4ee5b7",
+      "record_count": 0,
+      "stored_sha256": "bd9e0e0a26d1a499e470ec63ac206e3bd24276d9e03923d51628f8181446f1b9",
+      "uncompressed_sha256": "5461522c38a247460f74306c03b1e7995aa532dd30582aafc54d1fbf92ed0cc1"
+    },
+    {
+      "chunk_id": "6fd54e45-cb11-4f14-a89b-d788ed18dc1c",
+      "market": "um_shared",
+      "symbol": "BTCU_PERPETUAL",
+      "stream": "ws_market_8061b3e56c4ee5b7",
+      "record_count": 40,
+      "stored_sha256": "6f33e7577e88d539444e9e8f1f8af966b25f7583f42a2ffb20427fb89b325411",
+      "uncompressed_sha256": "90a77bd9e69bd97f495dbaafb0c1338f2f9491b490510473cf5ad33dbdc2dd67"
+    },
+    {
+      "chunk_id": "37984850-8f18-487f-b95a-a30b2ee69412",
+      "market": "um_shared",
+      "symbol": "ETHBTC_PERPETUAL",
+      "stream": "ws_market_dc5e4970b3a814a6",
+      "record_count": 0,
+      "stored_sha256": "bacdcf6594ada9df81b9735173be38a9a3912d411aa7a808893a3425434cb24e",
+      "uncompressed_sha256": "02e3f3d33ced3439f66994b5823171dcafe115060682493d5e8fa1c859787c45"
+    },
+    {
+      "chunk_id": "d2141283-a532-4a60-bfe8-d1cec7fde7be",
+      "market": "um_shared",
+      "symbol": "ETHBTC_PERPETUAL",
+      "stream": "ws_market_dc5e4970b3a814a6",
+      "record_count": 40,
+      "stored_sha256": "d89bfd5399e90c575fe0678d1cc489209708130f560e8903ca6bd967040cb5f6",
+      "uncompressed_sha256": "03426e147aaaf65bac53d72d4d7585a9358db7368030e545eb617bc9a7e31222"
+    },
+    {
+      "chunk_id": "3bf2c011-643c-46ae-8823-ff555fba945c",
+      "market": "um_shared",
+      "symbol": "ETHUSD1_PERPETUAL",
+      "stream": "ws_market_c19b270ecac3b545",
+      "record_count": 0,
+      "stored_sha256": "06f6440c12cbadad7ec09655133a32d93b6d1fdaac397ab00051088a60ecfe36",
+      "uncompressed_sha256": "bf3ed2c519e48e54d0c5d13216b9fae2fece6d85af9a69b526325e764c12e48a"
+    },
+    {
+      "chunk_id": "fd212514-f020-4c7d-83cd-c74d64a1c58d",
+      "market": "um_shared",
+      "symbol": "ETHUSD1_PERPETUAL",
+      "stream": "ws_market_c19b270ecac3b545",
+      "record_count": 40,
+      "stored_sha256": "64d73fcbe83b61514554311462fd2be4bcbe7b7ea5708051631dae242f71a093",
+      "uncompressed_sha256": "a2b203c264975573257d79763171cd85d85fcd70494a6f002a742a12362d8e36"
+    },
+    {
+      "chunk_id": "8f4be54e-68af-44f0-a281-6234ae7c58e6",
+      "market": "um_shared",
+      "symbol": "ETHUSDC_PERPETUAL",
+      "stream": "ws_market_b5f7944c7b81071e",
+      "record_count": 0,
+      "stored_sha256": "21c9590b40c461c28e5ca7ed6446aab9b4a6d6c7e4bff6b5c6c7dd8afd11e95f",
+      "uncompressed_sha256": "8e60c5cffcae0b1bc9ff8c3c337c19491b9f7e3ebb98458440e7555c61a99bf1"
+    },
+    {
+      "chunk_id": "ddac9bd1-7c90-4931-9193-bb03e1b17a9f",
+      "market": "um_shared",
+      "symbol": "ETHUSDC_PERPETUAL",
+      "stream": "ws_market_b5f7944c7b81071e",
+      "record_count": 40,
+      "stored_sha256": "5250d127e816cfc2eac92839e303af23ebe254482c770724665b85aed2b793d7",
+      "uncompressed_sha256": "42fbda0a4a59dbbed843b4fb9237d388b210c3c34639033a49a00f356eb63bfb"
+    },
+    {
+      "chunk_id": "8bc01e43-e920-4165-a8d9-a3be998f8c41",
+      "market": "um_shared",
+      "symbol": "ETHUSDT_CURRENT_QUARTER",
+      "stream": "ws_market_fe15312808a5fcff",
+      "record_count": 40,
+      "stored_sha256": "c18722e8f5d19d68ed2c95fffb0ddbe7d0c5ca08fab4e0c85aefd418df0f4ade",
+      "uncompressed_sha256": "eb52035429383e209ac6faa1f404ec4fd6ea5285042732bc546d73c79588a95f"
+    },
+    {
+      "chunk_id": "fd6e401e-24d6-4ba9-a52f-ef293740efea",
+      "market": "um_shared",
+      "symbol": "ETHUSDT_CURRENT_QUARTER",
+      "stream": "ws_market_fe15312808a5fcff",
+      "record_count": 0,
+      "stored_sha256": "e0f2c3c1603bfc557a32e68bbea68e09a9ba095eea7504a8fa758869f9b9032c",
+      "uncompressed_sha256": "ca0dacec59b403f6248196a81ff4e9bd03e4fac0d52ba07b79849f70f89797be"
+    },
+    {
+      "chunk_id": "19e3551e-4495-4f59-9273-33297889b57c",
+      "market": "um_shared",
+      "symbol": "ETHUSDT_NEXT_QUARTER",
+      "stream": "ws_market_d8abfd4ac18ba438",
+      "record_count": 0,
+      "stored_sha256": "f359437a963cc02c89c47fc995d622c95746b85383b10ae2f43dc340fb373e73",
+      "uncompressed_sha256": "5ad7407588713b8d3f4a89c96906cd587357c141217f8ac0f81827ea5c612be3"
+    },
+    {
+      "chunk_id": "497aaf7b-6cef-414c-9343-3e32a594f40d",
+      "market": "um_shared",
+      "symbol": "ETHUSDT_NEXT_QUARTER",
+      "stream": "ws_market_d8abfd4ac18ba438",
+      "record_count": 40,
+      "stored_sha256": "409b54c8177875f380fb76cd42754aab494553f059389bab0e85c5620a04cfaa",
+      "uncompressed_sha256": "6d5a66e3b9abcd82da855a27d4890df7afb2f7e92cc8595011662b35981c4003"
+    },
+    {
+      "chunk_id": "1c3c7995-2bcd-44b2-a48a-ee6f5d242b04",
+      "market": "um_shared",
+      "symbol": "ETHUSDT_PERPETUAL",
+      "stream": "ws_market_5aebc5fbba645fbe",
+      "record_count": 40,
+      "stored_sha256": "f52efb173301ff51f38123487d3f721424902599d911d5af92636b63d60ed0e8",
+      "uncompressed_sha256": "87fc70525938d100b3403c1284687dfe1ba0dcfcc3931db087e5eeba7c86d805"
+    },
+    {
+      "chunk_id": "e814fcf3-9a6e-4756-8b50-e860310db171",
+      "market": "um_shared",
+      "symbol": "ETHUSDT_PERPETUAL",
+      "stream": "ws_market_5aebc5fbba645fbe",
+      "record_count": 0,
+      "stored_sha256": "5ac628a3857eb15c0f3863ba4147b95247354bfa7c884e0c02b03715114eaa67",
+      "uncompressed_sha256": "c1b62607dec8a6cf74d80f8853d473101a6862e8ce34b4fc6ff8dedda3cd96c0"
+    },
+    {
+      "chunk_id": "4a3028fa-603e-4fbf-afdb-e78d3aafc516",
+      "market": "um_shared",
+      "symbol": "ETHU_PERPETUAL",
+      "stream": "ws_market_96cce2aa053fc47a",
+      "record_count": 40,
+      "stored_sha256": "bdfb1b2bb9bddc1fba82afd025ec8a518baf3711a97f0f994c11b653b8e88f85",
+      "uncompressed_sha256": "10e5036bf636ca6b51ca7fcbb5379dd669d24523a38d22ca706afdf146e8ea92"
+    },
+    {
+      "chunk_id": "e71c3e5c-4237-4cfe-8601-8f399a48c3f2",
+      "market": "um_shared",
+      "symbol": "ETHU_PERPETUAL",
+      "stream": "ws_market_96cce2aa053fc47a",
+      "record_count": 0,
+      "stored_sha256": "8a737b19bccf307095c4d7873a426436b1e86a72a779931790eedfb47d615d26",
+      "uncompressed_sha256": "d5797a5f3fec4a93279cf678f642cdef53ba54abd47658a205c1ee3af91b4d56"
+    },
+    {
+      "chunk_id": "0fdf43ec-21b0-41d0-946a-136d56a2e7e2",
+      "market": "um_shared",
+      "symbol": "__GLOBAL__",
+      "stream": "rest_observations",
+      "record_count": 6,
+      "stored_sha256": "7ee128bea1f14c37c099533347036c99bd6d0a052ac3da1aa40258622a6a81d5",
+      "uncompressed_sha256": "26ef321c3b852fea5bdab2122a10adbca955ecdb22794c2d3ee2593ffc13c681"
+    },
+    {
+      "chunk_id": "cb88ed10-67e0-44a4-a180-9e8527f7a1e1",
+      "market": "um_shared",
+      "symbol": "__GLOBAL__",
+      "stream": "ws_market_8dd3dec8f21b6a06",
+      "record_count": 0,
+      "stored_sha256": "71996ae46f9ef3ef2f942e0d315cb4264ab0c4f9fbd9f78e17232060e73e9521",
+      "uncompressed_sha256": "8ec9867d6d510770e271c4c2354d95363870d7109fc0b27171da64ed94951dfb"
+    },
+    {
+      "chunk_id": "f66bc9b6-02e2-4551-8028-a0608f38e389",
+      "market": "um_shared",
+      "symbol": "__GLOBAL__",
+      "stream": "ws_market_8dd3dec8f21b6a06",
+      "record_count": 40,
+      "stored_sha256": "ce1fea1b49b1e901484cef6b93548594003ad5fc6ee20ed94fa0e0777790ad28",
+      "uncompressed_sha256": "8fe1cb1039d4c150d1c8c257623aa16caf5537f3be4deaf5156aeec96f3d82e5"
+    }
+  ],
+  "measurement_scope": {
+    "timed": "reconcile/startup + WS/REST capture + availability monitor + drain/seal/stop",
+    "excluded": "imports, fixture generation, Catalog schema creation, offline Raw audit",
+    "queue_wait": "Spool enqueue to dequeue, monotonic clock, one sample per frame",
+    "persist_lag": "receive to append completion, monotonic clock, one sample per frame",
+    "fsync": "Raw writer fsync only; directory/compression fsync included in seal time",
+    "seal": "successful _seal_current calls only, including startup empty boundaries",
+    "rss": "current RSS sampled every 10ms and at boundaries; lifetime peak separate",
+    "sqlite": "DML statement time vs BEGIN-to-COMMIT/autocommit transaction time",
+    "limitations": "synthetic burst; 1m/5m intervals; no steady-state backlog claim; background verification worker is not started"
+  }
 }
