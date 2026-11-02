@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import grp
+import importlib
 import json
 import logging
 import os
@@ -17,99 +18,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, NoReturn, TextIO, cast
 
-from .archive import ArchiveError, ArchiveManager, ArchiveTarget
-from .archive.catalog_snapshot import CatalogSnapshotExporter
-from .archive.drain import archive_drain
-from .archive.remote_authorization import RemoteAuthorizer
-from .archive.remote_delete import RemoteDeleter
-from .archive.remote_source import RemoteSourceExporter
-from .archive.remote_transport import (
-    authority_status_from_catalog,
-    require_chunk_id,
-    require_receipt_id,
-    require_sha256,
-)
-from .backfill import HistoricalImporter, build_plan
-from .backfill.daily_trades import build_daily_trade_plan
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
-from .diagnostics import run_doctor
 from .domain.product import configured_products
 from .logging import configure_logging, log_event
-from .metrics.report import DailyReporter
-from .normalize import NormalizationError, Normalizer, normalization_status
 from .paths import discover_repository_root
-from .service.acceptance import (
-    SAMPLE_INTERVAL_NS,
-    STAGE_DURATION_NS,
-    V4_SCHEMA_VERSION,
-    V5_SCHEMA_VERSION,
-    AcceptanceError,
-    AcceptanceObserver,
-    V4AcceptanceObserver,
-    create_identity_evidence,
-    create_readiness_evidence,
-    resume_observer,
-    verify_completed_stage,
-    verify_prior_stage,
-)
-from .service.acceptance_v5_corpus import catalog_available
-from .service.acceptance_v5_finalize import (
-    baseline as v5_baseline,
-)
-from .service.acceptance_v5_finalize import (
-    finalize as v5_finalize,
-)
-from .service.acceptance_v5_finalize import (
-    verify_audit as verify_v5_audit,
-)
-from .service.acceptance_v5_online import V5AcceptanceObserver, resume_v5_observer
-from .service.archive_timer import ArchiveTimerManager, SystemdArchiveError
-from .service.deployment_identity import (
-    DeploymentIdentityError,
-    create_deployment_identity,
-    deployment_identity_path,
-    enforce_vps_paths,
-    load_deployment_identity,
-    rollback_compatibility,
-    runtime_deployment_identity,
-    verify_identity_files,
-    verify_retained_rollback_artifacts,
-    verify_vps_identity_permissions,
-    write_deployment_identity,
-)
-from .service.launchd import (
-    LaunchAgentError,
-    LaunchAgentManager,
-    installed_service_label,
-)
 from .service.lock import ServiceAlreadyRunning
-from .service.readiness import VpsReadinessEvaluator, wait_for_readiness
 from .service.runtime import run_service
-from .service.soak_timer import SoakTimerManager, SystemdSoakError
-from .service.systemd import SystemdError, SystemdManager
-from .soak.sample import soak_sample
-from .spool.legacy_reconnect import (
-    LegacyClassificationAuthority,
-    LegacyReconnectConflictError,
-    classification_authority_path,
-    evaluate_legacy_reconnect_decisions,
-)
-from .status import service_status
-from .storage.capacity import selected_capacity_profile
 from .storage.catalog import Catalog, CatalogStateError, RemoteArchiveState
-from .storage.forecast import StorageForecaster
 from .storage.layout import StorageLayout, ensure_storage_layout
-from .storage.linux import LinuxVolumeAdapter
-from .storage.macos import (
-    DiskArbitrationAdapter,
-    EjectError,
-    PlatformVolumeError,
-    SafeEjectCoordinator,
-    StorageRegistrationError,
-    StorageRegistry,
-    inspect_path,
-)
-from .storage.platform import volume_adapter
 from .version import git_commit as current_git_commit
 from .version import version_string
 
@@ -120,15 +36,136 @@ class _ArgumentParser(argparse.ArgumentParser):
         raise SystemExit(2)
 
 
-_ORIGINAL_DISK_ARBITRATION_ADAPTER = DiskArbitrationAdapter
-
-
 def _volume_adapter() -> Any:
     """Keep legacy macOS test injection while selecting Linux in production."""
 
-    if DiskArbitrationAdapter is not _ORIGINAL_DISK_ARBITRATION_ADAPTER:
-        return DiskArbitrationAdapter()
+    if "DiskArbitrationAdapter" in sys.modules[__name__].__dict__:
+        adapter_cls = sys.modules[__name__].__dict__["DiskArbitrationAdapter"]
+        from .storage.macos import DiskArbitrationAdapter as _OriginalAdapter
+
+        if adapter_cls is not _OriginalAdapter:
+            return adapter_cls()
+    from .storage.platform import volume_adapter
+
     return volume_adapter()
+
+
+_LAZY_MODULE_EXPORTS: dict[str, tuple[str, str]] = {
+    # archive
+    "ArchiveError": (".archive", "ArchiveError"),
+    "ArchiveManager": (".archive", "ArchiveManager"),
+    "ArchiveTarget": (".archive", "ArchiveTarget"),
+    "CatalogSnapshotExporter": (".archive.catalog_snapshot", "CatalogSnapshotExporter"),
+    "archive_drain": (".archive.drain", "archive_drain"),
+    "RemoteAuthorizer": (".archive.remote_authorization", "RemoteAuthorizer"),
+    "RemoteDeleter": (".archive.remote_delete", "RemoteDeleter"),
+    "RemoteSourceExporter": (".archive.remote_source", "RemoteSourceExporter"),
+    "authority_status_from_catalog": (".archive.remote_transport", "authority_status_from_catalog"),
+    "require_chunk_id": (".archive.remote_transport", "require_chunk_id"),
+    "require_receipt_id": (".archive.remote_transport", "require_receipt_id"),
+    "require_sha256": (".archive.remote_transport", "require_sha256"),
+    # backfill
+    "HistoricalImporter": (".backfill", "HistoricalImporter"),
+    "build_plan": (".backfill", "build_plan"),
+    "build_daily_trade_plan": (".backfill.daily_trades", "build_daily_trade_plan"),
+    # diagnostics
+    "run_doctor": (".diagnostics", "run_doctor"),
+    # metrics
+    "DailyReporter": (".metrics.report", "DailyReporter"),
+    "continuity_report": (".metrics.continuity", "continuity_report"),
+    # normalize
+    "NormalizationError": (".normalize", "NormalizationError"),
+    "Normalizer": (".normalize", "Normalizer"),
+    "normalization_status": (".normalize", "normalization_status"),
+    # service.acceptance
+    "SAMPLE_INTERVAL_NS": (".service.acceptance", "SAMPLE_INTERVAL_NS"),
+    "STAGE_DURATION_NS": (".service.acceptance", "STAGE_DURATION_NS"),
+    "V4_SCHEMA_VERSION": (".service.acceptance", "V4_SCHEMA_VERSION"),
+    "V5_SCHEMA_VERSION": (".service.acceptance", "V5_SCHEMA_VERSION"),
+    "AcceptanceError": (".service.acceptance", "AcceptanceError"),
+    "AcceptanceObserver": (".service.acceptance", "AcceptanceObserver"),
+    "V4AcceptanceObserver": (".service.acceptance", "V4AcceptanceObserver"),
+    "create_identity_evidence": (".service.acceptance", "create_identity_evidence"),
+    "create_readiness_evidence": (".service.acceptance", "create_readiness_evidence"),
+    "resume_observer": (".service.acceptance", "resume_observer"),
+    "verify_completed_stage": (".service.acceptance", "verify_completed_stage"),
+    "verify_prior_stage": (".service.acceptance", "verify_prior_stage"),
+    "catalog_available": (".service.acceptance_v5_corpus", "catalog_available"),
+    "v5_baseline": (".service.acceptance_v5_finalize", "baseline"),
+    "v5_finalize": (".service.acceptance_v5_finalize", "finalize"),
+    "verify_v5_audit": (".service.acceptance_v5_finalize", "verify_audit"),
+    "V5AcceptanceObserver": (".service.acceptance_v5_online", "V5AcceptanceObserver"),
+    "resume_v5_observer": (".service.acceptance_v5_online", "resume_v5_observer"),
+    # service
+    "ArchiveTimerManager": (".service.archive_timer", "ArchiveTimerManager"),
+    "SystemdArchiveError": (".service.archive_timer", "SystemdArchiveError"),
+    "DeploymentIdentityError": (".service.deployment_identity", "DeploymentIdentityError"),
+    "create_deployment_identity": (".service.deployment_identity", "create_deployment_identity"),
+    "deployment_identity_path": (".service.deployment_identity", "deployment_identity_path"),
+    "enforce_vps_paths": (".service.deployment_identity", "enforce_vps_paths"),
+    "load_deployment_identity": (".service.deployment_identity", "load_deployment_identity"),
+    "rollback_compatibility": (".service.deployment_identity", "rollback_compatibility"),
+    "runtime_deployment_identity": (".service.deployment_identity", "runtime_deployment_identity"),
+    "verify_identity_files": (".service.deployment_identity", "verify_identity_files"),
+    "verify_retained_rollback_artifacts": (
+        ".service.deployment_identity",
+        "verify_retained_rollback_artifacts",
+    ),
+    "verify_vps_identity_permissions": (
+        ".service.deployment_identity",
+        "verify_vps_identity_permissions",
+    ),
+    "write_deployment_identity": (".service.deployment_identity", "write_deployment_identity"),
+    "LaunchAgentError": (".service.launchd", "LaunchAgentError"),
+    "LaunchAgentManager": (".service.launchd", "LaunchAgentManager"),
+    "installed_service_label": (".service.launchd", "installed_service_label"),
+    "VpsReadinessEvaluator": (".service.readiness", "VpsReadinessEvaluator"),
+    "wait_for_readiness": (".service.readiness", "wait_for_readiness"),
+    "SoakTimerManager": (".service.soak_timer", "SoakTimerManager"),
+    "SystemdSoakError": (".service.soak_timer", "SystemdSoakError"),
+    "SystemdError": (".service.systemd", "SystemdError"),
+    "SystemdManager": (".service.systemd", "SystemdManager"),
+    "verify_new": (".service.verification", "verify_new"),
+    # soak
+    "soak_sample": (".soak.sample", "soak_sample"),
+    # spool
+    "LegacyClassificationAuthority": (".spool.legacy_reconnect", "LegacyClassificationAuthority"),
+    "LegacyReconnectConflictError": (".spool.legacy_reconnect", "LegacyReconnectConflictError"),
+    "classification_authority_path": (".spool.legacy_reconnect", "classification_authority_path"),
+    "evaluate_legacy_reconnect_decisions": (
+        ".spool.legacy_reconnect",
+        "evaluate_legacy_reconnect_decisions",
+    ),
+    # status
+    "service_status": (".status", "service_status"),
+    # storage
+    "selected_capacity_profile": (".storage.capacity", "selected_capacity_profile"),
+    "StorageForecaster": (".storage.forecast", "StorageForecaster"),
+    "LinuxVolumeAdapter": (".storage.linux", "LinuxVolumeAdapter"),
+    "DiskArbitrationAdapter": (".storage.macos", "DiskArbitrationAdapter"),
+    "EjectError": (".storage.macos", "EjectError"),
+    "PlatformVolumeError": (".storage.macos", "PlatformVolumeError"),
+    "SafeEjectCoordinator": (".storage.macos", "SafeEjectCoordinator"),
+    "StorageRegistrationError": (".storage.macos", "StorageRegistrationError"),
+    "StorageRegistry": (".storage.macos", "StorageRegistry"),
+    "inspect_path": (".storage.macos", "inspect_path"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_MODULE_EXPORTS:
+        mod_name, attr_name = _LAZY_MODULE_EXPORTS[name]
+        module = importlib.import_module(mod_name, package=__package__)
+        return getattr(module, attr_name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def _sym(name: str) -> Any:
+    """Resolve a CLI symbol from monkeypatched module globals or lazy imports."""
+    mod_dict = sys.modules[__name__].__dict__
+    if name in mod_dict:
+        return mod_dict[name]
+    return __getattr__(name)
 
 
 def _acceptance_archive_root_resolver(
@@ -137,6 +174,9 @@ def _acceptance_archive_root_resolver(
     """Resolve registered archive roots without changing Catalog or storage."""
 
     def resolve() -> Mapping[str, Path]:
+        PlatformVolumeError = _sym("PlatformVolumeError")
+        StorageRegistry = _sym("StorageRegistry")
+
         catalog_path = data_root / "state" / "catalog.sqlite"
         if not catalog_path.is_file():
             return {}
@@ -163,6 +203,7 @@ def _v5_archive_target_resolver(
     authority: Mapping[str, dict[str, Any]],
 ) -> Mapping[str, Path]:
     """Only targets referenced by this page; no Catalog open/history query."""
+    StorageRegistry = _sym("StorageRegistry")
 
     class SnapshotControl:
         def storage_control(self, storage_id: str) -> dict[str, object]:
@@ -218,7 +259,9 @@ def build_parser() -> argparse.ArgumentParser:
             default="baseline-bars",
         )
         command.add_argument(
-            "--product", action="append", default=[],
+            "--product",
+            action="append",
+            default=[],
             help="explicit market:symbol for selected-daily-trades; repeatable",
         )
         command.add_argument("--start", required=True, help="inclusive YYYY-MM-DD")
@@ -485,7 +528,10 @@ def _identity_systemd_manager(
     *,
     identity_user: object,
     identity_group: object,
-) -> SystemdManager:
+) -> Any:
+    DeploymentIdentityError = _sym("DeploymentIdentityError")
+    SystemdManager = _sym("SystemdManager")
+
     if loaded.config_file is None:
         raise DeploymentIdentityError("VPS deployment requires an explicit config file")
     if not isinstance(identity_user, str) or not isinstance(identity_group, str):
@@ -546,11 +592,14 @@ def _launchd_environment(loaded: LoadedConfig) -> dict[str, str]:
 
 def _select_archive_target(
     catalog: Catalog,
-    registry: StorageRegistry,
+    registry: Any,
     *,
     storage_id: str | None,
     allow_low_space: bool = False,
-) -> ArchiveTarget:
+) -> Any:
+    ArchiveError = _sym("ArchiveError")
+    ArchiveTarget = _sym("ArchiveTarget")
+
     statuses = registry.statuses()
     allowed_states = {"READY", *(["LOW_SPACE"] if allow_low_space else [])}
     ready = [
@@ -582,6 +631,14 @@ def _select_archive_target(
 
 def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
     """Run one fixed transport verb with payload-only stdout."""
+    CatalogSnapshotExporter = _sym("CatalogSnapshotExporter")
+    RemoteAuthorizer = _sym("RemoteAuthorizer")
+    RemoteDeleter = _sym("RemoteDeleter")
+    RemoteSourceExporter = _sym("RemoteSourceExporter")
+    authority_status_from_catalog = _sym("authority_status_from_catalog")
+    require_chunk_id = _sym("require_chunk_id")
+    require_receipt_id = _sym("require_receipt_id")
+    require_sha256 = _sym("require_sha256")
 
     action = str(args.remote_command)
     layout = StorageLayout.from_root(loaded.config.data_root)
@@ -678,7 +735,7 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
 
 
 def _run_acceptance_stage(
-    observer: AcceptanceObserver | V5AcceptanceObserver,
+    observer: Any,
     *,
     sleep: Callable[[float], None] | None = None,
 ) -> tuple[Path, str, dict[str, object]]:
@@ -690,6 +747,9 @@ def _run_acceptance_stage(
     overruns its target, the next sample starts immediately and the following
     target is re-anchored from that actual start; missed slots are not replayed.
     """
+    SAMPLE_INTERVAL_NS = _sym("SAMPLE_INTERVAL_NS")
+    STAGE_DURATION_NS = _sym("STAGE_DURATION_NS")
+    AcceptanceError = _sym("AcceptanceError")
 
     selected_sleep = time.sleep if sleep is None else sleep
     required_duration_ns = STAGE_DURATION_NS[observer.stage]
@@ -720,7 +780,7 @@ def _run_acceptance_stage(
         observer.sample()
         next_target_boottime_ns = sample_started_boottime_ns + SAMPLE_INTERVAL_NS
 
-    return observer.finalize()
+    return cast(tuple[Path, str, dict[str, object]], observer.finalize())
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -746,10 +806,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json(_config_payload(loaded))
         return 0
     if command == "doctor":
+        run_doctor = _sym("run_doctor")
         result = run_doctor(loaded, repository_root=repository_root)
         _write_json(result)
         return 1 if result["status"] == "FAIL" else 0
     if command == "status":
+        service_status = _sym("service_status")
         _write_json(
             service_status(
                 loaded.config.data_root,
@@ -758,6 +820,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     if command == "backfill":
+        HistoricalImporter = _sym("HistoricalImporter")
+        build_plan = _sym("build_plan")
+        build_daily_trade_plan = _sym("build_daily_trade_plan")
+
         action = getattr(args, "backfill_command", None)
         importer = HistoricalImporter(
             data_root=loaded.config.data_root,
@@ -798,10 +864,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json({"command": f"backfill.{action}", **result})
         return 0
     if command == "_service" and getattr(args, "service_command", None) == "run":
+        classification_authority_path = _sym("classification_authority_path")
+
         logger = configure_logging(loaded.config.log_level)
         try:
             runtime_identity = None
             if loaded.config.capacity_profile == "vps-production-v1":
+                DeploymentIdentityError = _sym("DeploymentIdentityError")
+                deployment_identity_path = _sym("deployment_identity_path")
+                enforce_vps_paths = _sym("enforce_vps_paths")
+                load_deployment_identity = _sym("load_deployment_identity")
+                runtime_deployment_identity = _sym("runtime_deployment_identity")
+                verify_identity_files = _sym("verify_identity_files")
+                verify_vps_identity_permissions = _sym("verify_vps_identity_permissions")
+
                 if loaded.config_file is None:
                     raise DeploymentIdentityError(
                         "vps-production-v1 requires an explicit config file"
@@ -848,6 +924,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
         return 0
     if command == "systemd":
+        SystemdError = _sym("SystemdError")
+        SystemdManager = _sym("SystemdManager")
+
         systemd_command = getattr(args, "systemd_command", None)
         if loaded.config_file is None:
             _write_json(
@@ -890,6 +969,39 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 2
     if command == "deployment":
+        V4_SCHEMA_VERSION = _sym("V4_SCHEMA_VERSION")
+        V5_SCHEMA_VERSION = _sym("V5_SCHEMA_VERSION")
+        AcceptanceError = _sym("AcceptanceError")
+        AcceptanceObserver = _sym("AcceptanceObserver")
+        V4AcceptanceObserver = _sym("V4AcceptanceObserver")
+        create_identity_evidence = _sym("create_identity_evidence")
+        create_readiness_evidence = _sym("create_readiness_evidence")
+        resume_observer = _sym("resume_observer")
+        verify_completed_stage = _sym("verify_completed_stage")
+        verify_prior_stage = _sym("verify_prior_stage")
+        catalog_available = _sym("catalog_available")
+        v5_baseline = _sym("v5_baseline")
+        v5_finalize = _sym("v5_finalize")
+        verify_v5_audit = _sym("verify_v5_audit")
+        V5AcceptanceObserver = _sym("V5AcceptanceObserver")
+        resume_v5_observer = _sym("resume_v5_observer")
+        DeploymentIdentityError = _sym("DeploymentIdentityError")
+        create_deployment_identity = _sym("create_deployment_identity")
+        deployment_identity_path = _sym("deployment_identity_path")
+        enforce_vps_paths = _sym("enforce_vps_paths")
+        load_deployment_identity = _sym("load_deployment_identity")
+        rollback_compatibility = _sym("rollback_compatibility")
+        runtime_deployment_identity = _sym("runtime_deployment_identity")
+        verify_identity_files = _sym("verify_identity_files")
+        verify_retained_rollback_artifacts = _sym("verify_retained_rollback_artifacts")
+        verify_vps_identity_permissions = _sym("verify_vps_identity_permissions")
+        write_deployment_identity = _sym("write_deployment_identity")
+        VpsReadinessEvaluator = _sym("VpsReadinessEvaluator")
+        wait_for_readiness = _sym("wait_for_readiness")
+        SystemdError = _sym("SystemdError")
+        SystemdManager = _sym("SystemdManager")
+        classification_authority_path = _sym("classification_authority_path")
+
         action = getattr(args, "deployment_command", None)
         try:
             if loaded.config.capacity_profile != "vps-production-v1":
@@ -1022,7 +1134,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     return 0 if document["result"] == "PASS_CANDIDATE" else 2
                 if acceptance_action == "stage":
-                    observer: AcceptanceObserver | V5AcceptanceObserver
+                    observer: Any
                     archive_root_resolver = _acceptance_archive_root_resolver(
                         loaded.config.data_root
                     )
@@ -1268,6 +1380,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 2
     if command == "launchd":
+        LaunchAgentError = _sym("LaunchAgentError")
+        LaunchAgentManager = _sym("LaunchAgentManager")
+        installed_service_label = _sym("installed_service_label")
+
         launchd_command = getattr(args, "launchd_command", None)
         try:
             label = getattr(args, "label", None)
@@ -1307,7 +1423,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 2
     if command in {"verify", "verify-raw"}:
-        from .service.verification import verify_new
+        verify_new = _sym("verify_new")
+        PlatformVolumeError = _sym("PlatformVolumeError")
+        StorageRegistry = _sym("StorageRegistry")
 
         layout = ensure_storage_layout(loaded.config.data_root)
         try:
@@ -1330,8 +1448,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     for chunk_id in args.chunk_id:
                         catalog.enroll_raw_verification(chunk_id)
                     result = verify_new(
-                        layout, catalog, max_files=args.max_files, max_bytes=args.max_bytes,
-                        max_seconds=args.max_seconds, external_roots=verification_roots,
+                        layout,
+                        catalog,
+                        max_files=args.max_files,
+                        max_bytes=args.max_bytes,
+                        max_seconds=args.max_seconds,
+                        external_roots=verification_roots,
                         through_utc_ns=args.through_utc_ns,
                     )
         except (OSError, RuntimeError, ValueError) as exc:
@@ -1341,13 +1463,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json({"command": command_label, **result})
         return 2 if result.get("failed_files") else 0
     if command == "report" and args.report_command == "continuity":
-        from .metrics.continuity import continuity_report
+        continuity_report = _sym("continuity_report")
 
         try:
             layout = StorageLayout.from_root(loaded.config.data_root)
             with Catalog.open_live_read_only(layout.catalog) as catalog:
                 result = continuity_report(
-                    catalog, start=args.start_utc_ns, end=args.end_utc_ns,
+                    catalog,
+                    start=args.start_utc_ns,
+                    end=args.end_utc_ns,
                     source_ids=args.source_id,
                 )
         except (OSError, RuntimeError, ValueError) as exc:
@@ -1356,6 +1480,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json({"command": "report.continuity", **result})
         return 0
     if command == "report" and getattr(args, "report_command", None) == "daily":
+        DailyReporter = _sym("DailyReporter")
+
         selected_date = getattr(args, "date", None) or datetime.now(UTC).date().isoformat()
         catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"
         if not catalog_path.is_file():
@@ -1383,6 +1509,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "recovery" and (
         getattr(args, "recovery_command", None) == "legacy-reconnect-preflight"
     ):
+        LegacyClassificationAuthority = _sym("LegacyClassificationAuthority")
+        LegacyReconnectConflictError = _sym("LegacyReconnectConflictError")
+        classification_authority_path = _sym("classification_authority_path")
+        evaluate_legacy_reconnect_decisions = _sym("evaluate_legacy_reconnect_decisions")
+
         # M21.4.11-R3.3: the preflight is INTRINSICALLY read-only.  The
         # layout is derived without any filesystem mutation (no mkdir,
         # touch, chmod, or creation fsync); required existing paths are
@@ -1422,6 +1553,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0 if report.first_corrected_startup_eligible else 2
     if command == "normalize":
+        NormalizationError = _sym("NormalizationError")
+        Normalizer = _sym("Normalizer")
+        normalization_status = _sym("normalization_status")
+        PlatformVolumeError = _sym("PlatformVolumeError")
+        StorageRegistry = _sym("StorageRegistry")
+
         normalize_command = getattr(args, "normalize_command", None)
         if normalize_command == "status":
             try:
@@ -1461,19 +1598,28 @@ def main(argv: Sequence[str] | None = None) -> int:
                         raise ValueError("--product must be market:symbol")
                     selected_products.add((market, symbol))
                 start_ns = (
-                    int(datetime.strptime(args.start, "%Y-%m-%d")
-                        .replace(tzinfo=UTC).timestamp() * 1e9)
-                    if args.start else None
+                    int(
+                        datetime.strptime(args.start, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
+                        * 1e9
+                    )
+                    if args.start
+                    else None
                 )
                 end_ns = (
-                    int(datetime.strptime(args.end, "%Y-%m-%d")
-                        .replace(tzinfo=UTC).timestamp() * 1e9)
-                    + 86_400_000_000_000 if args.end else None
+                    int(
+                        datetime.strptime(args.end, "%Y-%m-%d").replace(tzinfo=UTC).timestamp()
+                        * 1e9
+                    )
+                    + 86_400_000_000_000
+                    if args.end
+                    else None
                 )
                 selected_manifests: list[Path] | None = None
                 if args.sealed_since_utc_ns is not None:
-                    selected_manifests = [layout.root / path for path in
-                        catalog.sealed_manifests_since(args.sealed_since_utc_ns)]
+                    selected_manifests = [
+                        layout.root / path
+                        for path in catalog.sealed_manifests_since(args.sealed_since_utc_ns)
+                    ]
                 if args.chunk_id:
                     requested_paths = []
                     for chunk_id in args.chunk_id:
@@ -1481,15 +1627,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                         if chunk is None or not isinstance(chunk["manifest_path"], str):
                             raise ValueError(f"chunk is not sealed: {chunk_id}")
                         requested_paths.append(layout.root / chunk["manifest_path"])
-                    selected_manifests = requested_paths if selected_manifests is None else [
-                        path for path in requested_paths if path in selected_manifests
-                    ]
+                    selected_manifests = (
+                        requested_paths
+                        if selected_manifests is None
+                        else [path for path in requested_paths if path in selected_manifests]
+                    )
                 normalization_result = Normalizer(
                     layout=layout,
                     catalog=catalog,
                     external_roots=external_roots,
                     products=frozenset(selected_products) if selected_products else None,
-                    start_utc_ns=start_ns, end_utc_ns=end_ns, manifest_paths=selected_manifests,
+                    start_utc_ns=start_ns,
+                    end_utc_ns=end_ns,
+                    manifest_paths=selected_manifests,
                 ).run()
         except (NormalizationError, OSError, ValueError) as exc:
             _write_json(
@@ -1500,6 +1650,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json({"command": "normalize.run", **normalization_result.public_dict()})
         return 0
     if command == "storage":
+        selected_capacity_profile = _sym("selected_capacity_profile")
+        StorageForecaster = _sym("StorageForecaster")
+        LinuxVolumeAdapter = _sym("LinuxVolumeAdapter")
+        EjectError = _sym("EjectError")
+        PlatformVolumeError = _sym("PlatformVolumeError")
+        SafeEjectCoordinator = _sym("SafeEjectCoordinator")
+        StorageRegistrationError = _sym("StorageRegistrationError")
+        StorageRegistry = _sym("StorageRegistry")
+        inspect_path = _sym("inspect_path")
+
         adapter = _volume_adapter()
         storage_command = getattr(args, "storage_command", None)
         try:
@@ -1633,6 +1793,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             _write_json({"error": "storage_error", "message": str(exc)}, stream=sys.stderr)
             return 2
     if command == "archive":
+        ArchiveError = _sym("ArchiveError")
+        ArchiveManager = _sym("ArchiveManager")
+        archive_drain = _sym("archive_drain")
+        ArchiveTimerManager = _sym("ArchiveTimerManager")
+        SystemdArchiveError = _sym("SystemdArchiveError")
+        PlatformVolumeError = _sym("PlatformVolumeError")
+        StorageRegistrationError = _sym("StorageRegistrationError")
+        StorageRegistry = _sym("StorageRegistry")
+
         archive_command = getattr(args, "archive_command", None)
         if archive_command == "timer":
             timer_command = getattr(args, "archive_timer_command", None)
@@ -1757,6 +1926,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             _write_json({"error": "archive_error", "message": str(exc)}, stream=sys.stderr)
             return 2
     if command == "soak":
+        SoakTimerManager = _sym("SoakTimerManager")
+        SystemdSoakError = _sym("SystemdSoakError")
+        soak_sample = _sym("soak_sample")
+
         soak_command = getattr(args, "soak_command", None)
         if soak_command == "timer":
             timer_command = getattr(args, "soak_timer_command", None)

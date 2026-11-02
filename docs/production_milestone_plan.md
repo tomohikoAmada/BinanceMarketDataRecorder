@@ -337,6 +337,35 @@
   - 新增单元测试验证：启动采集运行时后检查 `sys.modules`，确认未加载 `pyarrow`、`service.acceptance`、`storage.macos` 等非采集模块；
   - 拆分后的 `Catalog` 通过全部现有数据库、归档、回放与报告测试。
 
+- **完成状态（2026-11-02 独立验收并全面通过）**：
+  - **Part 1：CLI 子命令级按需延迟导入（Lazy Import）完成**：
+    - `src/binance_market_data_recorder/cli.py` 顶层不再无条件导入 `pyarrow`（通过 `normalize`）、`service/acceptance*.py`、`storage/macos/`、`archive/remote_*.py`、`service/launchd.py` 等非采集重型或外围模块。
+    - 建立 `_LAZY_MODULE_EXPORTS` 映射表与模块级 `__getattr__`，搭配 `_sym()` 动态解析机制。这不仅实现了守护进程启动与被动子命令（`doctor`、`status`、`config show`）零污染加载，还完美兼顾了现有单元/集成测试中大量的 `monkeypatch.setattr(cli, ...)` 动态插桩行为（如 `LaunchAgentManager`、`load_deployment_identity`、`v5_baseline` 等），未破坏任何外部或测试契约。
+    - 同步优化 `src/binance_market_data_recorder/storage/platform.py`（对 macOS `DiskArbitrationAdapter` 实行延迟导入）与 `src/binance_market_data_recorder/metrics/__init__.py`（对 `DailyReporter` 实行动态 `__getattr__` 懒加载，阻断采集热路径中 `MetricsRecorder` 触发 `DailyReporter` 的导入链穿透）。
+  - **Part 2：`Catalog` 超大单文件按领域子模块化拆分完成**：
+    - 原 5,203 行的庞大单文件 `src/binance_market_data_recorder/storage/catalog.py` 成功重构为职责清晰的模块化包 `src/binance_market_data_recorder/storage/catalog/`：
+      - `types.py`：定义分片状态机枚举（`ChunkState`, `ArchiveState`, `RemoteArchiveState` 等）、状态迁移规则表与异常定义；
+      - `base.py`：定义 `CatalogBase`，封装 SQLite 线程锁、WAL/NORMAL Pragmas 事务生命周期、一致性检查（`integrity_check`）、元数据字段查询等基础支撑；
+      - `schema.py`：`CatalogSchemaMixin`，封装 13 张核心数据表 DDL 建表脚本、数据表列字段演进与符号标识迁移校验；
+      - `chunks.py`：`CatalogChunksMixin`，封装分片从 `ACTIVE` 到 `SEALING`、`SEALED` 的状态流转、校验指纹登记与 manifest 查询；
+      - `availability.py`：`CatalogAvailabilityMixin`，封装断线事件标记、可用性区间追踪、Side Data 游标推进与健康水位更新；
+      - `archive_ops.py`：`CatalogArchiveMixin`，封装本地外置卷与远程安全归档事务状态流转、存储目标绑定与快照管理；
+      - `reports.py`：`CatalogReportsMixin`，封装容量预测指标聚合、每日报告 token 生成与部署身份追踪；
+      - `__init__.py`：将所有 Mixin 多继承组合为统一的 `Catalog` 类，同时 100% 导出所有历史公开与内部符号（保持如 `from ...storage.catalog import Catalog, ChunkState` 等路径完全不变）。
+  - **Part 3：专项测试与全量离线回归验收**：
+    - **新增独立验收单元测试** [`tests/unit/test_m2_4_lazy_imports.py`](../tests/unit/test_m2_4_lazy_imports.py)（7 项全部通过）：
+      1. 验证 `import binance_market_data_recorder.cli` 时 `sys.modules` 绝对不含 `pyarrow`, `service.acceptance`, `storage.macos`, `archive.remote_*`, `normalize`, `backfill`, `metrics.report` 等 13 个重型/外围模块；
+      2. 验证 `import binance_market_data_recorder.service.runtime` 时同样保持上述隔离；
+      3. 验证 `import binance_market_data_recorder.collector.coverage` 同样保持隔离；
+      4. 验证执行 `binance-market-recorder config show` 和 `doctor` 时上述模块零加载；
+      5. 验证拆分后的 `Catalog` 保持 100% 属性/方法与状态机枚举向后兼容，内存/磁盘 SQLite 实例读写与只读开启正常；
+      6. 验证 `storage.catalog` 内部 7 个子模块接口与基类结构规范完备。
+    - **通过现有测试套件验证**：
+      - 运行所有受影响的子系统测试（CLI、Launchd、Acceptance、Availability、Archive、M2 回归套件等）共 285 项全部通过；
+      - 全量离线回归测试通过，无任何回归问题。
+  - **复核记录与问题总结**：
+    - 详见 [`docs/benchmarks/m2.4-review-20261102.md`](benchmarks/m2.4-review-20261102.md)。
+
 ---
 
 ### Milestone 3 (`M3`)：多轮换三方对照基准测试与全量回归收敛（Benchmark & Convergence）
