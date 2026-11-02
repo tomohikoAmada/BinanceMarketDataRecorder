@@ -45,7 +45,7 @@ from .format import (
 
 @dataclass(frozen=True)
 class RotationPolicy:
-    seconds: float = 60.0
+    seconds: float = 900.0
     bytes: int = 128 * 1024 * 1024
 
     def __post_init__(self) -> None:

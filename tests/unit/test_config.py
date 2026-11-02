@@ -15,7 +15,7 @@ def test_defaults_are_credential_free() -> None:
     assert loaded.config.data_root == default_data_root(home=fake_home).resolve()
     assert loaded.config.capacity_profile is None
     assert loaded.config.log_level == "INFO"
-    assert loaded.config.rotation_seconds == 60.0
+    assert loaded.config.rotation_seconds == 900.0
     assert loaded.config.rotation_bytes == 128 * 1024 * 1024
     assert loaded.config.durability_interval_seconds == 1.0
     assert loaded.config.ingress_queue_capacity == 8192

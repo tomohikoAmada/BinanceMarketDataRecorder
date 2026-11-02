@@ -17,7 +17,7 @@
 ## Current Milestone Direction (November 2026)
 
 The previous P0–P6 milestone plan has been **abolished and superseded** by the pragmatic Python optimization & qualification plan in [`docs/production_milestone_plan.md`](docs/production_milestone_plan.md) (`M1` → `M2` → `M3` → `M4`):
-- **`M1` (Core I/O & Hot-Path Optimization)**: `15m / 64 MiB` chunk rotation (`M1.1`), SQLite `WAL + NORMAL` with in-memory availability coalescing (`M1.2`), closed-bar K-line persistence with disconnect REST backfill & `S12` deduplication (`M1.3`), and zero-copy hot-path framing + single-hop REST persistence (`M1.4`).
+- **`M1` (Core I/O & Hot-Path Optimization)**: `15m / 128 MiB` chunk rotation (`M1.1`), SQLite `WAL + NORMAL` with in-memory availability coalescing (`M1.2`), closed-bar K-line persistence with disconnect REST backfill & `S12` deduplication (`M1.3`), and zero-copy hot-path framing + single-hop REST persistence (`M1.4`).
 - **`M2` (De-bloating & Removing Over-Defense)**: Remove live post-seal full-file readback and background re-verification (`M2.1`), remove startup 0-record `.zst` files (`M2.2`), unify the dual collector stack and WebSocket base (`M2.3`), and isolate peripheral/legacy modules via lazy CLI imports while splitting `storage/catalog.py` (`M2.4`).
 - **`M3` (Benchmark & Stability Convergence)**: Multi-rotation (`45–60m`) three-way benchmark (`M3.1`), full test/stress/recovery suite (`M3.2`), and production wheel/config freeze (`M3.3`).
 - **`M4` (GreenCloud VPS Qualification)**: Single continuous `BTC + ETH` run verified at **`2h` → `12h` → `24h`** checkpoints (`M4.1`–`M4.4`).

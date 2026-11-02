@@ -65,7 +65,7 @@ class SpotCollectorSettings:
     symbol: str
     queue_capacity: int = 8192
     receipt_queue_capacity: int = 1024
-    rotation_seconds: float = 60.0
+    rotation_seconds: float = 900.0
     rotation_bytes: int = 128 * 1024 * 1024
     durability_interval_seconds: float = 1.0
     max_frame_bytes: int = 16 * 1024 * 1024

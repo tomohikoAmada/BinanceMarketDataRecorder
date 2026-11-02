@@ -64,7 +64,7 @@ class RecorderConfig(BaseModel):
     log_level: LogLevel = "INFO"
     network_proxy_mode: ProxyMode = "direct"
     network_proxy_url: str | None = None
-    rotation_seconds: float = Field(default=60.0, gt=0)
+    rotation_seconds: float = Field(default=900.0, gt=0)
     rotation_bytes: int = Field(default=128 * 1024 * 1024, ge=1024 * 1024)
     durability_interval_seconds: float = Field(default=1.0, ge=0, le=1.0)
     ingress_queue_capacity: int = Field(default=8192, ge=1)
@@ -330,7 +330,7 @@ def load_config(
         "log_level": "INFO",
         "network_proxy_mode": "direct",
         "network_proxy_url": None,
-        "rotation_seconds": 60.0,
+        "rotation_seconds": 900.0,
         "rotation_bytes": 128 * 1024 * 1024,
         "durability_interval_seconds": 1.0,
         "ingress_queue_capacity": 8192,

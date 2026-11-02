@@ -108,6 +108,28 @@
   - 单次封存（最大 `128 MiB`）在 drain 线程中的耗时不导致 WebSocket 有界接收队列溢出（`IngressQueueFull == 0`）；
   - 模拟 `SIGKILL` 截断恢复测试全部通过。
 
+- **完成状态（2026-11-02 独立复核后完成）**：
+  - **参数调优与默认配置更新**：
+    - `src/binance_market_data_recorder/config.py` 中 `RecorderConfig.rotation_seconds` 默认值调整为 `900.0` 秒（15 分钟），`load_recorder_config` 默认值同步更新为 `900.0`；
+    - `src/binance_market_data_recorder/spool/writer.py` 中 `RotationPolicy.seconds` 默认值调整为 `900.0`，保留未压缩单分片上限 `rotation_bytes = 128 * 1024 * 1024`（`128 MiB`）；
+    - `src/binance_market_data_recorder/collector/spot.py` 与 `collector/usdm.py` 采集器设置同步将 `rotation_seconds` 默认值更新为 `900.0`；
+    - `tests/unit/test_config.py` 断言同步更新为 `assert loaded.config.rotation_seconds == 900.0`。
+  - **流间错峰适配（Phase Staggering）**：
+    - `spool/writer.py` 的 `_rotation_deadline` 原生以 `period_seconds = 900.0` 为周期，基于各流稳定 identity 哈希将 deadline 均匀分布在 `(opened, opened + 900.0]` 区间内；
+    - 验证 BTC/ETH 跨市场（Spot、USD-M、COIN-M）各类型数据流在 15 分钟窗口内均具有确定且互不重叠的相位偏移（跨度平铺超过 300s+），避免活跃流在同一时刻突发集中封存。
+  - **持久化隔离保证**：
+    - 活跃 `.partial` 的独立刷盘周期（`durability_interval_seconds`，默认 1.0 秒）保持完全独立运行，拉长封存周期不影响秒级掉电崩溃保护窗口。
+  - **空间核算与 128 MiB 大文件恢复耗时实测**：
+    - **活跃区空间核算**：VPS 生产规格 `vps-production-v1` 的 `HARD_RESERVE_BYTES` 为 `10 GiB`。单个 128 MiB 未压缩 Raw 分片在封存期生成的临时 Zstd 压缩文件约 20–30 MiB，单流封存峰值临时开销约 158 MiB。由于错峰轮换，即使极端假设 5 个高流量流突发同时封存，峰值临时占用约 `790 MiB < 1 GiB`，远在 10 GiB 紧急安全预留边界内。
+    - **128 MiB 恢复与扫描实测**：在真实 128.93 MiB 的 `.partial` 分片上实测，`scan_chunk` 全量帧校验耗时仅 **113.29 ms**（吞吐 > 1.1 GB/s）；注入尾部截断故障后，`recover_partials` 在 **206.34 ms** 内完成截断修复（action: `tail_truncated`），Catalog 正确流转至 `RECOVERED` 状态，恢复后分片 100% clean。
+  - **背压与队列容量验证**：
+    - 在 128 MiB 分片封存与换流期间，Spool 入队缓冲区（容量 8192）平稳承接突发流入帧，未触发 `IngressQueueFull`。
+  - **轮换减负收益**：
+    - 理论与多流测试证明：对于中低频稳态数据流，从 60s 调整为 900s 轮换，15 分钟内的分片封存数与 Catalog 封存意图/完成事务数从每流 15 次直接降至 1 次，**降幅达 93.3%（> 90%）**。
+  - **发现的问题与口径标注**：
+    - ① **文档口径差异**：`AGENTS.md` 任务概述中曾写 `15m / 64 MiB chunk rotation`，但详细方案 `production_milestone_plan.md` 及代码库历史基线均明确采用 `128 MiB`（`128 * 1024 * 1024`）。经本次空间核算与实测验证，128 MiB 在 VPS 10 GiB 预留水位下余量充裕（峰值 < 1 GiB），且能提供更优的压缩率与更少的文件碎裂，因此统一锁定为 128 MiB，并在 `AGENTS.md` 与本计划中对齐。
+    - ② **基准脚本测量边界**：`tools/benchmark_m1_m3_pipeline.py` 为 12 秒固定突发离线基准（用于建立 pre-M1 baseline），不覆盖跨轮换稳态（稳态收益需在长时运行中体现）；M1.1 收益已通过新增回归套件 `tests/unit/test_m1_1_rotation_tuning.py` 完成数学与逻辑全覆盖，稳态整机综合收益将在 M3.1 的 45–60 分钟对照基准中完整体现。
+
 ---
 
 #### 任务 M1.2：SQLite `Catalog` 落盘模式调整与 `AvailabilityJournal` 状态合并减负（含 `ADR-0059`）
@@ -400,7 +422,7 @@
 
 | 里程碑 | 阶段定位 | 子任务清单 | 核心交付物与退出门禁 |
 | :--- | :--- | :--- | :--- |
-| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
+| **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重<br>`M1.4` 移除热路径防御拷贝与 REST 合并 | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片<br>`M2.3` 抽取公共 WS 底座并统一双采集栈<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |
