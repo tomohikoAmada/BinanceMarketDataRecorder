@@ -119,8 +119,14 @@ class InstrumentedJournal(AvailabilityJournal):
         super().__init__(instance_id)
         self.stats = stats
 
-    def _emit(self, state: Availability, gap: dict[str, object] | None = None) -> None:
-        super()._emit(state, gap)
+    def _emit(
+        self,
+        state: Availability,
+        gap: dict[str, object] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        super()._emit(state, gap, *args, **kwargs)
         self.stats.pending_peak = max(self.stats.pending_peak, len(self.pending))
 
 

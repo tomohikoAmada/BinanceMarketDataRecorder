@@ -355,7 +355,7 @@ class Catalog:
                 raise CatalogStateError("cannot inspect remote Catalog schema") from exc
         else:
             self._connection.execute("PRAGMA journal_mode=WAL")
-            self._connection.execute("PRAGMA synchronous=FULL")
+            self._connection.execute("PRAGMA synchronous=NORMAL")
             identity_decision = self._identity_schema_decision()
             if identity_decision == "fresh":
                 self._initialize_fresh_symbol_identity_schema()
@@ -445,9 +445,11 @@ class Catalog:
         self.close()
 
     @contextmanager
-    def _transaction(self) -> Iterator[sqlite3.Connection]:
+    def _transaction(self, *, force_sync: bool = False) -> Iterator[sqlite3.Connection]:
         self._require_writable()
         with self._lock:
+            if force_sync:
+                self._connection.execute("PRAGMA synchronous = FULL")
             self._connection.execute("BEGIN IMMEDIATE")
             try:
                 yield self._connection
@@ -456,6 +458,11 @@ class Catalog:
                 raise
             else:
                 self._connection.execute("COMMIT")
+                if force_sync:
+                    self._connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            finally:
+                if force_sync:
+                    self._connection.execute("PRAGMA synchronous = NORMAL")
 
     def _require_writable(self) -> None:
         if self.read_only:
@@ -500,6 +507,11 @@ class Catalog:
             );
             CREATE INDEX IF NOT EXISTS source_availability_by_source_time
                 ON source_availability_gaps(source_id, started_at_utc_ns);
+            CREATE TABLE IF NOT EXISTS source_availability_watermark (
+                selection_id TEXT PRIMARY KEY,
+                evaluated_through_utc_ns INTEGER NOT NULL,
+                updated_at_utc_ns INTEGER NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS raw_verification_queue (
                 chunk_id TEXT PRIMARY KEY REFERENCES chunks(chunk_id),
                 enrolled_at_utc_ns INTEGER NOT NULL,
@@ -2732,7 +2744,11 @@ class Catalog:
         evidence_json = json.dumps(
             dict(evidence or {}), sort_keys=True, separators=(",", ":")
         )
-        with self._transaction() as connection:
+        force_sync = to_state in {
+            ArchiveState.LOCAL_DELETED,
+            ArchiveState.LOCAL_DELETE_PENDING,
+        }
+        with self._transaction(force_sync=force_sync) as connection:
             if connection.execute(
                 "SELECT 1 FROM archive_transaction_events WHERE idempotency_key = ?",
                 (idempotency_key,),
@@ -3101,7 +3117,7 @@ class Catalog:
         if any(expected_chunk.get(key) != value for key, value in required_chunk.items()):
             raise CatalogStateError("remote authorization source snapshot mismatch")
         row: sqlite3.Row | None = None
-        with self._transaction() as connection:
+        with self._transaction(force_sync=True) as connection:
             chunk = connection.execute(
                 "SELECT * FROM chunks WHERE chunk_id = ?", (receipt.chunk_id,)
             ).fetchone()
@@ -3277,6 +3293,7 @@ class Catalog:
         }
         evidence_json = json.dumps(evidence, sort_keys=True, separators=(",", ":"))
         with self._lock:
+            self._connection.execute("PRAGMA synchronous = FULL")
             transaction_started = False
             try:
                 if fault_hook is not None:
@@ -3366,6 +3383,7 @@ class Catalog:
                     fault_hook("k4_after_remote_deleted_update_event_before_commit")
                     fault_hook("before_remote_deleted_commit")
                 self._connection.execute("COMMIT")
+                self._connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
                 transaction_started = False
                 if fault_hook is not None:
                     fault_hook("after_remote_deleted_commit")
@@ -3374,6 +3392,8 @@ class Catalog:
                     with suppress(sqlite3.Error):
                         self._connection.execute("ROLLBACK")
                 raise
+            finally:
+                self._connection.execute("PRAGMA synchronous = NORMAL")
         persisted = self.remote_archive_transaction(receipt_id)
         if persisted is None:
             raise CatalogStateError("remote deletion terminal readback failed")
@@ -4577,16 +4597,70 @@ class Catalog:
             "evidence": json.loads(row["evidence_json"]),
         }
 
-    def source_availability(self) -> dict[str, dict[str, Any]]:
+    def source_availability_watermark(
+        self, selection_id: str | None = None
+    ) -> int | None:
+        with self._lock:
+            if self._connection.execute(
+                "SELECT 1 FROM sqlite_master "
+                "WHERE type='table' AND name='source_availability_watermark'"
+            ).fetchone() is None:
+                return None
+            if selection_id is not None:
+                row = self._connection.execute(
+                    "SELECT evaluated_through_utc_ns FROM source_availability_watermark "
+                    "WHERE selection_id = ?",
+                    (selection_id,),
+                ).fetchone()
+            else:
+                row = self._connection.execute(
+                    "SELECT evaluated_through_utc_ns FROM source_availability_watermark "
+                    "ORDER BY updated_at_utc_ns DESC LIMIT 1"
+                ).fetchone()
+        return int(row[0]) if row is not None else None
+
+    def source_availability(
+        self, selection_id: str | None = None
+    ) -> dict[str, dict[str, Any]]:
         with self._lock:
             if self._connection.execute(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='source_availability'"
             ).fetchone() is None:
                 return {}
             rows = self._connection.execute("SELECT * FROM source_availability").fetchall()
-        return {str(row["source_id"]): json.loads(row["state_json"]) for row in rows}
+            watermark_ns = self.source_availability_watermark(selection_id)
+        result: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            data = json.loads(row["state_json"])
+            if (
+                watermark_ns is not None
+                and data.get("unavailable_since_utc_ns") is None
+                and not data.get("dormant")
+            ):
+                data["observed_at_utc_ns"] = max(
+                    int(data.get("observed_at_utc_ns", 0)), watermark_ns
+                )
+                if data.get("last_valid_utc_ns") is not None:
+                    data["last_valid_utc_ns"] = max(
+                        int(data["last_valid_utc_ns"]), watermark_ns
+                    )
+            result[str(row["source_id"])] = data
+        return result
 
-    def persist_source_availability(self, batch: list[dict[str, Any]]) -> None:
+    def persist_source_availability_watermark(
+        self, selection_id: str, evaluated_through_utc_ns: int
+    ) -> None:
+        self.persist_source_availability(
+            [], watermark=(selection_id, evaluated_through_utc_ns)
+        )
+
+    def persist_source_availability(
+        self,
+        batch: list[dict[str, Any]],
+        *,
+        watermark: tuple[str, int] | None = None,
+    ) -> None:
+        now = time.time_ns()
         with self._transaction() as connection:
             for item in batch:
                 state, gap = item["state"], item["gap"]
@@ -4612,6 +4686,17 @@ class Catalog:
                         (gap["gap_id"], gap["source_id"], gap["started_at_utc_ns"],
                          gap["ended_at_utc_ns"], json.dumps(gap, sort_keys=True)),
                     )
+            if watermark is not None:
+                selection_id, evaluated_through_utc_ns = watermark
+                connection.execute(
+                    "INSERT INTO source_availability_watermark("
+                    "selection_id, evaluated_through_utc_ns, updated_at_utc_ns) "
+                    "VALUES (?, ?, ?) "
+                    "ON CONFLICT(selection_id) DO UPDATE SET "
+                    "evaluated_through_utc_ns=excluded.evaluated_through_utc_ns, "
+                    "updated_at_utc_ns=excluded.updated_at_utc_ns",
+                    (selection_id, evaluated_through_utc_ns, now),
+                )
 
     def sealed_manifests_since(self, since_utc_ns: int) -> list[str]:
         with self._lock:

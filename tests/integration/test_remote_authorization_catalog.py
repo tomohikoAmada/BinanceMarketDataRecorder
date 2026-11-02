@@ -130,6 +130,7 @@ def test_pre_m22_writable_upgrade_is_additive_and_preserves_rows(tmp_path: Path)
         "source_availability",
         "source_availability_gaps",
         "source_availability_lifecycle",
+        "source_availability_watermark",
     }
 
 

@@ -343,6 +343,8 @@ class SelectedAssetCapture:
         self._stop: asyncio.Event | None = None
         self._discovery_lock = asyncio.Lock()
         self.availability = AvailabilityJournal(instance_id)
+        self._pending_watermark_utc_ns: int | None = None
+        self._last_watermark_flush_utc_ns: int | None = None
         self._last_monitor_utc_ns: int | None = None
         self._clock_unreliable_until: int = 0
         self._group_sources: dict[UsdMStreamCollector, StreamGroup] = {}
@@ -350,6 +352,11 @@ class SelectedAssetCapture:
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
         for venue in ("spot", "usdm", "coinm"):
             self.add_source(directory_source(venue, self.coverage))
+
+    @property
+    def source_selection_id(self) -> str:
+        assets = ",".join(sorted(self.coverage.underlying_assets))
+        return f"assets:{assets}"
 
     def add_source(self, source: Source) -> None:
         if source.key not in self.sources:
@@ -938,18 +945,57 @@ class SelectedAssetCapture:
     async def _flush_availability(self, *, all_pending: bool = False) -> None:
         deadline = time.monotonic() + AVAILABILITY_FLUSH_SECONDS
         batches = 0
+        watermark_param: tuple[str, int] | None = None
+        if (
+            self._pending_watermark_utc_ns is not None
+            and (
+                all_pending
+                or self._last_watermark_flush_utc_ns is None
+                or (
+                    self._pending_watermark_utc_ns - self._last_watermark_flush_utc_ns
+                    >= 10_000_000_000
+                )
+            )
+        ):
+            watermark_param = (self.source_selection_id, self._pending_watermark_utc_ns)
+
         while self.availability.pending:
             batch = self.availability.batch()
-            await run_owned_blocking_call(self.catalog.persist_source_availability, batch)
+            to_persist: list[dict[str, Any]]
+            current_watermark: tuple[str, int] | None = None
+            if watermark_param is not None:
+                to_persist = [entry for entry in batch if entry.get("is_transition", False)]
+                if len(batch) == len(self.availability.pending):
+                    current_watermark = watermark_param
+                    self._last_watermark_flush_utc_ns = self._pending_watermark_utc_ns
+                    watermark_param = None
+            else:
+                to_persist = batch
+
+            if to_persist or current_watermark is not None:
+                if current_watermark is not None:
+                    await run_owned_blocking_call(
+                        self.catalog.persist_source_availability,
+                        to_persist,
+                        watermark=current_watermark,
+                    )
+                else:
+                    await run_owned_blocking_call(
+                        self.catalog.persist_source_availability,
+                        to_persist,
+                    )
             self.availability.acknowledge(len(batch))
             batches += 1
-            # Preserve <=128 records per Catalog transaction and yield after
-            # every owned blocking call. One transaction per outer pass cannot
-            # keep up with even the 2,233-source BTC checkpoint rate.
             if not all_pending and (
                 batches >= AVAILABILITY_FLUSH_MAX_BATCHES or time.monotonic() >= deadline
             ):
                 break
+
+        if watermark_param is not None:
+            await run_owned_blocking_call(
+                self.catalog.persist_source_availability, [], watermark=watermark_param
+            )
+            self._last_watermark_flush_utc_ns = self._pending_watermark_utc_ns
 
     def _writer_stalls(self, now: int) -> dict[tuple[str, str, str, str], int]:
         stalled: dict[tuple[str, str, str, str], int] = {}
@@ -1037,13 +1083,14 @@ class SelectedAssetCapture:
             else:
                 self.availability.valid(key, now)
             state.availability = health.public_dict(now)
+        self._pending_watermark_utc_ns = now
 
     async def run(self, stop: asyncio.Event) -> None:
         self._stop = stop
         terminal_error: BaseException | None = None
         try:
             self.availability.previous = await run_owned_blocking_call(
-                self.catalog.source_availability
+                self.catalog.source_availability, self.source_selection_id
             )
             while not stop.is_set():
                 self._changed.clear()

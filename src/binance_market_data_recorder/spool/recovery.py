@@ -680,6 +680,15 @@ def reconcile_sealed(
                         evidence={"source": "manifest"},
                         fields=fields,
                     )
+                    if target is ChunkState.SEALED:
+                        partial_path_str = row.get("partial_path")
+                        for candidate in [
+                            layout.root / str(partial_path_str) if partial_path_str else None,
+                            layout.active / f"{chunk_id}.bmdr.partial",
+                        ]:
+                            if candidate is not None and candidate.exists():
+                                candidate.unlink()
+                                fsync_directory(layout.active)
                     catalog_changed = True
                 except CatalogStateError:
                     # Archive may atomically reserve the chunk immediately after

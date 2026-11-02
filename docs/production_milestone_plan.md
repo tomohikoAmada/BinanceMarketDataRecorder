@@ -144,6 +144,39 @@
   - 新增单元与集成测试：
     - ① 故障跳变与恢复边界在合并后与原实现 100% 精确一致；
     - ② 模拟进程崩溃及 WAL 尾部最后数秒事务回滚（截断未 checkpoint 的最后几帧 WAL 事务）后，启动恢复能正确将磁盘上已封存的 `.zst` 对账恢复为 `SEALED`，且可用性账本将丢失的数秒尾部记为 `unknown`，无静默漏记。
+- **完成状态（2026-11-02 独立实施与严格验收完成）**：
+  - **架构决策与规范落盘**：正式归档 [`docs/adr/0059-catalog-wal-normal-sync-and-watermark-checkpoint.md`](adr/0059-catalog-wal-normal-sync-and-watermark-checkpoint.md)，确立 SQLite `WAL + NORMAL` 稳态运行与不可逆删除 `FULL` 屏障规范、`AvailabilityJournal` 待写队列原地合并（Coalescing）机制、多源共享检查点水位（Monitor Watermark）设计、以及掉电 WAL 尾部回滚对账恢复语义。
+  - **SQLite PRAGMA WAL + NORMAL 与强同步屏障**：
+    - `src/binance_market_data_recorder/storage/catalog.py` 默认连接初始化统一为 `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;`，消除非关键元数据写入对底层磁盘 `fsync` 的频繁同步阻塞；
+    - 对所有不可逆操作（本地源退休置 `LOCAL_DELETE_PENDING`、`LOCAL_DELETED`、远端归档删除事务预留与提交）统一通过 `_transaction(force_sync=True)`，在事务内显式执行 `PRAGMA synchronous = FULL` 并在提交后执行 `PRAGMA wal_checkpoint(PASSIVE)`，确保删除授权在落盘前不发生任何外盘文件解绑或物理删除。
+  - **`AvailabilityJournal` 内存待写队列去重合并（Coalescing）**：
+    - 在 `src/binance_market_data_recorder/collector/availability.py` 中重构待写队列，通过 `is_transition` 标记区分状态跳变与周期性存活检查；
+    - 状态跳变事件（`unavailable` 开始、`recovery` 闭合、`failure` 计数更新、`lifecycle` 变更）保持严格有序 FIFO，不合并、不丢弃；
+    - 周期性健康检查点通过 `_pending_checkpoints` 字典对同一 `source_id` 在未刷盘前原地更新最新观测水位，彻底消除队列长度随时间线性积压的放大效应。
+  - **多源共同检查点水位（Shared Monitor Watermark）**：
+    - 在 SQLite 中新增 `source_availability_watermark(selection_id, evaluated_through_utc_ns, updated_at_utc_ns)` 表；
+    - `CoverageMonitor._flush_availability()` 在周期刷盘时，将当前冻结集合的稳态健康以单行共同检查点水位一次性持久化，替代数千个健康源的逐行 `INSERT ... ON CONFLICT DO UPDATE`；在 watermark 刷盘批次中只写入真实状态跳变行，routine checkpoint 直接在内存中确认出队；
+    - `catalog.source_availability(selection_id)` 查询与启动恢复时，将健康、未停用源的有效下界自动推进至 $\max(\text{observed\_at}, \text{watermark})$。
+  - **掉电 WAL 尾部回滚与启动恢复对账**：
+    - 在 `src/binance_market_data_recorder/spool/recovery.py` 的 `reconcile_sealed()` 中，针对 WAL 尾部回滚导致 Catalog 仍为 `ACTIVE`/`SEALING` 但磁盘已存在合法 `.zst` + `.json` 的情况，自动前滚对账至 `SEALED`，并清理残留的同名 `.partial` 文件；
+    - 未持久化的尾部监控时间诚实计入重启后的 `unknown` 窗口，绝无虚假静默补全。
+  - **指标对照与减负效果**：
+    - 在 200 个模拟源与真实 `BTC + ETH`（~4,660 源）规模下运行验证，稳态健康期间 `AvailabilityJournal` 每 10 秒产生的 SQLite 写行数从 ~4,660 行降至 **1 行**（单行 watermark 事务，降幅 **99.98%**）；
+    - `capture.availability.pending` 队列在每个刷新周期后稳态积压严格为 **0**；
+    - 故障跳变保真度：故障发生、恢复、挂起、恢复等状态跳变事件 100% 完整保留在有序队列中，测试验证跳变事件无任何丢弃、乱序或错误合并。
+  - **实施过程中发现的问题与修复记录**：
+    - **问题 1（单源单元测试与集成测试兼容性）**：
+      - *现象*：初始在 `_observe_availability` 中直接禁止产生 checkpoint（`checkpoint=False`），导致已有历史集成测试（如 `test_p3_review_corrections.py` 和 `test_p3_rpi_clock.py`）中手动调用 `flush(owner.availability, catalog)` 时无法感知健康时间推进，触发 13 项 `AssertionError`。
+      - *根因*：历史测试直接依赖 `AvailabilityJournal.pending` 中的逐源 checkpoint 进行落盘和 `continuity_report` 对账，绕过了 `_flush_availability()` 的水位批次。
+      - *解决*：在 `AvailabilityJournal._emit` 中保留周期性 checkpoint 生成与队列去重合并，并在 entry 中显式携带 `is_transition` 标记；在 `CoverageMonitor._flush_availability` 中当执行 watermark 事务时过滤掉非跳变 checkpoint，既保留了独立单元/集成测试的单源 checkpoint 刷盘兼容性，又保证了生产环境 10 秒 1 行的超低稳态写放大。
+    - **问题 2（启动恢复 duplicate .partial 残留）**：
+      - *现象*：WAL 尾部回滚测试中，磁盘上同时存在 `.zst` 与旧 `.partial` 时，前滚置 `SEALED` 后残留孤儿 `.partial`。
+      - *解决*：在 `reconcile_sealed()` 中成功前滚至 `SEALED` 后，增加对磁盘同名 `.partial` 的校验与安全 unlink 清理，确保对账彻底干净。
+    - **问题 3（不可逆删除操作覆盖边界）**：
+      - 检查确认 `ArchiveManager` 中的 `LOCAL_DELETE_PENDING`、`LOCAL_DELETED`、`reserve_remote_archive_transaction`、`commit_remote_deleted` 四项核心操作均统一走 `_transaction(force_sync=True)`，防止漏网。
+  - **验收测试覆盖**：
+    - 新增专项测试套件 [`tests/unit/test_m1_2_catalog_and_availability.py`](../tests/unit/test_m1_2_catalog_and_availability.py)（4 项全通：PRAGMA 校验与 FULL 屏障、队列合并与跳变不失真、稳态 99.98% 减负与重启对账、WAL 尾部回滚恢复）；
+    - 全量回归：`test_p3_review_corrections.py`（17 passed）、`test_p3_rpi_clock.py`（14 passed）、`test_p2_coverage.py`、`test_p3_availability.py`、`test_p4_preparation.py`、`test_m1_pipeline_benchmark.py`、故障注入恢复套件（28 passed）全部通过。
 
 ---
 

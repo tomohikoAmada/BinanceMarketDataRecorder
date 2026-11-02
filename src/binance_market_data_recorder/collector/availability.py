@@ -59,23 +59,46 @@ class AvailabilityJournal:
         self.capacity = capacity
         self.sources: dict[str, Availability] = {}
         self.pending: deque[dict[str, Any]] = deque()
+        self._pending_checkpoints: dict[str, dict[str, Any]] = {}
         self.previous: dict[str, dict[str, Any]] = {}
 
-    def _emit(self, state: Availability, gap: dict[str, object] | None = None) -> None:
+    def _emit(
+        self,
+        state: Availability,
+        gap: dict[str, object] | None = None,
+        *,
+        is_transition: bool = False,
+    ) -> None:
+        if not is_transition:
+            existing = self._pending_checkpoints.get(state.source_id)
+            if existing is not None:
+                existing["state"] = state.public_dict(state.observed_at)
+                existing["eligibility"]["ended_at_utc_ns"] = (
+                    state.observed_at if state.dormant else None
+                )
+                existing["is_transition"] = False
+                state.checkpoint_at = state.observed_at
+                return
+        else:
+            self._pending_checkpoints.pop(state.source_id, None)
+
         if len(self.pending) >= self.capacity:
             raise RuntimeError("availability journal exceeded its bounded persistence queue")
-        self.pending.append(
-            {
-                "state": state.public_dict(state.observed_at),
-                "gap": gap,
-                "eligibility": {
-                    "interval_id": state.eligibility_id,
-                    "source_id": state.source_id,
-                    "started_at_utc_ns": state.eligible_since,
-                    "ended_at_utc_ns": state.observed_at if state.dormant else None,
-                },
-            }
-        )
+
+        entry: dict[str, Any] = {
+            "state": state.public_dict(state.observed_at),
+            "gap": gap,
+            "eligibility": {
+                "interval_id": state.eligibility_id,
+                "source_id": state.source_id,
+                "started_at_utc_ns": state.eligible_since,
+                "ended_at_utc_ns": state.observed_at if state.dormant else None,
+            },
+            "is_transition": is_transition,
+        }
+        self.pending.append(entry)
+        if not is_transition:
+            self._pending_checkpoints[state.source_id] = entry
         state.checkpoint_at = state.observed_at
 
     def ensure(self, key: str, now: int) -> Availability:
@@ -115,7 +138,7 @@ class AvailabilityJournal:
             }
         state.unavailable_since = state.gap_id = None
         state.reason, state.dormant = "DORMANT_LIFECYCLE", True
-        self._emit(state, gap)
+        self._emit(state, gap, is_transition=True)
 
     def resume(self, key: str, now: int) -> None:
         state = self.ensure(key, now)
@@ -141,6 +164,7 @@ class AvailabilityJournal:
                 "started_at_utc_ns": state.unavailable_since,
                 "ended_at_utc_ns": None,
             },
+            is_transition=True,
         )
 
     def failure(self, key: str, now: int, error: str, *, since: int | None = None) -> None:
@@ -148,9 +172,9 @@ class AvailabilityJournal:
         state.failures += 1
         state.last_error, state.last_error_at = error, now
         self.unavailable(key, now, error, since=since)
-        self._emit(state)
+        self._emit(state, is_transition=True)
 
-    def valid(self, key: str, now: int) -> None:
+    def valid(self, key: str, now: int, *, checkpoint: bool = True) -> None:
         state = self.ensure(key, now)
         state.observed_at = now
         state.last_valid = now
@@ -164,13 +188,16 @@ class AvailabilityJournal:
             }
             state.unavailable_since = state.gap_id = state.reason = None
             state.recoveries += 1
-            self._emit(state, gap)
-        elif now - state.checkpoint_at >= 10_000_000_000:
-            self._emit(state)
+            self._emit(state, gap, is_transition=True)
+        elif checkpoint and (now - state.checkpoint_at >= 10_000_000_000):
+            self._emit(state, is_transition=False)
 
     def batch(self, limit: int = 128) -> list[dict[str, Any]]:
         return list(islice(self.pending, limit))
 
     def acknowledge(self, count: int) -> None:
         for _ in range(count):
-            self.pending.popleft()
+            item = self.pending.popleft()
+            source_id = str(item["state"]["source_id"])
+            if self._pending_checkpoints.get(source_id) is item:
+                del self._pending_checkpoints[source_id]
