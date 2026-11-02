@@ -1,687 +1,696 @@
-"""M3.1 Three-Way Multi-Rotation Benchmark.
+"""M3.1 real-time, offline three-way capture benchmark (sequential fresh processes).
 
-Runs a reproducible 45-minute multi-rotation comparative benchmark across:
-  1. Arm A (Baseline main f109ffc): 60s rotation, FULL sync, uncoalesced journal,
-     double readback verification on seal, startup 0-record empty chunks.
-  2. Arm B (Optimized Same-Scope): 900s / 128 MiB rotation, NORMAL sync, coalesced
-     journal + shared watermark, zero readback, zero startup empty chunks.
-     Same scope as Arm A (all kline forming updates and all 16 S12 intervals).
-  3. Arm C (Optimized Production-Scope): Arm B optimized engine with D1 (kline closed-only
-     persistence + REST backfill) and D2 (S12 deduplicated to 6 distinct intervals).
-
-Outputs:
-  - docs/benchmarks/m3.1-three-way-benchmark.json
+Default: A=f109ffc, B=current source with original scope, C=production scope;
+45 wall-clock minutes EACH. Only network peers are synthetic. No clock patches,
+manual health updates, emulated baseline, or production data directories.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import logging
+import os
 import platform
-import random
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
-from collections.abc import Callable
+from collections import Counter
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-from binance_market_data_recorder.binance.coverage_config import (
-    SPOT_INTERVALS,
-    SPOT_UTC8_INTERVALS,
-    CoverageConfig,
-)
+from binance_market_data_recorder.binance.coverage_config import SPOT_INTERVALS, CoverageConfig
 from binance_market_data_recorder.binance.products import discover_products
-from binance_market_data_recorder.binance.public_sources import (
-    bar_period_seconds,
-    source_plan,
+from binance_market_data_recorder.binance.public_rest import RestObservation
+from binance_market_data_recorder.binance.public_sources import Source
+from binance_market_data_recorder.binance.public_websocket import (
+    StreamGroup,
 )
-from binance_market_data_recorder.collector.availability import (
-    Availability,
-    AvailabilityJournal,
-)
-from binance_market_data_recorder.collector.coverage import (
-    SelectedAssetCapture,
-    SourceState,
-)
+from binance_market_data_recorder.binance.request_budget import RECORDER_WINDOWS, RequestBudget
+from binance_market_data_recorder.collector.coverage import SelectedAssetCapture, SourceState
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import EventEnvelope
+from binance_market_data_recorder.domain.product import Product
 from binance_market_data_recorder.normalize.raw import iter_source_records, load_source_chunks
+from binance_market_data_recorder.paths import default_data_root
 from binance_market_data_recorder.service.resources import current_rss_bytes
-from binance_market_data_recorder.spool.readback import read_artifact
-from binance_market_data_recorder.spool.seal import RECONNECT_GAP_FLAG
 from binance_market_data_recorder.spool.stream import StreamSpool
-from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tools.benchmark_m1_m3_pipeline import (
     EPOCH_MS,
+    BenchmarkCapture,
+    InstrumentedCatalog,
     MockRestClient,
-    digest,
+    StatsCollector,
+    bar_bounds,
+    build_fixture_frames,
     directory,
-    fixture_groups,
     logical_record,
 )
 
-REPO = Path(__file__).resolve().parents[1]
-EPOCH_NS = EPOCH_MS * 1_000_000
-
-
-def percentile(values: list[float], pct: float) -> float:
-    if not values:
-        return 0.0
-    ordered = sorted(values)
-    idx = int((len(ordered) - 1) * (pct / 100.0))
-    return round(ordered[idx], 3)
-
-
-def latency_distribution(values: list[float]) -> dict[str, Any]:
-    if not values:
-        return {"count": 0, "p50": 0.0, "p95": 0.0, "p99": 0.0, "max": 0.0, "total": 0.0}
-    ordered = sorted(values)
-    n = len(ordered)
-    return {
-        "count": n,
-        "p50": round(ordered[int((n - 1) * 0.50)], 3),
-        "p95": round(ordered[int((n - 1) * 0.95)], 3),
-        "p99": round(ordered[int((n - 1) * 0.99)], 3),
-        "max": round(max(values), 3),
-        "total": round(sum(values), 3),
-    }
-
-
-class ControlledClock:
-    """Deterministic monotonic and wall clock for multi-rotation simulation."""
-
-    def __init__(self, start_ns: int = EPOCH_NS) -> None:
-        self._mono = 0.0
-        self._epoch_ns = start_ns
-
-    def monotonic(self) -> float:
-        return self._mono
-
-    def time_ns(self) -> int:
-        return self._epoch_ns
-
-    def time(self) -> float:
-        return self._epoch_ns / 1e9
-
-    def perf_counter_ns(self) -> int:
-        return time.perf_counter_ns()
-
-    def advance(self, secs: float) -> None:
-        self._mono += secs
-        self._epoch_ns += int(secs * 1e9)
-
-
-class BaselineAvailabilityJournal(AvailabilityJournal):
-    """Uncoalesced baseline journal recreating pre-M1.2 behavior."""
-
-    def _emit(
-        self,
-        state: Availability,
-        gap: dict[str, object] | None = None,
-        *,
-        is_transition: bool = False,
-    ) -> None:
-        if len(self.pending) >= self.capacity:
-            raise RuntimeError("availability journal exceeded bounded queue")
-        entry = {
-            "state": state.public_dict(state.observed_at),
-            "gap": gap,
-            "eligibility": {
-                "interval_id": state.eligibility_id,
-                "source_id": state.source_id,
-                "started_at_utc_ns": state.eligible_since,
-                "ended_at_utc_ns": state.observed_at if state.dormant else None,
-            },
-            "is_transition": is_transition,
-        }
-        self.pending.append(entry)
-        state.checkpoint_at = state.observed_at
-
-
-def extract_interval(wire: str) -> str:
-    """Extract standard bar interval string from websocket wire stream name."""
-    return wire.rsplit("_", 1)[1].split("@")[0]
-
-
-class ArmMetricsCollector:
-    """Collects per-tick and per-minute bucket statistics across 45 minutes."""
-
-    def __init__(self, arm_name: str, duration_s: int, tick_s: float) -> None:
-        self.arm_name = arm_name
-        self.duration_s = duration_s
-        self.tick_s = tick_s
-        self.ticks_per_minute = max(1, int(60.0 / tick_s))
-        self.minutes_total = duration_s // 60
-
-        self.minute_records: list[dict[str, Any]] = []
-
-        # Current minute accumulator
-        self.cur_received = 0
-        self.cur_persisted = 0
-        self.cur_filtered = 0
-        self.cur_sealed = 0
-        self.cur_fsyncs = 0
-        self.cur_disk_bytes = 0
-        self.cur_max_pending = 0
-        self.cur_persist_lags: list[float] = []
-        self.cur_flush_latencies: list[float] = []
-        self.min_cpu_start = time.process_time()
-        self.min_wall_start = time.perf_counter()
-
-        # Overall totals
-        self.total_received = 0
-        self.total_persisted = 0
-        self.total_filtered = 0
-        self.total_sealed = 0
-        self.total_fsyncs = 0
-        self.total_disk_bytes = 0
-        self.peak_pending = 0
-        self.all_persist_lags: list[float] = []
-        self.all_flush_latencies: list[float] = []
-        self.all_seal_latencies: list[float] = []
-        self.all_queue_waits: list[float] = []
-        self.rss_curve_mib: list[float] = []
-        self.cpu_curve_percent: list[float] = []
-        self.empty_startup_chunks = 0
-        self.readback_passes = 0
-
-    def record_frame(
-        self,
-        *,
-        persisted: bool,
-        filtered: bool,
-        size_bytes: int = 0,
-        persist_lag_ms: float = 0.0,
-        queue_wait_ms: float = 0.0,
-    ) -> None:
-        self.cur_received += 1
-        self.total_received += 1
-        if filtered:
-            self.cur_filtered += 1
-            self.total_filtered += 1
-        elif persisted:
-            self.cur_persisted += 1
-            self.total_persisted += 1
-            self.cur_disk_bytes += size_bytes
-            self.total_disk_bytes += size_bytes
-            self.cur_persist_lags.append(persist_lag_ms)
-            self.all_persist_lags.append(persist_lag_ms)
-            self.all_queue_waits.append(queue_wait_ms)
-
-    def record_fsync(self) -> None:
-        self.cur_fsyncs += 1
-        self.total_fsyncs += 1
-
-    def record_seal(
-        self, manifest: dict[str, Any], duration_ms: float, compressed_bytes: int
-    ) -> None:
-        self.cur_sealed += 1
-        self.total_sealed += 1
-        self.cur_disk_bytes += compressed_bytes
-        self.total_disk_bytes += compressed_bytes
-        self.all_seal_latencies.append(duration_ms)
-        if manifest.get("record_count") == 0:
-            self.empty_startup_chunks += 1
-
-    def record_availability_flush(self, duration_ms: float, pending_rows: int) -> None:
-        self.cur_flush_latencies.append(duration_ms)
-        self.all_flush_latencies.append(duration_ms)
-        self.cur_max_pending = max(self.cur_max_pending, pending_rows)
-        self.peak_pending = max(self.peak_pending, pending_rows)
-
-    def end_minute(self, minute: int) -> None:
-        wall_now = time.perf_counter()
-        cpu_now = time.process_time()
-        wall_elapsed = max(0.0001, wall_now - self.min_wall_start)
-        cpu_elapsed = max(0.0, cpu_now - self.min_cpu_start)
-        cpu_percent = (cpu_elapsed / wall_elapsed) * 100.0
-
-        rss_bytes = current_rss_bytes() or 0
-        rss_mib = round(rss_bytes / (1024 * 1024), 2)
-        self.rss_curve_mib.append(rss_mib)
-        self.cpu_curve_percent.append(round(cpu_percent, 2))
-
-        record = {
-            "minute": minute,
-            "cpu_percent": round(cpu_percent, 2),
-            "rss_mib": rss_mib,
-            "received_frames": self.cur_received,
-            "persisted_frames": self.cur_persisted,
-            "forming_filtered_frames": self.cur_filtered,
-            "sealed_chunks": self.cur_sealed,
-            "disk_bytes": self.cur_disk_bytes,
-            "fsync_calls": self.cur_fsyncs,
-            "max_pending_rows": self.cur_max_pending,
-            "persist_lag_ms": latency_distribution(self.cur_persist_lags),
-            "flush_latency_ms": latency_distribution(self.cur_flush_latencies),
-        }
-        self.minute_records.append(record)
-
-        # Reset minute accumulators
-        self.cur_received = 0
-        self.cur_persisted = 0
-        self.cur_filtered = 0
-        self.cur_sealed = 0
-        self.cur_fsyncs = 0
-        self.cur_disk_bytes = 0
-        self.cur_max_pending = 0
-        self.cur_persist_lags.clear()
-        self.cur_flush_latencies.clear()
-        self.min_cpu_start = cpu_now
-        self.min_wall_start = wall_now
-
-
-def run_single_arm(
-    *,
-    arm_name: str,
-    duration_s: int = 2700,
-    tick_s: float = 10.0,
-    seed: int = 20261102,
-) -> dict[str, Any]:
-    """Execute one complete multi-rotation benchmark arm."""
-    rng = random.Random(seed)
-    clock = ControlledClock()
-    is_arm_a = arm_name == "A"
-    is_arm_c = arm_name == "C"
-
-    # 1. Coverage configuration
-    cfg = CoverageConfig(
-        underlying_assets=("BTC", "ETH"),
-        spot_intervals=SPOT_INTERVALS,
-        spot_utc8_intervals=SPOT_UTC8_INTERVALS if is_arm_c else SPOT_INTERVALS,
-        kline_forming_policy="closed_only" if is_arm_c else "all",
+if TYPE_CHECKING:
+    from binance_market_data_recorder.binance.public_websocket import (
+        CombinedWebSocketStream,
+        WebSocketConnection,
     )
 
+
+REPO = Path(__file__).resolve().parents[1]
+DISTINCT_UTC8 = ("6h", "12h", "1d", "3d", "1w", "1M")
+
+
+def distribution(counts: Counter[int]) -> dict[str, int | float]:
+    """Exact distribution after quantizing observations to integer microseconds."""
+    n = sum(counts.values())
+    result: dict[str, int | float] = {"count": n}
+    for label, pct in (("p50", 0.50), ("p95", 0.95), ("p99", 0.99)):
+        accumulated = 0
+        result[label] = 0.0
+        for value, count in sorted(counts.items()):
+            accumulated += count
+            if accumulated > int((n - 1) * pct):
+                result[label] = value / 1000
+                break
+    result["max"] = max(counts, default=0) / 1000
+    result["total"] = sum(k * v for k, v in counts.items()) / 1000
+    return result
+
+
+class Fingerprint:
+    """Bounded multiset fingerprint: frame count + sum(SHA256) modulo 2**256.
+
+    Independent of thread ordering and chunk boundaries. Compare actual decoded
+    Raw to the expected input as well as comparing arms; this is not a file hash.
+    """
+
+    def __init__(self) -> None:
+        self.count = 0
+        self.value = 0
+
+    def add(self, value: bytes) -> None:
+        hashed = int.from_bytes(hashlib.sha256(value).digest())
+        self.count += 1
+        self.value = (self.value + hashed) % (1 << 256)
+
+    def public(self) -> dict[str, int | str]:
+        return {"count": self.count, "sha256_sum_mod_2_256": f"{self.value:064x}"}
+
+
+def frame_at(template: bytes, tick: int, seed: int) -> bytes:
+    """Valid, deterministic native payload; bar boundaries follow exchange time.
+
+    The exchange clock starts at a fixed Monday. Receive clocks remain real.
+    One update per wire per second is a declared synthetic load, not a measured
+    Binance rate. Every common wire has identical bytes in A/B/C.
+    """
+    frame = json.loads(template)
+    data = frame["data"]
+    now = EPOCH_MS + (tick + 1) * 1000
+    if isinstance(data, dict):
+        for name in ("E", "T", "t"):
+            if name in data:
+                data[name] = now
+        if "p" in data:
+            data["p"] = str(50000 + (seed + tick) % 100)
+        if "U" in data:
+            data.update(U=100 + tick * 2, u=101 + tick * 2)
+            if "pu" in data:
+                data["pu"] = 99 + tick * 2
+        elif "u" in data:
+            data["u"] = 100 + tick
+        if "a" in data and isinstance(data["a"], int):
+            data.update(a=100 + tick, f=100 + tick, l=100 + tick)
+        if "k" in data:
+            k = data["k"]
+            interval = k["i"]
+            first, following = bar_bounds(interval, 0, frame["stream"].endswith("@+08:00"))
+            # During a 45-minute run only fixed sub-hour periods advance.
+            period = following - first + 1
+            boundary = now > first and (now - first) % period == 0
+            opened = first + ((now - first - int(boundary)) // period) * period
+            k.update(t=opened, T=opened + period - 1, x=boundary)
+    return json.dumps(frame, separators=(",", ":")).encode()
+
+
+class PacedConnection:
+    def __init__(self, owner: TimedCapture, group: StreamGroup) -> None:
+        self.owner = owner
+        self.group = group
+        self.templates = owner.templates[group.name]
+        self.wires = len(group.wire_names)
+        self.index = 0
+
+    async def recv(self, decode: bool | None = None) -> bytes:
+        tick, ordinal = divmod(self.index, self.wires)
+        if tick >= self.owner.seconds:
+            await asyncio.Event().wait()
+            raise AssertionError("unreachable")
+        await asyncio.sleep(max(0, self.owner.started + tick - time.monotonic()))
+        value = frame_at(self.templates[ordinal], tick, self.owner.seed)
+        self.index += 1
+        if (
+            tick == 119
+            and self.group.sources[0].market == "spot"
+            and json.loads(value)["stream"] == "btcusdt@kline_1m"
+        ):
+            # Same missed close in every arm. C must automatically REST-repair it.
+            return await self.recv(decode)
+        self.owner.received.add(value)
+        data = json.loads(value)["data"]
+        if not (
+            self.owner.closed_only and isinstance(data, dict) and "k" in data and not data["k"]["x"]
+        ):
+            self.owner.expected_ws.add(value)
+        return value
+
+    async def close(self, code: int = 1000, reason: str = "") -> None:
+        pass
+
+
+class TimedCapture(BenchmarkCapture):
+    def __init__(self, *args: Any, seconds: int, seed: int, arm: str, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.seconds, self.seed, self.arm = seconds, seed, arm
+        self.closed_only = arm == "C"
+        self.started = time.monotonic()
+        self.templates = self.feed
+        self.received, self.expected_ws = Fingerprint(), Fingerprint()
+        self.ws_persisted = self.rest_persisted = self.backfilled = 0
+        self.expected_logical = Fingerprint()
+        self.expected_rest = Fingerprint()
+        self.pending_before_flush = 0
+        self.last_pending_after = 0
+        self.flush_after: list[int] = []
+        self.stats.event_sink = self.on_persisted
+
+    def on_persisted(self, event: EventEnvelope) -> None:
+        if "malformed" in event.capture_flags:
+            raise AssertionError("invalid fixture reached Raw")
+        self.expected_logical.add(logical_record(event).encode())
+        if event.module == "binance.public.websocket.v1":
+            self.ws_persisted += 1
+        else:
+            self.rest_persisted += 1
+            if "closed_bar_backfill" in event.capture_flags:
+                rows = json.loads(event.raw_payload)["response"]["model"]
+                assert rows[0][0] == EPOCH_MS + 60000
+                assert rows[0][6] == EPOCH_MS + 119999
+                assert event.receive_time_utc_ns // 1_000_000 > rows[0][6]
+                self.backfilled += 1
+            self.expected_rest.add(logical_record(event).encode())
+
+    def spool(self, market: str, symbol: str, stream: str) -> StreamSpool:
+        spool = super().spool(market, symbol, stream)
+        # Keep real hash-based phase staggering, not M1.0's full-first-period writer.
+        spool._writer_factory = RawChunkWriter
+        return spool
+
+    def make_group(
+        self,
+        group: StreamGroup,
+        product: Product | None,
+        observer: Callable[[EventEnvelope], None],
+        lifecycle: Callable[[str], None],
+    ) -> CombinedWebSocketStream:
+        collector = super().make_group(group, product, observer, lifecycle)
+
+        @asynccontextmanager
+        async def opener(url: str) -> AsyncIterator[WebSocketConnection]:
+            yield PacedConnection(self, group)
+
+        collector.opener = opener
+        return collector
+
+    def _schedule_kline_backfill(
+        self,
+        source: Source,
+        start_time_ms: int,
+        end_time_ms: int,
+        interval: str,
+    ) -> None:
+        # B must preserve A's persistence scope, including the deliberately missed
+        # close. Automatic closed-bar repair is part of D1, enabled in C only.
+        if self.arm != "B":
+            super()._schedule_kline_backfill(source, start_time_ms, end_time_ms, interval)
+
+    async def poll_once(self, state: SourceState) -> RestObservation:
+        # Run real request representation + validation + persistence. Fixed quotas
+        # and deadlines avoid request-count differences caused by faster engines.
+        if self.rest_completed[state.source.key] >= self.rest_remaining.get(state.source.key, 0):
+            state.next_due = float("inf")
+            return None  # type: ignore[return-value]
+        result = await SelectedAssetCapture.poll_once(self, state)
+        if not result.valid:
+            raise AssertionError(f"invalid REST fixture: {state.source.key}: {result.error}")
+        key = state.source.key
+        self.rest_completed[key] += 1
+        interval = max(1.0, state.source.cadence_seconds)
+        number = self.rest_completed[key]
+        state.next_due = (
+            self.started + number * interval if number < self.rest_remaining[key] else float("inf")
+        )
+        return result
+
+    async def _flush_availability(self, *, all_pending: bool = False) -> None:
+        self.pending_before_flush = max(self.pending_before_flush, len(self.availability.pending))
+        await super()._flush_availability(all_pending=all_pending)
+        self.last_pending_after = len(self.availability.pending)
+        self.flush_after.append(self.last_pending_after)
+
+
+def no_network(*args: Any, **kwargs: Any) -> None:
+    raise AssertionError("offline benchmark attempted a network connection")
+
+
+async def run_arm(arm: str, seconds: int, seed: int, root: Path) -> dict[str, Any]:
+    options: dict[str, Any] = {"underlying_assets": ("BTC", "ETH")}
+    if arm != "A":
+        options.update(
+            spot_utc8_intervals=DISTINCT_UTC8 if arm == "C" else SPOT_INTERVALS,
+            kline_forming_policy="closed_only" if arm == "C" else "all",
+        )
+    cfg = CoverageConfig(**options)
     products = [
         p
-        for v in ("spot", "usdm", "coinm")
-        for p in discover_products(v, directory(v), cfg)
+        for venue in ("spot", "usdm", "coinm")
+        for p in discover_products(venue, directory(venue), cfg)
         if p.status == "TRADING"
     ]
+    feed, _ = build_fixture_frames(products, cfg, 4, seed)
+    stats = StatsCollector()
+    layout = ensure_storage_layout(root)
+    counters = {"fsync": 0, "raw_bytes": 0}
+    original_fsync, original_write, original_writev = os.fsync, os.write, os.writev
 
-    rotation_secs = 60.0 if is_arm_a else 900.0
-    metrics = ArmMetricsCollector(arm_name, duration_s, tick_s)
+    def fsync(fd: int) -> None:
+        original_fsync(fd)
+        counters["fsync"] += 1
 
-    with tempfile.TemporaryDirectory(prefix=f"bmdr-m3-arm-{arm_name}-") as tmp_dir:
-        layout = ensure_storage_layout(Path(tmp_dir))
-        with Catalog(layout.catalog) as catalog:
-            if is_arm_a:
-                catalog._connection.execute("PRAGMA journal_mode = WAL;")
-                catalog._connection.execute("PRAGMA synchronous = FULL;")
-            else:
-                catalog._connection.execute("PRAGMA journal_mode = WAL;")
-                catalog._connection.execute("PRAGMA synchronous = NORMAL;")
+    def write(fd: int, value: Any) -> int:
+        count = original_write(fd, value)
+        counters["raw_bytes"] += count
+        return count
 
-            start_rss = current_rss_bytes() or 0
-            capture = SelectedAssetCapture(
-                RecorderConfig(
-                    data_root=layout.root,
-                    coverage=cfg,
-                    rotation_seconds=rotation_secs,
+    def writev(fd: int, values: Any) -> int:
+        count = original_writev(fd, values)
+        counters["raw_bytes"] += count
+        return count
+
+    budget = RequestBudget({k: (1_000_000, s) for k, (_, s) in RECORDER_WINDOWS.items()})
+    with InstrumentedCatalog(layout.catalog, stats) as catalog:
+        owner = TimedCapture(
+            RecorderConfig(
+                data_root=root, coverage=cfg, rotation_seconds=60.0 if arm == "A" else 900.0
+            ),
+            logging.getLogger("m3"),
+            "m3-benchmark",
+            "m3-benchmark",
+            layout,
+            catalog,
+            stats=stats,
+            feed=feed,
+            seconds=seconds,
+            seed=seed,
+            arm=arm,
+            clients={v: MockRestClient(v) for v in ("spot", "usdm", "coinm")},
+        )
+        stop = asyncio.Event()
+        samples: list[dict[str, Any]] = []
+        minutes: list[dict[str, Any]] = []
+        histograms: dict[str, Counter[int]] = {k: Counter() for k in stats.latencies}
+        previous: Counter[str] = Counter()
+        start_wall, start_cpu = time.perf_counter(), time.process_time()
+        start_rss = current_rss_bytes() or 0
+        previous_wall, previous_cpu = start_wall, start_cpu
+        sealed_bytes = 0
+        total_seals = 0
+
+        def sample() -> None:
+            nonlocal previous_wall, previous_cpu, sealed_bytes, total_seals
+            wall, cpu = time.perf_counter(), time.process_time()
+            sealed_through = len(stats.seals)
+            for manifest in stats.seals[:sealed_through]:
+                # Manifests already pass through the instrumented os.write.
+                # Compression writes via FileIO, so add that separate output once.
+                sealed_bytes += int(str(manifest["stored_bytes"]))
+            total_seals += sealed_through
+            del stats.seals[:sealed_through]
+            row = {
+                "elapsed_seconds": round(wall - start_wall, 3),
+                "cpu_percent": round(100 * (cpu - previous_cpu) / (wall - previous_wall), 3),
+                "rss_mib": round((current_rss_bytes() or 0) / 1024**2, 3),
+                "received_frames": owner.received.count,
+                "persisted_ws_frames": owner.ws_persisted,
+                "persisted_rest_frames": owner.rest_persisted,
+                "forming_filtered_count": sum(
+                    getattr(s, "forming_filtered_count", 0) for s in owner.sources.values()
                 ),
-                logging.getLogger(f"bench-{arm_name}"),
-                f"bench-inst-{arm_name}",
-                "bench-v1",
-                layout,
-                catalog,
-                clients={v: MockRestClient(v) for v in ("spot", "usdm", "coinm")},
+                "sealed_chunks": total_seals,
+                "seal_window": sealed_through > 0,
+                "raw_artifact_write_bytes": counters["raw_bytes"] + sealed_bytes,
+                "python_fsync_calls": counters["fsync"],
+                "pending_before_flush_max": owner.pending_before_flush,
+                "pending_after_flush": owner.last_pending_after,
+                "pending_after_flush_max": max(owner.flush_after, default=0),
+                "flushes_returned_to_zero": owner.flush_after.count(0),
+            }
+            samples.append(row)
+            previous_wall, previous_cpu = wall, cpu
+            owner.pending_before_flush = 0
+            owner.flush_after.clear()
+
+        def end_minute() -> None:
+            current: Counter[str] = Counter(
+                {
+                    k: samples[-1][k]
+                    for k in (
+                        "received_frames",
+                        "persisted_ws_frames",
+                        "persisted_rest_frames",
+                        "forming_filtered_count",
+                        "sealed_chunks",
+                        "raw_artifact_write_bytes",
+                        "python_fsync_calls",
+                    )
+                }
             )
-
-            if is_arm_a:
-                capture.availability = BaselineAvailabilityJournal(
-                    capture.instance_id, capacity=1_000_000
-                )
-
-            sources = source_plan(tuple(products), cfg)
-            t_start = clock.time_ns()
-            for s in sources:
-                st = SourceState(source=s, first_due=0)
-                st.connected = True
-                st.last_success = t_start
-                capture.sources[s.key] = st
-                capture._active_sources[s.key] = st
-                capture.availability.ensure("/".join(s.key), t_start)
-                capture.availability.valid("/".join(s.key), t_start)
-
-            groups = fixture_groups(products, cfg)
-            spools: dict[str, StreamSpool] = {
-                group.name: capture.spool(
-                    group.sources[0].market, group.sources[0].symbol, group.name
-                )
-                for group in groups
+            row: dict[str, Any] = {
+                "elapsed_seconds": samples[-1]["elapsed_seconds"],
+                **{k: current[k] - previous[k] for k in current},
             }
+            for name, values in stats.latencies.items():
+                counts = Counter(round(v * 1000) for v in values)
+                row[name + "_ms"] = distribution(counts)
+                histograms[name].update(counts)
+                values.clear()
+            previous.clear()
+            previous.update(current)
+            minutes.append(row)
 
-            # Arm A creates startup 0-record empty chunks (reproducing pre-M2.2 behavior)
-            if is_arm_a:
-                for sp in spools.values():
-                    sp._writer = sp._new_writer()
-                    m = sp._seal_current(forced_flags=frozenset({RECONNECT_GAP_FLAG}))
-                    if m is not None:
-                        metrics.record_seal(m, 0.5, cast(int, m.get("stored_bytes", 0)))
-                        metrics.readback_passes += 2
+        verifier_stop = asyncio.Event()
+        verification = {"processed_files": 0, "failed_files": 0}
 
-            # Instrument spools for metrics & Arm A readback
-            for sp in spools.values():
-                original_seal = sp._seal_current
+        async def verify_baseline() -> None:
+            from binance_market_data_recorder.service.verification import verify_new
 
-                def make_timed_seal(
-                    spool_obj: StreamSpool, orig_seal: Callable[..., Any]
-                ) -> Callable[..., Any]:
-                    def timed_seal(*args: Any, **kwargs: Any) -> Any:
-                        t0 = time.perf_counter_ns()
-                        manifest = orig_seal(*args, **kwargs)
-                        dur_ms = (time.perf_counter_ns() - t0) / 1e6
-                        if manifest is not None:
-                            stored = cast(int, manifest.get("stored_bytes", 0))
-                            metrics.record_seal(manifest, dur_ms, stored)
-                            if is_arm_a:
-                                rel = manifest.get("relative_path")
-                                if rel:
-                                    sealed_path = layout.root / str(rel)
-                                    if sealed_path.exists():
-                                        read_artifact(sealed_path, scan_frames=True)
-                                        read_artifact(sealed_path, scan_frames=False)
-                                        metrics.readback_passes += 2
-                        return manifest
+            while True:
+                result = await asyncio.to_thread(verify_new, layout, catalog)
+                verification["processed_files"] += int(str(result["processed_files"]))
+                verification["failed_files"] += int(str(result["failed_this_batch"]))
+                assert verification["failed_files"] == 0
+                if verifier_stop.is_set() and result["processed_files"] == 0:
+                    return
+                await asyncio.sleep(1)
 
-                    return timed_seal
+        async def capture() -> None:
+            try:
+                await owner.run(stop)
+            finally:
+                verifier_stop.set()
 
-                sp._seal_current = make_timed_seal(sp, original_seal)  # type: ignore[method-assign]
-
-            # Timing & execution
-            start_wall = time.perf_counter()
-            start_cpu = time.process_time()
-            ticks = int(duration_s // tick_s)
-
-            with (
-                patch("binance_market_data_recorder.spool.writer.time", clock),
-                patch(
-                    "binance_market_data_recorder.collector.coverage.time.monotonic",
-                    clock.monotonic,
-                ),
-                patch(
-                    "binance_market_data_recorder.collector.coverage.time.time_ns", clock.time_ns
-                ),
-                patch("binance_market_data_recorder.collector.coverage.time.time", clock.time),
-            ):
-                for tick in range(ticks):
-                    clock.advance(tick_s)
-                    now_mono = clock.monotonic()
-                    now_ns = clock.time_ns()
-                    now_ms = now_ns // 1_000_000
-
-                    # 1. Feed WS events across groups
-                    for group in groups:
-                        g_market = group.sources[0].market
-                        g_symbol = group.sources[0].symbol
-                        for wire in group.wire_names:
-                            source = group.by_wire[wire]
-                            # Incoming frame marks source valid in memory
-                            capture.availability.valid(
-                                "/".join(source.key), now_ns, checkpoint=False
+        async def monitor() -> None:
+            for second in range(1, seconds + 1):
+                await asyncio.sleep(max(0, owner.started + second - time.monotonic()))
+                sample()
+                if second % 60 == 0:
+                    end_minute()
+                    print(json.dumps({"arm": arm, **samples[-1]}), flush=True)
+            # Every input has a fixed count. Finish the real bounded queues/polls
+            # before asking the supervisor to perform its normal shutdown.
+            async with asyncio.timeout(120):
+                while (
+                    any(
+                        g.capture_progress()["received_frames"]
+                        != (
+                            len(owner.templates[g.stream_name]) // 4 * seconds
+                            - int(
+                                seconds >= 120
+                                and g.market == "spot"
+                                and g.symbol == "BTCUSDT"
+                                and "btcusdt@kline_1m" in g.combined_streams
                             )
-                            is_kline = "kline" in wire.lower()
-                            if is_kline:
-                                interval = extract_interval(wire)
-                                period_s = bar_period_seconds(interval)
-                                is_closed = int(now_mono) % period_s == 0
-                                if is_arm_c and not is_closed:
-                                    # D1: Filter forming bar in memory
-                                    capture.sources[source.key].forming_filtered_count += 1
-                                    metrics.record_frame(persisted=False, filtered=True)
-                                    continue
-
-                            price = str(50000 + rng.randrange(100))
-                            payload = json.dumps(
-                                {
-                                    "stream": wire,
-                                    "data": {
-                                        "e": "trade" if not is_kline else "kline",
-                                        "E": now_ms,
-                                        "s": g_symbol,
-                                        "p": price,
-                                        "q": "1.0",
-                                        "T": now_ms,
-                                        "m": True,
-                                    },
-                                },
-                                separators=(",", ":"),
-                            ).encode()
-
-                            env = EventEnvelope(
-                                market=g_market,
-                                symbol=g_symbol,
-                                stream=group.name,
-                                module="binance.public.websocket.v1",
-                                source_sequence={"sourceStream": wire, "t": tick},
-                                exchange_event_time=now_ms,
-                                receive_time_utc_ns=now_ns,
-                                receive_monotonic_ns=int(now_mono * 1e9),
-                                connection_id=f"conn-{g_market}",
-                                collector_instance_id=capture.instance_id,
-                                collector_version=capture.version,
-                                raw_payload=payload,
-                            )
-
-                            sp = spools[group.name]
-                            q_t0 = time.perf_counter_ns()
-                            sp.enqueue(env)
-                            q_wait_ms = (time.perf_counter_ns() - q_t0) / 1e6
-
-                            p_t0 = time.perf_counter_ns()
-                            metrics.record_frame(
-                                persisted=True,
-                                filtered=False,
-                                size_bytes=len(payload),
-                                persist_lag_ms=(time.perf_counter_ns() - p_t0) / 1e6,
-                                queue_wait_ms=q_wait_ms,
-                            )
-
-                    # 2. Drain all spools
-                    for sp in spools.values():
-                        sp.drain_all()
-                        metrics.record_fsync()
-
-                    # 3. Availability monitoring & flush
-                    # Maintain monitor state across synthetic tick jumps
-                    capture._last_monitor_utc_ns = now_ns - 1_000_000_000
-                    for st_obj in capture._active_sources.values():
-                        st_obj.last_success = now_ns
-                    capture._observe_availability(now_ns)
-                    f_t0 = time.perf_counter_ns()
-                    if is_arm_a:
-                        capture._pending_watermark_utc_ns = None
-                    asyncio.run(capture._flush_availability())
-                    flush_ms = (time.perf_counter_ns() - f_t0) / 1e6
-                    metrics.record_availability_flush(
-                        flush_ms, len(capture.availability.pending)
+                        )
+                        for g in owner.groups
                     )
-
-                    # 4. Check minute boundary
-                    if (tick + 1) % metrics.ticks_per_minute == 0:
-                        minute_idx = (tick + 1) // metrics.ticks_per_minute
-                        metrics.end_minute(minute_idx)
-
-                # Shutdown & final seal
-                for sp in spools.values():
-                    sp.close_and_seal()
-
-            total_wall = time.perf_counter() - start_wall
-            total_cpu = time.process_time() - start_cpu
-            final_rss = current_rss_bytes() or 0
-
-            # Offline audit
-            chunks = load_source_chunks(layout=layout, catalog=catalog)
-            logical_hashes: list[str] = []
-            for chunk in chunks:
-                for record in iter_source_records(chunk):
-                    logical_hashes.append(logical_record(record.envelope))
-
-            content_digest = digest(sorted(logical_hashes))
-            zst_files = list(layout.sealed.glob("*.zst"))
-            manifest_files = list(layout.manifests.glob("*.manifest.json"))
-            orphan_partials = list(layout.active.glob("*.partial"))
-
-            if len(orphan_partials) > 0:
-                raise AssertionError(
-                    f"Arm {arm_name} left {len(orphan_partials)} orphan partial files"
-                )
-
-            peak_seal_minute = max(metrics.minute_records, key=lambda m: m["sealed_chunks"])
-            cpu_peak_seal_percent = peak_seal_minute["cpu_percent"]
-            avg_cpu_percent = (total_cpu / total_wall) * 100.0
-
-            result = {
-                "arm": arm_name,
-                "configuration": {
-                    "underlying_assets": list(cfg.underlying_assets),
-                    "spot_intervals": list(cfg.spot_intervals),
-                    "spot_utc8_intervals": list(cfg.spot_utc8_intervals),
-                    "kline_forming_policy": cfg.kline_forming_policy,
-                    "rotation_seconds": rotation_secs,
-                    "sqlite_sync": "FULL" if is_arm_a else "NORMAL",
-                    "availability_coalescing": not is_arm_a,
-                    "startup_empty_chunks": is_arm_a,
-                    "seal_readback": is_arm_a,
-                },
-                "summary": {
-                    "wall_seconds": round(total_wall, 3),
-                    "cpu_seconds": round(total_cpu, 3),
-                    "cpu_average_percent": round(avg_cpu_percent, 2),
-                    "cpu_peak_seal_window_percent": round(cpu_peak_seal_percent, 2),
-                    "start_rss_mib": round(start_rss / (1024 * 1024), 2),
-                    "peak_rss_mib": max(metrics.rss_curve_mib, default=0.0),
-                    "final_rss_mib": round(final_rss / (1024 * 1024), 2),
-                    "rss_growth_mib": round((final_rss - start_rss) / (1024 * 1024), 2),
-                    "frames_received_total": metrics.total_received,
-                    "frames_persisted_total": metrics.total_persisted,
-                    "forming_filtered_total": metrics.total_filtered,
-                    "sealed_chunks_total": len(zst_files),
-                    "sealed_chunks_per_hour": round(len(zst_files) * 3600.0 / duration_s, 1),
-                    "empty_startup_chunks": metrics.empty_startup_chunks,
-                    "manifest_files_total": len(manifest_files),
-                    "readback_passes": metrics.readback_passes,
-                    "disk_bytes_total": metrics.total_disk_bytes,
-                    "disk_write_rate_mb_per_min": round(
-                        (metrics.total_disk_bytes / (1024 * 1024)) / (duration_s / 60.0), 3
-                    ),
-                    "fsync_calls_total": metrics.total_fsyncs,
-                    "availability_max_pending": metrics.peak_pending,
-                    "availability_steady_state_pending": round(
-                        sum(m["max_pending_rows"] for m in metrics.minute_records)
-                        / len(metrics.minute_records),
-                        1,
+                    or any(owner.rest_completed[k] != n for k, n in owner.rest_remaining.items())
+                    or any(
+                        getattr(state, "backfill_start_ms", None) is not None
+                        for state in owner.sources.values()
                     )
-                    if metrics.minute_records
-                    else 0,
-                    "availability_flush_ms": latency_distribution(metrics.all_flush_latencies),
-                    "persist_lag_ms": latency_distribution(metrics.all_persist_lags),
-                    "queue_wait_ms": latency_distribution(metrics.all_queue_waits),
-                    "seal_latency_ms": latency_distribution(metrics.all_seal_latencies),
-                    "logical_content_digest": content_digest,
-                    "verified_raw_frames": len(logical_hashes),
-                },
-                "timeline_minutes": metrics.minute_records,
-            }
+                ):
+                    if time.monotonic() - owner.started > seconds + 110:
+                        print(
+                            "Incomplete REST quotas:",
+                            [
+                                (k, owner.rest_completed[k], n)
+                                for k, n in owner.rest_remaining.items()
+                                if owner.rest_completed[k] != n
+                            ],
+                            flush=True,
+                        )
+                    await asyncio.sleep(0.05)
+            stop.set()
 
-            return result
+        with (
+            patch("socket.socket.connect", no_network),
+            patch("os.fsync", fsync),
+            patch("os.write", write),
+            patch("os.writev", writev),
+            patch(
+                "binance_market_data_recorder.collector.coverage.shared_request_budget",
+                return_value=budget,
+            ),
+        ):
+            for venue in ("spot", "usdm", "coinm"):
+                await owner.reconcile(venue, directory(venue))
+            # Each concrete REST source is included, at its declared cadence.
+            # Freeze finite slots and parameters; no live network quotas apply.
+            for key, state in owner.sources.items():
+                if state.source.transport == "rest" and not state.dormant:
+                    interval = max(1.0, state.source.cadence_seconds)
+                    owner.rest_remaining[key] = (
+                        max(1, int((seconds - 1) // interval) + 1)
+                        if state.source.cadence_seconds
+                        else 1
+                    )
+                    state.next_due = 0
+            owner.started = time.monotonic()
+            async with asyncio.TaskGroup() as tasks:
+                tasks.create_task(capture())
+                if arm == "A":
+                    tasks.create_task(verify_baseline())
+                tasks.create_task(monitor())
+            sample()
+            end_minute()
+        wall, cpu = time.perf_counter() - start_wall, time.process_time() - start_cpu
+        pragmas = {
+            name: catalog._connection.execute(f"PRAGMA {name}").fetchone()[0]
+            for name in ("journal_mode", "synchronous")
+        }
+        assert pragmas["synchronous"] == (2 if arm == "A" else 1)
+        # Audit only after capture/metrics stop. This readback is an offline check.
+        actual_ws, actual_rest, actual_logical = Fingerprint(), Fingerprint(), Fingerprint()
+        chunks = load_source_chunks(layout=layout, catalog=catalog)
+        inventory = []
+        for chunk in chunks:
+            count = 0
+            for record in iter_source_records(chunk):
+                event = record.envelope
+                if "malformed" in event.capture_flags:
+                    raise AssertionError("malformed Raw")
+                encoded = logical_record(event).encode()
+                actual_logical.add(encoded)
+                if event.module == "binance.public.websocket.v1":
+                    actual_ws.add(event.raw_payload)
+                else:
+                    actual_rest.add(encoded)
+                count += 1
+            assert count == chunk.manifest["record_count"]
+            inventory.append(
+                {
+                    k: chunk.manifest[k]
+                    for k in (
+                        "chunk_id",
+                        "market",
+                        "symbol",
+                        "stream",
+                        "record_count",
+                        "stored_bytes",
+                        "stored_sha256",
+                        "uncompressed_bytes",
+                        "uncompressed_sha256",
+                    )
+                }
+            )
+        assert actual_ws.public() == owner.expected_ws.public(), (
+            "WS content",
+            actual_ws.public(),
+            owner.expected_ws.public(),
+        )
+        assert actual_rest.public() == owner.expected_rest.public()
+        expected_backfill = int(arm == "C" and seconds >= 180)
+        assert owner.backfilled == expected_backfill, (
+            "backfill count",
+            owner.backfilled,
+            expected_backfill,
+        )
+        assert actual_rest.count == sum(owner.rest_remaining.values()) + expected_backfill
+        assert owner.received.count - owner.expected_ws.count == sum(
+            getattr(state, "forming_filtered_count", 0) for state in owner.sources.values()
+        )
+        assert actual_logical.public() == owner.expected_logical.public()
+        assert not list(layout.active.glob("*.partial"))
+        assert len(chunks) == total_seals
+        if arm == "A":
+            assert verification["processed_files"] == len(chunks)
+        result = {
+            "arm": arm,
+            "platform": platform.platform(),
+            "python": sys.version,
+            "runtime_module": __import__("binance_market_data_recorder").__file__,
+            "coverage": cfg.model_dump(mode="json"),
+            "sqlite_pragmas": pragmas,
+            "duration_seconds": seconds,
+            "wall_seconds": wall,
+            "cpu_seconds": cpu,
+            "cpu_average_percent": cpu / wall * 100,
+            "cpu_peak_seal_window_percent": max(
+                (r["cpu_percent"] for r in samples if r["seal_window"]), default=0
+            ),
+            "start_rss_mib": start_rss / 1024**2,
+            "peak_rss_mib": max(r["rss_mib"] for r in samples),
+            "input_ws": owner.received.public(),
+            "expected_ws": owner.expected_ws.public(),
+            "actual_ws": actual_ws.public(),
+            "actual_rest": actual_rest.public(),
+            "closed_bar_backfill_frames": owner.backfilled,
+            "actual_logical": actual_logical.public(),
+            "rest_quotas": [
+                {"key": k, "count": v} for k, v in sorted(owner.rest_remaining.items())
+            ],
+            "availability_pending_peak_rows": stats.pending_peak,
+            "availability_steady_pending_max": max(
+                (r["pending_after_flush_max"] for r in samples[300:-1]), default=0
+            ),
+            "summary": samples[-1],
+            "latencies_ms": {k: distribution(v) for k, v in histograms.items()},
+            "samples_seconds": samples,
+            "timeline_minutes": minutes,
+            "chunks": inventory,
+            "audit": "PASS",
+            "baseline_background_verification": verification,
+        }
+        return result
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--duration-minutes", type=int, default=45)
-    parser.add_argument("--tick-seconds", type=float, default=10.0)
+    parser.add_argument("--duration-seconds", type=int, default=2700)
     parser.add_argument("--seed", type=int, default=20261102)
+    parser.add_argument("--arm", choices=("A", "B", "C"))
+    parser.add_argument("--data-root", type=Path)
     parser.add_argument(
-        "--output-json",
-        type=Path,
-        default=Path("docs/benchmarks/m3.1-three-way-benchmark.json"),
-    )
-    parser.add_argument(
-        "--verify-repeatability", action=argparse.BooleanOptionalAction, default=True
+        "--output-json", type=Path, default=REPO / "docs/benchmarks/m3.1-three-way-benchmark.json"
     )
     args = parser.parse_args()
-
-    duration_s = args.duration_minutes * 60
-    print(
-        f"Starting M3.1 Three-Way Benchmark "
-        f"(Duration: {args.duration_minutes}m / {duration_s}s, Tick: {args.tick_seconds}s)..."
-    )
-
-    arms_results: dict[str, Any] = {}
-    for arm in ("A", "B", "C"):
-        print(f"--- Running Arm {arm} ---")
-        t0 = time.time()
-        res = run_single_arm(
-            arm_name=arm,
-            duration_s=duration_s,
-            tick_s=args.tick_seconds,
-            seed=args.seed,
+    if args.duration_seconds < 1:
+        parser.error("duration must be positive")
+    if args.arm:
+        if args.data_root is None:
+            parser.error("worker needs --data-root")
+        result = asyncio.run(run_arm(args.arm, args.duration_seconds, args.seed, args.data_root))
+        args.output_json.write_text(json.dumps(result, indent=2) + "\n")
+        return
+    scratch = default_data_root() / "benchmarks"
+    scratch.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="m3-review-", dir=scratch) as tmp:
+        work = Path(tmp)
+        baseline = work / "baseline"
+        baseline.mkdir()
+        archive = work / "source.tar"
+        subprocess.run(
+            ["git", "archive", "f109ffc", "src", "-o", str(archive)], cwd=REPO, check=True
         )
-        arms_results[arm] = res
-        summary = res["summary"]
-        print(
-            f"Arm {arm} finished in {time.time() - t0:.2f}s wall clock. "
-            f"(Avg CPU: {summary['cpu_average_percent']}%, Peak RSS: {summary['peak_rss_mib']} MiB)"
-        )
-
-    repeat_matches = True
-    if args.verify_repeatability:
-        print("--- Verifying Repeatability on Arm C ---")
-        repeat_res = run_single_arm(
-            arm_name="C",
-            duration_s=duration_s,
-            tick_s=args.tick_seconds,
-            seed=args.seed,
-        )
-        c_orig = arms_results["C"]["summary"]
-        c_rep = repeat_res["summary"]
-        repeat_matches = (
-            c_orig["frames_received_total"] == c_rep["frames_received_total"]
-            and c_orig["frames_persisted_total"] == c_rep["frames_persisted_total"]
-            and c_orig["forming_filtered_total"] == c_rep["forming_filtered_total"]
-            and c_orig["sealed_chunks_total"] == c_rep["sealed_chunks_total"]
-            and c_orig["logical_content_digest"] == c_rep["logical_content_digest"]
-        )
-        digest_prefix = c_orig["logical_content_digest"][:16]
-        print(
-            f"Arm C repeatability: {'MATCH' if repeat_matches else 'MISMATCH'} "
-            f"(Content Digest: {digest_prefix}...)"
-        )
-        if not repeat_matches:
-            raise SystemExit("FAIL: Repeatability mismatch in Arm C runs!")
-
-    full_report = {
-        "schema_version": "bmdr-m3.1-three-way.v1",
-        "timestamp_utc": datetime.now(UTC).isoformat(),
-        "git_commit": subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
-        ).strip(),
-        "environment": {
-            "platform": platform.platform(),
-            "python": sys.version,
-            "duration_minutes": args.duration_minutes,
-            "duration_seconds": duration_s,
-            "tick_seconds": args.tick_seconds,
-            "random_seed": args.seed,
-        },
-        "repeatability": {
-            "verified": args.verify_repeatability,
-            "status": "PASS" if repeat_matches else "FAIL",
-        },
-        "arms": arms_results,
-    }
-
-    args.output_json.parent.mkdir(parents=True, exist_ok=True)
-    args.output_json.write_text(json.dumps(full_report, indent=2) + "\n")
-    print(f"Saved JSON report to {args.output_json}")
+        with tarfile.open(archive) as tar:
+            tar.extractall(baseline, filter="data")
+        arms = {}
+        for arm in ("A", "B", "C"):
+            output = work / f"{arm}.json"
+            env = dict(os.environ)
+            runtime = baseline if arm == "A" else REPO
+            env["PYTHONPATH"] = os.pathsep.join((str(runtime / "src"), str(REPO)))
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve()),
+                    "--arm",
+                    arm,
+                    "--duration-seconds",
+                    str(args.duration_seconds),
+                    "--seed",
+                    str(args.seed),
+                    "--data-root",
+                    str(work / f"data-{arm}"),
+                    "--output-json",
+                    str(output),
+                ],
+                env=env,
+                cwd=REPO,
+                check=True,
+            )
+            arms[arm] = json.loads(output.read_text())
+            # Save progress after each successful, fully audited arm.
+            args.output_json.write_text(
+                json.dumps({"status": "IN_PROGRESS", "arms": arms}, indent=2) + "\n"
+            )
+        assert arms["A"]["input_ws"] == arms["B"]["input_ws"]
+        assert arms["A"]["actual_ws"] == arms["B"]["actual_ws"]
+        assert arms["A"]["actual_rest"] == arms["B"]["actual_rest"]
+        report = {
+            "schema_version": "bmdr-m3.1-three-way.v2",
+            "status": "PASS" if args.duration_seconds >= 2700 else "SMOKE_PASS",
+            "qualification_duration_met": args.duration_seconds >= 2700,
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "seed": args.seed,
+            "candidate_src_tree": subprocess.check_output(
+                ["git", "rev-parse", "HEAD:src"], cwd=REPO, text=True
+            ).strip(),
+            "baseline_src_tree": subprocess.check_output(
+                ["git", "rev-parse", "f109ffc:src"], cwd=REPO, text=True
+            ).strip(),
+            "candidate_git_sha": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
+            ).strip(),
+            "baseline_git_sha": subprocess.check_output(
+                ["git", "rev-parse", "f109ffc"], cwd=REPO, text=True
+            ).strip(),
+            "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "helper_sha256": hashlib.sha256(
+                (REPO / "tools/benchmark_m1_m3_pipeline.py").read_bytes()
+            ).hexdigest(),
+            "measurement_scope": {
+                "clock": "real wall and monotonic; sequential fresh subprocesses",
+                "load": "BTC/ETH fixture sources; one WS update/wire/second; native REST cadence",
+                "fault": "omit BTCUSDT Spot 1m close at 120s in all arms; C REST-repairs at 180s",
+                "io": "Python write/writev + compression bytes; excludes SQLite/physical IO",
+                "fsync": "Python os.fsync calls incl. directories; excludes SQLite C calls",
+                "cpu": "process CPU / real elapsed, 100% = one core; 1s samples for seal windows",
+                "rss": "fresh process; 1s samples; includes harness overhead; no VPS extrapolation",
+                "audit": "offline after timing; count + modular SHA256 multiset fingerprint",
+                "baseline": "f109ffc capture/seal + verify_new thread; combined process CPU",
+            },
+            "arms": arms,
+        }
+        args.output_json.write_text(json.dumps(report, indent=2) + "\n")
 
 
 if __name__ == "__main__":

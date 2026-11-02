@@ -25,7 +25,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from functools import partial
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 from binance_market_data_recorder.binance.coverage_config import CoverageConfig
@@ -37,9 +37,7 @@ from binance_market_data_recorder.binance.public_sources import (
     source_plan,
 )
 from binance_market_data_recorder.binance.public_websocket import (
-    CombinedWebSocketStream,
     StreamGroup,
-    WebSocketConnection,
     stream_groups,
 )
 from binance_market_data_recorder.binance.request_budget import RECORDER_WINDOWS, RequestBudget
@@ -58,6 +56,13 @@ from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
+
+if TYPE_CHECKING:
+    from binance_market_data_recorder.binance.public_websocket import (
+        CombinedWebSocketStream,
+        WebSocketConnection,
+    )
+
 
 REPO = Path(__file__).resolve().parents[1]
 FIXTURES_DIR = REPO / "tests/fixtures/binance/p2"
