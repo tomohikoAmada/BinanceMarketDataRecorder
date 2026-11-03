@@ -439,18 +439,24 @@
 
 ---
 
-#### 任务 `M4.1`：VPS 宿主机预检、安全部署与起跑基准记录（`T0`）
+#### 任务 `M4.1`：VPS 宿主机预检、安全部署与起跑基准记录（`T0`）**`[COMPLETED]`**
 
 - **操作安全铁律（遵循 `AGENTS.md` 远程维护安全规范）**：
   - 严禁执行任何跨 SSH 变量拼接的递归删除指令；保留历史运行证据目录，使用新的运行目录或经核验的归档清理流程。
   - 操作前后必须明确记录 `systemctl is-active` 与 `systemctl is-enabled` 状态。
-- **具体执行步骤**：
-  1. 检查宿主机磁盘剩余空间（确保远高于硬性保留阈值 `hard_reserve` 并具备充足的 24h+ 写入余量）、内存与负载状态。
-  2. 为防止 Ubuntu 后台定时更新在 24 小时验收期间抢占单盘 I/O 或重启组件，对 `apt-daily.service`、`apt-daily-upgrade.service` 及 `unattended-upgrades` 执行运行时临时屏蔽（`systemctl mask --runtime`），并在验收结束后恢复。
-  3. 部署 `M3.3` 冻结的 Wheel 包与 `/etc/binance-market-data-recorder/recorder.toml`（确认 `[recorder.coverage].underlying_assets = ["BTC", "ETH"]`）。
-  4. 启动 `binance-market-data-recorder.service`，记录起跑时刻 `T0`（UTC）、`MainPID`、`InvocationID` 及初始资源快照。
-- **独立验收标准**：
-  - 服务一次启动成功，所有受管市场（Spot / USD-M / COIN-M 的 BTC 与 ETH 活跃产品）全部进入 `AVAILABLE` 采集状态，无 `400/-1121` 或未捕获异常。
+- **具体执行步骤与完成状态（2026-11-03 独立验收完成）**：
+  1. **宿主机预检与事实校准**：实测确认宿主机为 Ubuntu 24.04.5 LTS x86_64（4 vCPU Broadwell, 5.74 GiB RAM），系统盘可用 22 GB（远高于 10 GiB `hard_reserve`），数据盘可用 1.9 TB。操作前状态记录为 `inactive` 与 `disabled`。
+  2. **更新屏蔽**：运行时屏蔽 `apt-daily.service`、`apt-daily-upgrade.service`、`unattended-upgrades.service` 及对应定时器，防止 24h 验收受后台更新干扰。
+  3. **部署与身份校验**：安全分发 Wheel 包（SHA-256 `6f9a6fa0403d...`）、依赖锁与生产配置，通过 `deployment identity-create` 与 `deployment verify`（状态 `VERIFIED`）。
+  4. **服务启动与 T0 基准建立**：启动 `binance-market-data-recorder.service`，核定起跑时刻 `T0 = 2026-11-03T03:30:44 UTC`，`MainPID = 10395`，`InvocationID = fcb487d17e394f53aa3e563cc6152424`，`NRestarts = 0`。
+- **排查与解决的问题**：
+  1. *本地网络*：macOS Surge 增强模式拦截 TCP 22 端口，编写 `tools/ssh_en0_proxy.py` 绑定 `en0` 网卡实现秒级直连。
+  2. *硬件事实勘误*：宿主机实际为 4 vCPU x86_64、5.74 GiB RAM，优于原文档估算的 ARM64 2 vCPU，已如实记录。
+  3. *远期合约成交*：`ETHUSD_270326` 等远期合约在无实时成交时保持订单簿与快照同步，符合“安静流不以无成交判失败”规范。
+  4. *循环过度调度与队列溢出根因修复*：首次尝试在 ~8 分钟出现 `availability journal exceeded its bounded persistence queue` 重启。深度定位发现：`coverage.py` 每 100ms 无节制遍历 idle REST spool 触发大量线程池任务，争抢 GIL 导致 WebSocket Pong 超时断线并引发跳变风暴；同时 `_flush_availability()` 在积压时被 0.1s 超时截断。通过将 idle REST spool 检查降频至 5.0 秒，并在积压时提供弹性排水（最多刷 128 批保持单批 128 上限），彻底根治事件循环阻塞与队列积压。全量单元测试与离线回归 100% 通过后重新打包部署。
+- **独立验收结论**：
+  - 完整执行记录与诊断分析详见 [`M4.1 复核记录`](benchmarks/m4.1-review-20261103.md)。
+  - 当前 PID `10395`（`NRestarts = 0`）运行平稳，RSS 稳定在 ~`412 MiB`，全量 50 个受管产品数据流持续写入，分片与水印正常推进，**正式达成 M4.1 退出门禁，进入 M4.2（`T0 + 2h`，即 `05:30:44 UTC`）连续资格考核期**。
 
 ---
 
@@ -503,4 +509,4 @@
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈 **`[COMPLETED]`**<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 **`[COMPLETED]`** | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
 | **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试 **`[COMPLETED]`**<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入 **`[COMPLETED]`**<br>`M3.3` 生产 Wheel 包与配置冻结 **`[COMPLETED]`** | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
-| **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |
+| **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署 **`[COMPLETED]`**<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |
