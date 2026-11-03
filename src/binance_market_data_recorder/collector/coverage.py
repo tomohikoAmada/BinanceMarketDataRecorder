@@ -392,6 +392,7 @@ class SelectedAssetCapture:
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
         self._rest_drain_waiters: dict[tuple[str, str, str], list[asyncio.Future[None]]] = {}
         self._rest_drain_in_progress: set[tuple[str, str, str]] = set()
+        self._last_rest_spool_drain: float = 0.0
         if config.coverage is None:
             products, sources = explicit_source_plan(config)
             for source in sources:
@@ -1471,10 +1472,15 @@ class SelectedAssetCapture:
                     )
                 batches += 1
             self.availability.acknowledge(len(batch))
-            if not all_pending and (
-                batches >= AVAILABILITY_FLUSH_MAX_BATCHES or time.monotonic() >= deadline
-            ):
-                break
+            if not all_pending:
+                if len(self.availability.pending) > 2048:
+                    if batches >= 128:
+                        break
+                elif (
+                    batches >= AVAILABILITY_FLUSH_MAX_BATCHES
+                    or time.monotonic() >= deadline
+                ):
+                    break
 
         # A bounded flush may leave transitions pending. Never certify their
         # monitoring time until those transitions have committed.
@@ -1655,15 +1661,18 @@ class SelectedAssetCapture:
                         self.polls[state.source.key] = asyncio.create_task(
                             self._run_kline_backfill(state)
                         )
-                # Idle REST spools need the same periodic sync/rotation as active ones.
-                for spool_key, spool in tuple(self.spools.items()):
-                    if (
-                        spool_key[2] == "rest_observations"
-                        and not self._spool_locks[spool_key].locked()
-                        and spool_key not in self._rest_drain_in_progress
-                    ):
-                        async with self._spool_locks[spool_key]:
-                            await run_owned_blocking_call(spool.drain_all)
+                # Idle REST spools need periodic sync/rotation (evaluated every 5s).
+                now_mono = time.monotonic()
+                if now_mono - self._last_rest_spool_drain >= 5.0:
+                    for spool_key, spool in tuple(self.spools.items()):
+                        if (
+                            spool_key[2] == "rest_observations"
+                            and not self._spool_locks[spool_key].locked()
+                            and spool_key not in self._rest_drain_in_progress
+                        ):
+                            async with self._spool_locks[spool_key]:
+                                await run_owned_blocking_call(spool.drain_all)
+                    self._last_rest_spool_drain = now_mono
                 with suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), timeout=0.1)
         except BaseException as exc:

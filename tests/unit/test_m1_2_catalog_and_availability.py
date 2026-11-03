@@ -663,3 +663,55 @@ def test_reconcile_retained_partial_uses_raw_identity_not_catalog_path(tmp_path:
         reconcile_sealed(layout=layout, catalog=catalog)
         assert not writer.path.exists()
         assert unrelated.read_bytes() == b"keep"
+
+
+def test_emergency_backlog_drains_without_queue_overflow(tmp_path: Path) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    config = RecorderConfig(
+        data_root=layout.root,
+        coverage=CoverageConfig(
+            underlying_assets=("BTC", "ETH"),
+            capture_dated_premium_klines=False,
+            capture_dated_adl_risk=False,
+        ),
+    )
+    logger = logging.getLogger("test")
+
+    with Catalog(layout.catalog) as catalog:
+        capture = SelectedAssetCapture(
+            config=config,
+            logger=logger,
+            version="1.0.0",
+            instance_id="inst-backlog-test",
+            layout=layout,
+            catalog=catalog,
+            clients={"spot": Client(), "usdm": Client(), "coinm": Client()},
+        )
+        for i in range(4660):
+            source = Source(
+                family="S01",
+                venue_market="spot",
+                market="spot",
+                symbol="BTCUSDT",
+                stream=f"test_stream_{i}",
+                transport="ws",
+                endpoint="/ws/test",
+                cadence_seconds=1.0,
+            )
+            capture.add_source(source)
+            capture.sources[source.key].connected = True
+
+        # Initial observation + flush
+        capture._observe_availability(BASE)
+        asyncio.run(capture._flush_availability(all_pending=True))
+        assert len(capture.availability.pending) == 0
+        # Simulate a 10s monitoring delay, which generates MONITORING_UNKNOWN + valid transitions
+        capture._observe_availability(BASE + 10 * SECOND)
+        assert len(capture.availability.pending) > 2048
+
+        # Flush without all_pending must drain the backlog adaptively
+        asyncio.run(capture._flush_availability())
+        # Pending queue backlog has been drained down to safe level (<= 2048)
+        assert len(capture.availability.pending) <= 2048
+        asyncio.run(capture._flush_availability(all_pending=True))
+        assert len(capture.availability.pending) == 0
