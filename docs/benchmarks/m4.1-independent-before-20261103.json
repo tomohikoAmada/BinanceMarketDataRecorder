@@ -1,0 +1,440 @@
+{
+  "observed_at_utc": "2026-11-03T04:22:26.949488+00:00",
+  "systemd": {
+    "returncode": 0,
+    "stdout": "MainPID=10395\nNRestarts=0\nActiveState=active\nSubState=running\nActiveEnterTimestamp=Tue 2026-11-03 03:30:44 UTC\nInvocationID=fcb487d17e394f53aa3e563cc6152424"
+  },
+  "is_active": {
+    "returncode": 0,
+    "stdout": "active"
+  },
+  "is_enabled": {
+    "returncode": 0,
+    "stdout": "enabled"
+  },
+  "host": {
+    "architecture": "x86_64",
+    "cpu_count": 4,
+    "executor_workers": 8
+  },
+  "status": {
+    "status": "RUNNING",
+    "pid": 10395,
+    "started_at_utc_ns": 1793676651222100565,
+    "heartbeat_at_utc_ns": 1793679745447395466,
+    "network_status": "DEGRADED",
+    "expected_product_count": 50,
+    "ready_product_count": 8,
+    "core_ready": false
+  },
+  "coverage": {
+    "availability_journal_pending": 2496,
+    "capture_metrics": {
+      "failure_count": 0,
+      "forming_filtered_count": 1084526,
+      "last_error_type": null
+    }
+  },
+  "watermarks": [
+    {
+      "selection_id": "assets:BTC,ETH:d5793d09-7098-4625-b64d-0b06a370f583",
+      "evaluated_through_utc_ns": 1793676651263915657,
+      "updated_at_utc_ns": 1793676651264375694
+    }
+  ],
+  "gap_reasons": {
+    "MONITORING_UNKNOWN": 247726,
+    "STARTUP_UNKNOWN": 4038,
+    "unexpected_disconnect": 694
+  },
+  "product_readiness": [
+    {
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_261225",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_270326",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_261225",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_270326",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "cm_perpetual",
+      "symbol": "BTCUSD_PERP",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "cm_perpetual",
+      "symbol": "ETHUSD_PERP",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCARS",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCBRL",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCEUR",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCFDUSD",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCIDR",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCJPY",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCMXN",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCTHB",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCTRY",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCU",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCUSD",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCUSD1",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCUSDC",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCUSDS",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "BTCUSDT",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHARS",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHBRL",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHBTC",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHEUR",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHFDUSD",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHIDR",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHJPY",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHMXN",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHTHB",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHTRY",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHU",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHUSD",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHUSD1",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHUSDC",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHUSDS",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHUSDT",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "ready": true,
+      "orderbook_synchronized": true,
+      "snapshot_persisted": true
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "ready": false,
+      "orderbook_synchronized": false,
+      "snapshot_persisted": false
+    }
+  ],
+  "btc_depth_snapshot": {
+    "error_type": null,
+    "last_attempt_utc_ns": null,
+    "last_success_utc_ns": null,
+    "observations": 0,
+    "status": "PENDING"
+  },
+  "quiet_window": {
+    "returncode": 0,
+    "stdout": "Id=apt-daily.service\nActiveState=inactive\nUnitFileState=masked-runtime\n\nId=apt-daily-upgrade.service\nActiveState=inactive\nUnitFileState=masked-runtime\n\nId=unattended-upgrades.service\nActiveState=inactive\nUnitFileState=masked-runtime\n\nId=apt-daily.timer\nActiveState=failed\nUnitFileState=masked-runtime\n\nId=apt-daily-upgrade.timer\nActiveState=failed\nUnitFileState=masked-runtime"
+  },
+  "journal_event_counts": {
+    "coinm_websocket_connected": 15,
+    "usdm_websocket_connected": 59,
+    "spot_websocket_connected": 51,
+    "spot_websocket_disconnected": 20,
+    "spot_ingress_stream_recovery": 20,
+    "usdm_websocket_disconnected": 19,
+    "usdm_ingress_stream_recovery": 19,
+    "coinm_websocket_disconnected": 1,
+    "coinm_ingress_stream_recovery": 1
+  },
+  "disconnect_reasons": {
+    "ConnectionClosedError": 25,
+    "Pong timeout": 15
+  },
+  "process": {
+    "rss_bytes": 591851520,
+    "cpu_time_seconds": 3463.91
+  },
+  "disk_available_bytes": 21793107968,
+  "artifact_hashes": {
+    "/etc/binance-market-data-recorder/recorder.toml": "5a9a2510b5ae3457c06075adeee9d57b36349cdda93920da3670f53b01fb7082",
+    "/opt/binance-market-data-recorder/m4-20261103/linux-x86_64-python312.lock": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+    "/opt/binance-market-data-recorder/m4-20261103/recorder.toml": "5a9a2510b5ae3457c06075adeee9d57b36349cdda93920da3670f53b01fb7082",
+    "/opt/binance-market-data-recorder/m4-20261103/observe_vps_recorder.py": "76dfc5aa970792ccf98c931bff0302b10a6ad7698ac0f2dbe67676839e0d5677",
+    "/opt/binance-market-data-recorder/m4-20261103/binance_market_data_recorder-0.1.0a1-py3-none-any.whl": "6f9a6fa0403d45ed56d044730f29d2120593fd7c9d95ae7af7e8b1e844b2ec6c"
+  }
+}

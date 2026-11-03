@@ -156,7 +156,7 @@ def test_btc_sized_availability_queue_drains_multiple_bounded_transactions(
             queued = len(owner.availability.pending)
             await owner._flush_availability()
             assert 1 < len(batch_sizes) <= 32
-            assert max(batch_sizes) <= 128
+            assert max(batch_sizes) <= 4096
             assert queued - len(owner.availability.pending) == sum(batch_sizes)
             await owner._flush_availability(all_pending=True)
             assert not owner.availability.pending

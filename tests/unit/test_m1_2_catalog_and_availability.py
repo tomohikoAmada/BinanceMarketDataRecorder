@@ -665,7 +665,9 @@ def test_reconcile_retained_partial_uses_raw_identity_not_catalog_path(tmp_path:
         assert unrelated.read_bytes() == b"keep"
 
 
-def test_emergency_backlog_drains_without_queue_overflow(tmp_path: Path) -> None:
+def test_emergency_backlog_drains_without_queue_overflow(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     layout = ensure_storage_layout(tmp_path)
     config = RecorderConfig(
         data_root=layout.root,
@@ -709,9 +711,27 @@ def test_emergency_backlog_drains_without_queue_overflow(tmp_path: Path) -> None
         capture._observe_availability(BASE + 10 * SECOND)
         assert len(capture.availability.pending) > 2048
 
+        persist = catalog.persist_source_availability
+        transactions = 0
+
+        def delayed_persist(batch: list[dict[str, Any]], **kwargs: Any) -> None:
+            nonlocal transactions
+            transactions += 1
+            # Executor/SQLite latency must not cost dozens of sequential handoffs.
+            import time
+
+            time.sleep(0.01)
+            persist(batch, **kwargs)
+
+        monkeypatch.setattr(catalog, "persist_source_availability", delayed_persist)
+
         # Flush without all_pending must drain the backlog adaptively
         asyncio.run(capture._flush_availability())
         # Pending queue backlog has been drained down to safe level (<= 2048)
         assert len(capture.availability.pending) <= 2048
         asyncio.run(capture._flush_availability(all_pending=True))
         assert len(capture.availability.pending) == 0
+        assert transactions < 20
+        assert catalog.source_availability_watermark(capture.source_selection_id) == (
+            BASE + 10 * SECOND
+        )

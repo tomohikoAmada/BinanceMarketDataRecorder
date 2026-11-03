@@ -5,6 +5,7 @@ import select
 import socket
 import sys
 
+
 def main() -> None:
     if len(sys.argv) < 3:
         sys.stderr.write("Usage: ssh_en0_proxy.py <host> <port>\n")

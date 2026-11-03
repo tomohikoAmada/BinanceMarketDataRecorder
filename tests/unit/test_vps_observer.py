@@ -199,6 +199,9 @@ def test_real_cli_and_spool_observation_is_read_only(tmp_path: Path) -> None:
         "heartbeat_interval_seconds": 5.0,
         "network_connected": True,
         "network_status": "CONNECTED",
+        "selected_asset_coverage": {"availability_journal_pending": 123},
+        "expected_product_count": 50,
+        "ready_product_count": 7,
         "markets": {"spot": {"last_receive_time_utc_ns": time.time_ns()}},
     }
     store = ServiceStateStore(layout.state / "service_state.json")
@@ -245,6 +248,9 @@ def test_real_cli_and_spool_observation_is_read_only(tmp_path: Path) -> None:
         assert obs.catalog_active_chunks == 1
         assert obs.last_event_age_seconds is not None
         assert obs.space_severity is not None
+        assert obs.availability_journal_pending == 123
+        assert obs.expected_product_count == 50
+        assert obs.ready_product_count == 7
         assert chunks.sealed_zst_count == chunks.manifest_json_count == 1
         assert chunks.active_partial_count == 1
         assert chunks.growth_rate_chunks_per_hour == 2.0
@@ -252,7 +258,10 @@ def test_real_cli_and_spool_observation_is_read_only(tmp_path: Path) -> None:
 
         state["heartbeat_at_utc_ns"] = time.time_ns() - 60_000_000_000
         store.write(state)
-        assert query_status_cli(None, tmp_path).service_status == "STALE"
+        stale = query_status_cli(None, tmp_path)
+        assert stale.service_status == "STALE"
+        assert stale.availability_journal_pending is None
+        assert stale.ready_product_count is None
 
 
 def test_real_cli_without_catalog_and_missing_config(tmp_path: Path) -> None:

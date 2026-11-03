@@ -160,12 +160,23 @@ def test_side_transport_terminal_storage_failure_fails_closed_without_replacemen
             max_frame_bytes=1024 * 1024,
         )
         stats = SideDataStats(True)
+        first_persisted = asyncio.Event()
+
+        class GatedSocket(ScriptedSocket):
+            sent = 0
+
+            async def recv(self, decode: bool | None = None) -> bytes:
+                if self.sent:
+                    await first_persisted.wait()
+                payload = await super().recv(decode)
+                self.sent += 1
+                return payload
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
             nonlocal opener_calls
             opener_calls += 1
-            yield ScriptedSocket([payload], block_on_exhaustion=True)
+            yield GatedSocket([payload, payload], block_on_exhaustion=True)
 
         extension = make_side_extension(
             tmp_path,
@@ -180,6 +191,7 @@ def test_side_transport_terminal_storage_failure_fails_closed_without_replacemen
             stats.observe_envelope(envelope)
             if stats.accepted >= 1:
                 spool.armed = True
+                first_persisted.set()
 
         extension.collector.envelope_observer = arm_after_first_persist
         supervisor = SideDataSupervisor(

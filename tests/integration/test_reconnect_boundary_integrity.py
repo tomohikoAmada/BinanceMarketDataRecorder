@@ -3247,9 +3247,15 @@ def test_spot_writer_cancellation_owns_blocking_drain(
     monkeypatch.setattr(asyncio, "create_task", capturing_create_task)
 
     class GatedSocket(ScriptedSocket):
+        sent = 0
+
         async def recv(self, decode: bool | None = None) -> bytes:
+            if self.sent == 1:
+                await gate.wait()
             try:
-                return next(self.messages)
+                payload = next(self.messages)
+                self.sent += 1
+                return payload
             except StopIteration:
                 await gate.wait()
                 await asyncio.Future[None]()
@@ -3303,7 +3309,7 @@ def test_spot_writer_cancellation_owns_blocking_drain(
                 await asyncio.sleep(0.01)
             assert spool.drain_calls >= 1
             engage.set()
-            # The next drain (frame 2, or an idle drain) now blocks in its
+            # The next drain (frame 2) now blocks in its
             # worker thread; wait for the deterministic blocked state.
             gate.set()
             deadline = asyncio.get_running_loop().time() + 5
@@ -3328,13 +3334,13 @@ def test_spot_writer_cancellation_owns_blocking_drain(
             }
         finally:
             release.set()
+            stop.set()
             if writer_task is not None:
                 await asyncio.gather(
                     run_task, writer_task, return_exceptions=True
                 )
             else:
                 await asyncio.gather(run_task, return_exceptions=True)
-            stop.set()
             catalog.close()
 
     captured = asyncio.run(scenario())

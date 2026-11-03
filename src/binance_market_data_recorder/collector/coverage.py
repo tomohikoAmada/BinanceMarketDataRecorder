@@ -392,7 +392,6 @@ class SelectedAssetCapture:
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
         self._rest_drain_waiters: dict[tuple[str, str, str], list[asyncio.Future[None]]] = {}
         self._rest_drain_in_progress: set[tuple[str, str, str]] = set()
-        self._last_rest_spool_drain: float = 0.0
         if config.coverage is None:
             products, sources = explicit_source_plan(config)
             for source in sources:
@@ -1445,7 +1444,11 @@ class SelectedAssetCapture:
             watermark_param = (self.source_selection_id, self._pending_watermark_utc_ns)
 
         while self.availability.pending:
-            batch = self.availability.batch()
+            # One handoff/transaction for a burst, rather than up to 128
+            # round trips competing with the WS writers for the same executor.
+            batch = self.availability.batch(
+                4096 if len(self.availability.pending) > 2048 else 128
+            )
             # A monitor-backed journal uses the shared watermark for health.
             # Standalone journal users retain ordinary per-source checkpoints.
             to_persist = (
@@ -1661,18 +1664,16 @@ class SelectedAssetCapture:
                         self.polls[state.source.key] = asyncio.create_task(
                             self._run_kline_backfill(state)
                         )
-                # Idle REST spools need periodic sync/rotation (evaluated every 5s).
-                now_mono = time.monotonic()
-                if now_mono - self._last_rest_spool_drain >= 5.0:
-                    for spool_key, spool in tuple(self.spools.items()):
-                        if (
-                            spool_key[2] == "rest_observations"
-                            and not self._spool_locks[spool_key].locked()
-                            and spool_key not in self._rest_drain_in_progress
-                        ):
-                            async with self._spool_locks[spool_key]:
-                                await run_owned_blocking_call(spool.drain_all)
-                    self._last_rest_spool_drain = now_mono
+                # Cheap memory checks retain 1s durability without empty worker jobs.
+                for spool_key, spool in tuple(self.spools.items()):
+                    if (
+                        spool_key[2] == "rest_observations"
+                        and not self._spool_locks[spool_key].locked()
+                        and spool_key not in self._rest_drain_in_progress
+                        and spool.maintenance_due()
+                    ):
+                        async with self._spool_locks[spool_key]:
+                            await run_owned_blocking_call(spool.drain_all)
                 with suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), timeout=0.1)
         except BaseException as exc:

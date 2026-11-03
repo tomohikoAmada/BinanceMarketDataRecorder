@@ -199,6 +199,12 @@ class StreamSpool:
             self._seal_current()
         return True
 
+    def maintenance_due(self) -> bool:
+        """Pending frames, an unsynced tail or rotation require worker I/O."""
+        return self.queue.depth > 0 or (
+            self._writer is not None and self._writer.maintenance_due()
+        )
+
     def drain_all(self) -> int:
         count = 0
         while True:

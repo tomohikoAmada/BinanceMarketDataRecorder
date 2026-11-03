@@ -347,6 +347,13 @@ class RawChunkWriter:
             if written:
                 views[0] = views[0][written:]
 
+    def maintenance_due(self) -> bool:
+        """Check idle work in memory before handing off to a blocking worker."""
+        return self.should_rotate() or (
+            self._record_count != self._synced_record_count
+            and time.monotonic() - self._last_sync_monotonic >= self.durability_interval_seconds
+        )
+
     def sync_if_due(self, *, now_monotonic: float | None = None) -> bool:
         """Fsync when due; a spool loop calls this even when the stream is idle."""
 

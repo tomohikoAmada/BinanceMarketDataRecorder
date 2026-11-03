@@ -65,6 +65,9 @@ class StatusObservation:
     space_severity: str | None
     last_event_age_seconds: float | None
     detail: str | None = None
+    availability_journal_pending: int | None = None
+    expected_product_count: int | None = None
+    ready_product_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -395,6 +398,11 @@ def query_status_cli(
                 if isinstance(last_event_ns, (int, float))
                 else None
             )
+            state = (
+                payload.get("observed_service_state") or {}
+                if payload.get("status") == "RUNNING" else {}
+            )
+            coverage = state.get("selected_asset_coverage") or {}
 
             return StatusObservation(
                 available=True,
@@ -406,6 +414,9 @@ def query_status_cli(
                 space_severity=storage.get("space_severity"),
                 last_event_age_seconds=last_event_sec,
                 detail=payload.get("detail"),
+                availability_journal_pending=coverage.get("availability_journal_pending"),
+                expected_product_count=state.get("expected_product_count"),
+                ready_product_count=state.get("ready_product_count"),
             )
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
         pass

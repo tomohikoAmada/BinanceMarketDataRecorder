@@ -661,7 +661,11 @@ class PublicWebSocketStream:
             else:
                 self._filtered_total += 1
         drain_started = time.perf_counter_ns()
-        drained = await _run_owned_blocking_call(self.spool.drain_all)
+        drained = (
+            await _run_owned_blocking_call(self.spool.drain_all)
+            if persisted or self.spool.maintenance_due()
+            else 0
+        )
         drain_duration = time.perf_counter_ns() - drain_started
         self._last_writer_batch_size = len(batch)
         self._last_writer_drain_ns = drain_duration
@@ -691,7 +695,8 @@ class PublicWebSocketStream:
             try:
                 batch.append(await asyncio.wait_for(self._receipts.get(), timeout=0.1))
             except TimeoutError:
-                await _run_owned_blocking_call(self.spool.drain_all)
+                if self.spool.maintenance_due():
+                    await _run_owned_blocking_call(self.spool.drain_all)
                 continue
             batch_bytes = len(batch[0].raw_payload)
             for _ in range(min(255, self.spool.queue.capacity - 1)):
