@@ -489,6 +489,12 @@
   - **旧版 ready 口径**为 43/50，七个低活跃 Spot 产品未收到首笔聚合成交，其中 BTCARS、ETHARS 还未收到首条 `bookTicker`，两者均已连接且深度桥接完成。独立接收探针 45s 内两路各 0 条，对照 BTCUSDT 收到 2,524 条。Binance 的 Spot `bookTicker` 在最优价或数量发生变化时推送。两路保持在冻结源集合和逐源可用率门禁内。预热记录到 Pong timeout，仍需在 2h 窗口核验。参见 [Binance Spot Book Ticker 文档](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#individual-symbol-book-ticker-streams)。
   - **新检查点（北京时间）**。2h 为 11 月 3 日 **19:50:41**，12h 为 11 月 4 日 **05:50:41**，24h 为 11 月 4 日 **17:50:41**。已设置跟进检查。下一步为 M4.2，Production Ready 待 24h 全部验收。
 
+- **第二轮 2h 实测（2026-11-03，FAIL）**。精确窗口为北京时间 17:50:41.299712099 至 19:50:41.299712099。667 个样本均为 PID `33345`、原 InvocationID、零重启。待刷队列 517 个样本为 0，峰值 18。CPU 均值 109.16%、峰值 122.87%（单核为 100%），RSS 366.10–617.90 MiB。窗口日志未匹配 SQLite locked、Traceback、OOM 或 HTTP 418/429。
+  - **可用率仍未达标**。4,038 个冻结源中 344 个超过 36 秒预算（304 REST、40 WS）。上一轮为 411 个（334 REST、77 WS）。最差为 `usdm/ETHU/taker_buy_sell_volume_5m/rest`，不可用 1,400.70s，可用率 80.55%。前三个最差源均为 D16，Catalog 原因为 `DataPublicationStale`。1,932 个 `RESPONSE_DEADLINE_EXCEEDED` 区间中，192 个 `mark_price_bars_1m` 区间均起于每分钟第 11 秒。这确认失约集中在固定边界。
+  - **REST 请求时间取证**。将上述 192 个区间与同源下一次 Raw REST 请求匹配，188 次请求进入采集 worker 后开始时已超过截止线。请求开始时间相对截止线的中位差为 +6.10s，响应时间相对请求开始的中位差为 18.8ms，192 个响应均为 HTTP 200，响应至关闭缺口的中位差为 183ms。优先量化调度、预算及 executor 的等待，再决定改动。三个 D16 最差源的 HTTP 200 样本中另确认五次只返回早于评估窗口 300 秒的一行，两次响应为空，保持现有新鲜度语义。取证保存在 `m4.2-rest-timing.json`。
+  - **热流仍频繁断线**。共 72 次（USD-M 49、Spot 23），19 次 Pong timeout、53 次无对端关闭原因。其中 68 次发生在 BTCUSDT 或 ETHUSDT。恢复日志记录最大 receipt 队列深度 3,582，无入队等待，最大 fsync、drain、seal 分别约 0.391s、10.956s、13.602s。不同操作的峰值不证明发生在同一时刻。分别从 Spot 和 USD-M BTCUSDT 抽取窗口内帧数最多的 WS 分片，trade、book ticker 事件到接收中位延迟约 19.05s、32.61s，最大约 80.27s、250.63s。样本与前轮行情不同，不能将差值归因于优化。后续针对热流分别测接收、事件循环和 worker 等待，避免凭总体 CPU 或 fsync 数量改拓扑及耐久周期。
+  - **停机与证据**。北京时间 20:05 后取证并受控停止，`inactive/disabled`、退出码 0、遗留 partial 0。已停止观察器并恢复系统更新服务和 timer。保留原 Raw/Catalog，证据在 `/srv/recorder-data/recorder-archive/m4-41d1839-20261103/`。冻结 1,348 个窗口内封存的分片（676、672 个/小时），停机后使用现有独立校验器离线核验，1,348/1,348 通过，损坏、截断和规范编码错误均为 0。K 线闭合序列门禁未核验，未签收。取消本轮 12h、24h 检查和自动跟进。下一次从 M4.1 新建 T0。
+
 ---
 
 #### 任务 `M4.3`：第二阶段检查点：`T0 + 12h` 中期耐久与内存/存储平稳性门禁
