@@ -482,6 +482,13 @@
   - **重跑候选修复（2026-11-03）**。选币采集心跳省略产品逐源 `side_data`，保留产品就绪、共享源、网络降级判定、传输进度和原子状态发布。逐源可用性继续从 Catalog 查询。健康监控保留内存状态，在导出时才构造字典，稳定源由共享 watermark 表达。合法形成帧在单次 JSON 解析和校验后、构造 envelope 前完成过滤及状态更新，收盘、非法帧与补齐走原路径。
   - **刷盘与指标复核**。旧 VPS Catalog 按资格窗口内提交的批次汇总到 441,578 个 Raw fsync 样本，p95/p99 均落在 50ms 桶内，6 个落在 0.5–1s 桶，未见更慢的桶。按提交时间筛选不能把每个样本精确定位到资格窗口内，也不包含 executor 等待和整个 seal 耗时。保留 M1.1 的 1 秒周期及连接分组。指标改用 UTC 整数日缓存日期字符串，50 万次本地调用由约 0.179s 降至 0.043s。仍以帧的实际日期归桶，含跨日和迟到帧。暂保留指标锁和 60 秒容量写入，缺少证据支持重排采样职责。
 
+- **第二轮 M4.1（2026-11-03，PASS）**。已部署代码 `41d1839`，Wheel SHA-256 `766cf3efdfb9cebf80dab8a0f62737026f92cf7e23d2bf63712a2ceeb3b62419`，150 个包文件与提交逐字节匹配。配置、锁文件和观察器摘要与上轮一致，VPS 部署身份 `VERIFIED`。全量离线测试 **2,580 passed / 24 skipped / 5 deselected / 13 warnings**，Ruff、strict mypy、M0 和 Go Raw golden 通过。5 万条相同形成帧的解析微基准由 0.299s 降至 0.181s，仅测解析至过滤。
+  - 旧运行完整 `data` 和 `state` 保留于 `/var/lib/binance-market-data-recorder/m42-failed-3ff043f-20261103/`。新轮启动前为 `inactive/disabled`，系统盘可用约 19.92 GiB，五个更新单元已临时屏蔽并验证 inactive。外部观察器先启动。Recorder 于北京时间 **17:39:18** 启动，`active/enabled`，PID `33345`，InvocationID `b9cf14589aca449996a4aa32c5b81576`，`NRestarts=0`。证据目录 `/srv/recorder-data/recorder-archive/m4-41d1839-20261103/`。
+  - 部署预检中曾遇到停用单元未驻留 systemd、上传件属主继承及先屏蔽后停 timer 导致 `failed`。启用但未启动时完成身份校验，规范化上传件属主，并改为先停止再屏蔽更新单元。上述尝试均在 Recorder 实际启动前结束。
+  - **新 T0** 为 `2026-11-03T09:50:41.299712099Z`。冻结基准为证据目录中的 `baseline.json`，记录 50/50 深度桥接、4,038 个活跃源全部可用（1,844 WS、2,194 REST）、pending 0、watermark 距 T0 约 0.17s。两条既定 dormant 仍明确记录。心跳状态文件 985,399 字节，较上轮留存的 4,990,189 字节约少 80%。T0 有 85 个 WS 组和 156 个活跃 partial。预热不计入资格时长。
+  - **旧版 ready 口径**为 43/50，七个低活跃 Spot 产品未收到首笔聚合成交，其中 BTCARS、ETHARS 还未收到首条 `bookTicker`，两者均已连接且深度桥接完成。独立接收探针 45s 内两路各 0 条，对照 BTCUSDT 收到 2,524 条。Binance 的 Spot `bookTicker` 在最优价或数量发生变化时推送。两路保持在冻结源集合和逐源可用率门禁内。预热记录到 Pong timeout，仍需在 2h 窗口核验。参见 [Binance Spot Book Ticker 文档](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#individual-symbol-book-ticker-streams)。
+  - **新检查点（北京时间）**。2h 为 11 月 3 日 **19:50:41**，12h 为 11 月 4 日 **05:50:41**，24h 为 11 月 4 日 **17:50:41**。已设置跟进检查。下一步为 M4.2，Production Ready 待 24h 全部验收。
+
 ---
 
 #### 任务 `M4.3`：第二阶段检查点：`T0 + 12h` 中期耐久与内存/存储平稳性门禁

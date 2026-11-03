@@ -888,3 +888,8 @@ drop those configured sources.
 - [Official USD-M market-data catalog](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data): Top Trader Long/Short Account Ratio (`GET /futures/data/topLongShortAccountRatio`) and Top Trader Long/Short Position Ratio (`GET /futures/data/topLongShortPositionRatio`). Both original documentation URLs redirect to this catalog.
 
 Documentation review only; no account/order endpoints or live market requests were used.
+
+
+### 2026-11-03 M4 rerun, Spot best bid and ask updates
+
+The Spot `bookTicker` stream pushes changes to best bid or ask price or quantity. M4.1 recorded connected quiet streams with no first frame separately from depth synchronization and source availability. [Binance Spot WebSocket Market Streams](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#individual-symbol-book-ticker-streams).

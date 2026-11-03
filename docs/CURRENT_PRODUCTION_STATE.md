@@ -1,6 +1,10 @@
 # Current Production State
 
-## M4.2 checkpoint (2026-11-03)
+## M4 rerun (2026-11-03)
+
+Recorder source `41d1839` started at 09:39:18 UTC on GreenCloud Tokyo. **M4.1 passed at 09:50:41.299712099 UTC** with PID 33345, invocation `b9cf14589aca449996a4aa32c5b81576`, and zero restarts. The baseline freezes all 4,038 active sources, 50 synchronized depth books, and a pending queue of zero. The external observer writes to `/srv/recorder-data/recorder-archive/m4-41d1839-20261103/`. Checkpoints fall at 11:50:41 UTC on November 3 and 21:50:41 UTC on November 3 and 09:50:41 UTC on November 4. Production readiness is pending.
+
+## M4.2 checkpoint (first run, historical, 2026-11-03)
 
 The run that began qualification at 05:18:17 UTC failed the 2h per-source availability gate. 411 of 4,038 sources exceeded 36 seconds of unavailability or uncertainty. The Recorder stopped cleanly and is inactive and disabled. Normal OS updates were restored. The 12h and 24h targets for that run are cancelled. The earlier M4.1 baseline below is retained as historical evidence. See the [M4.2 result and repair notes](production_milestone_plan.md#任务-m42第一阶段检查点t0--2h-稳定性与零积压门禁).
 
