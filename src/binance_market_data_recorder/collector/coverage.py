@@ -36,7 +36,7 @@ from ..binance.public_websocket import (
     CombinedWebSocketStream,
     DepthSequenceObserver,
     StreamGroup,
-    envelope_for_group,
+    capture_group_frame,
     logical_envelope,
     stream_groups,
 )
@@ -54,7 +54,7 @@ from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout
 from ..supervisor.depth_continuity import DepthContinuity
 from ..supervisor.readiness import CORE_STREAMS, CollectorReadiness, ReadinessSnapshot
-from .availability import AvailabilityJournal
+from .availability import Availability, AvailabilityJournal
 from .explicit import explicit_source_plan
 from .supervisor import CoreMarketTerminalFailure
 
@@ -80,7 +80,7 @@ class SourceState:
     recent_trades: RecentTradesCompactor | None = None
     sequence_reliable: bool | None = None
     completed_deliveries: set[int] = field(default_factory=set)
-    availability: dict[str, object] = field(default_factory=dict)
+    health: Availability | None = None
     forming_filtered_count: int = 0
     last_closed_open_time_ms: int | None = None
     first_kline_open_time_ms: int | None = None
@@ -91,7 +91,17 @@ class SourceState:
     period_limit: int = 499
     degraded_after_seconds: float | None = None
 
-    def public_dict(self, now: int) -> dict[str, object]:
+    @property
+    def availability(self) -> dict[str, object]:
+        return self.availability_at(self.health.observed_at if self.health is not None else 0)
+
+    def availability_at(self, now: int) -> dict[str, object]:
+        status = self.health.public_dict(now) if self.health is not None else {}
+        if self.dormant:
+            status.update(lifecycle="DORMANT", source_id="/".join(self.source.key))
+        return status
+
+    def _deadline(self) -> int:
         source = self.source
         deadline = self.response_deadline_utc_ns or (
             (self.last_success or self.first_due) + int((source.cadence_seconds + 10) * 1e9)
@@ -100,27 +110,33 @@ class SourceState:
             deadline = (self.last_success or self.first_due) + int(
                 (self.degraded_after_seconds + source.cadence_seconds) * 1e9
             )
-        status = (
+        return deadline
+
+    def status_at(self, now: int) -> str:
+        return (
             "DORMANT_LIFECYCLE"
             if self.dormant
             else ("CONNECTED" if self.connected else "CONNECTING")
-            if source.transport == "ws"
+            if self.source.transport == "ws"
             else (
                 "FAILED"
                 if self.error
                 else "PENDING"
                 if self.last_success is None
                 else "STALE"
-                if source.cadence_seconds and now > deadline
+                if self.source.cadence_seconds and now > self._deadline()
                 else "VALID"
             )
         )
+
+    def public_dict(self, now: int) -> dict[str, object]:
+        source = self.source
         return {
             "enabled": not self.dormant,
             "family": source.family,
             "scope": source.symbol,
             "stream": source.stream,
-            "status": status,
+            "status": self.status_at(now),
             "last_success_utc_ns": self.last_success,
             "last_attempt_utc_ns": self.last_attempt,
             "error_type": self.error,
@@ -129,7 +145,7 @@ class SourceState:
             "last_closed_open_time_ms": self.last_closed_open_time_ms,
             "backfill_start_ms": self.backfill_start_ms,
             "backfill_end_ms": self.backfill_end_ms if self.backfill_start_ms is not None else None,
-            "success_deadline_utc_ns": deadline,
+            "success_deadline_utc_ns": self._deadline(),
             "cadence_seconds": source.cadence_seconds,
             "priority": source.priority,
             "data_freshness_evaluated": source.lifecycle in {"closed_bar", "after_delivery"}
@@ -138,7 +154,7 @@ class SourceState:
             "publication_time_ms": self.publication_time_ms,
             "continuity_qualified": False,
             "sequence_reliable": self.sequence_reliable,
-            "availability": self.availability,
+            "availability": self.availability_at(now),
             "consecutive_failures": self.failures,
         }
 
@@ -653,8 +669,31 @@ class SelectedAssetCapture:
 
         sequence = DepthSequenceObserver()
 
+        def on_forming(source: Source, open_time: int, now: int) -> None:
+            state = self.sources.get(source.key)
+            if state is None:
+                return
+            if state.first_kline_open_time_ms is None:
+                state.first_kline_open_time_ms = open_time
+            state.last_success = now
+            state.error = None
+            state.forming_filtered_count += 1
+            state.count += 1
+            key = "/".join(source.key)
+            if now >= self._clock_unreliable_until:
+                self.availability.valid(key, now, checkpoint=False)
+            if state.health is None:
+                state.health = self.availability.ensure(key, now)
+
+        forming_observer = (
+            on_forming if self.coverage.kline_forming_policy == "closed_only" else None
+        )
+
         def capture(**kwargs: Any) -> EventEnvelope | None:
-            envelope = sequence.observe(envelope_for_group(group, product, **kwargs))
+            envelope = capture_group_frame(group, product, on_forming=forming_observer, **kwargs)
+            if envelope is None:
+                return None
+            envelope = sequence.observe(envelope)
             if (
                 "klineClosed" in envelope.source_sequence
                 and "malformed" not in envelope.capture_flags
@@ -677,18 +716,6 @@ class SelectedAssetCapture:
                         if interval and expected_t is not None and t > expected_t:
                             self._schedule_kline_backfill(state.source, expected_t, t - 1, interval)
                         state.last_closed_open_time_ms = max(state.last_closed_open_time_ms or 0, t)
-                if not is_closed and self.coverage.kline_forming_policy == "closed_only":
-                    if state is not None:
-                        state.last_success = envelope.receive_time_utc_ns
-                        state.error = None
-                        state.forming_filtered_count += 1
-                        state.count += 1
-                        now = envelope.receive_time_utc_ns
-                        key = "/".join(state.source.key)
-                        if now >= self._clock_unreliable_until:
-                            self.availability.valid(key, now, checkpoint=False)
-                        state.availability = self.availability.ensure(key, now).public_dict(now)
-                    return None
             return envelope
 
         collector = CombinedWebSocketStream(
@@ -1563,20 +1590,17 @@ class SelectedAssetCapture:
                     or self.availability.previous[key].get("dormant")
                 )
             ):
-                state.availability = {"lifecycle": "DORMANT", "source_id": key}
                 continue
-            health = self.availability.ensure(
+            state.health = self.availability.ensure(
                 key, now if source.lifecycle == "after_delivery" else state.first_due
             )
             if state.dormant:
                 self.availability.suspend(key, now)
                 # End eligibility explicitly; do not reinterpret earlier gaps as health.
-                state.availability = {**health.public_dict(now), "lifecycle": "DORMANT"}
                 continue
             self.availability.resume(key, now)
             if now < self._clock_unreliable_until:
                 self.availability.unavailable(key, now, "CLOCK_DISCONTINUITY")
-                state.availability = health.public_dict(now)
                 continue
             if previous is not None and (now < previous or now - previous > 5_000_000_000):
                 self.availability.unavailable(key, now, "MONITORING_UNKNOWN", since=previous)
@@ -1598,8 +1622,7 @@ class SelectedAssetCapture:
             if reason is not None:
                 self.availability.unavailable(key, now, reason, since=since)
             else:
-                self.availability.valid(key, now)
-            state.availability = health.public_dict(now)
+                self.availability.valid(key, now, checkpoint=False)
         self._pending_watermark_utc_ns = now
 
     async def _monitor_availability(self, stop: asyncio.Event) -> None:

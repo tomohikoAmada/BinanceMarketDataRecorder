@@ -25,7 +25,8 @@ import resource
 import shutil
 import time
 from collections.abc import Callable, Mapping
-from datetime import UTC, datetime
+from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from threading import RLock
 from uuid import uuid4
@@ -40,8 +41,13 @@ MetricKey = tuple[str, str, str]
 CAPACITY_SAMPLE_BUCKET_NS = 60_000_000_000
 
 
+@lru_cache(maxsize=4)
+def _utc_date_for_day(day: int) -> str:
+    return date.fromordinal(date(1970, 1, 1).toordinal() + day).isoformat()
+
+
 def utc_date_from_ns(value: int) -> str:
-    return datetime.fromtimestamp(value / 1_000_000_000, tz=UTC).date().isoformat()
+    return _utc_date_for_day(value // 86_400_000_000_000)
 
 
 class MetricsRecorder:

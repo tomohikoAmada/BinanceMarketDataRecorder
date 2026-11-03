@@ -247,7 +247,7 @@ class ServiceRuntime:
                 ),
             }
             side_status = getattr(collector, "side_data_status", None)
-            if callable(side_status):
+            if self.config.coverage is None and callable(side_status):
                 output[name.market][name.symbol]["side_data"] = side_status()
         return output
 
@@ -330,7 +330,16 @@ class ServiceRuntime:
         degraded_side_states = {"RETRYING", "STALE", "FAILED"}
         if self._status == "RUNNING":
             degraded_side_states.add("STOPPED")
-        if any(
+        now = self.utc_clock_ns()
+        coverage_degraded = (
+            self.config.coverage is not None
+            and isinstance(self._supervisor, SelectedAssetCapture)
+            and any(
+                state.status_at(now) in degraded_side_states
+                for state in self._supervisor.sources.values()
+            )
+        )
+        if coverage_degraded or any(
             item.get("enabled") and item.get("status") in degraded_side_states
             for item in side_items
         ):

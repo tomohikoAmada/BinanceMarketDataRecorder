@@ -1220,6 +1220,32 @@ def envelope_for_group(
     receive_time_utc_ns: int,
     receive_monotonic_ns: int,
 ) -> EventEnvelope:
+    envelope = capture_group_frame(
+        group,
+        product,
+        raw_payload=raw_payload,
+        connection_id=connection_id,
+        collector_instance_id=collector_instance_id,
+        collector_version=collector_version,
+        receive_time_utc_ns=receive_time_utc_ns,
+        receive_monotonic_ns=receive_monotonic_ns,
+    )
+    assert envelope is not None
+    return envelope
+
+
+def capture_group_frame(
+    group: StreamGroup,
+    product: Product | None,
+    *,
+    raw_payload: bytes,
+    connection_id: str,
+    collector_instance_id: str,
+    collector_version: str,
+    receive_time_utc_ns: int,
+    receive_monotonic_ns: int,
+    on_forming: Callable[[Source, int, int], None] | None = None,
+) -> EventEnvelope | None:
     source = group.sources[0]
     sequence: dict[str, int | str] = {}
     flags: tuple[str, ...] = ()
@@ -1320,6 +1346,10 @@ def envelope_for_group(
     except (ValueError, KeyError, TypeError, AttributeError, RecursionError):
         flags = ("malformed",)
         event_time = transaction_time = trade_time = None
+    else:
+        if on_forming is not None and sequence.get("klineClosed") == 0:
+            on_forming(source, int(sequence["openTime"]), receive_time_utc_ns)
+            return None
     return EventEnvelope(
         market=source.market,
         symbol=source.symbol if product is None else product.key.symbol,

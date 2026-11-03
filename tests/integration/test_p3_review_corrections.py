@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.factories import event
 from tests.unit.test_p2_coverage import SMALL, Response, products
-from tests.unit.test_p3_availability import BASE, flush, owner_at
+from tests.unit.test_p3_availability import BASE, owner_at
 
 
 @pytest.mark.parametrize("empty", [False, True])
@@ -127,7 +128,8 @@ def test_p3_r2_idle_or_recent_progress_does_not_backdate_a_stall(
         owner._observe_availability(BASE + 60_000_000_000)
         state = owner.sources[source.key]
         assert state.availability["unavailable_since_utc_ns"] is None
-        flush(owner.availability, catalog)
+        assert all(entry["is_transition"] for entry in owner.availability.pending)
+        asyncio.run(owner._flush_availability(all_pending=True))
         report = continuity_report(catalog, start=BASE, end=BASE + 60_000_000_000)["sources"]
         assert all(row["unavailable_or_unknown_ns"] == 0 for row in report)
         for second in range(61, 71):
@@ -138,7 +140,7 @@ def test_p3_r2_idle_or_recent_progress_does_not_backdate_a_stall(
         collector._persisted_total = 2
         collector._pending_since_utc_ns = None
         owner._observe_availability(BASE + 71_000_000_000)
-        flush(owner.availability, catalog)
+        asyncio.run(owner._flush_availability(all_pending=True))
         report = continuity_report(
             catalog, start=BASE, end=BASE + 71_000_000_000, source_ids=["/".join(source.key)]
         )["sources"][0]
@@ -255,7 +257,7 @@ def test_p3_r3_submonitor_depth_gap_survives_snapshot_recovery(
         for second in range(1, 12):
             elapsed = second * 1_000_000_000
             owner._observe_availability(BASE + elapsed)
-        flush(owner.availability, catalog)
+        asyncio.run(owner._flush_availability(all_pending=True))
         report = continuity_report(
             catalog, start=BASE + 1, end=BASE + 10_000_000_000, source_ids=["/".join(source.key)]
         )["sources"][0]

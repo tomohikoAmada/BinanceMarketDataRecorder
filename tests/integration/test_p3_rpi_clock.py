@@ -26,7 +26,7 @@ from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.integration.test_p2_capture import Client
 from tests.unit.test_p2_coverage import SMALL, Response, products
-from tests.unit.test_p3_availability import BASE, flush, owner_at
+from tests.unit.test_p3_availability import BASE, owner_at
 
 SECOND = 1_000_000_000
 
@@ -86,7 +86,7 @@ class RpiFixture:
         self.owner._observe_availability(self.now)
 
     def report(self, end: int) -> dict[str, object]:
-        flush(self.owner.availability, self.owner.catalog)
+        asyncio.run(self.owner._flush_availability(all_pending=True))
         return continuity_report(  # type: ignore[no-any-return]
             self.owner.catalog, start=BASE, end=BASE + end * SECOND, source_ids=[self.key],
         )["sources"][0]
@@ -314,7 +314,7 @@ def test_delivery_completion_ends_eligibility_without_clock_health_credit(
             assert (await owner.poll_once(state)).valid
             assert state.dormant and health.dormant
             assert health.last_valid == last_valid  # No clock-health credit from the response.
-            flush(owner.availability, catalog)
+            await owner._flush_availability(all_pending=True)
             gaps = catalog.source_availability_intervals("/".join(source.key), BASE, BASE + SECOND)
             assert len(gaps) == 1
             assert gaps[0]["started_at_utc_ns"] == BASE
