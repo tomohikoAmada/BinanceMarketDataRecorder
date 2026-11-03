@@ -25,6 +25,8 @@ prevent_sleep = false
 
 [recorder.coverage]
 underlying_assets = ["BTC", "ETH"]
+# M4 retry candidate: bounded poll tasks sharing the existing request budget.
+rest_concurrency = 8
 # ADR-0055 / D1: dated premium klines omitted prospectively; perpetual retained
 capture_dated_premium_klines = false
 # ADR-0057: USD-M delivery adlQuantile returns HTTP 400 / -1121; omitted prospectively

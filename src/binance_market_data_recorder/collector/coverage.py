@@ -17,6 +17,7 @@ from dataclasses import dataclass, field, replace
 from functools import partial
 from typing import Any, cast
 from uuid import uuid4
+from zlib import crc32
 
 from websockets.asyncio.client import connect
 from websockets.exceptions import InvalidStatus
@@ -89,6 +90,7 @@ class SourceState:
     backfill_due: float = 0
     next_period_ms: int | None = None
     period_limit: int = 499
+    publication_retries: int = 0
     degraded_after_seconds: float | None = None
 
     @property
@@ -339,8 +341,19 @@ class ProductCapture:
             and s.source.market == self.product.key.market
             and s.source.transport == "ws"
         )
+        limit = self.owner.coverage.streams_per_connection
+        if (
+            self.owner.config.coverage is not None
+            and self.product.key.market in {"spot", "um_perpetual"}
+            and self.product.key.symbol in {"BTCUSDT", "ETHUSDT"}
+        ):
+            hot = {"trade", "agg_trade", "book_ticker", "diff_depth", "rpi_depth"}
+            groups = stream_groups(tuple(s for s in sources if s.stream in hot), limit)
+            groups += stream_groups(tuple(s for s in sources if s.stream not in hot), limit)
+        else:
+            groups = stream_groups(sources, limit)
         async with asyncio.TaskGroup() as tasks:
-            for group in stream_groups(sources, self.owner.coverage.streams_per_connection):
+            for group in groups:
                 collector = self.owner.make_group(
                     group, self.product, self.persisted, partial(self.lifecycle, group)
                 )
@@ -1173,6 +1186,8 @@ class SelectedAssetCapture:
         source = state.source
         await shared_request_budget().acquire(source.charges)
         state.last_attempt = time.time_ns()
+        scheduled_at = state.last_attempt - int(max(0, time.monotonic() - state.next_due) * 1e9)
+        scheduled_at = max(state.first_due, scheduled_at)
         eligible_since = state.first_due
         if source.lifecycle == "after_delivery":
             delivery_times = [
@@ -1235,6 +1250,7 @@ class SelectedAssetCapture:
                 if source.cadence_seconds
                 else float("inf")
             )
+            bar_due: float | None = None
             if source.lifecycle == "closed_bar":
                 rows = result.document
                 interval = str(dict(source.parameters)["interval"])
@@ -1262,7 +1278,11 @@ class SelectedAssetCapture:
                     else:
                         next_close = latest_close + 1 + bar_period_seconds(interval) * 1000
                     delay = (next_close - now_ms) / 1000 + 1
-                    state.next_due = time.monotonic() + (max(1, delay) if delay >= 0 else 60)
+                    bar_due = time.monotonic() + (max(1, delay) if delay >= 0 else 60)
+                    state.next_due = bar_due
+                    if self.config.coverage is not None and state.error is None:
+                        # Spread aligned polls without moving the publication deadline.
+                        state.next_due += crc32("/".join(source.key).encode()) % 3501 / 1000
                 else:
                     state.error = "DataPublicationPending"
                     state.next_due = time.monotonic() + 60
@@ -1361,9 +1381,24 @@ class SelectedAssetCapture:
                         },
                         symbol=source.symbol,
                     )
-            if source.cadence_seconds:
+            d16_stale = (
+                self.config.coverage is not None
+                and source.family == "D16"
+                and state.error == "DataPublicationStale"
+            )
+            if d16_stale:
+                state.last_success = previous_success
+                if state.publication_retries < 2:
+                    state.publication_retries += 1
+                    state.next_due = time.monotonic() + 15
+                else:
+                    state.publication_retries = 0
+            elif source.family == "D16":
+                state.publication_retries = 0
+            if source.cadence_seconds and not d16_stale:
                 state.response_deadline_utc_ns = (
-                    time.time_ns() + int((max(0, state.next_due - time.monotonic()) + 10) * 1e9)
+                    time.time_ns()
+                    + int((max(0, (bar_due or state.next_due) - time.monotonic()) + 10) * 1e9)
                     if source.lifecycle == "closed_bar"
                     else result.envelope.receive_time_utc_ns
                     + int((source.cadence_seconds + 10) * 1e9)
@@ -1398,7 +1433,7 @@ class SelectedAssetCapture:
                     "/".join(source.key),
                     completed_at,
                     state.error,
-                    since=previous_success or state.first_due,
+                    since=scheduled_at if d16_stale else previous_success or state.first_due,
                 )
             if self.config.coverage is None:
                 if state.error is None:
@@ -1701,9 +1736,9 @@ class SelectedAssetCapture:
                     ):
                         break
                     if shared_request_budget().delay(state.source.charges) <= 0:
-                        self.polls[state.source.key] = asyncio.create_task(
-                            self._poll_if_ready(state)
-                        )
+                        task = asyncio.create_task(self._poll_if_ready(state))
+                        self.polls[state.source.key] = task
+                        task.add_done_callback(lambda _: self._changed.set())
                 for state in self._active_sources.values():
                     if len(self.polls) >= self.coverage.rest_concurrency:
                         break
@@ -1712,9 +1747,9 @@ class SelectedAssetCapture:
                         and state.source.key not in self.polls
                         and time.monotonic() >= state.backfill_due
                     ):
-                        self.polls[state.source.key] = asyncio.create_task(
-                            self._run_kline_backfill(state)
-                        )
+                        task = asyncio.create_task(self._run_kline_backfill(state))
+                        self.polls[state.source.key] = task
+                        task.add_done_callback(lambda _: self._changed.set())
                 # Cheap memory checks retain 1s durability without empty worker jobs.
                 for spool_key, spool in tuple(self.spools.items()):
                     if (
@@ -1726,7 +1761,7 @@ class SelectedAssetCapture:
                         async with self._spool_locks[spool_key]:
                             await run_owned_blocking_call(spool.drain_all)
                 with suppress(TimeoutError):
-                    await asyncio.wait_for(stop.wait(), timeout=0.1)
+                    await asyncio.wait_for(self._changed.wait(), timeout=0.1)
         except BaseException as exc:
             terminal_error = exc
             raise

@@ -360,3 +360,49 @@ def test_statistical_period_is_evaluated_against_requested_window(
                 spool.close_and_seal()
 
     asyncio.run(scenario())
+
+
+def test_d16_retries_stale_publication_from_due_without_refreshing_health(tmp_path: Path) -> None:
+    import time
+
+    async def scenario() -> None:
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = owner_at(tmp_path, catalog)
+            product = next(p for p in products() if p.key.market == "um_perpetual")
+            source = next(s for s in product_sources(product, SMALL) if s.family == "D16")
+            source = replace(source, required_fields=())
+            owner.add_source(source)
+            state = owner.sources[source.key]
+            previous = time.time_ns() - 300_000_000_000
+            state.first_due = previous
+            state.last_success = previous
+            key = "/".join(source.key)
+            owner.availability.valid(key, previous)
+            earliest = time.time_ns() - 3_000_000_000
+            gap = None
+            for attempt in range(3):
+                state.next_due = time.monotonic() - 2
+                start = owner._parameters(source)["startTime"]
+                owner.clients["usdm"] = Client([{"timestamp": start - 300_000}])
+                assert (await owner.poll_once(state)).valid
+                assert state.error == "DataPublicationStale"
+                assert state.last_success == previous
+                current_gap = owner.availability.sources[key].unavailable_since
+                assert state.last_attempt is not None
+                assert current_gap is not None and earliest <= current_gap <= state.last_attempt
+                if gap is not None:
+                    assert current_gap == gap
+                gap = current_gap
+                delay = state.next_due - time.monotonic()
+                assert (14 < delay <= 15) if attempt < 2 else (299 < delay <= 300)
+            start = owner._parameters(source)["startTime"]
+            owner.clients["usdm"] = Client([{"timestamp": start}])
+            assert (await owner.poll_once(state)).valid
+            assert state.error is None
+            assert state.last_success is not None and state.last_success > previous
+            assert owner.availability.sources[key].unavailable_since is None
+            for spool in owner.spools.values():
+                spool.close_and_seal()
+
+    asyncio.run(scenario())
