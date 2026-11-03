@@ -18,6 +18,7 @@ import os
 import subprocess
 import sys
 import time
+import tomllib
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -59,8 +60,8 @@ class StatusObservation:
     service_status: str
     network_connected: bool
     network_status: str
-    catalog_sealed_chunks: int
-    catalog_active_chunks: int
+    catalog_sealed_chunks: int | None
+    catalog_active_chunks: int | None
     space_severity: str | None
     last_event_age_seconds: float | None
     detail: str | None = None
@@ -225,26 +226,21 @@ class RawChunkTracker:
         self._initial_chunks: int = -1
         self._initial_bytes: int = -1
 
-    def sample(self, raw_dir: Path, now_mono: float) -> RawChunksObservation:
+    def sample(self, data_root: Path, now_mono: float) -> RawChunksObservation:
         zst_count = 0
         partial_count = 0
         json_count = 0
         total_zst_bytes = 0
 
-        if raw_dir.is_dir():
+        data_dir = data_root / "data"
+        for entry in (data_dir / "sealed").glob("*.zst"):
             try:
-                for entry in raw_dir.rglob("*"):
-                    if entry.is_file():
-                        name = entry.name
-                        if name.endswith(".zst"):
-                            zst_count += 1
-                            total_zst_bytes += entry.stat().st_size
-                        elif name.endswith(".partial"):
-                            partial_count += 1
-                        elif name.endswith(".json"):
-                            json_count += 1
-            except OSError:
-                pass
+                total_zst_bytes += entry.stat().st_size
+                zst_count += 1
+            except FileNotFoundError:
+                continue  # An archive worker can retire a chunk during sampling.
+        partial_count = sum(1 for _ in (data_dir / "active").glob("*.partial"))
+        json_count = sum(1 for _ in (data_dir / "manifests").glob("*.manifest.json"))
 
         if self._initial_chunks < 0:
             self._initial_time = now_mono
@@ -370,10 +366,13 @@ def query_status_cli(
     cmd: list[str] = (
         [executable]
         if cli_path
-        else [executable, "-m", "binance_market_data_recorder.cli"]
+        else [executable, "-m", "binance_market_data_recorder"]
     )
-    if config_path and config_path.is_file():
+    environment = os.environ.copy()
+    if config_path is not None:
         cmd.extend(["--config", str(config_path)])
+    else:
+        environment["BINANCE_MARKET_RECORDER_DATA_ROOT"] = str(data_root)
     cmd.append("status")
 
     try:
@@ -383,6 +382,7 @@ def query_status_cli(
             text=True,
             check=False,
             timeout=8,
+            env=environment,
         )
         if proc.returncode == 0:
             payload = json.loads(proc.stdout)
@@ -401,8 +401,8 @@ def query_status_cli(
                 service_status=str(payload.get("status", "UNKNOWN")),
                 network_connected=bool(payload.get("network_connected")),
                 network_status=str(payload.get("network_status", "UNKNOWN")),
-                catalog_sealed_chunks=int(catalog.get("sealed_chunks", 0)),
-                catalog_active_chunks=int(catalog.get("active_chunks", 0)),
+                catalog_sealed_chunks=catalog.get("sealed_chunks"),
+                catalog_active_chunks=catalog.get("active_chunks"),
                 space_severity=storage.get("space_severity"),
                 last_event_age_seconds=last_event_sec,
                 detail=payload.get("detail"),
@@ -410,32 +410,13 @@ def query_status_cli(
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
         pass
 
-    # Direct fallback: read service_state.json if available
-    state_file = data_root / "state" / "service_state.json"
-    if state_file.is_file():
-        try:
-            state_data = json.loads(state_file.read_text(encoding="utf-8"))
-            return StatusObservation(
-                available=True,
-                service_status=str(state_data.get("status", "UNKNOWN")),
-                network_connected=bool(state_data.get("network_connected")),
-                network_status=str(state_data.get("network_status", "UNKNOWN")),
-                catalog_sealed_chunks=0,
-                catalog_active_chunks=0,
-                space_severity=None,
-                last_event_age_seconds=None,
-                detail="read_from_service_state_json_fallback",
-            )
-        except (OSError, json.JSONDecodeError):
-            pass
-
     return StatusObservation(
         available=False,
         service_status="UNKNOWN",
         network_connected=False,
         network_status="UNKNOWN",
-        catalog_sealed_chunks=0,
-        catalog_active_chunks=0,
+        catalog_sealed_chunks=None,
+        catalog_active_chunks=None,
         space_severity=None,
         last_event_age_seconds=None,
         detail="status_command_failed",
@@ -444,7 +425,9 @@ def query_status_cli(
 
 def query_disk(data_root: Path) -> DiskObservation:
     """Sample filesystem space via statvfs."""
-    target = data_root if data_root.exists() else Path.home()
+    target = data_root
+    while not target.exists():
+        target = target.parent
     stat = os.statvfs(target)
     total_bytes = stat.f_blocks * stat.f_frsize
     free_bytes = stat.f_bfree * stat.f_frsize
@@ -496,7 +479,7 @@ def take_sample(
     proc_obs = proc_sampler.sample(target_pid)
     status_obs = query_status_cli(config_path, data_root, cli_path=cli_path)
     disk_obs = query_disk(data_root)
-    chunks_obs = chunk_tracker.sample(data_root / "raw", now_mono)
+    chunks_obs = chunk_tracker.sample(data_root, now_mono)
 
     return SampleRecord(
         timestamp_utc=timestamp_utc,
@@ -524,7 +507,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--data-root",
         type=Path,
-        default=DEFAULT_VPS_DATA_ROOT,
+        default=None,
         help="Path to recorder persistent data root",
     )
     parser.add_argument(
@@ -574,23 +557,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.once:
         args.count = 1
 
-    # Auto-resolve data root from config if default doesn't exist but config does
-    data_root: Path = args.data_root
-    if (
-        args.config
-        and args.config.is_file()
-        and (not data_root.exists() or data_root == DEFAULT_VPS_DATA_ROOT)
-    ):
+    data_root = args.data_root
+    if args.config is not None:
         try:
-            import tomllib
-
             with args.config.open("rb") as handle:
                 parsed_toml = tomllib.load(handle)
-                configured_root = parsed_toml.get("recorder", {}).get("data_root")
-                if configured_root:
-                    data_root = Path(configured_root)
-        except Exception:
-            pass
+            configured_root = Path(parsed_toml["recorder"]["data_root"]).expanduser()
+        except (OSError, KeyError, tomllib.TOMLDecodeError) as exc:
+            parser.error(f"cannot read recorder data_root from config: {exc}")
+        if data_root is not None and data_root.resolve() != configured_root.resolve():
+            parser.error("--data-root must match the recorder config data_root")
+        data_root = configured_root
+    data_root = (data_root or DEFAULT_VPS_DATA_ROOT).expanduser().resolve()
+
+    if args.interval <= 0 or (args.count is not None and args.count <= 0):
+        parser.error("--interval and --count must be positive")
 
     proc_sampler = ProcessSampler()
     chunk_tracker = RawChunkTracker()

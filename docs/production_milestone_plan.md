@@ -412,7 +412,7 @@
 
 ---
 
-#### 任务 `M3.3`：生产构建包与 VPS 部署配置冻结 **`[COMPLETED — 独立验收完成]`**
+#### 任务 `M3.3`：生产构建包与 VPS 部署配置冻结 **`[COMPLETED — 独立复核接续完成]`**
 
 - **具体改造要求**：
   1. 构建纯净 Wheel 包并记录源码 Git Commit SHA 与构建产物 SHA-256。
@@ -421,17 +421,14 @@
 - **独立验收标准**：
   - Wheel 包在本地全新虚拟环境中安装后，`binance-market-recorder --version`、`config show`、`doctor` 均正常执行并通过检查。
 
-- **完成状态（2026-11-03 独立验收完成）**：
-  - **纯净 Wheel 构建与散列冻结**：基于验证通过的源码（`src/` 保持与 `45440e9` 字节一致），构建纯净 `binance_market_data_recorder-0.1.0a1-py3-none-any.whl`（`578,787` 字节），SHA-256 为 `925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119`，对应 Git Commit `45440e966087`。机器可读元数据见 [`docs/benchmarks/m3.3-release-freeze.json`](benchmarks/m3.3-release-freeze.json)。
-  - **生产配置模板建立与全项校验**：编写并验证 canonical 配置文件模板 [`deploy/recorder.toml`](../deploy/recorder.toml) 及同步副本 [`examples/recorder.production.toml`](../examples/recorder.production.toml)。显式锁存 `underlying_assets = ["BTC", "ETH"]`、15 分钟 / 128 MiB 分片轮换上限（M1.1）、仅落盘已收盘 K 线并支持自动 REST 补齐（ADR-0058 / D1）、S12 精简 6 周期（D2）、ADR-0055/0057 豁免源，以及底层 SQLite WAL+NORMAL 策略。新增专用回归 [`tests/unit/test_production_config.py`](../tests/unit/test_production_config.py) 验证配置契约 100% 成立。
-  - **非侵入式外部观测脚本**：新增 [`tools/observe_vps_recorder.py`](../tools/observe_vps_recorder.py) 及启动包装 [`scripts/observe-recorder`](../scripts/observe-recorder)，实现对 `systemctl show`、进程 CPU/RSS、`binance-market-recorder status`、`os.statvfs` 磁盘剩余量及 Raw 分片生成速率的定期采样，以结构化 JSONL 输出，全链路只读、不抢占 SQLite 锁且不触碰服务状态。新增专项测试 [`tests/unit/test_vps_observer.py`](../tests/unit/test_vps_observer.py)（10 项通过）。
-  - **独立全新环境验收通过**：在全新虚拟环境中安装该 Wheel 包，实测 `binance-market-recorder --version`（正确打印 `0.1.0a1 (git 45440e966087)`）、`config show`（默认配置与生产模板解析一致）与 `doctor`（5 项平台/路径/代理检查全 PASS）均完全通过。
-  - **全量测试与质量门禁**：离线测试套件通过（**2562 passed, 24 skipped, 5 deselected, 13 warnings in 213.10s**）；Ruff 全绿、Strict Mypy（386 个源文件）0 错误、M0 契约与 Go Raw v1 golden 均 100% 验证通过。
-  - **发现的问题与环境边界**：
-    1. 生产配置中的 `data_root = "/var/lib/binance-market-data-recorder"` 为 Linux VPS 标准路径，需由 systemd 服务用户在 Ubuntu 上运行；macOS 本地开发环境因无 `/private/var/lib` 写权限，默认 CLI 诊断检查应使用无 `--config` 参数的本机应用支持目录。
-    2. `vps-production-v1` 容量配置文件严格禁止任何 `BINANCE_MARKET_RECORDER_*` 环境变量注入以防未授权路径劫持，需完全依赖 `/etc/binance-market-data-recorder/recorder.toml` 文件定义。
-    3. `tools/observe_vps_recorder.py` 支持在非 Linux 环境（macOS）平滑降级（记录 `systemctl_not_found` 并自动退回 `ps` 统计），确保跨平台离线测试不被中断。
-  - 完整审查报告与指标见 [`M3.3 复核记录`](benchmarks/m3.3-review-20261103.md)。至此 Milestone 3 全部完成，正式进入 Milestone 4 VPS 实战验收。
+- **完成状态（2026-11-03 独立复核接续完成）**：
+  - 原 `9fb5e0e` 的 Wheel 和主要生产策略正确，但**原“全部独立验收完成”声明撤回**：模板遗漏 P4 已验证的 32 MiB 帧上限；观察器调用无执行入口的 `…cli` 模块、扫描不存在的 `raw/` 目录，CLI 失败时又把未校验的状态文件当作健康状态；配置测试在现有 CI 环境变量下失败。完整问题与修复见 [M3.3 复核记录](benchmarks/m3.3-review-20261103.md)。
+  - **保留并核实原 Wheel**：`578,787` bytes，SHA-256 `925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119`；包内全部 **150 个文件**与 `45440e9660873b9bfe60d1cf6ad8c0db5c54b5d0` 的 `src/` 逐字节相符，无缺失。当前生产 `src/` 与该提交一致，不重复改造采集路径。
+  - **配置重新冻结**：保留 BTC+ETH、900s/128 MiB、1s fsync、closed_only、S12 六周期、D06 分档和 ADR-0055/0057 豁免；将 `max_frame_bytes` 恢复为 **33,554,432（32 MiB）**，覆盖 P4 已实测的 17,817,762-byte Spot 目录。两份模板一致，并在 [冻结 JSON](benchmarks/m3.3-release-freeze.json) 记录实际配置、依赖锁和观察器摘要。
+  - **观察器接通真实数据**：通过包的 `__main__` 执行 `status`，读取 `data/active`、`data/sealed`、`data/manifests` 的目录元数据；配置与数据目录保持一致，缺失 Catalog 用 `null` 表示。删除未经存活/心跳校验的健康回退，继续沿用现有 CLI 的 `STALE` 判断。无 Raw 解压、SQLite 写事务或服务控制操作；WAL 只读连接仍可能更新 SQLite 共享内存读标记。
+  - **干净 Wheel 验收**：新 venv 按 macOS runtime lock 安装依赖，再 `--no-deps` 安装原 Wheel，`pip check` 通过；从仓库外清除项目环境覆盖后运行版本、默认/生产模板 `config show`、默认 `doctor` 全通过。版本真实输出为 `0.1.0a1 (git unknown)`：现有版本函数从环境/当前 checkout 探测 Git，并未嵌入 Wheel；源码身份由文件比对和冻结 SHA 证明，不以 checkout 内的版本输出替代。Linux `/var/lib` 模板在 macOS 的 `doctor` 权限失败保留披露，不声称 VPS 已验收。
+  - **实际观察器验收**：新 venv 内使用安装的 Wheel 生成真实非空 Raw、manifest 和 Catalog，仓库外连续采样两次，正确读出 RUNNING、PID/CPU/RSS、Catalog 与磁盘分片数，数据文件摘要不变；专项回归另覆盖 active partial、过期心跳、缺失 Catalog/配置和现有 CI 环境。最终离线回归 **2566 passed, 24 skipped, 5 deselected, 13 warnings in 217.90s (0:03:37)**；Ruff、strict mypy（386 文件）、M0、Go Raw golden 与差异检查全通过，13 条既有 fork 警告保留披露。
+  - **范围**：本次只补齐 M3.3，不启动 M4 或 SSH 维护；下一步是 M4.1，目标宿主机平台、路径权限和连续运行门禁仍须实测。
 
 ---
 

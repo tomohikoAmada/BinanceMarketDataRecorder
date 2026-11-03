@@ -1,8 +1,8 @@
 # Current Production State
 
-## Active Status (2026-11-02)
+## Active Status (2026-11-03)
 
-- **Production Readiness**: **NO** (currently progressing through the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md); `M1.0` completed, baseline established in [`docs/benchmarks/baseline-main.json`](benchmarks/baseline-main.json)).
+- **Production Readiness**: **NO** (currently progressing through the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md); M1–M3 are complete; M4 VPS qualification is still pending).
 - **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.
 - **Milestone Progress**:
   - `M1.0` (Pre-M1 Baseline Pipeline Benchmark): **COMPLETED after independent correction** (2026-11-02; [review](benchmarks/m1.0-review-20261102.md)). Corrected v2 tool and reports verify two identical inputs and 13,966 decoded Raw frames per run (content digest `cb65e4c7...`). At the M1.0 freeze, production `src/` matched `f109ffc`; the 12s synthetic baseline includes startup/shutdown and makes no steady-state rotation/backlog claim. Original v1 reports are retained under `docs/benchmarks/archive/`.
@@ -12,9 +12,12 @@
   - `M1.4` (direct envelope framing and batched REST persistence): **COMPLETED after independent correction** ([review](benchmarks/m1.4-review-20261102.md)); removed residual Writer dictionary copies and fixed unobserved Future exceptions on REST drain failures.
   - `M2.1` (remove live post-seal full-file readback and background re-verification): **COMPLETED after independent correction** ([review](benchmarks/m2.1-review-20261102.md)); removed live verification toggles and seal compatibility fallbacks, fixed compressed short writes, and exercised actual rotation/stop and manual corruption detection.
   - `M2.2` (remove startup empty chunks): **COMPLETED after independent correction** ([review](benchmarks/m2.2-review-20261102.md)); startup emits no empty Raw/boundary files, first real stream chunks carry the manifest marker. Fixed startup evidence being masked by an ambiguous old-frame gap; verified legacy/new Raw normalization and replay together.
-  - Next task: `M2.3` (unify the WebSocket base and collector stacks). This review did not deploy to the VPS or reobserve its service state.
-- **GreenCloud VPS (`greencloud-tokyo-01`) State**:
-  - Primary service `binance-market-data-recorder.service` remains `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
+  - `M2.3` / `M2.4`: **COMPLETED after independent correction**; unified collection and deferred peripheral imports, with the Catalog split by domain.
+  - `M3.1` / `M3.2`: **COMPLETED after independent correction**; actual three-way 45-minute runs, full offline/stress/recovery checks.
+  - `M3.3`: **COMPLETED after independent correction** ([review](benchmarks/m3.3-review-20261103.md)); source-matched Wheel retained, fresh-venv CLI checks pass, 32 MiB production frame limit restored, observer verified against actual Raw/Catalog.
+  - Next task: **M4.1**. This review did not deploy to the VPS or reobserve its service state.
+- **Last recorded GreenCloud VPS (`greencloud-tokyo-01`) state (2026-11-02; not reobserved in this review)**:
+  - Primary service `binance-market-data-recorder.service` was recorded as `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
   - Temporary P4 diagnostic units (`p4-btc-recorder.service` and timers) were stopped cleanly after diagnostic runs; all 45, 337, and 874 sealed chunks across Runs A, B, and C passed independent `raw-independent.v2` verification with zero corruption.
 
 ## Summary of Retained Baseline & Diagnostic Findings (P0–P3 & P4-prep)

@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from binance_market_data_recorder.config import load_config
+from binance_market_data_recorder.spool.format import encode_frame
+from tests.factories import event
 
 ROOT = Path(__file__).resolve().parents[2]
 DEPLOY_CONFIG = ROOT / "deploy" / "recorder.toml"
@@ -20,7 +22,7 @@ def test_production_config_files_exist_and_match() -> None:
 
 
 def test_production_config_loads_and_verifies_m3_3_contract() -> None:
-    loaded = load_config(config_file=DEPLOY_CONFIG)
+    loaded = load_config(config_file=DEPLOY_CONFIG, environ={})
     config = loaded.config
 
     # Host and environment paths
@@ -36,7 +38,7 @@ def test_production_config_loads_and_verifies_m3_3_contract() -> None:
 
     # Ingress queue and frame sizes
     assert config.ingress_queue_capacity == 8192
-    assert config.max_frame_bytes == 16 * 1024 * 1024
+    assert config.max_frame_bytes == 32 * 1024 * 1024
     assert config.heartbeat_seconds == 5.0
     assert config.prevent_sleep is False
 
@@ -78,3 +80,10 @@ def test_production_config_loads_and_verifies_m3_3_contract() -> None:
     assert cadences["cm_perpetual:ETHUSD_PERP"] == 30.0
     assert cadences["cm_delivery:BTCUSD_261225"] == 30.0
     assert cadences["cm_delivery:ETHUSD_261225"] == 30.0
+
+
+def test_production_frame_limit_accepts_observed_spot_directory_size() -> None:
+    config = load_config(config_file=DEPLOY_CONFIG, environ={}).config
+    # P4 Run A failed before discovery at this real response representation size.
+    frame = encode_frame(event(payload=b" " * 17_817_762), max_frame_bytes=config.max_frame_bytes)
+    assert len(frame) > 16 * 1024 * 1024

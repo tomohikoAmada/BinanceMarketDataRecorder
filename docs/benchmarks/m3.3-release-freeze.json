@@ -1,6 +1,6 @@
 {
   "schema": "binance-market-data-recorder/release-freeze.v1",
-  "frozen_at_utc": "2026-11-03T01:55:00Z",
+  "frozen_at_utc": "2026-11-03T02:06:22.509707+00:00",
   "git_commit": "45440e9660873b9bfe60d1cf6ad8c0db5c54b5d0",
   "git_commit_short": "45440e9",
   "distribution_name": "binance-market-data-recorder",
@@ -8,13 +8,19 @@
   "wheel": {
     "filename": "binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
     "size_bytes": 578787,
-    "sha256": "925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119"
+    "sha256": "925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119",
+    "local_path": "dist/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+    "source_files_verified": 150,
+    "source_match": "All package files byte-match git_commit; no tracked package files missing"
   },
   "production_config": {
     "canonical_template_path": "deploy/recorder.toml",
     "example_path": "examples/recorder.production.toml",
     "target_vps_path": "/etc/binance-market-data-recorder/recorder.toml",
-    "underlying_assets": ["BTC", "ETH"],
+    "underlying_assets": [
+      "BTC",
+      "ETH"
+    ],
     "capacity_profile": "vps-production-v1",
     "data_root": "/var/lib/binance-market-data-recorder",
     "network_proxy_mode": "direct",
@@ -23,15 +29,33 @@
     "rotation_bytes": 134217728,
     "durability_interval_seconds": 1.0,
     "ingress_queue_capacity": 8192,
-    "max_frame_bytes": 16777216,
+    "max_frame_bytes": 33554432,
     "heartbeat_seconds": 5.0,
     "kline_forming_policy": "closed_only",
-    "spot_utc8_intervals": ["6h", "12h", "1d", "3d", "1w", "1M"],
+    "spot_utc8_intervals": [
+      "6h",
+      "12h",
+      "1d",
+      "3d",
+      "1w",
+      "1M"
+    ],
     "capture_dated_premium_klines": false,
     "capture_dated_adl_risk": false,
     "recent_trades_interval_seconds": 30.0,
     "max_steady_derivative_weight_per_minute": 1000.0,
-    "catalog_policy": "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL (ADR-0059)"
+    "catalog_policy": "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL (ADR-0059)",
+    "sha256": "5a9a2510b5ae3457c06075adeee9d57b36349cdda93920da3670f53b01fb7082",
+    "frame_limit_evidence": "P4 Run A rejected a 17,817,762-byte Spot directory at 16 MiB; retain P4 Run B/C 32 MiB configuration",
+    "temporary_space_budget": {
+      "scope": "M3.3 32 MiB frame configuration; same conservative 2x compression budget as M1.1",
+      "per_concurrent_seal_bytes": 335544344,
+      "planned_vps_cpu_count": 2,
+      "python312_default_executor_workers": 6,
+      "planned_vps_temporary_bytes": 2013266064,
+      "hard_reserve_bytes": 10737418240,
+      "limit": "M4.1 must confirm actual CPU/executor configuration; the old 32-worker universal bound for 16 MiB frames does not apply to this enlarged frame limit"
+    }
   },
   "external_observer": {
     "script_path": "tools/observe_vps_recorder.py",
@@ -42,21 +66,111 @@
       "service_status_and_catalog_sampling",
       "filesystem_statvfs_capacity_sampling",
       "raw_chunks_count_and_growth_rate_sampling"
-    ]
+    ],
+    "sha256": "76dfc5aa970792ccf98c931bff0302b10a6ad7698ac0f2dbe67676839e0d5677",
+    "wrapper_sha256": "cd452cdea293d50f56b76d0c5c218e8764ed3746d60b3254c429664a2cdeec99",
+    "raw_paths": [
+      "data/active/*.partial",
+      "data/sealed/*.zst",
+      "data/manifests/*.manifest.json"
+    ],
+    "growth_rate_scope": "Net retained sealed-file/byte increase since first sample, clamped at zero; archive retirement can reduce the observed rate",
+    "read_only_scope": "No Recorder data writes or SQLite write transactions; normal WAL read locks/shared-memory read marks remain possible"
   },
   "acceptance_evidence": {
-    "isolated_venv_installation": "PASS",
-    "cli_version": "binance-market-data-recorder 0.1.0a1 (git 45440e966087)",
+    "isolated_venv_installation": "PASS: fresh Python 3.12 venv, hash-locked runtime dependencies, --no-deps Wheel installation, pip check",
+    "cli_version": "binance-market-data-recorder 0.1.0a1 (git unknown)",
     "cli_config_show_default": "PASS",
     "cli_config_show_production": "PASS",
-    "cli_doctor": "PASS",
-    "full_offline_regression": "2562 passed, 24 skipped, 5 deselected, 13 warnings in 213.10s",
+    "cli_doctor": "PASS: default macOS profile, 4 checks; Linux template data_root permissions fail on macOS as expected",
+    "full_offline_regression": "2566 passed, 24 skipped, 5 deselected, 13 warnings in 217.90s (0:03:37)",
     "static_quality_gates": {
       "ruff": "PASS",
       "mypy_strict": "PASS (386 source files)",
       "m0_contracts": "PASS",
       "go_raw_v1_golden": "PASS",
       "git_diff_check": "PASS"
-    }
-  }
+    },
+    "cli_version_scope": "Invoked outside all Git checkouts, without project environment overrides; existing Wheel does not embed a Git SHA",
+    "cli_doctor_result": {
+      "checks": [
+        {
+          "name": "python_version",
+          "observed": "3.12.14",
+          "required": ">=3.12,<3.13",
+          "status": "PASS"
+        },
+        {
+          "name": "certified_platform",
+          "observed": {
+            "machine": "arm64",
+            "system": "Darwin"
+          },
+          "required": "macOS Apple Silicon or Ubuntu Linux ARM64",
+          "status": "PASS",
+          "support_level": "SUPPORTED"
+        },
+        {
+          "data_root": "/Users/amada/Library/Application Support/BinanceMarketDataRecorder",
+          "data_root_exists": true,
+          "mutated": false,
+          "name": "data_root_parent_access",
+          "nearest_existing_parent": "/Users/amada/Library/Application Support/BinanceMarketDataRecorder",
+          "status": "PASS"
+        },
+        {
+          "name": "proxy_policy",
+          "proxy_loopback": null,
+          "proxy_mode": "direct",
+          "proxy_port": null,
+          "proxy_scheme": null,
+          "raw_proxy_url_exposed": false,
+          "status": "PASS"
+        }
+      ],
+      "command": "doctor",
+      "filesystem_mutated": false,
+      "network_accessed": false,
+      "status": "PASS"
+    },
+    "wheel_smoke_exit_codes": {
+      "version": 0,
+      "config_default": 0,
+      "config_production": 0,
+      "doctor_default": 0,
+      "doctor_linux_template_on_macos": 1
+    },
+    "targeted_config_and_observer_regression": "16 passed in 3.53s",
+    "ci_environment_config_regression": "3 passed in 0.11s with BINANCE_MARKET_RECORDER_DATA_ROOT preset",
+    "installed_wheel_observer_smoke": {
+      "samples": 2,
+      "unchanged_data_file_hashes": {
+        "state/catalog.sqlite": "0ab48b25cba617ed3a4acca0161813b314c095ef63544bb4af60769eb1012977",
+        "state/service_state.json": "20061798dfcfee7bb4cc6af56e66df246027b4815b2a2da493e5d765d366e58f",
+        "state/catalog.sqlite-wal": "236a7b5ac8d57d56b435038728d83184f75f55bc89b8e93acbbba70cec6a4ec0",
+        "data/sealed/37fa4c706a2b4a7aa7c05f5a5cdc814b.bmdr.zst": "9229d5e4d88f1280dd0a0e5b00eea27e606a5dcc800a7c1358e6fd7d9075f134",
+        "data/manifests/37fa4c706a2b4a7aa7c05f5a5cdc814b.manifest.json": "f5f694d720c01e6b764b5d3dcee540a80b79994f39ae6e0c66ee3ecd0b73226d"
+      },
+      "observed_sealed_chunks": 1,
+      "observed_manifests": 1,
+      "observed_status": "RUNNING",
+      "cli": "installed wheel via package __main__",
+      "systemd": "not available on local macOS; missing-binary path exercised"
+    },
+    "runtime_lock_sha256": {
+      "requirements/macos-arm64-python312.lock": "a5108d2595a914033e4b5d956848e383800bafafbcd3aa9beb7c8e133dda696c",
+      "requirements/linux-aarch64-python312.lock": "5f1008b3f34b10731c9a7cc2381a1d760869bcd9fdd9ab8babc9f923671e1ce2",
+      "requirements/linux-x86_64-python312.lock": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335"
+    },
+    "limits": [
+      "Local macOS independent validation only; no new SSH/deployment/service-state observations",
+      "Real Linux systemd and target-host production doctor remain M4.1 checks",
+      "M3.1 and M3.2 measurements retain their recorded source revisions; not rerun by this M3.3 review"
+    ],
+    "warnings_scope": "13 pre-existing Python 3.12 multiprocessing fork deprecation warnings: 5 archive_kill9, 8 catalog_snapshot; no new warnings",
+    "full_offline_log_sha256": "e02ed7edd873349f1cdfb73e7445420fcdf46391181439c4a95b6338a6e7034c"
+  },
+  "independently_verified_at_utc": "2026-11-03T02:05:24.507287+00:00",
+  "reviewed_delivery_git_commit": "9fb5e0e32b99272fd0c887ba81681b437da8aa2f",
+  "original_frozen_at_utc": "2026-11-03T01:55:00Z"
 }

@@ -4,9 +4,17 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from binance_market_data_recorder.service.state import ServiceStateStore
+from binance_market_data_recorder.spool.writer import RawChunkWriter
+from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from tests.factories import event
 from tools.observe_vps_recorder import (
     ProcessObservation,
     ProcessSampler,
@@ -123,29 +131,29 @@ def test_process_sampler_with_mocked_alive(tmp_path: Path) -> None:
 
 
 def test_raw_chunk_tracker(tmp_path: Path) -> None:
-    raw_dir = tmp_path / "raw"
-    raw_dir.mkdir()
+    layout = ensure_storage_layout(tmp_path)
 
     tracker = RawChunkTracker()
     now = 1000.0
 
     # Initial sample: 0 chunks
-    obs1 = tracker.sample(raw_dir, now)
+    obs1 = tracker.sample(tmp_path, now)
     assert obs1.sealed_zst_count == 0
     assert obs1.active_partial_count == 0
     assert obs1.total_sealed_bytes == 0
     assert obs1.growth_rate_chunks_per_hour == 0.0
 
     # Create 2 sealed .zst (each 10 MiB) and 1 .partial
-    chunk1 = raw_dir / "chunk1.zst"
+    chunk1 = layout.sealed / "chunk1.zst"
     chunk1.write_bytes(b"x" * (10 * 1024 * 1024))
-    chunk2 = raw_dir / "chunk2.zst"
+    chunk2 = layout.sealed / "chunk2.zst"
     chunk2.write_bytes(b"x" * (10 * 1024 * 1024))
-    (raw_dir / "active.partial").write_bytes(b"abc")
-    (raw_dir / "chunk1.json").write_text("{}")
+    (layout.active / "active.partial").write_bytes(b"abc")
+    (layout.manifests / "chunk1.manifest.json").write_text("{}")
+    (layout.manifests / "unrelated.json").write_text("{}")
 
     # Sample 1800s later (0.5 hours)
-    obs2 = tracker.sample(raw_dir, now + 1800.0)
+    obs2 = tracker.sample(tmp_path, now + 1800.0)
     assert obs2.sealed_zst_count == 2
     assert obs2.active_partial_count == 1
     assert obs2.manifest_json_count == 1
@@ -156,7 +164,7 @@ def test_raw_chunk_tracker(tmp_path: Path) -> None:
     assert obs2.growth_rate_mb_per_hour == 40.0
 
 
-def test_query_status_cli_fallback(tmp_path: Path) -> None:
+def test_failed_cli_does_not_promote_unchecked_state_to_healthy(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
     state_dir.mkdir(parents=True)
     state_file = state_dir / "service_state.json"
@@ -175,10 +183,93 @@ def test_query_status_cli_fallback(tmp_path: Path) -> None:
         mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="failed")
         obs = query_status_cli(None, tmp_path)
 
+    assert obs.available is False
+    assert obs.service_status == "UNKNOWN"
+    assert obs.network_connected is False
+    assert obs.catalog_sealed_chunks is None
+    assert obs.detail == "status_command_failed"
+
+
+def test_real_cli_and_spool_observation_is_read_only(tmp_path: Path) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    state = {
+        "status": "RUNNING",
+        "pid": os.getpid(),
+        "heartbeat_at_utc_ns": time.time_ns(),
+        "heartbeat_interval_seconds": 5.0,
+        "network_connected": True,
+        "network_status": "CONNECTED",
+        "markets": {"spot": {"last_receive_time_utc_ns": time.time_ns()}},
+    }
+    store = ServiceStateStore(layout.state / "service_state.json")
+    store.write(state)
+    tracker = RawChunkTracker()
+    tracker.sample(tmp_path, 100.0)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="diff_depth",
+            collector_instance_id="collector-1",
+            collector_version="0.1.0+test",
+        )
+        writer.append(event())
+        writer.seal()
+        active = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="diff_depth",
+            collector_instance_id="collector-1",
+            collector_version="0.1.0+test",
+        )
+        active.append(event(2))
+        active.close()
+        before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+        # A WAL reader may update shared-memory read marks; Recorder data stays unchanged.
+        obs = query_status_cli(None, tmp_path)
+        chunks = tracker.sample(tmp_path, 1900.0)
+        after = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
+        assert after.keys() == before.keys()
+        assert all(
+            after[p] == content for p, content in before.items() if p.suffix != ".sqlite-shm"
+        )
+
+        assert obs.available is True
+        assert obs.service_status == "RUNNING"
+        assert obs.network_connected is True
+        assert obs.catalog_sealed_chunks == 1
+        assert obs.catalog_active_chunks == 1
+        assert obs.last_event_age_seconds is not None
+        assert obs.space_severity is not None
+        assert chunks.sealed_zst_count == chunks.manifest_json_count == 1
+        assert chunks.active_partial_count == 1
+        assert chunks.growth_rate_chunks_per_hour == 2.0
+        assert chunks.total_sealed_bytes == sum(p.stat().st_size for p in layout.sealed.iterdir())
+
+        state["heartbeat_at_utc_ns"] = time.time_ns() - 60_000_000_000
+        store.write(state)
+        assert query_status_cli(None, tmp_path).service_status == "STALE"
+
+
+def test_real_cli_without_catalog_and_missing_config(tmp_path: Path) -> None:
+    obs = query_status_cli(None, tmp_path)
     assert obs.available is True
-    assert obs.service_status == "RUNNING"
-    assert obs.network_connected is True
-    assert obs.network_status == "OK"
+    assert obs.service_status == "NOT_RUNNING"
+    assert obs.catalog_active_chunks is None
+    assert obs.catalog_sealed_chunks is None
+    assert not list(tmp_path.iterdir())
+    assert query_status_cli(tmp_path / "missing.toml", tmp_path).available is False
+
+
+def test_observer_rejects_mismatched_roots(tmp_path: Path) -> None:
+    config = tmp_path / "recorder.toml"
+    config.write_text(f'[recorder]\ndata_root = "{tmp_path}"\n')
+    with pytest.raises(SystemExit, match="2"):
+        main(["--once", "--config", str(config), "--data-root", str(tmp_path / "other")])
 
 
 def test_query_disk() -> None:

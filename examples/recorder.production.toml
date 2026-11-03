@@ -17,7 +17,8 @@ rotation_seconds = 900.0
 rotation_bytes = 134217728
 durability_interval_seconds = 1.0
 ingress_queue_capacity = 8192
-max_frame_bytes = 16777216
+# P4 observed a 17,817,762-byte Spot directory representation; retain its 32 MiB limit.
+max_frame_bytes = 33554432
 heartbeat_seconds = 5.0
 sleep_gap_threshold_seconds = 30.0
 prevent_sleep = false
