@@ -476,7 +476,11 @@ def test_watermark_waits_for_all_transitions(
             owner.availability.failure("spot/BTCUSDT/stream-0/ws", BASE + SECOND, "TimeoutError")
             for sec in range(1, 11):
                 owner._observe_availability(BASE + sec * SECOND)
-            # Leave an outage beyond the first batch of pending checkpoints.
+            # Leave an outage beyond the first batch of actual transitions.
+            for i in range(128):
+                owner.availability.unavailable(
+                    f"spot/BTCUSDT/stream-{i}/ws", BASE + 10 * SECOND, "TimeoutError"
+                )
             key = "/".join(source.key)
             owner.availability.failure(key, BASE + 10 * SECOND, "TimeoutError")
             if bound == "batches":
