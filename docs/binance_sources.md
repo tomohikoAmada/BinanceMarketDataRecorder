@@ -4,7 +4,7 @@
 
 ## C++ rewrite proposal review — 2026-11-03
 
-Research for [GPT-6 Astra's review and revised C0–C5 proposal](../schnellerBMDR/cpp_rewrite_milestone_plan.md#gpt-6-astra-review).
+Research for [GPT-6 Astra's review and revised C0–C5 proposal](../S-BMDR/cpp_rewrite_milestone_plan.md#gpt-6-astra-review).
 This was documentation research and local code inspection, not a live endpoint test
 or a change to capture scope. No account request, API key, market-data request or
 `llms-full.txt` download was used. Observed documentation, existing runtime evidence
