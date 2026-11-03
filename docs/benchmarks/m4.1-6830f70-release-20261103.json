@@ -1,0 +1,24 @@
+{
+  "source_git_sha": "6830f70f616b9daa1860e245d959eacb66970ebc",
+  "wheel": {
+    "path": "dist/m41-independent/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+    "size_bytes": 579099,
+    "sha256": "16ca2d9d2d7756650fe79ccde77b61475391fd697bb4ab5d45a350d5481677d9",
+    "package_files_git_verified": 150
+  },
+  "production_config_sha256": "5a9a2510b5ae3457c06075adeee9d57b36349cdda93920da3670f53b01fb7082",
+  "dependency_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+  "observer_sha256": "e4438e19f520ec622ca769f41268faf2be7867b4a2bdecd8107a1bdbfadcce70",
+  "validation": {
+    "offline": "2569 passed, 24 skipped, 5 deselected, 13 warnings in 207.78s",
+    "offline_log_sha256": "71f656eb2914f4dcafc7634881ba0a7407bf89d605a2c6cff3ad65297ae14f0b",
+    "stress": ".....                                                                    [100%]\n5 passed, 42 deselected in 77.81s (0:01:17)",
+    "ruff": "PASS",
+    "mypy": "PASS: 388 files",
+    "m0": "PASS",
+    "go_raw_golden": "PASS",
+    "clean_wheel": "PASS: locked fresh macOS venv; pip check, version, config show default/production, doctor outside checkout",
+    "targeted": "89 passed; extra observer/side-data 16 passed",
+    "warnings": "13 pre-existing multiprocessing fork DeprecationWarnings; online tests skipped by default, all five stress tests run separately"
+  }
+}

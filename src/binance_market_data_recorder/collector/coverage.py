@@ -1585,13 +1585,23 @@ class SelectedAssetCapture:
             state.availability = health.public_dict(now)
         self._pending_watermark_utc_ns = now
 
+    async def _monitor_availability(self, stop: asyncio.Event) -> None:
+        # SQLite/REST waits in the scheduling loop must not stop in-memory
+        # health observations and manufacture a full-source UNKNOWN storm.
+        while not stop.is_set():
+            self._observe_availability(time.time_ns())
+            with suppress(TimeoutError):
+                await asyncio.wait_for(stop.wait(), timeout=1.0)
+
     async def run(self, stop: asyncio.Event) -> None:
         self._stop = stop
         terminal_error: BaseException | None = None
+        monitor: asyncio.Task[None] | None = None
         try:
             self.availability.previous = await run_owned_blocking_call(
                 self.catalog.source_availability
             )
+            monitor = asyncio.create_task(self._monitor_availability(stop))
             for initial_key, collector in self.collectors.items():
                 if initial_key in self.product_tasks:
                     continue
@@ -1602,13 +1612,11 @@ class SelectedAssetCapture:
                 )
             while not stop.is_set():
                 self._changed.clear()
-                now = time.time_ns()
-                if (
-                    self._last_monitor_utc_ns is None
-                    or now < self._last_monitor_utc_ns
-                    or now - self._last_monitor_utc_ns >= 1_000_000_000
-                ):
-                    self._observe_availability(now)
+                if monitor.done():
+                    monitor.result()
+                    if stop.is_set():
+                        break
+                    raise RuntimeError("availability monitor returned before stop")
                 await self._flush_availability()
                 if time.monotonic() - self._last_metrics_flush >= 10:
                     await run_owned_blocking_call(self.metrics.safely_flush)
@@ -1683,6 +1691,13 @@ class SelectedAssetCapture:
             for child_stop in (*self.product_stops.values(), *self.shared_stops.values()):
                 child_stop.set()
             cleanup_error: BaseException | None = None
+            if monitor is not None:
+                monitor.cancel()
+                monitor_result = (await asyncio.gather(monitor, return_exceptions=True))[0]
+                if isinstance(monitor_result, BaseException) and not isinstance(
+                    monitor_result, asyncio.CancelledError
+                ):
+                    cleanup_error = monitor_result
             stopped_at = time.time_ns()
             try:
                 for state in self.sources.values():
