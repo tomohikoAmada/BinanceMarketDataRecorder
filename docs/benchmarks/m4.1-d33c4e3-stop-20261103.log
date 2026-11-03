@@ -1,9 +1,0 @@
-active
-enabled
-inactive
-disabled
-Result=success
-NRestarts=0
-ExecMainStatus=0
-0
-Removed "/etc/systemd/system/multi-user.target.wants/binance-market-data-recorder.service".

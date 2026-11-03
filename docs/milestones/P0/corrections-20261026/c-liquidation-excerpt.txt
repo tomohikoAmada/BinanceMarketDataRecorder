@@ -1,1 +1,0 @@
-For each symbol，only the latest one liquidation order within 1000ms will be pushed as the snapshot.

@@ -1,8 +1,0 @@
-{
-  "source_git_sha": "8bdae2005b0311dac4615bcecffd56c8a3cb211c",
-  "wheel_sha256": "c7a705986e57578046a77341cbde218ed07b20116a7f80d1a95b87c0a35499db",
-  "lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
-  "matched_python_files": 141,
-  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
-  "installed_package": "/opt/binance-market-data-recorder/p4-20261101-btc-c/venv/lib/python3.12/site-packages/binance_market_data_recorder"
-}
