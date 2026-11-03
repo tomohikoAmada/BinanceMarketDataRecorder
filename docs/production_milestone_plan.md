@@ -428,6 +428,7 @@
   - **观察器接通真实数据**：通过包的 `__main__` 执行 `status`，读取 `data/active`、`data/sealed`、`data/manifests` 的目录元数据；配置与数据目录保持一致，缺失 Catalog 用 `null` 表示。删除未经存活/心跳校验的健康回退，继续沿用现有 CLI 的 `STALE` 判断。无 Raw 解压、SQLite 写事务或服务控制操作；WAL 只读连接仍可能更新 SQLite 共享内存读标记。
   - **干净 Wheel 验收**：新 venv 按 macOS runtime lock 安装依赖，再 `--no-deps` 安装原 Wheel，`pip check` 通过；从仓库外清除项目环境覆盖后运行版本、默认/生产模板 `config show`、默认 `doctor` 全通过。版本真实输出为 `0.1.0a1 (git unknown)`：现有版本函数从环境/当前 checkout 探测 Git，并未嵌入 Wheel；源码身份由文件比对和冻结 SHA 证明，不以 checkout 内的版本输出替代。Linux `/var/lib` 模板在 macOS 的 `doctor` 权限失败保留披露，不声称 VPS 已验收。
   - **实际观察器验收**：新 venv 内使用安装的 Wheel 生成真实非空 Raw、manifest 和 Catalog，仓库外连续采样两次，正确读出 RUNNING、PID/CPU/RSS、Catalog 与磁盘分片数，数据文件摘要不变；专项回归另覆盖 active partial、过期心跳、缺失 Catalog/配置和现有 CI 环境。最终离线回归 **2566 passed, 24 skipped, 5 deselected, 13 warnings in 217.90s (0:03:37)**；Ruff、strict mypy（386 文件）、M0、Go Raw golden 与差异检查全通过，13 条既有 fork 警告保留披露。
+  - **CI 接续修正（2026-11-03）**：`2481700` 的 Ubuntu CI 全通过，macOS 一个既有服务测试误将 RUNNING 状态发布等同于 collector 已获得调度。50ms 延迟可复现原断言失败；测试改为在原有界轮询内同时等待两条件，保留启动顺序/heartbeat 断言并保证失败清理，参数化覆盖两种调度。生产 `src/`、Wheel、配置与观察器不变；详见 [复核记录的 CI 接续修正](benchmarks/m3.3-review-20261103.md#ci-接续修正2026-11-03)。
   - **范围**：本次只补齐 M3.3，不启动 M4 或 SSH 维护；下一步是 M4.1，目标宿主机平台、路径权限和连续运行门禁仍须实测。
 
 ---

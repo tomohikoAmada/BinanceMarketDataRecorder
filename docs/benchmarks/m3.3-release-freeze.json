@@ -172,5 +172,18 @@
   },
   "independently_verified_at_utc": "2026-11-03T02:05:24.507287+00:00",
   "reviewed_delivery_git_commit": "9fb5e0e32b99272fd0c887ba81681b437da8aa2f",
-  "original_frozen_at_utc": "2026-11-03T01:55:00Z"
+  "original_frozen_at_utc": "2026-11-03T01:55:00Z",
+  "ci_followup": {
+    "failed_commit": "24817003804bb162b1b5bd869a480d3881e660a9",
+    "failed_run_url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41564104623",
+    "original_ubuntu_job": "PASS: full offline checks, exact dependency identity, build and clean-wheel smoke",
+    "original_macos_job": "1 failed, 2565 passed, 24 skipped, 5 deselected, 13 warnings",
+    "root_cause": "Test assumed publishing RUNNING implied collector tasks had already executed; task scheduling may happen later",
+    "reproduction": "Delaying FakeCollector.run by 50 ms reproduces the original started assertion failure locally",
+    "fix_scope": "One service-runtime test waits for RUNNING and all collectors started within its existing bounded loop, guarantees cleanup, and covers 0/50 ms scheduling delay; no production artifact changes",
+    "focused_regression": "29 passed in 3.43s in tests/unit/test_service_runtime.py",
+    "static_and_contract_checks": "PASS: Ruff, strict mypy (386 files), M0, Go Raw golden, git diff --check",
+    "full_offline_regression": "2567 passed, 24 skipped, 5 deselected, 13 warnings in 224.57s (0:03:44)",
+    "full_offline_log_sha256": "c9b83e26b7c407b8fd9be2b8ef5cefdc36c3ba882e51372a1781cb5609fe983e"
+  }
 }

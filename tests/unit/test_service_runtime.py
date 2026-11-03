@@ -730,17 +730,24 @@ def test_starting_heartbeat_advances_during_recovery_and_stop_is_cooperative(
         assert len(catalog.operational_events(event_type="SERVICE_STOPPED")) == 1
 
 
+@pytest.mark.parametrize("collector_start_delay", [0.0, 0.05])
 def test_recovery_completion_observes_capacity_before_collectors_and_reuses_heartbeat(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    collector_start_delay: float,
 ) -> None:
     async def exercise() -> None:
+        class ScheduledCollector(FakeCollector):
+            async def run(self, stop: asyncio.Event) -> None:
+                await asyncio.sleep(collector_start_delay)
+                await super().run(stop)
+
         entered = threading.Event()
         release = threading.Event()
         order: list[str] = []
         collectors = {
-            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "service-spot"),
-            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "service-um"),
+            ProductKey("spot", "BTCUSDT"): ScheduledCollector("spot", "service-spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): ScheduledCollector("um_perpetual", "service-um"),
         }
 
         def slow_recovery(
@@ -800,27 +807,35 @@ def test_recovery_completion_observes_capacity_before_collectors_and_reuses_hear
         runtime.heartbeat_owner_count = 0
 
         task = asyncio.create_task(runtime.run())
-        assert await asyncio.to_thread(entered.wait, 2)
-        state = runtime.state_store.read()
-        assert state is not None
-        assert state["status"] == "STARTING"
-        assert state["startup_recovery_complete"] is False
-        release.set()
-        for _ in range(200):
-            await asyncio.sleep(0.005)
+        try:
+            assert await asyncio.to_thread(entered.wait, 2)
             state = runtime.state_store.read()
-            if state is not None and state["status"] == "RUNNING":
-                break
-        else:
-            pytest.fail("runtime did not become RUNNING after recovery")
+            assert state is not None
+            assert state["status"] == "STARTING"
+            assert state["startup_recovery_complete"] is False
+            release.set()
+            for _ in range(200):
+                await asyncio.sleep(0.005)
+                state = runtime.state_store.read()
+                # RUNNING is published independently of collector task scheduling.
+                if (
+                    state is not None
+                    and state["status"] == "RUNNING"
+                    and all(collector.started for collector in collectors.values())
+                ):
+                    break
+            else:
+                pytest.fail("runtime and collectors did not start after recovery")
 
-        assert state["startup_recovery_complete"] is True
-        assert isinstance(state["capacity"], dict)
-        assert all(collector.started for collector in collectors.values())
-        assert order[:3] == ["recovery", "capacity", "collectors"]
-        assert runtime.heartbeat_owner_count == 1
-        runtime.request_stop("SIGTERM")
-        await asyncio.wait_for(task, timeout=2)
+            assert state["startup_recovery_complete"] is True
+            assert isinstance(state["capacity"], dict)
+            assert all(collector.started for collector in collectors.values())
+            assert order[:3] == ["recovery", "capacity", "collectors"]
+            assert runtime.heartbeat_owner_count == 1
+        finally:
+            release.set()
+            runtime.request_stop("SIGTERM")
+            await asyncio.wait_for(task, timeout=2)
 
     asyncio.run(exercise())
 
