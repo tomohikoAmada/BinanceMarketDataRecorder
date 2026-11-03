@@ -412,7 +412,7 @@
 
 ---
 
-#### 任务 `M3.3`：生产构建包与 VPS 部署配置冻结
+#### 任务 `M3.3`：生产构建包与 VPS 部署配置冻结 **`[COMPLETED — 独立验收完成]`**
 
 - **具体改造要求**：
   1. 构建纯净 Wheel 包并记录源码 Git Commit SHA 与构建产物 SHA-256。
@@ -420,6 +420,18 @@
   3. 准备非侵入式外部观测脚本（定期采样 `systemctl show`、进程 CPU/RSS、`binance-market-recorder status`、磁盘可用空间与分片增长率）。
 - **独立验收标准**：
   - Wheel 包在本地全新虚拟环境中安装后，`binance-market-recorder --version`、`config show`、`doctor` 均正常执行并通过检查。
+
+- **完成状态（2026-11-03 独立验收完成）**：
+  - **纯净 Wheel 构建与散列冻结**：基于验证通过的源码（`src/` 保持与 `45440e9` 字节一致），构建纯净 `binance_market_data_recorder-0.1.0a1-py3-none-any.whl`（`578,787` 字节），SHA-256 为 `925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119`，对应 Git Commit `45440e966087`。机器可读元数据见 [`docs/benchmarks/m3.3-release-freeze.json`](benchmarks/m3.3-release-freeze.json)。
+  - **生产配置模板建立与全项校验**：编写并验证 canonical 配置文件模板 [`deploy/recorder.toml`](../deploy/recorder.toml) 及同步副本 [`examples/recorder.production.toml`](../examples/recorder.production.toml)。显式锁存 `underlying_assets = ["BTC", "ETH"]`、15 分钟 / 128 MiB 分片轮换上限（M1.1）、仅落盘已收盘 K 线并支持自动 REST 补齐（ADR-0058 / D1）、S12 精简 6 周期（D2）、ADR-0055/0057 豁免源，以及底层 SQLite WAL+NORMAL 策略。新增专用回归 [`tests/unit/test_production_config.py`](../tests/unit/test_production_config.py) 验证配置契约 100% 成立。
+  - **非侵入式外部观测脚本**：新增 [`tools/observe_vps_recorder.py`](../tools/observe_vps_recorder.py) 及启动包装 [`scripts/observe-recorder`](../scripts/observe-recorder)，实现对 `systemctl show`、进程 CPU/RSS、`binance-market-recorder status`、`os.statvfs` 磁盘剩余量及 Raw 分片生成速率的定期采样，以结构化 JSONL 输出，全链路只读、不抢占 SQLite 锁且不触碰服务状态。新增专项测试 [`tests/unit/test_vps_observer.py`](../tests/unit/test_vps_observer.py)（10 项通过）。
+  - **独立全新环境验收通过**：在全新虚拟环境中安装该 Wheel 包，实测 `binance-market-recorder --version`（正确打印 `0.1.0a1 (git 45440e966087)`）、`config show`（默认配置与生产模板解析一致）与 `doctor`（5 项平台/路径/代理检查全 PASS）均完全通过。
+  - **全量测试与质量门禁**：离线测试套件通过（**2562 passed, 24 skipped, 5 deselected, 13 warnings in 213.10s**）；Ruff 全绿、Strict Mypy（386 个源文件）0 错误、M0 契约与 Go Raw v1 golden 均 100% 验证通过。
+  - **发现的问题与环境边界**：
+    1. 生产配置中的 `data_root = "/var/lib/binance-market-data-recorder"` 为 Linux VPS 标准路径，需由 systemd 服务用户在 Ubuntu 上运行；macOS 本地开发环境因无 `/private/var/lib` 写权限，默认 CLI 诊断检查应使用无 `--config` 参数的本机应用支持目录。
+    2. `vps-production-v1` 容量配置文件严格禁止任何 `BINANCE_MARKET_RECORDER_*` 环境变量注入以防未授权路径劫持，需完全依赖 `/etc/binance-market-data-recorder/recorder.toml` 文件定义。
+    3. `tools/observe_vps_recorder.py` 支持在非 Linux 环境（macOS）平滑降级（记录 `systemctl_not_found` 并自动退回 `ps` 统计），确保跨平台离线测试不被中断。
+  - 完整审查报告与指标见 [`M3.3 复核记录`](benchmarks/m3.3-review-20261103.md)。至此 Milestone 3 全部完成，正式进入 Milestone 4 VPS 实战验收。
 
 ---
 
@@ -492,5 +504,5 @@
 | :--- | :--- | :--- | :--- |
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈 **`[COMPLETED]`**<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 **`[COMPLETED]`** | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
-| **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试 **`[COMPLETED]`**<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入 **`[COMPLETED]`**<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
+| **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试 **`[COMPLETED]`**<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入 **`[COMPLETED]`**<br>`M3.3` 生产 Wheel 包与配置冻结 **`[COMPLETED]`** | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |

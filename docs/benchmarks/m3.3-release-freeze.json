@@ -1,0 +1,62 @@
+{
+  "schema": "binance-market-data-recorder/release-freeze.v1",
+  "frozen_at_utc": "2026-11-03T01:55:00Z",
+  "git_commit": "45440e9660873b9bfe60d1cf6ad8c0db5c54b5d0",
+  "git_commit_short": "45440e9",
+  "distribution_name": "binance-market-data-recorder",
+  "package_version": "0.1.0a1",
+  "wheel": {
+    "filename": "binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+    "size_bytes": 578787,
+    "sha256": "925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119"
+  },
+  "production_config": {
+    "canonical_template_path": "deploy/recorder.toml",
+    "example_path": "examples/recorder.production.toml",
+    "target_vps_path": "/etc/binance-market-data-recorder/recorder.toml",
+    "underlying_assets": ["BTC", "ETH"],
+    "capacity_profile": "vps-production-v1",
+    "data_root": "/var/lib/binance-market-data-recorder",
+    "network_proxy_mode": "direct",
+    "log_level": "INFO",
+    "rotation_seconds": 900.0,
+    "rotation_bytes": 134217728,
+    "durability_interval_seconds": 1.0,
+    "ingress_queue_capacity": 8192,
+    "max_frame_bytes": 16777216,
+    "heartbeat_seconds": 5.0,
+    "kline_forming_policy": "closed_only",
+    "spot_utc8_intervals": ["6h", "12h", "1d", "3d", "1w", "1M"],
+    "capture_dated_premium_klines": false,
+    "capture_dated_adl_risk": false,
+    "recent_trades_interval_seconds": 30.0,
+    "max_steady_derivative_weight_per_minute": 1000.0,
+    "catalog_policy": "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL (ADR-0059)"
+  },
+  "external_observer": {
+    "script_path": "tools/observe_vps_recorder.py",
+    "wrapper_path": "scripts/observe-recorder",
+    "capabilities": [
+      "systemctl_show_periodic_sampling",
+      "process_cpu_and_rss_sampling",
+      "service_status_and_catalog_sampling",
+      "filesystem_statvfs_capacity_sampling",
+      "raw_chunks_count_and_growth_rate_sampling"
+    ]
+  },
+  "acceptance_evidence": {
+    "isolated_venv_installation": "PASS",
+    "cli_version": "binance-market-data-recorder 0.1.0a1 (git 45440e966087)",
+    "cli_config_show_default": "PASS",
+    "cli_config_show_production": "PASS",
+    "cli_doctor": "PASS",
+    "full_offline_regression": "2562 passed, 24 skipped, 5 deselected, 13 warnings in 213.10s",
+    "static_quality_gates": {
+      "ruff": "PASS",
+      "mypy_strict": "PASS (386 source files)",
+      "m0_contracts": "PASS",
+      "go_raw_v1_golden": "PASS",
+      "git_diff_check": "PASS"
+    }
+  }
+}
