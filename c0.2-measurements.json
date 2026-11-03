@@ -1,0 +1,461 @@
+{
+  "platform": "macOS 27.0.1 arm64",
+  "compiler": "AppleClang 21.0.0.21000401",
+  "build_type": "Release",
+  "dependencies": {
+    "Boost": "1.90.0",
+    "libcurl": "8.7.1",
+    "simdjson": "4.6.4",
+    "nlohmann_json": "3.12.0",
+    "absl_crc32c": "20260107",
+    "OpenSSL": "3.6.4"
+  },
+  "before": [
+    {
+      "python_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+      "raw_golden": "PASS",
+      "results": [
+        {
+          "case": "ordinary",
+          "ws_input_bytes": 162,
+          "http_input_bytes": 581297,
+          "records": 3,
+          "wall_ms": 3.900334,
+          "cpu_ms": 3.103,
+          "peak_rss_bytes": 16465920,
+          "new_calls": 1360,
+          "new_requested_bytes": 20317045,
+          "peak_queue_payload_bytes": 581297,
+          "peak_queue_records": 2,
+          "encode_write_ns": 2138666,
+          "final_fsync_close_ns": 285541,
+          "max_receive_to_final_fsync_ns": 3181333
+        },
+        {
+          "case": "http-error",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 11,
+          "records": 1,
+          "wall_ms": 0.93975,
+          "cpu_ms": 0.493,
+          "peak_rss_bytes": 11730944,
+          "new_calls": 656,
+          "new_requested_bytes": 57451,
+          "peak_queue_payload_bytes": 11,
+          "peak_queue_records": 1,
+          "encode_write_ns": 214584,
+          "final_fsync_close_ns": 85292,
+          "max_receive_to_final_fsync_ns": 313250
+        },
+        {
+          "case": "large",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 17817762,
+          "records": 1,
+          "wall_ms": 79.511791,
+          "cpu_ms": 75.481,
+          "peak_rss_bytes": 176439296,
+          "new_calls": 681,
+          "new_requested_bytes": 624774908,
+          "peak_queue_payload_bytes": 17817762,
+          "peak_queue_records": 1,
+          "encode_write_ns": 64005542,
+          "final_fsync_close_ns": 2565708,
+          "max_receive_to_final_fsync_ns": 70329083
+        },
+        {
+          "case": "burst",
+          "ws_input_bytes": 67108864,
+          "http_input_bytes": 17817762,
+          "records": 8193,
+          "wall_ms": 484.39975,
+          "cpu_ms": 282.71,
+          "peak_rss_bytes": 249479168,
+          "new_calls": 2319527,
+          "new_requested_bytes": 1304010912,
+          "peak_queue_payload_bytes": 67108864,
+          "peak_queue_records": 8192,
+          "encode_write_ns": 220677622,
+          "final_fsync_close_ns": 3925209,
+          "max_receive_to_final_fsync_ns": 483685334
+        },
+        {
+          "case": "oversize",
+          "rejected_http_bytes": 25165824
+        }
+      ]
+    },
+    {
+      "python_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+      "raw_golden": "PASS",
+      "results": [
+        {
+          "case": "ordinary",
+          "ws_input_bytes": 162,
+          "http_input_bytes": 581297,
+          "records": 3,
+          "wall_ms": 4.591208,
+          "cpu_ms": 3.061,
+          "peak_rss_bytes": 16416768,
+          "new_calls": 1360,
+          "new_requested_bytes": 20307509,
+          "peak_queue_payload_bytes": 581297,
+          "peak_queue_records": 2,
+          "encode_write_ns": 2132875,
+          "final_fsync_close_ns": 421625,
+          "max_receive_to_final_fsync_ns": 3795375
+        },
+        {
+          "case": "http-error",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 11,
+          "records": 1,
+          "wall_ms": 1.101792,
+          "cpu_ms": 0.49,
+          "peak_rss_bytes": 11681792,
+          "new_calls": 656,
+          "new_requested_bytes": 57451,
+          "peak_queue_payload_bytes": 11,
+          "peak_queue_records": 1,
+          "encode_write_ns": 193750,
+          "final_fsync_close_ns": 271542,
+          "max_receive_to_final_fsync_ns": 480417
+        },
+        {
+          "case": "large",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 17817762,
+          "records": 1,
+          "wall_ms": 85.781875,
+          "cpu_ms": 75.2,
+          "peak_rss_bytes": 176472064,
+          "new_calls": 681,
+          "new_requested_bytes": 624774908,
+          "peak_queue_payload_bytes": 17817762,
+          "peak_queue_records": 1,
+          "encode_write_ns": 72200959,
+          "final_fsync_close_ns": 1766208,
+          "max_receive_to_final_fsync_ns": 77763500
+        },
+        {
+          "case": "burst",
+          "ws_input_bytes": 67108864,
+          "http_input_bytes": 17817762,
+          "records": 8193,
+          "wall_ms": 472.401542,
+          "cpu_ms": 266.024,
+          "peak_rss_bytes": 249593856,
+          "new_calls": 2319527,
+          "new_requested_bytes": 1304320160,
+          "peak_queue_payload_bytes": 67108864,
+          "peak_queue_records": 8192,
+          "encode_write_ns": 210249108,
+          "final_fsync_close_ns": 2949375,
+          "max_receive_to_final_fsync_ns": 471716500
+        },
+        {
+          "case": "oversize",
+          "rejected_http_bytes": 25165824
+        }
+      ]
+    },
+    {
+      "python_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+      "raw_golden": "PASS",
+      "results": [
+        {
+          "case": "ordinary",
+          "ws_input_bytes": 162,
+          "http_input_bytes": 581297,
+          "records": 3,
+          "wall_ms": 4.354208,
+          "cpu_ms": 3.086,
+          "peak_rss_bytes": 16449536,
+          "new_calls": 1360,
+          "new_requested_bytes": 20307509,
+          "peak_queue_payload_bytes": 581297,
+          "peak_queue_records": 2,
+          "encode_write_ns": 2156250,
+          "final_fsync_close_ns": 543750,
+          "max_receive_to_final_fsync_ns": 3604083
+        },
+        {
+          "case": "http-error",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 11,
+          "records": 1,
+          "wall_ms": 1.135792,
+          "cpu_ms": 0.474,
+          "peak_rss_bytes": 11698176,
+          "new_calls": 656,
+          "new_requested_bytes": 57451,
+          "peak_queue_payload_bytes": 11,
+          "peak_queue_records": 1,
+          "encode_write_ns": 203959,
+          "final_fsync_close_ns": 276125,
+          "max_receive_to_final_fsync_ns": 493792
+        },
+        {
+          "case": "large",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 17817762,
+          "records": 1,
+          "wall_ms": 80.701583,
+          "cpu_ms": 74.867,
+          "peak_rss_bytes": 176390144,
+          "new_calls": 681,
+          "new_requested_bytes": 624465660,
+          "peak_queue_payload_bytes": 17817762,
+          "peak_queue_records": 1,
+          "encode_write_ns": 66368209,
+          "final_fsync_close_ns": 1737333,
+          "max_receive_to_final_fsync_ns": 71793042
+        },
+        {
+          "case": "burst",
+          "ws_input_bytes": 67108864,
+          "http_input_bytes": 17817762,
+          "records": 8193,
+          "wall_ms": 478.024791,
+          "cpu_ms": 266.821,
+          "peak_rss_bytes": 249724928,
+          "new_calls": 2319527,
+          "new_requested_bytes": 1304320160,
+          "peak_queue_payload_bytes": 67108864,
+          "peak_queue_records": 8192,
+          "encode_write_ns": 215982414,
+          "final_fsync_close_ns": 2980541,
+          "max_receive_to_final_fsync_ns": 477332541
+        },
+        {
+          "case": "oversize",
+          "rejected_http_bytes": 25165824
+        }
+      ]
+    }
+  ],
+  "after": [
+    {
+      "python_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+      "raw_golden": "PASS",
+      "results": [
+        {
+          "case": "ordinary",
+          "ws_input_bytes": 162,
+          "http_input_bytes": 581297,
+          "records": 3,
+          "wall_ms": 4.622667,
+          "cpu_ms": 3.328,
+          "peak_rss_bytes": 15695872,
+          "new_calls": 1328,
+          "new_requested_bytes": 17986154,
+          "peak_queue_payload_bytes": 581297,
+          "peak_queue_records": 1,
+          "encode_write_ns": 2340167,
+          "final_fsync_close_ns": 254416,
+          "max_receive_to_final_fsync_ns": 3478291
+        },
+        {
+          "case": "http-error",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 11,
+          "records": 1,
+          "wall_ms": 1.005792,
+          "cpu_ms": 0.525,
+          "peak_rss_bytes": 11583488,
+          "new_calls": 645,
+          "new_requested_bytes": 54557,
+          "peak_queue_payload_bytes": 11,
+          "peak_queue_records": 1,
+          "encode_write_ns": 218792,
+          "final_fsync_close_ns": 62459,
+          "max_receive_to_final_fsync_ns": 297417
+        },
+        {
+          "case": "large",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 17817762,
+          "records": 1,
+          "wall_ms": 81.481166,
+          "cpu_ms": 77.962,
+          "peak_rss_bytes": 152748032,
+          "new_calls": 670,
+          "new_requested_bytes": 553288132,
+          "peak_queue_payload_bytes": 17817762,
+          "peak_queue_records": 1,
+          "encode_write_ns": 65820583,
+          "final_fsync_close_ns": 2365750,
+          "max_receive_to_final_fsync_ns": 72174333
+        },
+        {
+          "case": "burst",
+          "ws_input_bytes": 67108864,
+          "http_input_bytes": 17817762,
+          "records": 8193,
+          "wall_ms": 464.517292,
+          "cpu_ms": 262.261,
+          "peak_rss_bytes": 226050048,
+          "new_calls": 2237609,
+          "new_requested_bytes": 1028919171,
+          "peak_queue_payload_bytes": 67108864,
+          "peak_queue_records": 8192,
+          "encode_write_ns": 205213438,
+          "final_fsync_close_ns": 5128542,
+          "max_receive_to_final_fsync_ns": 463790125
+        },
+        {
+          "case": "oversize",
+          "rejected_http_bytes": 25165824
+        }
+      ]
+    },
+    {
+      "python_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+      "raw_golden": "PASS",
+      "results": [
+        {
+          "case": "ordinary",
+          "ws_input_bytes": 162,
+          "http_input_bytes": 581297,
+          "records": 3,
+          "wall_ms": 4.430083,
+          "cpu_ms": 3.193,
+          "peak_rss_bytes": 15581184,
+          "new_calls": 1328,
+          "new_requested_bytes": 17986154,
+          "peak_queue_payload_bytes": 581297,
+          "peak_queue_records": 2,
+          "encode_write_ns": 2247666,
+          "final_fsync_close_ns": 302084,
+          "max_receive_to_final_fsync_ns": 3458625
+        },
+        {
+          "case": "http-error",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 11,
+          "records": 1,
+          "wall_ms": 1.171333,
+          "cpu_ms": 0.507,
+          "peak_rss_bytes": 11599872,
+          "new_calls": 645,
+          "new_requested_bytes": 54557,
+          "peak_queue_payload_bytes": 11,
+          "peak_queue_records": 1,
+          "encode_write_ns": 213583,
+          "final_fsync_close_ns": 267250,
+          "max_receive_to_final_fsync_ns": 489500
+        },
+        {
+          "case": "large",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 17817762,
+          "records": 1,
+          "wall_ms": 79.578042,
+          "cpu_ms": 75.491,
+          "peak_rss_bytes": 152780800,
+          "new_calls": 670,
+          "new_requested_bytes": 553191824,
+          "peak_queue_payload_bytes": 17817762,
+          "peak_queue_records": 1,
+          "encode_write_ns": 65536167,
+          "final_fsync_close_ns": 2559250,
+          "max_receive_to_final_fsync_ns": 71676625
+        },
+        {
+          "case": "burst",
+          "ws_input_bytes": 67108864,
+          "http_input_bytes": 17817762,
+          "records": 8193,
+          "wall_ms": 461.184708,
+          "cpu_ms": 249.745,
+          "peak_rss_bytes": 225902592,
+          "new_calls": 2237609,
+          "new_requested_bytes": 1028609923,
+          "peak_queue_payload_bytes": 67108864,
+          "peak_queue_records": 8192,
+          "encode_write_ns": 199630238,
+          "final_fsync_close_ns": 3548916,
+          "max_receive_to_final_fsync_ns": 460342458
+        },
+        {
+          "case": "oversize",
+          "rejected_http_bytes": 25165824
+        }
+      ]
+    },
+    {
+      "python_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+      "raw_golden": "PASS",
+      "results": [
+        {
+          "case": "ordinary",
+          "ws_input_bytes": 162,
+          "http_input_bytes": 581297,
+          "records": 3,
+          "wall_ms": 4.307333,
+          "cpu_ms": 3.251,
+          "peak_rss_bytes": 15646720,
+          "new_calls": 1328,
+          "new_requested_bytes": 17986154,
+          "peak_queue_payload_bytes": 581297,
+          "peak_queue_records": 2,
+          "encode_write_ns": 2280334,
+          "final_fsync_close_ns": 302792,
+          "max_receive_to_final_fsync_ns": 3407542
+        },
+        {
+          "case": "http-error",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 11,
+          "records": 1,
+          "wall_ms": 1.196209,
+          "cpu_ms": 0.523,
+          "peak_rss_bytes": 11583488,
+          "new_calls": 645,
+          "new_requested_bytes": 54557,
+          "peak_queue_payload_bytes": 11,
+          "peak_queue_records": 1,
+          "encode_write_ns": 217500,
+          "final_fsync_close_ns": 260542,
+          "max_receive_to_final_fsync_ns": 491250
+        },
+        {
+          "case": "large",
+          "ws_input_bytes": 0,
+          "http_input_bytes": 17817762,
+          "records": 1,
+          "wall_ms": 86.663959,
+          "cpu_ms": 80.47,
+          "peak_rss_bytes": 152862720,
+          "new_calls": 670,
+          "new_requested_bytes": 553501072,
+          "peak_queue_payload_bytes": 17817762,
+          "peak_queue_records": 1,
+          "encode_write_ns": 71941834,
+          "final_fsync_close_ns": 2528000,
+          "max_receive_to_final_fsync_ns": 78582250
+        },
+        {
+          "case": "burst",
+          "ws_input_bytes": 67108864,
+          "http_input_bytes": 17817762,
+          "records": 8193,
+          "wall_ms": 469.785208,
+          "cpu_ms": 276.155,
+          "peak_rss_bytes": 223559680,
+          "new_calls": 2237609,
+          "new_requested_bytes": 1028919171,
+          "peak_queue_payload_bytes": 67108864,
+          "peak_queue_records": 8192,
+          "encode_write_ns": 211926192,
+          "final_fsync_close_ns": 3482959,
+          "max_receive_to_final_fsync_ns": 468770709
+        },
+        {
+          "case": "oversize",
+          "rejected_http_bytes": 25165824
+        }
+      ]
+    }
+  ]
+}
