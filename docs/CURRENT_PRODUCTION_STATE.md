@@ -2,7 +2,7 @@
 
 ## Active Status (2026-11-03)
 
-- **Production Readiness**: **NO** (currently progressing through the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md); M1–M3 are complete; M4 VPS qualification is still pending).
+- **Production Readiness**: **NO** (currently progressing through the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md); M1–M3 are complete; M4.1 is complete after independent correction; timed M4.2–M4.4 qualification is pending).
 - **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.
 - **Milestone Progress**:
   - `M1.0` (Pre-M1 Baseline Pipeline Benchmark): **COMPLETED after independent correction** (2026-11-02; [review](benchmarks/m1.0-review-20261102.md)). Corrected v2 tool and reports verify two identical inputs and 13,966 decoded Raw frames per run (content digest `cb65e4c7...`). At the M1.0 freeze, production `src/` matched `f109ffc`; the 12s synthetic baseline includes startup/shutdown and makes no steady-state rotation/backlog claim. Original v1 reports are retained under `docs/benchmarks/archive/`.
@@ -15,10 +15,16 @@
   - `M2.3` / `M2.4`: **COMPLETED after independent correction**; unified collection and deferred peripheral imports, with the Catalog split by domain.
   - `M3.1` / `M3.2`: **COMPLETED after independent correction**; actual three-way 45-minute runs, full offline/stress/recovery checks.
   - `M3.3`: **COMPLETED after independent correction** ([review](benchmarks/m3.3-review-20261103.md)); source-matched Wheel retained, fresh-venv CLI checks pass, 32 MiB production frame limit restored, observer verified against actual Raw/Catalog.
-  - Next task: **M4.1**. This review did not deploy to the VPS or reobserve its service state.
-- **Last recorded GreenCloud VPS (`greencloud-tokyo-01`) state (2026-11-02; not reobserved in this review)**:
-  - Primary service `binance-market-data-recorder.service` was recorded as `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
-  - Temporary P4 diagnostic units (`p4-btc-recorder.service` and timers) were stopped cleanly after diagnostic runs; all 45, 337, and 874 sealed chunks across Runs A, B, and C passed independent `raw-independent.v2` verification with zero corruption.
+  - `M4.1`: **COMPLETED after independent correction** ([review](benchmarks/m4.1-review-20261103.md)). Withdrew the original premature PASS, fixed empty worker jobs, monitor starvation and repeated future-snapshot replacement; all prior Raw and failure history retained.
+  - Next task: **M4.2**, same-process 2h checkpoint at **2026-11-03 07:18:17 UTC (15:18:17 Asia/Shanghai)**. No 2h/12h/24h qualification has passed yet.
+- **GreenCloud VPS state observed 2026-11-03**:
+  - Unit `binance-market-data-recorder.service`: **active / enabled** for the authorized qualification run; PID **17133**, InvocationID **9384c31ecf5944ffb6da398e9bde673c**, NRestarts **0**.
+  - Installed source **3ff043f8d0ed5a790369197a47d3efeb219c94d9**, Wheel SHA-256 **e8cb5caee2f7e4a81fa9beabd476da3844ddae5b75adc79a1fa126cdbc33a05a**. Deployment identity VERIFIED; exact release under `/opt/binance-market-data-recorder/m41-3ff043f-20261103/`.
+  - Service started **05:04:09 UTC**. Formal **T0 = 05:18:17.209919 UTC**, frozen after AVAILABLE initialization; warm-up is retained and excluded from timed qualification. [Baseline](benchmarks/m4.1-baseline-20261103.json) binds all 4,038 active source IDs, products, policy omissions, process/boot identity and checkpoint targets.
+  - At T0: **50/50 snapshots and depth sequence bridges**, 1,844 connected WS sources, 2,194 valid REST sources, **pending=0**, no open active source unavailability. Legacy ready=45/50: five quiet products lack only their first agg_trade; no missing depth is excused.
+  - External observer `bmdr-m4-observer-3ff043f-20261103.service` runs as bmdr with a 26h limit. Evidence: `/srv/recorder-data/recorder-archive/m4-3ff043f-20261103/`; sampling began before service start and continues after this review.
+  - Five apt/unattended-update units are **runtime-masked / inactive** for the qualification quiet window. Restore normal updates on controlled exit; at final controlled stop record **inactive / disabled** as the plan requires. Do not interpret the present enabled state as Production Ready.
+  - Rejected runs are retained under `run1-overflow-preserved-20261103/`, `m41-rejected-20261103T033044Z/`, `m41-rejected-6830f70-20261103T043743Z/`, and `m41-rejected-d33c4e3-20261103T044705Z/` below `/var/lib/binance-market-data-recorder/`. No unarchived Raw was deleted.
 
 ## Summary of Retained Baseline & Diagnostic Findings (P0–P3 & P4-prep)
 

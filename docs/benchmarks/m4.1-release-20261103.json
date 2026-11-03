@@ -1,0 +1,25 @@
+{
+  "source_git_sha": "3ff043f8d0ed5a790369197a47d3efeb219c94d9",
+  "wheel": {
+    "path": "dist/m41-snapshot/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+    "size_bytes": 579434,
+    "sha256": "e8cb5caee2f7e4a81fa9beabd476da3844ddae5b75adc79a1fa126cdbc33a05a",
+    "package_files_git_verified": 150
+  },
+  "production_config_sha256": "5a9a2510b5ae3457c06075adeee9d57b36349cdda93920da3670f53b01fb7082",
+  "dependency_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+  "observer_sha256": "e4438e19f520ec622ca769f41268faf2be7867b4a2bdecd8107a1bdbfadcce70",
+  "validation": {
+    "offline": "2579 passed, 24 skipped, 5 deselected, 13 warnings in 207.47s",
+    "offline_log_sha256": "4d6282da8e665832b8fbd296b5a73d47f0d34d8f4649ea8138558e63305868e0",
+    "stress": "5 passed in 77.81s at 6830f70; later monitor/snapshot followups do not change Writer or Raw encoding",
+    "ruff": "PASS",
+    "mypy": "PASS: 389 files",
+    "m0": "PASS",
+    "go_raw_golden": "PASS",
+    "clean_wheel": "PASS: hash-locked clean venv; pip check, version/config/doctor outside checkout",
+    "snapshot_focused": "41 passed in 7.21s; 8 snapshot-wait cases also pass separately",
+    "target_doctor": "PASS_WITH_WARNINGS: existing generic x86_64 DEVELOPER_PREVIEW classification, not a new production qualification claim",
+    "warnings": "13 pre-existing fork deprecation warnings; opt-in online tests skipped, all five stress tests run separately"
+  }
+}

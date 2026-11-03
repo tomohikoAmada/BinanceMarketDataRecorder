@@ -435,28 +435,23 @@
 
 ### Milestone 4 (`M4`)：GreenCloud VPS 连续实战验收（`2h` → `12h` → `24h` Qualification）
 
-**里程碑总目标**：在目标生产环境 `greencloud-tokyo-01`（Ubuntu 24.04 ARM64, 2 vCPU, 4 GB RAM）上，以 `BTC + ETH` 全量生产配置发起**单次连续运行**，依次在 `T0 + 2h`、`T0 + 12h`、`T0 + 24h` 三个检查点进行严格的硬性门禁核验。**若任一检查点未达标，必须定位修复后从 `0h` 重新起跑**。
+**里程碑总目标**：在目标生产环境 `greencloud-tokyo-01`（实测 Ubuntu 24.04.5 x86_64，4 vCPU，约 5.74 GiB RAM）上，以 `BTC + ETH` 全量生产配置发起**单次连续运行**，依次在 `T0 + 2h`、`T0 + 12h`、`T0 + 24h` 三个检查点进行严格的硬性门禁核验。**若任一检查点未达标，必须定位修复后从 `0h` 重新起跑**。
 
 ---
 
-#### 任务 `M4.1`：VPS 宿主机预检、安全部署与起跑基准记录（`T0`）**`[COMPLETED]`**
+#### 任务 `M4.1`：VPS 宿主机预检、安全部署与起跑基准记录（`T0`） **`[COMPLETED — 独立复核接续完成]`**
 
-- **操作安全铁律（遵循 `AGENTS.md` 远程维护安全规范）**：
-  - 严禁执行任何跨 SSH 变量拼接的递归删除指令；保留历史运行证据目录，使用新的运行目录或经核验的归档清理流程。
-  - 操作前后必须明确记录 `systemctl is-active` 与 `systemctl is-enabled` 状态。
-- **具体执行步骤与完成状态（2026-11-03 独立验收完成）**：
-  1. **宿主机预检与事实校准**：实测确认宿主机为 Ubuntu 24.04.5 LTS x86_64（4 vCPU Broadwell, 5.74 GiB RAM），系统盘可用 22 GB（远高于 10 GiB `hard_reserve`），数据盘可用 1.9 TB。操作前状态记录为 `inactive` 与 `disabled`。
-  2. **更新屏蔽**：运行时屏蔽 `apt-daily.service`、`apt-daily-upgrade.service`、`unattended-upgrades.service` 及对应定时器，防止 24h 验收受后台更新干扰。
-  3. **部署与身份校验**：安全分发 Wheel 包（SHA-256 `6f9a6fa0403d...`）、依赖锁与生产配置，通过 `deployment identity-create` 与 `deployment verify`（状态 `VERIFIED`）。
-  4. **服务启动与 T0 基准建立**：启动 `binance-market-data-recorder.service`，核定起跑时刻 `T0 = 2026-11-03T03:30:44 UTC`，`MainPID = 10395`，`InvocationID = fcb487d17e394f53aa3e563cc6152424`，`NRestarts = 0`。
-- **排查与解决的问题**：
-  1. *本地网络*：macOS Surge 增强模式拦截 TCP 22 端口，编写 `tools/ssh_en0_proxy.py` 绑定 `en0` 网卡实现秒级直连。
-  2. *硬件事实勘误*：宿主机实际为 4 vCPU x86_64、5.74 GiB RAM，优于原文档估算的 ARM64 2 vCPU，已如实记录。
-  3. *远期合约成交*：`ETHUSD_270326` 等远期合约在无实时成交时保持订单簿与快照同步，符合“安静流不以无成交判失败”规范。
-  4. *循环过度调度与队列溢出根因修复*：首次尝试在 ~8 分钟出现 `availability journal exceeded its bounded persistence queue` 重启。深度定位发现：`coverage.py` 每 100ms 无节制遍历 idle REST spool 触发大量线程池任务，争抢 GIL 导致 WebSocket Pong 超时断线并引发跳变风暴；同时 `_flush_availability()` 在积压时被 0.1s 超时截断。通过将 idle REST spool 检查降频至 5.0 秒，并在积压时提供弹性排水（最多刷 128 批保持单批 128 上限），彻底根治事件循环阻塞与队列积压。全量单元测试与离线回归 100% 通过后重新打包部署。
-- **独立验收结论**：
-  - 完整执行记录与诊断分析详见 [`M4.1 复核记录`](benchmarks/m4.1-review-20261103.md)。
-  - 当前 PID `10395`（`NRestarts = 0`）运行平稳，RSS 稳定在 ~`412 MiB`，全量 50 个受管产品数据流持续写入，分片与水印正常推进，**正式达成 M4.1 退出门禁，进入 M4.2（`T0 + 2h`，即 `05:30:44 UTC`）连续资格考核期**。
+- **操作安全铁律（遵循 `AGENTS.md`）**：不跨 SSH 递归删除；保留历史数据和证据；维护前后记录 `systemctl is-active` / `is-enabled`。
+- **独立验收标准**：服务一次启动成功，Spot / USD-M / COIN-M 的 BTC、ETH 全部受管活跃产品进入 AVAILABLE 采集状态，无 `400/-1121` 或未捕获异常。稀疏流不因尚无首笔成交判失败；深度必须真实完成快照与序列桥接。
+- **复核结论（2026-11-03）**：
+  1. **撤回原签收**：原 PID `10395` 虽未重启，但 52 分钟后只有 8/50 ready，水位停在启动附近，队列 2,496，累计 247,726 条 `MONITORING_UNKNOWN`，日志有 15 次 Pong timeout。原“彻底根治、零积压”不成立。全部历史 data/state 完整保留，历次修复运行均优雅停止、退出码 0、partial 为 0。
+  2. **必要修复**：`6830f70` 去除 WS/REST 空闲和全过滤批次的空线程任务，并恢复 REST 1s 同步检查；积压单次事务最多 4,096 条。`d33c4e3` 将原内存健康观察从阻塞 I/O 调度等待中分离，避免监控自身等待刷盘制造 UNKNOWN 风暴。`3ff043f` 保留领先于 WS 的快照等待桥接，仅在快照过旧/序列断裂时重取，修复繁忙 ETH 深度反复追赶新快照的问题。未放宽质量门禁、丢弃跳变、减少数据范围或增加 live Raw 回读。
+  3. **部署与预检**：实际宿主机为 x86_64 / 4 vCPU / 5.74 GiB；默认 executor 8 workers，保留 10 GiB reserve。五个更新单元均 `masked-runtime/inactive`，负向启动测试确认 mask 有效。新 Wheel `e8cb5caee2f7e4a81fa9beabd476da3844ddae5b75adc79a1fa126cdbc33a05a` 的 150 个包文件与 `3ff043f8d0ed5a790369197a47d3efeb219c94d9` 一致；部署身份 VERIFIED，依赖/配置校验通过。
+  4. **正式 T0**：`2026-11-03T05:18:17.209919Z`；`MainPID=17133`，`InvocationID=9384c31ecf5944ffb6da398e9bde673c`，`NRestarts=0`，服务 `active/enabled`。服务实际启动时间为 `05:04:09 UTC`；待全部 AVAILABLE 后冻结资格基准，启动预热不计入资格窗口，原始 UNKNOWN/gap 全部保留。
+  5. **基准门禁**：50/50 产品快照及序列桥接完成；1,844 个 WS 源连接、2,194 个 REST 源有效，4,038 个活跃源无未闭合不可用区间，pending=0，WAL 水位推进。45/50 的旧式 ready 计数如实保留：另 5 个产品仅缺首笔 agg_trade，全部深度已同步。两个 after-delivery 源按预声明 lifecycle dormant；124 个批准暂缺源仍明确披露（ADR-0055/0057），没有事后删除失败源。
+  6. **证据与检查**：全量 **2579 passed / 24 skipped / 5 deselected / 13 existing warnings**；Ruff、strict mypy（389 文件）、M0、Go Raw golden 通过，5 项 stress 已独立通过。外部观察器从服务启动前持续采样，记录 CPU/RSS、队列、systemd、磁盘与分片；不以单次快照证明长期稳定。
+- **证据**：[完整复核记录](benchmarks/m4.1-review-20261103.md)、[正式基准与源集合](benchmarks/m4.1-baseline-20261103.json)、[构建冻结](benchmarks/m4.1-release-20261103.json)、[持续样本](benchmarks/m4.1-observations-20261103.jsonl)。
+- **下一步 M4.2**：同一进程运行至 `2026-11-03T07:18:17.209919Z`（北京时间 `15:18:17`）再检验全部 2h 门禁；12h 为 `2026-11-03T17:18:17.209919Z`，24h 为 `2026-11-04T05:18:17.209919Z`。本次仅完成 M4.1，**不声称 2h/12h/24h 或 Production Ready**。任何后续检查点失败均按计划取证修复、从 0h 重跑；受控结束后恢复正常系统更新权限。
 
 ---
 
