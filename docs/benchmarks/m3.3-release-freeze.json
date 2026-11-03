@@ -1,14 +1,14 @@
 {
   "schema": "binance-market-data-recorder/release-freeze.v1",
-  "frozen_at_utc": "2026-11-03T02:06:22.509707+00:00",
-  "git_commit": "45440e9660873b9bfe60d1cf6ad8c0db5c54b5d0",
-  "git_commit_short": "45440e9",
+  "frozen_at_utc": "2026-11-03T03:21:00.000000+00:00",
+  "git_commit": "5892b476382643f1dbaffe1d78e727f809f6596a",
+  "git_commit_short": "5892b47",
   "distribution_name": "binance-market-data-recorder",
   "package_version": "0.1.0a1",
   "wheel": {
     "filename": "binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
-    "size_bytes": 578787,
-    "sha256": "925140811b9911e83d4f39ecc3d28e115e681900c610e68321798eb5d4f27119",
+    "size_bytes": 578875,
+    "sha256": "6f9a6fa0403d45ed56d044730f29d2120593fd7c9d95ae7af7e8b1e844b2ec6c",
     "local_path": "dist/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
     "source_files_verified": 150,
     "source_match": "All package files byte-match git_commit; no tracked package files missing"
