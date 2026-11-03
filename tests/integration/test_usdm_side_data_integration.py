@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
+import pytest
+
 from binance_market_data_recorder.binance.usdm.side_data_rest import (
     PublicResponse,
     UsdMSideRestApi,
@@ -119,7 +121,9 @@ class Socket:
         return None
 
 
-def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Path) -> None:
+def test_side_data_failure_is_counted_without_stopping_core_capture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     core_payloads = {
         "btcusdt@depth@100ms": (
             b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":1,"u":1,"pu":0,"b":[],"a":[]}'
@@ -175,6 +179,15 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
             side_rest_api=cast(UsdMSideRestApi, SideApi()),
             websocket_opener=opener,
         )
+        release_snapshot = asyncio.Event()
+        capture_snapshot = collector._capture_snapshot
+
+        async def delayed_snapshot(session_stop: asyncio.Event) -> None:
+            await release_snapshot.wait()
+            await capture_snapshot(session_stop)
+
+        # Reproduce the CI ordering: side data can finish before the core snapshot.
+        monkeypatch.setattr(collector, "_capture_snapshot", delayed_snapshot)
         global_owner = UsdMSideDataManager(
             metrics=collector.metrics,
             scope="global",
@@ -213,8 +226,10 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
                     for name, item in status.items()
                 )
             ):
-                stop.set()
-                break
+                release_snapshot.set()
+                if collector.snapshot_spool.persistence_progress().synchronized_frames >= 1:
+                    stop.set()
+                    break
             await asyncio.sleep(0.01)
         await asyncio.wait_for(global_task, timeout=5)
         await asyncio.wait_for(task, timeout=5)
