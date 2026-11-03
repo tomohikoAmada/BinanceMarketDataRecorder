@@ -500,6 +500,10 @@
   - **D16**。已确认仅返回前置 overlap 桶时旧代码从上次成功回推且等正常周期。选币模式对此从本轮到期记缺口，保持上次成功水位，最多两次 15s 补查，继续保存原始响应和使用原请求预算。既有空评估窗口语义保留。回归验证旧桶、补查上限及当前桶恢复。
   - **WS 热流**。实际按产品、路由分组，冻结上限为 128。只将 Spot/USD-M 永续 BTCUSDT、ETHUSDT 的 trade/aggTrade/bookTicker/depth/RPI 与同路由低频源分开，保留路由、全部订阅和 Raw 耐久周期。恢复日志的 seal/drain 峰值来自不同操作，尚未量化 executor 等待或 GIL。候选保留同一 executor 和编码路径，避免同时改变 I/O 并发及连接分组。
 
+  - **第三轮部署与预热**。代码 `f3804c3`，Wheel SHA-256 `c9b6299295963ca7c07a4e9e6d373c202d2c99cb718d48f187f4c376c51f5b6e`，150 个包文件与源码提交逐字节一致，VPS 部署身份 VERIFIED。首次全量回归发现回放夹具仍按旧分组，改为共用分组函数后全量复测 **2,581 passed / 24 skipped / 5 deselected / 13 warnings**，Ruff、strict mypy、M0、Go Raw golden 通过。第三轮从北京时间 **21:08:22** 预热，PID `45800`、InvocationID `c3ac2c4578724ee8a4f6366d31c35929`、零重启。启动前 Recorder 为 `inactive/disabled`，启动后 `active/enabled`，更新单元临时屏蔽，观察器先启动。第二轮的完整 `data/state` 移至 `/var/lib/binance-market-data-recorder/m42-failed-41d1839-20261103/`。第三轮证据目录为 `/srv/recorder-data/recorder-archive/m4-f3804c3-20261103/`。
+  - **第三轮 M4.1 PASS**。新 T0 为北京时间 11 月 3 日 **21:17:22.316038728**，即 `2026-11-03T13:17:22.316038728Z`。同一 PID 和 InvocationID、零重启，50/50 产品快照与深度桥接，4,038 个活跃源与上一轮冻结清单一致、无开放不可用区间，pending=0。44/50 旧式 ready，余下六个 Spot 产品只缺首笔聚合成交。两条已知 dormant 保留。89 个 WS 组，比第二轮多四个。启动到 T0 约 9 分钟，预热日志有 4 次 WS 断线（1 次 Pong timeout）。只读 TCP 抽样最大 Recv-Q 约 3.34 MB，仍需分辨读循环、线程等待与对端行为。证据目录的 `baseline.json` 冻结本轮门禁数据。
+  - **第三轮检查点（北京时间）**。11 月 3 日 **23:17:22** 检查 2h。通过后继续 11 月 4 日 **09:17:22** 的 12h 和 **21:17:22** 的 24h。已配置自动跟进。生产资格待全部检查通过。
+
 ---
 
 #### 任务 `M4.3`：第二阶段检查点：`T0 + 12h` 中期耐久与内存/存储平稳性门禁
