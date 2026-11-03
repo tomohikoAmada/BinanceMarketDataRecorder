@@ -301,7 +301,7 @@ def fixture_groups(products: list[Product], config: CoverageConfig) -> tuple[Str
     return tuple(
         g
         for members in scopes.values()
-        for g in stream_groups(tuple(members), config.streams_per_connection)
+        for g in stream_groups(tuple(members), config.streams_per_connection, isolate_hot=True)
     )
 
 

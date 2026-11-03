@@ -341,17 +341,11 @@ class ProductCapture:
             and s.source.market == self.product.key.market
             and s.source.transport == "ws"
         )
-        limit = self.owner.coverage.streams_per_connection
-        if (
-            self.owner.config.coverage is not None
-            and self.product.key.market in {"spot", "um_perpetual"}
-            and self.product.key.symbol in {"BTCUSDT", "ETHUSDT"}
-        ):
-            hot = {"trade", "agg_trade", "book_ticker", "diff_depth", "rpi_depth"}
-            groups = stream_groups(tuple(s for s in sources if s.stream in hot), limit)
-            groups += stream_groups(tuple(s for s in sources if s.stream not in hot), limit)
-        else:
-            groups = stream_groups(sources, limit)
+        groups = stream_groups(
+            sources,
+            self.owner.coverage.streams_per_connection,
+            isolate_hot=self.owner.config.coverage is not None,
+        )
         async with asyncio.TaskGroup() as tasks:
             for group in groups:
                 collector = self.owner.make_group(

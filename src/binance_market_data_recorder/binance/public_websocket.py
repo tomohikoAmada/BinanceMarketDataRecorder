@@ -1173,15 +1173,24 @@ class StreamGroup:
         object.__setattr__(self, "by_wire", dict(zip(names, self.sources, strict=True)))
 
 
-def stream_groups(sources: tuple[Source, ...], limit: int) -> tuple[StreamGroup, ...]:
+def stream_groups(
+    sources: tuple[Source, ...], limit: int, *, isolate_hot: bool = False
+) -> tuple[StreamGroup, ...]:
     if not 1 <= limit <= 1024:
         raise ValueError("combined-stream limit must be between 1 and 1024")
-    groups: dict[str, list[Source]] = {}
+    groups: dict[tuple[str, bool], list[Source]] = {}
     for source in sources:
         if source.transport == "ws":
-            groups.setdefault(source.endpoint.rsplit("/", 1)[0], []).append(source)
+            hot = (
+                isolate_hot
+                and source.market in {"spot", "um_perpetual"}
+                and source.symbol in {"BTCUSDT", "ETHUSDT"}
+                and source.stream
+                in {"trade", "agg_trade", "book_ticker", "diff_depth", "rpi_depth"}
+            )
+            groups.setdefault((source.endpoint.rsplit("/", 1)[0], hot), []).append(source)
     result = []
-    for endpoint, members in sorted(groups.items()):
+    for (endpoint, _hot), members in sorted(groups.items()):
         members.sort(key=lambda s: s.endpoint)
         route = ""
         root = endpoint
