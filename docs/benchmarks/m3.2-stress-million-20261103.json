@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-11-03T01:10:18.480867+00:00",
+  "record_count": 1000000,
+  "write_duration_seconds": 56.1349,
+  "write_frames_per_second": 17814.22,
+  "scan_duration_seconds": 17.2725,
+  "scan_frames_per_second": 57895.51,
+  "tracemalloc_peak_bytes": 4828,
+  "tracemalloc_peak_mib": 0.0046,
+  "peak_rss_bytes": 206159872,
+  "peak_rss_mib": 196.6094,
+  "uncompressed_bytes": 436000306
+}

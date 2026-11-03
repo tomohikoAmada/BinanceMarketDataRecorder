@@ -384,7 +384,7 @@
 
 ---
 
-#### 任务 `M3.2`：全量离线测试、100 万事件压力测试与故障注入回归
+#### 任务 `M3.2`：全量离线测试、100 万事件压力测试与故障注入回归 **`[COMPLETED — 独立复核验证通过]`**
 
 - **具体测试与检查清单**：
   1. **静态与契约检查**：
@@ -401,6 +401,15 @@
      - **K 线断线跨整点 REST 补采测试**：模拟 WS 在整点收盘时刻断线重连，验证自动触发 REST K 线补采、写入 `capture_flags = ("closed_bar_backfill",)` 且收盘序列无缺口。
 - **独立验收标准**：
   - 上述全部测试命令 100% 绿灯通过，无新增回归或未受控警告。
+
+- **完成状态（2026-11-03 独立复核验证通过）**：
+  - **静态与契约检查全绿**：`ruff check .` 0 警告 0 错误；`mypy` 严格模式核查 **383 个源码文件** 0 类型错误；`verify_m0_contracts.py` 契约通过；`verify_raw_chunk_golden.go` 确认 Raw v1 磁盘字节 Framing 与 CRC32C 100% 兼容；`git diff --check` 通过。
+  - **全量离线测试全绿**：`pytest -q` 执行 **2548 passed, 24 skipped, 5 deselected, 13 warnings**（耗时 231.24s）。24 项跳过为需连网的环境测试；5 项未选中为 stress 标记；13 条保留警告为 Python 3.12 既有多线程进程 `fork()` DeprecationWarning，无任何隐藏或新增警告。
+  - **100 万事件压测达标**：已在 `tests/stress/test_million_events.py` 中引入精准微秒计时与系统 RSS 采样，产出结构化报告 [`docs/benchmarks/m3.2-stress-million-20261103.json`](benchmarks/m3.2-stress-million-20261103.json)。写入 1,000,000 帧耗时 **54.868s（18,225.6 fps）**，扫描 1,000,000 帧耗时 **17.006s（58,804.2 fps）**，`tracemalloc` 峰值堆内存 **0.012 MiB**（远低于 64 MiB 门禁），独立进程采样峰值 RSS 为 **64.62 MiB**。全量 stress 套件（5 项高负载测试）全部通过（86.97s）。
+  - **专项故障恢复端到端验收**：编写并沉淀集成测试 [`tests/integration/test_m3_2_fault_recovery.py`](../tests/integration/test_m3_2_fault_recovery.py)（7 passed in 7.05s），结合既有 `tests/fault_injection/` 全部 86 项测试（5.31s）全部绿灯：
+    1. **SQLite WAL 尾部回滚对账**：模拟掉电截断 WAL 尾部事务，覆盖 6 种状态组合，`recover_storage()` 100% 成功根据磁盘完整分片前滚对账为 `SEALED`，孤立 `.partial` 彻底清理，丢失监控诚实记为 `unknown`，具备幂等性。
+    2. **K 线断线跨整点 REST 补采**：模拟 WS 在整点收盘前断线（110s）并在收盘后重连（125s），系统精准调度 `startTime=60_000, endTime=119_999` 的 REST 补采，打上 `closed_bar_backfill` 标记与真实 REST 接收时间，与重连后 WS 收到的第 2 根收盘 bar 构成严格无缺口序列 `[0, 60_000, 120_000]`。
+  - 完整复核报告见 [`M3.2 复核记录`](benchmarks/m3.2-review-20261103.md)。本阶段已完成 M3.2，下一步为 M3.3（Wheel 与 VPS 配置冻结）。
 
 ---
 
@@ -484,5 +493,5 @@
 | :--- | :--- | :--- | :--- |
 | **`M1`** | **核心性能与写放大治理** | `M1.0` 多流固定输入基准 **`[COMPLETED]`**<br>`M1.1` 15m/128MiB 封存轮换 **`[COMPLETED]`**<br>`M1.2` `Catalog` WAL+NORMAL 与状态去重 **`[COMPLETED]`**<br>`M1.3` K 线收盘落盘 + 断线 REST 补采 + `S12` 直接去重 **`[COMPLETED]`**<br>`M1.4` 移除热路径防御拷贝与 REST 合并 **`[COMPLETED]`** | 分片生成速率下降 `~90%`；`AvailabilityJournal` 零积压；K 线断线自动补齐闭合 bar；`ADR-0058` / `ADR-0059` 落地并通过单测 |
 | **`M2`** | **去过度设计与移除过度防御** | `M2.1` 取消实时封存全文件解压回读与后台重验 **`[COMPLETED]`**<br>`M2.2` 取消启动时 80+ 个空 `.zst` 分片 **`[COMPLETED]`**<br>`M2.3` 抽取公共 WS 底座并统一双采集栈 **`[COMPLETED]`**<br>`M2.4` CLI 延迟导入与 `Catalog` 拆分 **`[COMPLETED]`** | 实时封存磁盘重读从 2 次直接降至 **0 次**；启动 `0` 空 `.zst` 分片；消除 `spot->usdm` 反向依赖；守护进程不加载外围重模块 |
-| **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试 **`[COMPLETED]`**<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
+| **`M3`** | **多轮换三方基准与收敛** | `M3.1` 45–60m 三方对照基准测试 **`[COMPLETED]`**<br>`M3.2` 全量测试 + 100 万事件压测 + 故障注入 **`[COMPLETED]`**<br>`M3.3` 生产 Wheel 包与配置冻结 | 独立量化“代码优化收益”与“K 线收敛收益”；`pytest` / `ruff` / `mypy` / `verify_raw_chunk_golden.go` / `1M stress` 全绿 |
 | **`M4`** | **VPS 连续 `2h→12h→24h` 验收** | `M4.1` 宿主机预检与 `T0` 部署<br>`M4.2` `T0 + 2h` 检查点<br>`M4.3` `T0 + 12h` 检查点<br>`M4.4` `T0 + 24h` 终验（含跨日与 24h 轮换） | `greencloud-tokyo-01` 上 `BTC + ETH` 单次连续跑满 `2h → 12h → 24h`，`MainPID` 不变，可用率 `>= 99.5%`，`0` 损坏分片 |
