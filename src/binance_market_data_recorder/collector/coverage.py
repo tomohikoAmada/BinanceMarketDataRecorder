@@ -389,7 +389,7 @@ class SelectedAssetCapture:
         self.shared_stops: dict[tuple[str, str], asyncio.Event] = {}
         self.shared_members: dict[tuple[str, str], tuple[tuple[str, str, str, str], ...]] = {}
         self.admission: dict[ProductKey, str] = {}
-        self.polls: dict[tuple[str, str, str, str], asyncio.Task[RestObservation]] = {}
+        self.polls: dict[tuple[str, str, str, str], asyncio.Task[RestObservation | None]] = {}
         self._changed = asyncio.Event()
         self._stop: asyncio.Event | None = None
         self._discovery_lock = asyncio.Lock()
@@ -1136,6 +1136,12 @@ class SelectedAssetCapture:
                 max(0.0, (until - time.time_ns()) / 1e9),
             )
 
+    async def _poll_if_ready(self, state: SourceState) -> None:
+        # Other tasks may consume the budget before this task starts. Leave
+        # the source due so a throttled poll cannot occupy a concurrency slot.
+        if shared_request_budget().delay(state.source.charges) <= 0:
+            await self.poll_once(state)
+
     async def poll_once(self, state: SourceState) -> RestObservation:
         source = state.source
         await shared_request_budget().acquire(source.charges)
@@ -1671,7 +1677,10 @@ class SelectedAssetCapture:
                         or state.next_due > time.monotonic()
                     ):
                         break
-                    self.polls[state.source.key] = asyncio.create_task(self.poll_once(state))
+                    if shared_request_budget().delay(state.source.charges) <= 0:
+                        self.polls[state.source.key] = asyncio.create_task(
+                            self._poll_if_ready(state)
+                        )
                 for state in self._active_sources.values():
                     if len(self.polls) >= self.coverage.rest_concurrency:
                         break

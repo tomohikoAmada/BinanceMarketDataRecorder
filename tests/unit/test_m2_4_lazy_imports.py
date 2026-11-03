@@ -45,11 +45,17 @@ def _run_in_fresh_process(code: str) -> subprocess.CompletedProcess[str]:
 
 
 def test_cli_import_does_not_load_heavy_modules() -> None:
+    forbidden = [
+        *FORBIDDEN_COLLECTOR_MODULES,
+        "binance_sdk_",
+        "binance_market_data_recorder.service.runtime",
+    ]
     code = f"""
 import sys
 import binance_market_data_recorder.cli
+import binance_market_data_recorder.status
 
-forbidden = {FORBIDDEN_COLLECTOR_MODULES!r}
+forbidden = {forbidden!r}
 loaded = [m for m in sys.modules if m.startswith(tuple(forbidden))]
 assert not loaded, f"Forbidden modules loaded by cli.py: {{loaded}}"
 """

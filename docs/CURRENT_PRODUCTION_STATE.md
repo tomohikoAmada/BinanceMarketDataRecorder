@@ -1,6 +1,10 @@
 # Current Production State
 
-## Active Status (2026-11-03)
+## M4.2 checkpoint (2026-11-03)
+
+The run that began qualification at 05:18:17 UTC failed the 2h per-source availability gate. 411 of 4,038 sources exceeded 36 seconds of unavailability or uncertainty. The Recorder stopped cleanly and is inactive and disabled. Normal OS updates were restored. The 12h and 24h targets for that run are cancelled. The earlier M4.1 baseline below is retained as historical evidence. See the [M4.2 result and repair notes](production_milestone_plan.md#任务-m42第一阶段检查点t0--2h-稳定性与零积压门禁).
+
+## M4.1 baseline (historical, 2026-11-03)
 
 - **Production Readiness**: **NO** (currently progressing through the finalized milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md); M1–M3 are complete; M4.1 is complete after independent correction; timed M4.2–M4.4 qualification is pending).
 - **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.

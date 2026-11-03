@@ -281,6 +281,9 @@ def test_normal_stop_cancels_polls_still_waiting_for_budget(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class WaitingBudget:
+        def delay(self, charges: Any) -> float:
+            return 0.0
+
         async def acquire(self, charges: Any) -> None:
             await asyncio.Event().wait()
 

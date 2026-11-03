@@ -23,7 +23,6 @@ from .domain.product import configured_products
 from .logging import configure_logging, log_event
 from .paths import discover_repository_root
 from .service.lock import ServiceAlreadyRunning
-from .service.runtime import run_service
 from .storage.catalog import Catalog, CatalogStateError, RemoteArchiveState
 from .storage.layout import StorageLayout, ensure_storage_layout
 from .version import git_commit as current_git_commit
@@ -54,6 +53,7 @@ def _volume_adapter() -> Any:
 
 
 _LAZY_MODULE_EXPORTS: dict[str, tuple[str, str]] = {
+    "run_service": (".service.runtime", "run_service"),
     # archive
     "ArchiveError": (".archive", "ArchiveError"),
     "ArchiveManager": (".archive", "ArchiveManager"),
@@ -900,7 +900,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 runtime_identity = runtime_deployment_identity(identity)
             asyncio.run(
-                run_service(
+                _sym("run_service")(
                     loaded.config,
                     logger=logger,
                     authority_path=classification_authority_path(

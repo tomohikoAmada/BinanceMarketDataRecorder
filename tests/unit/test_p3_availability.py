@@ -8,8 +8,13 @@ from pathlib import Path
 import pytest
 
 from binance_market_data_recorder.binance.public_sources import Source, product_sources
+from binance_market_data_recorder.binance.request_budget import shared_request_budget
 from binance_market_data_recorder.collector.availability import AvailabilityJournal
-from binance_market_data_recorder.collector.coverage import ProductCapture, SelectedAssetCapture
+from binance_market_data_recorder.collector.coverage import (
+    ProductCapture,
+    SelectedAssetCapture,
+    SourceState,
+)
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.metrics.continuity import continuity_report
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -117,6 +122,42 @@ def owner_at(root: Path, catalog: Catalog) -> SelectedAssetCapture:
         catalog,
         clients={v: Client() for v in ("spot", "usdm", "coinm")},
     )
+
+
+def test_throttled_rest_source_does_not_block_another_market(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def scenario() -> None:
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = owner_at(tmp_path, catalog)
+            owner._active_sources.clear()
+            owner.coverage = owner.coverage.model_copy(update={"rest_concurrency": 1})
+            blocked = Source(
+                family="S02", venue_market="spot", market="spot", symbol="BTCUSDT",
+                stream="depth_snapshot", transport="rest", endpoint="/api/v3/depth",
+                cadence_seconds=0, weight=1,
+            )
+            available = replace(
+                blocked, family="D02", venue_market="usdm", market="um_perpetual",
+                endpoint="/fapi/v1/depth",
+            )
+            owner.add_source(blocked)
+            owner.add_source(available)
+            shared_request_budget().block("spot", 60)
+            stop = asyncio.Event()
+            polls = []
+
+            async def poll(state: SourceState) -> None:
+                await shared_request_budget().acquire(state.source.charges)
+                polls.append(state.source.key)
+                stop.set()
+
+            monkeypatch.setattr(owner, "poll_once", poll)
+            await asyncio.wait_for(owner.run(stop), timeout=2)
+            assert polls == [available.key]
+
+    asyncio.run(scenario())
 
 
 def test_rest_deadline_is_source_local_and_valid_recovery_retains_failure(tmp_path: Path) -> None:
