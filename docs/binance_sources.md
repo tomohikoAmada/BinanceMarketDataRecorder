@@ -1,5 +1,15 @@
 # Official Binance Sources
 
+## M4.1 snapshot bridge followup — 2026-11-03
+
+Read the official [Spot local-book procedure](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md#how-to-manage-a-local-order-book-correctly)
+and [USD-M local-book procedure](https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly).
+Buffer stream updates, discard updates already covered by the snapshot, and wait for a bridging
+update. Fetch another snapshot when the existing one is too old or continuity breaks; a snapshot
+ahead of currently persisted events is not itself a reason to keep replacing the target.
+The followup changes only when the existing capture coordinator requests another public snapshot;
+U/u/pu validation, bounded buffers, Raw bytes and offline order-book reconstruction are unchanged.
+
 ## P2-R2 access and importance clarification — 2026-10-29
 
 The owner requested a focused check of API-key/VIP access and the importance of the

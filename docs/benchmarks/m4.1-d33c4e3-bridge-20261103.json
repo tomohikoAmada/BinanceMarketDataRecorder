@@ -1,0 +1,41 @@
+{
+  "observed_at_utc": "2026-11-03T05:00:00.905338+00:00",
+  "pid": 15373,
+  "pending": 0,
+  "ready": 40,
+  "snapshots": 50,
+  "synchronized": 49,
+  "open_gaps": [
+    [
+      "usdm/ETHUSDT_261225/taker_buy_sell_volume_5m/rest",
+      "DataPublicationStale"
+    ],
+    [
+      "usdm/ETHBTC/taker_buy_sell_volume_5m/rest",
+      "DataPublicationStale"
+    ],
+    [
+      "usdm/ETHUSDT/diff_depth/ws",
+      "STARTUP_UNKNOWN"
+    ],
+    [
+      "usdm/ETHUSDT/rpi_depth/ws",
+      "STARTUP_UNKNOWN"
+    ]
+  ],
+  "depth_snapshot_counts": {
+    "spot/ETHUSDT": 168,
+    "um_perpetual/ETHUSDT": 70
+  },
+  "watermarks": [
+    [
+      "assets:BTC,ETH:60be6f42-828f-4428-8729-8489059094ba",
+      1793681998188916809,
+      1793681998277816960
+    ]
+  ],
+  "disconnect_reasons": {
+    "ConnectionClosedError": 4,
+    "Pong timeout": 3
+  }
+}

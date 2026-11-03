@@ -47,6 +47,7 @@ from ..config import RecorderConfig
 from ..domain.event import EventEnvelope
 from ..domain.product import Product, ProductKey
 from ..metrics.recorder import MetricsRecorder
+from ..orderbook.reconstructor import SynchronizeResult
 from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
@@ -206,8 +207,14 @@ class ProductCapture:
             self.readiness.observe_persisted(envelope)
             if stream == "diff_depth" and not self.readiness.snapshot().orderbook_synchronized:
                 if self.snapshot is not None:
-                    self.readiness.observe_snapshot_persisted(self.snapshot)
-                if not self.readiness.snapshot().orderbook_synchronized:
+                    result = self.readiness.observe_snapshot_persisted(self.snapshot)
+                    if result in {
+                        SynchronizeResult.SNAPSHOT_TOO_OLD, SynchronizeResult.SEQUENCE_GAP,
+                    }:
+                        self.snapshot = None
+                # A snapshot ahead of persisted WS events needs those events,
+                # not a continuously newer REST target that they can never reach.
+                if self.snapshot is None:
                     self.owner.request_snapshot(self.product)
             if (
                 stream == "diff_depth"
@@ -237,8 +244,12 @@ class ProductCapture:
                 )
                 self.rpi_snapshot = None
             if not self.rpi.is_reliable and self.rpi_snapshot is not None:
-                self.rpi.synchronize(self.rpi_snapshot)
-            if not self.rpi.is_reliable:
+                result = self.rpi.synchronize(self.rpi_snapshot)
+                if result in {
+                    SynchronizeResult.SNAPSHOT_TOO_OLD, SynchronizeResult.SEQUENCE_GAP,
+                }:
+                    self.rpi_snapshot = None
+            if not self.rpi.is_reliable and self.rpi_snapshot is None:
                 self.owner.request_snapshot(self.product, rpi=True)
             self._observe_rpi_health(envelope.receive_time_utc_ns)
         if envelope.source_sequence.get("sourceStream") == "server_shutdown":
