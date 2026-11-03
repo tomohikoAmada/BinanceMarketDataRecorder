@@ -1,5 +1,39 @@
 # Official Binance Sources
 
+<a id="cpp-rewrite-research-20261103"></a>
+
+## C++ rewrite proposal review — 2026-11-03
+
+Research for [GPT-6 Astra's review and revised C0–C5 proposal](../schnellerBMDR/cpp_rewrite_milestone_plan.md#gpt-6-astra-review).
+This was documentation research and local code inspection, not a live endpoint test
+or a change to capture scope. No account request, API key, market-data request or
+`llms-full.txt` download was used. Observed documentation, existing runtime evidence
+and engineering recommendations are kept distinct.
+
+The web tool could not retrieve the Agent Native index or selected product `.md`
+pages. Direct HTTPS retrieval succeeded for the index and the product pages listed
+below; catalogue semantics were read through the rendered official pages.
+Hashes below describe downloaded bodies, not the rendered catalogue excerpts.
+The common futures-data `general-info.md` page returned generic Spot/SAPI material;
+it was not used to infer derivatives endpoint limits.
+
+| Official source | Representation / retrieval date | Review conclusion |
+| --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | Downloaded text, 2026-11-03, 175,048 bytes; SHA-256 `2101155962c871d35d81476f5558f3dde8af3dab31f374bde72f3e3904591d7c` | Locates selected product documentation; not itself an endpoint contract. |
+| [Spot WS connection rules](https://developers.binance.com/en/docs/products/spot/web-socket-streams.md) | Downloaded Markdown, 2026-11-03, 10,472 bytes; SHA-256 `555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35` | 24h connection lifetime; client-to-server control-message limits and connection-attempt/stream limits must be budgeted separately from market-data throughput. |
+| [Spot WS catalogue](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~) | Rendered official page, 2026-11-03 | Individual-symbol bookTicker and market-wide ticker arrays have different scopes; changed-symbol arrays are not necessarily a complete snapshot of every symbol on every push. |
+| [USD-M public WS catalogue](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public) | Rendered official page, 2026-11-03 | `!bookTicker` lists 5s update speed even though its introductory sentence says real-time. Do not use it to promise the fidelity of individual-symbol BBO updates. The page describes post-migration UM/CM fields `st/ps` and merged all-market scope. |
+| [USD-M market WS catalogue](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market) | Rendered official page, 2026-11-03 | `!forceOrder@arr` is a per-symbol representative publication within 1000ms, not an exhaustive liquidation ledger. This page still says latest; see the conflicting changelog below. |
+| [Derivatives changelog](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md) | Downloaded Markdown, 2026-11-03, 112,546 bytes; SHA-256 `05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8` | The 2026-04-10 USD-M entry, effective 2026-04-14, changes liquidation selection to largest within 1000ms. The latest/largest documentation conflict remains unresolved; neither means all events. |
+| [USD-M market REST catalogue](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data) | Rendered official page, 2026-11-03 | historicalTrades and both top-trader ratio endpoints list a required API-key header. Statistics pages also list 1000 requests/5min/IP; fundingRate and fundingInfo share 500 requests/5min/IP. Zero request weight does not remove independent request-count limits. Do not infer COIN-M permissions by analogy. |
+| [USD-M general REST rules](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md) | Downloaded Markdown, 2026-11-03, 19,261 bytes; SHA-256 `7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65` | Rate-limit metadata and observed usage headers inform admission; 429 requires backoff and repeated violations can lead to 418. The full exchange allowance is not automatically Recorder's allocation on a shared IP. |
+
+The implementation plan must refresh applicability when C++ source parity is frozen,
+including the existing dated-premium/dated-ADL exceptions. This review does not
+resolve those exceptions, assert new unsigned access, or authorize authenticated
+sources. C++ library references and design inferences are linked beside the relevant
+comments in the proposal rather than treated as Binance authority.
+
 ## M4.1 snapshot bridge followup — 2026-11-03
 
 Read the official [Spot local-book procedure](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md#how-to-manage-a-local-order-book-correctly)
