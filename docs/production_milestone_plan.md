@@ -384,7 +384,7 @@
 
 ---
 
-#### 任务 `M3.2`：全量离线测试、100 万事件压力测试与故障注入回归 **`[COMPLETED — 独立复核验证通过]`**
+#### 任务 `M3.2`：全量离线测试、100 万事件压力测试与故障注入回归 **`[COMPLETED — 独立复核接续完成]`**
 
 - **具体测试与检查清单**：
   1. **静态与契约检查**：
@@ -402,14 +402,13 @@
 - **独立验收标准**：
   - 上述全部测试命令 100% 绿灯通过，无新增回归或未受控警告。
 
-- **完成状态（2026-11-03 独立复核验证通过）**：
-  - **静态与契约检查全绿**：`ruff check .` 0 警告 0 错误；`mypy` 严格模式核查 **383 个源码文件** 0 类型错误；`verify_m0_contracts.py` 契约通过；`verify_raw_chunk_golden.go` 确认 Raw v1 磁盘字节 Framing 与 CRC32C 100% 兼容；`git diff --check` 通过。
-  - **全量离线测试全绿**：`pytest -q` 执行 **2548 passed, 24 skipped, 5 deselected, 13 warnings**（耗时 231.24s）。24 项跳过为需连网的环境测试；5 项未选中为 stress 标记；13 条保留警告为 Python 3.12 既有多线程进程 `fork()` DeprecationWarning，无任何隐藏或新增警告。
-  - **100 万事件压测达标**：已在 `tests/stress/test_million_events.py` 中引入精准微秒计时与系统 RSS 采样，产出结构化报告 [`docs/benchmarks/m3.2-stress-million-20261103.json`](benchmarks/m3.2-stress-million-20261103.json)。写入 1,000,000 帧耗时 **54.868s（18,225.6 fps）**，扫描 1,000,000 帧耗时 **17.006s（58,804.2 fps）**，`tracemalloc` 峰值堆内存 **0.012 MiB**（远低于 64 MiB 门禁），独立进程采样峰值 RSS 为 **64.62 MiB**。全量 stress 套件（5 项高负载测试）全部通过（86.97s）。
-  - **专项故障恢复端到端验收**：编写并沉淀集成测试 [`tests/integration/test_m3_2_fault_recovery.py`](../tests/integration/test_m3_2_fault_recovery.py)（7 passed in 7.05s），结合既有 `tests/fault_injection/` 全部 86 项测试（5.31s）全部绿灯：
-    1. **SQLite WAL 尾部回滚对账**：模拟掉电截断 WAL 尾部事务，覆盖 6 种状态组合，`recover_storage()` 100% 成功根据磁盘完整分片前滚对账为 `SEALED`，孤立 `.partial` 彻底清理，丢失监控诚实记为 `unknown`，具备幂等性。
-    2. **K 线断线跨整点 REST 补采**：模拟 WS 在整点收盘前断线（110s）并在收盘后重连（125s），系统精准调度 `startTime=60_000, endTime=119_999` 的 REST 补采，打上 `closed_bar_backfill` 标记与真实 REST 接收时间，与重连后 WS 收到的第 2 根收盘 bar 构成严格无缺口序列 `[0, 60_000, 120_000]`。
-  - 完整复核报告见 [`M3.2 复核记录`](benchmarks/m3.2-review-20261103.md)。本阶段已完成 M3.2，下一步为 M3.3（Wheel 与 VPS 配置冻结）。
+- **完成状态（2026-11-03 独立复核接续完成）**：
+  - 原 `9495487` 全量回归可复现为 **2548 passed / 24 skipped / 5 deselected / 13 warnings**；但原专项尚未证明 K 线自动调度及完整落盘，WAL 用例只有已封存分片的前滚/重复 partial 清理，压测 JSON 与文档数值也不一致。因此撤回原“全部证据已齐备”的声明，以本次复核替代。
+  - **K 线跨整点自动补采**：实际运行 `SelectedAssetCapture`、`ProductCapture`、公共 WS 接收/断线重连、共享请求预算和 REST 调度。相对 `110s` 断线、`125s` 重连后，自动补回 `[60_000, 119_999]`；正常停机封存后，通过现有 Raw 读取器确认两份 WS 原始 bytes 与一份 REST 补采实际存在，开盘序列严格为 `[0, 60_000, 120_000]`（相对基准分钟），标记含 `closed_bar_backfill`，REST 接收时间落在实际请求与测试结束之间，无遗留 partial。
+  - **WAL 回滚恢复**：保留原 6 种已封存组合，增加 Raw 内容/唯一分片核对；新增 2 种仅剩孤立 partial 的掉电回滚场景，分别恢复为 `ACTIVE / RECOVERED`，截除不完整帧尾且保留全部有效 bytes，不伪造完整封存区间。保留 12 秒 `UNKNOWN` 与幂等性检查。专项合计 **9 passed**。
+  - **100 万事件压力测试**：独立 pytest 进程写入 **52.1270s（19,183.90 fps）**，扫描 **15.3146s（65,297.15 fps）**；追加阶段 tracemalloc 峰值 **18,219 bytes**，进程生命周期最大 RSS **49.3125 MiB**，扫描 clean。JSON 同步记录 Python/平台和 RSS 口径；现在仅显式设置 `STRESS_METRICS_PATH` 才导出，普通回归不再覆盖验收记录。其余 4 项 stress 另行执行全部通过，合计全部 **5 项 stress 通过**。
+  - **最终门禁**：全量离线回归 **2550 passed, 24 skipped, 5 deselected, 13 warnings in 211.89s (0:03:31)**；Ruff、strict mypy（383 个文件）、M0、Go Raw golden、`git diff --check` 全绿。24 项在线测试按配置跳过，5 项 stress 已另行执行；13 条既有 fork 弃用警告未隐藏，无新增警告。
+  - 本次只修改测试与证据/交接文档，**`src/` 与 `9495487` 一致**，没有新增生产回读、重验或防御层。完整测量口径、问题与命令见 [M3.2 独立复核记录](benchmarks/m3.2-review-20261103.md) 和 [1M JSON](benchmarks/m3.2-stress-million-20261103.json)。下一步为 M3.3；本次不替代生产构建冻结或 M4 VPS 验收。
 
 ---
 

@@ -1,6 +1,6 @@
 # Project Handoff
 
-## Active Engineering Direction (2026-11-02)
+## Active Engineering Direction (2026-11-03)
 
 The previous P0–P6 milestone plan has been **abolished** and replaced by the finalized Python milestone plan (`M1` → `M2` → `M3` → `M4`) in [`production_milestone_plan.md`](production_milestone_plan.md):
 
@@ -16,8 +16,8 @@ The previous P0–P6 milestone plan has been **abolished** and replaced by the f
    - **M2.3**: **COMPLETED after independent correction** ([review](benchmarks/m2.3-review-20261102.md)): explicit and coverage configurations share the production capture supervisor and common WebSocket base. Legacy collectors remain frozen for direct compatibility tests.
    - **M2.4**: **COMPLETED after independent correction** ([review](benchmarks/m2.4-review-20261102.md)): split `storage/catalog/` without changing existing methods or imports; isolate peripheral CLI imports and defer the legacy reconnect engine until related recovery evidence exists. A subprocess test now starts, writes, seals, stops and restarts the actual service. No VPS deployment was performed. Next task: **M3.1**.
 3. **M3 — Controlled Three-Way Benchmark & Pre-VPS Convergence**:
-   - **M3.1**: **COMPLETED after independent validation** ([review](benchmarks/m3.1-review-20261102.md)): 45-minute (2,700s, 3 rotation cycles) multi-arm benchmark evaluated on Apple M-series hardware with seed `20261102` (`BTC + ETH`, 85 stream spools). Pure engine optimization (Arm A → Arm B) reduced wall-clock time by 53.3%, chunks by 91.5% (3,980 → 340), startup empty chunks by 100% (85 → 0), post-seal readbacks by 100% (7,960 → 0), and eliminated the 212k-row uncoalesced availability backlog and RSS leakage. Production scope (Arm C) with D1 + D2 reduced persisted frames by 75.7% (581,580 → 141,431) and disk bytes by 75.8% (91.9 MB → 22.3 MB, 0.47 MB/min), achieving an overall 4.45x speedup and 100% byte-for-byte deterministic repeatability match. Next task: **M3.2**.
-   - **M3.2**: Full offline test suite, 1M-event stress test, and fault-injection regressions (SQLite WAL rollback reconciliation & K-line disconnect REST backfill).
+   - **M3.1**: **COMPLETED after independent correction** ([review](benchmarks/m3.1-review-20261102.md)): three actual 2,700s runs with the real baseline and production paths. A/B input and Raw content match; B reduces CPU time by 12.52%, chunks by 90.46% (6,595 → 629) and Catalog write transactions by 88.65%. C reduces Raw frames by 75.76% versus B, has zero pending rows at all 2,400 steady-state samples, and successfully backfills the injected closed-bar gap. The original simulated 45-minute results and 4.45x speedup claim were withdrawn; RSS and remaining measurement limits are recorded in the review.
+   - **M3.2**: **COMPLETED after independent correction** ([review](benchmarks/m3.2-review-20261103.md)): 2550 passed, 24 skipped, 5 deselected, 13 warnings in 211.89s (0:03:31); all five stress tests and static/Raw contract checks pass. Nine recovery cases cover sealed-file WAL rollback, orphan/truncated partials without false completeness, and real WS reconnect → scheduled REST backfill → sealed Raw readback. The 1M-event JSON and report now agree; metrics export is explicit. Production `src/` is unchanged. Next task: **M3.3**.
    - **M3.3**: Production wheel build & deployment configuration freeze.
 4. **M4 — GreenCloud VPS Continuous Qualification (`BTC + ETH`: `2h` → `12h` → `24h`)**:
    - Run `[recorder.coverage].underlying_assets = ["BTC", "ETH"]` on `greencloud-tokyo-01` in one continuous service incarnation across `2h`, `12h`, and `24h` checkpoints (any checkpoint failure requires fixing and restarting from `0h`).

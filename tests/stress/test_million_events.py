@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import resource
 import sys
 import time
@@ -63,6 +64,9 @@ def test_one_million_synthetic_frames_use_bounded_python_memory(tmp_path: Path) 
 
         metrics = {
             "timestamp_utc": datetime.now(UTC).isoformat(),
+            "python_version": platform.python_version(),
+            "platform": platform.platform(),
+            "rss_scope": "process lifetime high-water mark, read after scan; includes tracemalloc",
             "record_count": 1_000_000,
             "write_duration_seconds": round(write_duration_s, 4),
             "write_frames_per_second": round(write_fps, 2),
@@ -86,8 +90,4 @@ def test_one_million_synthetic_frames_use_bounded_python_memory(tmp_path: Path) 
         if output_path_env:
             out_file = Path(output_path_env)
             out_file.parent.mkdir(parents=True, exist_ok=True)
-            out_file.write_text(json.dumps(metrics, indent=2))
-        else:
-            default_out = Path("docs/benchmarks/m3.2-stress-million-20261103.json")
-            if default_out.parent.is_dir():
-                default_out.write_text(json.dumps(metrics, indent=2))
+            out_file.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
