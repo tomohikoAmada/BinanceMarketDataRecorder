@@ -1,0 +1,141 @@
+{
+  "platform": "GreenCloud Ubuntu 24.04 x86_64, GCC 13.3.0, CMake 3.28.3",
+  "code_commit": "7ef37251be487218dfddd74b6558d3c4566be7cb",
+  "python_baseline": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+  "binary_sha256": "f5abaeb9d92c8d386ed8a83c025c9bd22bff569d616b7a75b06ffca4a3084d44",
+  "tested_script_sha256": {
+    "verify_recorder.py": "db312de45a5b4db903b14a45ea616e188f98125edbf4ebd1699ef6909fd4a0ef",
+    "verify_reliability.py": "5dee38988de170282a3c937e58a9b2e452b87a75746a2802789ad80c185eaf08",
+    "recover_raw.py": "543783a11786aa4107915e52d0d6af9af700266928b25d29afd14b06ff63c075"
+  },
+  "native_release_ctest": "4 passed; review fixture also passed a focused rerun",
+  "archive_volume_long": {
+    "reader_audit": "PASS",
+    "durability_gate": "FAIL",
+    "exact_max_ns": null
+  },
+  "diagnostics_190s": {
+    "archive_volume": {
+      "records": 2091,
+      "sealed": 3,
+      "rotations": {
+        "size": 1,
+        "shutdown": 2
+      },
+      "max_durability_ns": 3020544443,
+      "max_receive_to_append_ns": 1891599430,
+      "receive_to_append_p99_ms": 774,
+      "max_status_cpu_percent": 22.03803729932122,
+      "stop_reason": "INPUT_COMPLETE",
+      "peak_queue_payload_bytes": 1318242,
+      "peak_queue_records": 21,
+      "wall_seconds": 190.219674966,
+      "cpu_seconds": 7.622981,
+      "peak_rss_bytes": 23326720,
+      "interrupted": false,
+      "ws_records": 1901,
+      "rest_records": 190,
+      "samples_count": 181,
+      "max_fsync_syscall_seconds": 1.886681
+    },
+    "system_volume": {
+      "records": 2091,
+      "sealed": 3,
+      "rotations": {
+        "size": 1,
+        "shutdown": 2
+      },
+      "max_durability_ns": 1153013078,
+      "max_receive_to_append_ns": 203174206,
+      "receive_to_append_p99_ms": 24,
+      "max_status_cpu_percent": 22.780083562195415,
+      "stop_reason": "INPUT_COMPLETE",
+      "peak_queue_payload_bytes": 589489,
+      "peak_queue_records": 3,
+      "wall_seconds": 190.203564748,
+      "cpu_seconds": 8.100849,
+      "peak_rss_bytes": 23089152,
+      "interrupted": false,
+      "ws_records": 1901,
+      "rest_records": 190,
+      "samples_count": 185,
+      "max_fsync_syscall_seconds": 0.024312
+    }
+  },
+  "system_volume_long": {
+    "started_at": "2026-11-04T09:50:34+08:00",
+    "finished_at": "2026-11-04T10:37:07+08:00",
+    "reader_audit": "PASS",
+    "latency_gate": "PASS",
+    "records": 30361,
+    "sealed": 20,
+    "rotations": {
+      "size": 15,
+      "time": 3,
+      "shutdown": 2
+    },
+    "max_durability_ns": 1108099718,
+    "max_receive_to_append_ns": 221996949,
+    "receive_to_append_p99_ms": 26,
+    "max_status_cpu_percent": 28.37112954426487,
+    "stop_reason": "INPUT_COMPLETE",
+    "peak_queue_payload_bytes": 589489,
+    "peak_queue_records": 3,
+    "wall_seconds": 2760.269837137,
+    "cpu_seconds": 94.212161,
+    "peak_rss_bytes": 72544256,
+    "interrupted": false,
+    "ws_records": 27601,
+    "rest_records": 2760,
+    "max_60s_cpu_percent": 4.180534356116344,
+    "samples_count": 2690
+  },
+  "system_volume_burst": {
+    "ws_offered_records": 8192,
+    "ws_frame_bytes_except_malformed_fixture": 8192,
+    "http_response_bytes": 17817762,
+    "first_fsync_injected_delay_ms": 250,
+    "reader_audit": "PASS",
+    "latency_gate": "FAIL",
+    "max_traced_fsync_syscall_seconds_including_injection": 0.25141,
+    "records": 8195,
+    "sealed": 2,
+    "rotations": {
+      "shutdown": 2
+    },
+    "max_durability_ns": 1938113426,
+    "max_receive_to_append_ns": 925354101,
+    "receive_to_append_p99_ms": 922,
+    "max_status_cpu_percent": 147.00839393183912,
+    "stop_reason": "INPUT_COMPLETE",
+    "peak_queue_payload_bytes": 41009314,
+    "peak_queue_records": 3022,
+    "wall_seconds": 3.630651202,
+    "cpu_seconds": 4.46817,
+    "peak_rss_bytes": 210903040,
+    "interrupted": false,
+    "ws_records": 8192,
+    "rest_records": 3
+  },
+  "public_smoke": {
+    "reader_audit": "PASS",
+    "ws_records": 2,
+    "rest_records": 1,
+    "records": 3,
+    "sealed": 2,
+    "rotations": {
+      "shutdown": 2
+    },
+    "max_durability_ns": 135647235,
+    "max_receive_to_append_ns": 4148650,
+    "receive_to_append_p99_ms": 5,
+    "max_status_cpu_percent": 0.0,
+    "stop_reason": "INPUT_COMPLETE",
+    "peak_queue_payload_bytes": 5349,
+    "peak_queue_records": 1,
+    "wall_seconds": 0.251545376,
+    "cpu_seconds": 0.122283,
+    "peak_rss_bytes": 20238336,
+    "interrupted": false
+  }
+}

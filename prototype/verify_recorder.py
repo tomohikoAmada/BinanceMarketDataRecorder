@@ -255,11 +255,6 @@ async def main():
             report = await scenario(
                 root / "long", seconds * 10 + 1, 8192, rate=10, duration=seconds
             )
-            assert report["wall_seconds"] >= seconds
-            assert report["rotations"]["time"] >= 3
-            assert report["max_durability_ns"] <= 1_250_000_000
-            assert report["peak_rss_bytes"] <= 768 * 1024**2
-            assert report["receive_to_append_p99_ms"] <= 100
             samples = report["samples"]
             timeline = [sample["elapsed_seconds"] for sample in samples]
             windows = [
@@ -272,9 +267,14 @@ async def main():
                 if index >= 0
             ]
             report["max_60s_cpu_percent"] = max(windows)
+            print(json.dumps(report, indent=2), flush=True)
+            assert report["wall_seconds"] >= seconds
+            assert report["rotations"]["time"] >= 3
+            assert report["max_durability_ns"] <= 1_250_000_000
+            assert report["peak_rss_bytes"] <= 768 * 1024**2
+            assert report["receive_to_append_p99_ms"] <= 100
             assert report["max_60s_cpu_percent"] <= 120
             assert report["max_status_cpu_percent"] <= 200
-            print(json.dumps(report, indent=2))
         else:
             timed = await scenario(
                 root / "timed",
