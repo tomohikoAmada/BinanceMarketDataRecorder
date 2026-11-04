@@ -1,0 +1,20 @@
+{
+  "name": "sbmdr-c1",
+  "version-string": "0.1.0",
+  "builtin-baseline": "afa249f12f52ed8a3b919f195495ba8b330288d1",
+  "dependencies": [
+    "abseil",
+    "boost-asio",
+    "boost-beast",
+    {
+      "name": "curl",
+      "default-features": false,
+      "features": ["openssl"]
+    },
+    "nlohmann-json",
+    "openssl",
+    "simdjson",
+    "sqlite3",
+    "zstd"
+  ]
+}

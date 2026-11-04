@@ -2,9 +2,9 @@
 
 <a id="gpt-6-astra-review"></a>
 
-> **版本：中文定稿，2026-11-03。编写：GPT-6 Astra。**
+> **版本：中文定稿，2026-11-03；实现复核更新，2026-11-04。编写与评审：GPT-6 Astra。**
 >
-> **状态：重写方向与工程原则已确认；C0–C5 的实现和验收尚未开始。**
+> **状态：C0 已完成并提交；C1 主体已实现，有历史本地验收，当前版本待修正及 GreenCloud 验收；C2 部分实现、尚未通过；C3–C5 未开始。详见[本次代码审查](#cpp-review-20261104)。**
 >
 > 本文件整合并替代此前的 C++ 草案与评审，作为同一仓库新分支上的独立重写计划。Python 的现行计划、运行记录和历史数据继续保留；服务切换属于 C5，不因计划定稿自动发生。
 
@@ -39,7 +39,7 @@
 
 ### 1.3 项目边界
 
-保留项目名称、仓库、数据路径及正式 CLI `binance-market-recorder`。在同一仓库的 `codex/cpp-rewrite` 分支实施；可使用独立 worktree。实验程序可暂用 `binance-market-recorder-cpp` 区分。
+保留项目名称、仓库、数据路径及正式 CLI `binance-market-recorder`。当前实际重写分支为同一仓库的 **`S-BMDR`**，计划位于仓库根目录；可使用独立 worktree。当前实验程序名为 `sbmdr-c0`，正式 CLI 对齐仍属于后续交付工作，不为本次评审单独改名。
 
 仅访问公开、免密钥、免签名市场数据接口；不读密钥、凭据库，不调用账户或订单接口，不输出原始代理 URL。市场数据目录中的接口不一定免密钥，权限须逐接口确认。
 
@@ -101,10 +101,10 @@ flowchart LR
 | REST | libcurl multi | 复用并发请求、连接复用和代理能力；不自研 HTTP 连接池。 |
 | JSON | simdjson | 复用 parser，提取路由、过滤、序列和水位所需字段，保留原始主体。 |
 | 队列与内存 | 标准拥有型缓冲区、批量队列、mutex/condition_variable | 同时限制记录数和字节数；默认不用无锁队列或自研内存池。 |
-| 压缩与摘要 | libzstd、google/crc32c、OpenSSL EVP | 使用库的硬件选择与回退；保留既有 CRC 和必要文件摘要。 |
+| 压缩与摘要 | libzstd、Abseil CRC32C、OpenSSL EVP | C0 已采用 Abseil 并通过既有 golden，继续复用，不为匹配早期候选名称改换 CRC 库；保留既有 CRC 和必要文件摘要。 |
 | Catalog | SQLite C API，加少量 RAII 资源管理 | 复用既有 SQL/表；不再同时引入 SQLiteCpp 或 ORM。 |
 | CLI、配置与日志 | CLI11、toml++、spdlog | 保留原命令与配置含义；日志记录状态和错误，不逐帧输出。 |
-| 单测与诊断 | GoogleTest、ASan/UBSan、独立 TSan 构建 | 按实际变化运行；性能只测不带 sanitizer 的 Release。 |
+| 单测与诊断 | 现有 CTest + Python 夹具、ASan/UBSan、独立 TSan 构建 | 先复用已实现入口，不为形式统一额外引入 GoogleTest；性能只测不带 sanitizer 的 Release。 |
 
 Raw v1 的 C++ 编码使用成熟 CBOR 库及必要的固定 schema 适配；C0 验证 canonical 字节与现有 golden 一致，不手写通用 CBOR 解析器。
 
@@ -217,10 +217,12 @@ C0 允许在测到相关瓶颈后，做一个最小格式或压缩对照实验�
 
 | 任务 | 可复现问题/当前需求 | 最小实现与复用 | 资源成本 | 验收标准 |
 | --- | --- | --- | --- | --- |
-| C1.1 工程与依赖 | C++ 需要可重复构建；跨架构不能依赖结构体布局。 | CMake presets、CTest、vcpkg 固定基线；只加入本阶段用到的依赖。 | 构建/CI 时间与二进制依赖；不增加业务线程。 | 开发机与目标 Linux 构建通过；至少 x86_64/ARM64 两种架构通过同一字节向量。 |
+| C1.1 工程与依赖 | C++ 需要可重复构建；跨架构不能依赖结构体布局。 | CMake presets、CTest、vcpkg 固定基线；只加入本阶段用到的依赖。 | 构建与测试时间、二进制依赖；不增加业务线程。 | GreenCloud 原生 Linux x86_64 构建及同一字节向量通过；已完成的 ARM64 字节兼容结果保留，不把跨平台重复运行设为每次变更的门槛。 |
 | C1.2 网络与交接 | 存储工作会延迟收包；借用接收 buffer 跨线程可复现内容被覆盖。 | 按 3.1 分工，复用产品/源身份；移动拥有型 buffer，消息数和字节双上限，按批取出。 | 默认三个工作线程、连接缓冲、有限队列；空闲等待。 | 延迟存储消费者时内容不变、接收线程不做磁盘操作；超过预算明确报告，不能无限分配。 |
 | C1.3 写入与目录 | 必须保留既有 Raw/manifest/Catalog、耐久和轮换行为。 | 实现 C0 选定格式；复用 SQL、统计字段和 seal 顺序；首次真实消息才开文件。 | 有界写入批次、所选压缩上下文、SQLite cache、必要 fsync。 | 15 分钟/128 MiB 两种轮换正确；同步水位真实；无启动空文件、无封存后回读。 |
 | C1.4 读取、状态与退出 | 晚做 reader 会延迟发现格式不兼容；退出时仍有在途数据。 | v1 直接用现有 Python reader；若选 v2，只加最小读取适配。状态复用简明快照，退出依次停止接收、排空、封存。 | 离线 reader 成本；低频摘要，无共享内存协议。 | 独立读回比对 payload/时间/身份/数量；正常退出排空完成，I/O 失败可见。 |
+
+**C1 主体已实现，当前版本待目标机验收。** [最小记录器与独立读取器](c1-recorder.md)及[历史验收数据](c1-qualification.json)记录了公开 Binance 烟测、字节向量和 46 分钟 macOS 多轮换结果；其中 Linux x86_64 来自本机模拟运行。长测记录的三个 C++ 源文件摘要均与当前工作区不同，不能直接签收当前代码。完成本次相关修正后，在 GreenCloud 原生运行本阶段适用测试及一次 45–60 分钟验收；保留旧结果，不改写成 VPS 实测。
 
 **退出标准：** 默认链路真实墙钟运行 45–60 分钟，跨多次轮换且无持续积压；正常与畸形消息对得上；CPU/RSS/延迟达到 C0 的该负载预算。运行当前 C++ 单测及适用 sanitizer 检查。原型代码优先整理复用，不再另起第二套实现。
 
@@ -235,6 +237,8 @@ C0 允许在测到相关瓶颈后，做一个最小格式或压缩对照实验�
 | C2.3 REST 调度 | M4 已复现整分请求发出过晚、等待预算占并发槽、D16 只返回旧桶。 | 迁移现有多窗口预算、完成唤醒、确定性错峰和有界重试；预算可用后再占槽，实际发送扣账，响应限流立即生效。 | 每源少量到期状态，受限连接数与请求量；不建新调度服务。 | 重放同一齐发/限流/旧桶案例，分清派发、网络与发布延迟；无错误刷新成功水位、无绕过冷却。 |
 | C2.4 补齐与连续性 | 断线可能漏掉唯一闭合 bar；深度需要重新接续。 | 迁移闭合 K 线有限范围补齐和深度序列桥接；跨进程未完成范围先复用现有持久证据。只有夹具证明缺失游标会漏修，才在既有元数据中补最小游标。 | 少量范围状态、共享预算中的修复请求；不扫全历史。 | 缺 bar、旧响应、空响应、重启与重叠场景结果可解释；深度缺失轨迹不被伪装为已补回。 |
 | C2.5 过载与保底 | 写入停顿、磁盘不足可耗尽有界队列。 | 复用磁盘保留和停止规则；先暂停可延后 REST 入场，WS 无法接纳则报告受影响范围并有界退出/恢复，不覆盖队列旧帧。 | 配置规定的缓冲及排空空间；低频容量采样。 | 注入存储停顿/低空间后无静默覆盖、无无限等待、无未归档删除；正常停止排空成功，失败停止明确留证。 |
+
+**C2 进行中，尚未通过。** [可靠性进度与复跑入口](c2-reliability.md)记录已有代表源验证及剩余项；先处理[本次审查 R1–R4](#cpp-review-findings)，再补当前阶段的故障、调度和连续性验收。Python 参考实现的测试通过，不替代 C++ 写入与封存边界的实际验证。
 
 **退出标准：** 关键故障夹具通过；ASan/UBSan 与独立 TSan 无未解决的本项目缺陷。错误处理到达既有恢复规则即可，不继续添加假设性的二次、三次保护层。进程崩溃测试不冒称物理断电测试。
 
@@ -302,7 +306,18 @@ C0 将以下数值写入同一份简短基线/预算报告，不为它们新建�
 
 测量使用抽样或固定容量直方图，不每帧写日志/SQL，不保存无限增长的观测列表。不承诺尚未测得的 `CPU <8%`、`RSS <64 MiB`、`50 万帧/秒` 或 `3 秒校验`。
 
-测试按变化范围执行：
+### 6.1 测试环境：从本次评审起以 GreenCloud 为准
+
+按用户要求，后续可执行测试统一在 **`greencloud-tokyo-01` 的原生 Linux x86_64 环境**运行，包括相关 CTest、Python 兼容/恢复测试、sanitizer、性能及持续运行验收。开发机用于编辑、静态审查、文档检查和结果查看；历史 macOS/模拟 Linux 结果保留，但不能代替当前目标机结论。
+
+- 复用现有 CMake/vcpkg、CTest 和 Python 夹具，不新增测试服务、调度平台或环境抽象层。固定的 Python 基线及依赖可放在隔离测试目录中复用。
+- 测试使用独立进程、端口、数据根和 Catalog。合成夹具可使用 VPS 临时目录；真实公开采集使用既有内部根下的独立 `S-BMDR` 子目录。故障注入只作用于测试进程和测试文件，不通过填满生产盘或终止现有采集进程制造故障。
+- Release 用于性能测量，ASan/UBSan 与 TSan 分开运行。测试前检查可用资源；共享 IP 上的公开烟测请求计入既有预算。并行负载影响结果时如实记录，不将其当作采集器自身性能。
+- 结果继续写入已有阶段报告/JSON，至少绑定实际源文件或提交、二进制、工具链/依赖、输入配置、主机和运行时长；无需新建证据管理系统。
+
+### 6.2 按变更范围选择测试
+
+测试按变化范围执行，执行地点遵循 6.1：
 
 - C++ 实现：相关 CTest、ASan/UBSan；涉及线程交接时运行独立 TSan。只补能发现真实边界错误的用例，不写镜像实现的测试。
 - Python 工具/读取兼容发生变化：相关 pytest、ruff、mypy 及适用的 `python3.12 tests/verify_m0_contracts.py`。
@@ -323,7 +338,7 @@ C0 将以下数值写入同一份简短基线/预算报告，不为它们新建�
 
 复用现有文档/结果目录，避免相同数据在多份报告重复保存。只有磁盘格式、发布契约或删除授权等边界变化需要 ADR；普通局部实现写在变更说明里即可。
 
-当前任务仅完成本计划定稿。下一项实现工作为 **C0**；C1–C5 的任务不能以“为后续做准备”为由提前进入 C0。
+当前开发工作为 **C1 收尾与 C2 可靠性实现**。本次任务只进行审查和计划标注，不直接修业务代码或启动生产切换。下一轮先修复第十节的问题并完成 GreenCloud 对应验证，再继续 C2 已列出的剩余项；C3 全矩阵与 C4 扩展暂不提前实施。
 
 ## 八、候选优化：不纳入当前默认实施范围
 
@@ -348,5 +363,92 @@ C0 将以下数值写入同一份简短基线/预算报告，不为它们新建�
 - Binance 语义与权限：[官方来源记录](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/fa73698304fb8666a2379c000c6e912fa19af085/docs/binance_sources.md#cpp-rewrite-research-20261103)。本计划延续 2026-11-03 已完成的检索，不把文档研究当作线上端点资格。
 - C++ 所有权和按证据优化：[C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)；内存对象不等于磁盘协议：[C++ 对象表示](https://eel.is/c++draft/basic.types.general)。
 - 库的实际约束：[Beast 线程与缓冲](https://www.boost.org/doc/libs/latest/libs/beast/doc/html/beast/using_websocket/notes.html)、[libcurl multi](https://curl.se/libcurl/c/libcurl-multi.html)、[simdjson 生命周期与 padding](https://simdjson.org/api/4.6.4/md_doc_2basics.html)、[libzstd API](https://github.com/facebook/zstd/blob/v1.5.7/lib/zstd.h)、[SQLite 同步语义](https://sqlite.org/pragma.html#pragma_synchronous)、[vcpkg 版本规则](https://learn.microsoft.com/en-us/vcpkg/users/versioning)。
+
+<a id="cpp-review-20261104"></a>
+
+## 十、实现进度与代码审查（GPT-6 Astra，2026-11-04）
+
+### 10.1 审查范围与结论
+
+本次审查对象为 **`S-BMDR@7c06dcbc` 加当前未提交工作区**。HEAD 提交内容停在 C0；C1/C2 的头文件、读取/恢复脚本、构建配置和验收记录中有多项尚未纳入 Git。下述结论针对已经读到的工作区内容，不将它们误称为已提交发布版本。
+
+| 阶段 | 实际完成情况 | 本次判断 |
+| --- | --- | --- |
+| C0 | 固定 Python 基线与输入、Raw v1 原型、格式决策、目标预算已有提交与记录。 | 已完成；目标机预算仍是待验证上限，不是已取得的生产成绩。 |
+| C1 | Spot BTCUSDT S02 + S01、TLS、三个工作线程、有界交接、Raw/压缩/manifest/Catalog、读取与正常停止链路已实现。历史长测 2,760.11 秒、30,344 条、20 个分片，记录 CPU 均值 1.42%、峰值 RSS 23.13 MiB。 | 最小链路已打通，历史数据只说明该 macOS 单 WS/REST 负载。当前代码与报告摘要不同，且未覆盖 C0 规定的突发、大目录、存储停顿组合，不能推算全源性能或签收 GreenCloud。 |
+| C2 | 有离线恢复适配、代表源重连、单源滚动配额/冷却、序列缺口与队列饱和处理。 | 部分实现。下列缺陷、C++ 崩溃/I/O 故障边界、心跳/主动换连、多源准入、快照桥接、闭合 K 线补齐和低空间验收仍未闭合。 |
+| C3–C5 | 尚无完整源矩阵迁移、广度扩展或连续生产资格证据。 | 未开始；当前还不是可替换 Python 生产版的全源记录器。 |
+
+**架构评价：方向合理，宜继续小步修正。** 拥有型 payload、标准有界队列、单一存储所有者、成熟网络/压缩库，以及复用 Python 离线工具均值得保留。当前单产品原型使用两个存储槽、少量源文件和固定身份是合理的阶段约束；不要求现在扩成通用框架。Raw v2、无锁队列、内存池、绑核和额外线程均没有新的必要性证据。
+
+本次定位使用的源码 SHA-256 前 12 位：`main.cpp=e6d47b926879`、`recorder_run.hpp=5d5d5b2bc714`、`recorder_storage.hpp=809b42bebb7d`、`recover_raw.py=b76e1b5ad3b4`。行号均指本次工作区版本。
+
+<a id="cpp-review-findings"></a>
+
+### 10.2 需要修改的具体问题
+
+以下 R1–R3 是正确性问题，R4 是已经选定的 libcurl 复用方案尚未落实；都属于当前 C1/C2 范围。除 R3 已在 VPS 复现外，其他项为源码路径确认，所列回归尚未在目标机执行，不标为测试通过。
+
+#### R1 · P1 · 短暂 WS 故障会变成整个记录器永久退出（C2.2）
+
+定位：[recorder_run.hpp:194](/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/prototype/recorder_run.hpp:194)，以及同文件 208–215、289–305 行。
+
+| 要求 | 处理意见 |
+| --- | --- |
+| 可复现问题 | WS 连续六次未收到记录就失败，`consecutive > 5` 抛出异常，外层停止 WS、REST 和记录器。连接立即被拒绝/关闭时，重试等待合计仅约 8 秒；即使端点随后恢复，进程也不再采集。当前没有可依赖的生产自动重启链路，不能据此宣称具备持续重连能力。 |
+| 最小实现 | 复用现有停止令牌、抖动和 `AttemptWindow`，对可恢复连接错误限制退避上限及尝试频率，不以累计六次失败终止采集。明确的配置/证书错误仍可退出；不增加第二套重试管理器或 watchdog。 |
+| 资源成本 | 保留一个有上限的退避计数/时间点，沿用现有连接预算和等待；不增加线程，不忙等。 |
+| GreenCloud 验收 | 回环服务连续拒绝至少六次后恢复，原进程继续记录且标记重连缺口；冷却期间 SIGTERM 能退出，重试次数不突破预算。正常连接和现有重连用例继续通过。 |
+
+#### R2 · P1 · 响应体失败会丢弃已经收到的限流冷却（C2.3）
+
+定位：[main.cpp:761](/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/prototype/main.cpp:761)（先抛传输错误，后取 HTTP 状态），以及 [recorder_run.hpp:274](/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/prototype/recorder_run.hpp:274)（普通失败快速重试）。
+
+| 要求 | 处理意见 |
+| --- | --- |
+| 可复现问题 | HTTP 服务先返回 `429` 或 `418`、`Retry-After: 60`，再发送短于 `Content-Length` 的 body 并断开。libcurl 报传输失败；`receive_rest()` 在读取状态/返回结果前抛异常，已收到的 `retry_after` 随局部对象销毁，调度器进入 1 秒快速重试，绕过服务端冷却。 |
+| 最小实现 | 在转交传输错误前取得已收到的 HTTP 状态和冷却头，让同一调度分支先应用已确认的 429/418 冷却，再报告 body 不完整。不要把残缺 body 标成完整响应或刷新成功水位；不新增限流服务。 |
+| 资源成本 | 复用现有响应结果，增加必要的传输失败标识或等价返回信息；常数级元数据，无额外请求或线程。 |
+| GreenCloud 验收 | 扩展现有 HTTP 限流夹具，分别覆盖完整与截断的 429/418；冷却到期前请求计数不增长，失败响应不被判为有效。普通未收到 HTTP 响应的连接失败仍按原规则有限快速重试。 |
+
+此结论依据实际调用顺序；libcurl 可分别提供[已收到的响应码](https://curl.se/libcurl/c/CURLINFO_RESPONSE_CODE.html)和[传输错误](https://curl.se/libcurl/c/libcurl-errors.html)，不能把两者合并成“只有 body 全部成功才知道被限流”。
+
+#### R3 · P1 · 恢复失败仍返回成功退出码（C2.1，已在 GreenCloud 复现）
+
+定位：[recover_raw.py:25](/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/prototype/recover_raw.py:25)、65、71 行。
+
+| 要求 | 处理意见 |
+| --- | --- |
+| 可复现问题 | 复用的 `recover_storage()` 会将部分封存对账错误返回为 `action="reconcile_failed"`；适配器只收集并打印，最终正常退出。封存 artifact 缺失而 active 为空时，工具因此报告退出码 0，后续脚本不能用退出码判断恢复是否成功。 |
+| 最小实现 | 检查已有恢复结果中的失败项，保留错误明细并返回非零退出码；已成功隔离/截尾等结果仍按现有规则处理。不增加新的磁盘扫描、恢复状态机或重复校验。 |
+| 资源成本 | 遍历已经在内存中的少量结果，无新增磁盘读写或常驻成本。 |
+| GreenCloud 验收 | 使用现有 Raw golden 生成隔离封存夹具，将其 artifact 临时移开后执行恢复：应输出失败并非零退出；移回后恢复成功且可重复执行。既有截尾/隔离用例继续通过。 |
+
+**本次实测：** 在 GreenCloud 使用固定 Python 提交 `38acb1d0` 的源码、原生 Python 3.12.3 和当前适配器，合成目录为 `/tmp/sbmdr-review-20261104-wVI0im`。artifact 临时移开时得到 `exit_code=0`、`action=reconcile_failed`、`stderr=""`；移回后得到 `exit_code=0`、`action=catalog_unchanged`。仅移动合成夹具并已恢复，未改动生产数据。这个实测验证的是适配器缺陷，不是 C++ 整体恢复资格。
+
+#### R4 · P2 · 每个 REST 请求销毁连接缓存，未实现连接复用（C2.3）
+
+定位：[main.cpp:714](/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/prototype/main.cpp:714)（每次调用重新创建 `Easy`、`Multi`），调用点 [recorder_run.hpp:237](/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/prototype/recorder_run.hpp:237)。
+
+| 要求 | 处理意见 |
+| --- | --- |
+| 可复现问题 | 连续对支持 keep-alive 的同一 HTTP 服务请求时，每次 `receive_rest()` 返回都销毁 multi 及其连接池，下一次重新连接。即使用了 multi API，也没有跨请求连接复用；当前函数还会阻塞 REST 工作线程直到单次请求完成，不能作为多源并发调度已完成的证据。 |
+| 最小实现 | 将 multi 的生命周期提到现有 REST 工作线程，复用现有 easy handle 或按当前并发需要增减 handle；完成后正确移除，再在同一 multi 上发后续请求。多源准入仍按 C2.3 原任务实现，不手写连接池或网络框架。 |
+| 资源成本 | 有界的连接/TLS 缓存替代反复建立与销毁；并发和连接数仍受 C0 预算限制。实测握手次数及 RSS，不预先承诺 CPU 收益。 |
+| GreenCloud 验收 | 使用 HTTP/1.1 keep-alive 夹具连续请求，服务端接受连接次数小于请求次数；请求失败后仍可继续，正常/异常退出均正确释放 handle。后续多源夹具分别验证并发与派发延迟，不能用单请求吞吐替代。 |
+
+[libcurl 文档](https://curl.se/libcurl/c/curl_multi_cleanup.html)明确 multi 清理会关闭其连接池；最小修正是调整库对象的生命周期。
+
+### 10.3 验收与交付收尾
+
+| 当前问题 | 最小处理 | 成本 | 验收 |
+| --- | --- | --- | --- |
+| C1 长测摘要与当前代码不同，C1/C2 文件尚有未跟踪项；旧报告不能证明当前版本。 | 在本轮修正结束后纳入必要源码、构建/测试脚本和结果，记录实际版本；保留历史报告，补一份 GreenCloud 当前版本结果。 | 一次当前阶段适用回归和既定长测，无常驻组件。 | 从干净检出可构建/测试；源文件及二进制与报告对应。不要提交 `.venv`、构建目录、缓存或采集数据。 |
+| CMake 声明最低 3.24，而 preset schema 使用 6；3.24 只支持到 5。 | 当前 preset 未用到 6 的特性，降至兼容 schema 即可，或如实提升最低版本；不添加构建包装层。 | 常数级配置修改。 | 声明版本与 preset 一致，GreenCloud 的 configure/build/test 入口可用。参考 [CMake 3.24 文档](https://cmake.org/cmake/help/v3.24/manual/cmake-presets.7.html)。 |
+| `c1-recorder.md` 仍写 429/418 后停止采集，当前代码已改为冷却；其中本地构建/测试示例也未体现新的环境要求。 | 实施对应修正时同步这几处说明、复跑命令和测试环境，不另建一套操作手册。 | 文档修改，无运行成本。 | 文档行为与当前二进制一致，后续复跑入口指向 GreenCloud。 |
+
+**本次目标机现场仅作执行准备信息：** GreenCloud 为 Linux x86_64、4 vCPU、5,878 MiB RAM，CMake 3.28.3、GCC 13.3.0；原 Python systemd 服务为 `inactive/dead`。`pkg-config`、Ninja 及主要 C++ 开发依赖尚不齐全；采集根所在系统盘可用约 **16.2 GiB**，低于公开模式要求的 18 GiB。因此本次没有安装开发依赖、运行 C++ 原生测试、启动公开采集或变更生产服务。依赖与磁盘条件具备后再执行目标机验收，不为让测试启动而下调冻结门槛或删除生产 Raw。
+
+下一轮顺序：**修 R1–R3 → 在 C2.3 中落实 R4 → 补齐当前版本 GreenCloud 的 C1 验收与对应故障回归 → 完成 C2 已列出的剩余验收项**。仅修这些已定位问题，不因本次审查扩展 Raw 格式、线程架构或全市场功能。
 
 **执行准则：当前问题、最小方案、明确成本、可验证结果。当前里程碑不需要的机制，保持候选状态。**
