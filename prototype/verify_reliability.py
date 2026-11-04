@@ -3,6 +3,7 @@
 import asyncio
 import json
 import signal
+import socket
 import sqlite3
 from functools import partial
 from http.server import ThreadingHTTPServer
@@ -120,13 +121,19 @@ async def verify_shutdown_in_backoff(root: Path) -> None:
     async def reject(peer):
         peer.transport.abort()
 
+    with socket.socket() as unavailable:
+        unavailable.bind(("127.0.0.1", 0))
+        await shutdown_recorder(root, reject, str(unavailable.getsockname()[1]))
+
+
+async def shutdown_recorder(root: Path, reject, http_port: str) -> None:
     async with serve(reject, "127.0.0.1", 0) as ws:
         port = str(ws.sockets[0].getsockname()[1])
         proc = await asyncio.create_subprocess_exec(
             BINARY,
             "record",
             port,
-            port,
+            http_port,
             "1",
             root,
             "1000",
@@ -140,8 +147,9 @@ async def verify_shutdown_in_backoff(root: Path) -> None:
                 if json.loads(line).get("event") == "WS_RECONNECT":
                     break
             proc.send_signal(signal.SIGTERM)
-            stdout, _ = await asyncio.wait_for(proc.communicate(), 2)
-            assert proc.returncode == 0
+            # The recorder drains a started HTTP transfer, which has a 10 s timeout.
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), 12)
+            assert proc.returncode == 0, stderr.decode()
             assert json.loads(stdout)["stop_reason"] == "SIGNAL"
         finally:
             if proc.returncode is None:
