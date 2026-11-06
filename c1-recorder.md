@@ -1,5 +1,7 @@
 # C1 最小端到端记录器与读取器
 
+本文的早期本机/长测结果属于历史版本。当前优化、GreenCloud 逐次结果与未关闭门槛见[计划第十一节](cpp_rewrite_milestone_plan.md#cpp-performance-review-20261104)和[2026-11-06 结果](c1-performance-20261106.json)。
+
 ## 实现
 
 - 公开入口使用 Spot BTCUSDT S02 100 ms 深度流与 S01 `exchangeInfo?symbol=BTCUSDT`。WS 使用 Boost.Beast TLS，REST 使用 libcurl multi。两个连接均校验证书，使用只读公开市场端点。完整响应仅保留一份 base64 主体表示。公开模式每小时发起一次 REST 请求，并在 HTTP 418/429 后按服务端指示冷却。完整响应可封存，截断响应记录传输失败并保留冷却约束。REST 工作线程跨请求复用 libcurl 连接缓存。[官方端点记录](docs/binance_sources.md)

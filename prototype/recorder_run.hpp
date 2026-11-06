@@ -36,18 +36,21 @@ void status_line(const Json& event) { std::fprintf(stderr, "%s\n", event.dump().
 
 int record(int argc, char** argv) {
     const bool public_capture = argc == 6 && std::string_view(argv[2]) == "--public";
-    if (!public_capture && argc != 7 && argc != 9) {
+    if (!public_capture && argc != 7 && argc != 9 && argc != 10) {
         throw std::runtime_error(
             "usage: sbmdr-c0 record WS_PORT HTTP_PORT WS_COUNT OUTPUT_DIR REST_INTERVAL_MS "
-            "[ROTATE_MS ROTATE_BYTES] | record --public OUTPUT_DIR WS_COUNT CA_FILE");
+            "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS]] | record --public OUTPUT_DIR WS_COUNT CA_FILE");
     }
     const std::string ws_port = public_capture ? "" : argv[2], http_port = public_capture ? "" : argv[3];
     const auto ws_count = std::stoull(argv[4]);
     const fs::path root(public_capture ? argv[3] : argv[5]);
     const auto ca = public_capture ? std::optional<std::string>(argv[5]) : std::nullopt;
     const auto rest_period = public_capture ? milliseconds(3600000) : milliseconds(std::stoll(argv[6]));
-    const auto rotation = argc == 9 ? milliseconds(std::stoll(argv[7])) : milliseconds(900000);
-    const auto rotation_bytes = argc == 9 ? std::stoull(argv[8]) : 128ULL * 1024 * 1024;
+    const auto rotation = argc >= 9 ? milliseconds(std::stoll(argv[7])) : milliseconds(900000);
+    const auto rotation_bytes = argc >= 9 ? std::stoull(argv[8]) : 128ULL * 1024 * 1024;
+    const auto test_pause = argc == 10 ? milliseconds(std::stoll(argv[9])) : milliseconds(0);
+    if (test_pause.count() < 0 || test_pause > seconds(5))
+        throw std::runtime_error("test pause must be between zero and five seconds");
     if (ws_count == 0 || rest_period.count() <= 0 || rotation.count() <= 0 ||
         rotation_bytes < 1024 * 1024) {
         throw std::runtime_error("invalid recorder limits");
@@ -104,6 +107,8 @@ int record(int argc, char** argv) {
     const auto run_id = "c1-" + uuid_text(uuid_bytes());
     const auto start = steady_clock::now();
     const auto cpu_start = std::clock();
+    const auto allocation_start = allocations.load();
+    const auto allocated_start = allocated_bytes.load();
     Handoff queue;
     std::stop_source stop;
     std::atomic<unsigned> overloads{0};
@@ -118,9 +123,15 @@ int record(int argc, char** argv) {
             auto previous_cpu = cpu_start;
             double max_status_cpu = 0;
             bool disk_stop = false;
+            std::int64_t pause_start = 0, pause_finish = 0;
             while (queue.take(batch)) {
+                if (!public_capture && !batch.empty() && test_pause.count() && !pause_start) {
+                    pause_start = ns<steady_clock>();
+                    std::this_thread::sleep_for(test_pause);
+                    pause_finish = ns<steady_clock>();
+                }
                 storage.tick();
-                for (const auto& message : batch) {
+                for (auto& message : batch) {
                     storage.append(message);
                     ++records;
                     storage.tick();
@@ -156,7 +167,9 @@ int record(int argc, char** argv) {
             if (affected & 2U)
                 storage.mark_overload(true, public_capture);
             storage.finish();
-            return Json{{"records", records},
+            Json result{{"records", records},
+                        {"test_pause_start_monotonic_ns", pause_start},
+                        {"test_pause_finish_monotonic_ns", pause_finish},
                         {"sealed", storage.sealed_count},
                         {"rotations", storage.rotations},
                         {"max_durability_ns", storage.max_durability_ns},
@@ -164,6 +177,10 @@ int record(int argc, char** argv) {
                         {"receive_to_append_p99_ms", storage.append_p99_ms()},
                         {"max_status_cpu_percent", max_status_cpu},
                         {"stop_reason", disk_stop ? "DISK_EMERGENCY_STOP" : "INPUT_COMPLETE"}};
+#ifdef SBMDR_DIAGNOSTICS
+            result["diagnostics_last_chunk_per_source"] = storage.diagnostics;
+#endif
+            return result;
         } catch (...) {
             stop.request_stop();
             queue.close();
@@ -236,7 +253,7 @@ int record(int argc, char** argv) {
                 const auto dispatch = steady_clock::now();
                 budget.charge(dispatch);
                 try {
-                    const auto result = receive_rest(multi.get(), http_port, queue, ca, true);
+                    const auto result = receive_rest(multi.get(), http_port, queue, ca, true, run_id);
                     if (result.status == 418 || result.status == 429) {
                         std::uint64_t requested = 0;
                         const auto* end = result.retry_after.data() + result.retry_after.size();
@@ -314,6 +331,11 @@ int record(int argc, char** argv) {
     report["wall_seconds"] = duration<double>(steady_clock::now() - start).count();
     report["cpu_seconds"] = static_cast<double>(std::clock() - cpu_start) / CLOCKS_PER_SEC;
     report["peak_rss_bytes"] = peak_rss();
+    report["allocation_counter_enabled"] = allocation_counter_enabled;
+    report["new_calls"] =
+        allocation_counter_enabled ? Json(allocations.load() - allocation_start) : Json(nullptr);
+    report["new_requested_bytes"] =
+        allocation_counter_enabled ? Json(allocated_bytes.load() - allocated_start) : Json(nullptr);
     report["interrupted"] = interrupted.load(std::memory_order_relaxed);
     if (report["interrupted"] == true && report["stop_reason"] == "INPUT_COMPLETE")
         report["stop_reason"] = "SIGNAL";

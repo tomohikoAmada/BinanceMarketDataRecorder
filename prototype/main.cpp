@@ -55,6 +55,11 @@ constexpr std::size_t queue_limit = 64 * 1024 * 1024;
 constexpr std::size_t queue_records = 8192;
 constexpr std::size_t max_encoded_metadata = 4096;
 std::atomic<std::uint64_t> allocations{}, allocated_bytes{};
+#ifdef SBMDR_NO_NEW_COUNTER
+constexpr bool allocation_counter_enabled = false;
+#else
+constexpr bool allocation_counter_enabled = true;
+#endif
 
 #ifndef SBMDR_NO_NEW_COUNTER
 // Counts C++ new requests. C malloc and aligned allocations are outside this counter.
@@ -105,12 +110,17 @@ void big_endian(Bytes& bytes, std::uint32_t value, int count) {
     }
 }
 
-std::array<Bytes, 2> framed(Json value, Bytes prefix, std::size_t limit) {
-    Bytes body;
+std::array<Bytes, 2> framed(const Json& value, Bytes prefix, std::size_t limit,
+                            bool canonical_input = false, Bytes* scratch = nullptr) {
+    Bytes body = scratch ? std::move(*scratch) : Bytes{};
+    body.clear();
     if (auto payload = value.find("raw_payload"); payload != value.end()) {
         body.reserve(payload->get_binary().size() + 1024);
     }
-    Json::to_cbor(canonical(std::move(value)), body);
+    if (canonical_input)
+        Json::to_cbor(value, body);
+    else
+        Json::to_cbor(canonical(value), body);
     if (body.size() > limit)
         throw std::runtime_error("Raw v1 body exceeds limit");
     big_endian(prefix, static_cast<std::uint32_t>(body.size()), 4);
@@ -127,10 +137,10 @@ std::array<Bytes, 2> framed(Json value, Bytes prefix, std::size_t limit) {
 constexpr std::array<std::uint8_t, 16> chunk_prefix{'B', 'M', 'R',  'C',  'H', 'N', 'K', 0x1a,
                                                     1,   0,   0xfe, 0xff, 0,   0,   0,   0};
 
-void write_all(int fd, std::array<Bytes, 2> parts) {
+void write_all(int fd, const std::array<Bytes, 2>& parts) {
     std::array<iovec, 2> vectors{{
-        {parts[0].data(), parts[0].size()},
-        {parts[1].data(), parts[1].size()},
+        {const_cast<std::uint8_t*>(parts[0].data()), parts[0].size()},
+        {const_cast<std::uint8_t*>(parts[1].data()), parts[1].size()},
     }};
     std::size_t first = 0;
     while (first < vectors.size()) {
@@ -153,6 +163,9 @@ void write_all(int fd, std::array<Bytes, 2> parts) {
 }
 
 struct Message {
+#ifdef SBMDR_DIAGNOSTICS
+    std::int64_t enqueued = 0, rest_preparation_ns = 0;
+#endif
     bool rest = false;
     bool symbol_scoped = false;
     unsigned generation = 0;
@@ -232,6 +245,42 @@ void sync_directory(const std::filesystem::path& path) {
         throw std::runtime_error("directory fsync failed");
 }
 
+Bytes prepare_rest_payload(const Message& message, const std::string& run_id) {
+    const auto provenance =
+        Json{
+            {"schema_version", "binance-public-rest-provenance.v1"},
+            {"representation", "http-body-base64.v1"},
+            {"family", "S01"},
+            {"source_stream", "exchange_info"},
+            {"scope", message.symbol_scoped ? "BTCUSDT" : "__GLOBAL__"},
+            {"venue_market", "spot"},
+            {"request",
+             {{"request_id", run_id + "-rest-" + std::to_string(message.request_mono)},
+              {"method", "GET"},
+              {"path", "/api/v3/exchangeInfo"},
+              {"parameters", message.symbol_scoped ? Json{{"symbol", "BTCUSDT"}} : Json::object()},
+              {"request_time_utc_ns", message.request_utc},
+              {"request_monotonic_ns", message.request_mono},
+              {"timeout_ms", 10000}}},
+            {"response",
+             {{"status", message.status},
+              {"headers", message.retry_after.empty() ? Json{{"content-type", message.content_type}}
+                                                      : Json{{"content-type", message.content_type},
+                                                             {"retry-after", message.retry_after}}},
+              {"raw_body_base64", base64(message.body)},
+              {"valid", message.rest_valid},
+              {"error_type", message.rest_valid ? Json(nullptr) : Json("InvalidResponse")},
+              {"receive_time_utc_ns", message.utc},
+              {"receive_monotonic_ns", message.mono}}},
+            {"transport",
+             {{"kind", "libcurl_http_response_body"},
+              {"raw_http_body_available", true},
+              {"content_decoding", false}}},
+        }
+            .dump();
+    return Bytes(provenance.begin(), provenance.end());
+}
+
 std::string connection_id(const Message& message, const std::string& run_id) {
     if (message.rest)
         return run_id + "-rest";
@@ -247,8 +296,8 @@ class RawFile {
     RawFile() = default;
     RawFile(const RawFile&) = delete;
 
-    void append(const std::filesystem::path& path, const Message& message, const std::string& run_id,
-                std::string_view version = "c0") {
+    void append(const std::filesystem::path& path, Message& message, const std::string& run_id,
+                std::string_view version = "c0", Bytes* scratch = nullptr) {
         const auto stream = message.rest ? "rest_observations" : "ws_market_c0_depth";
         if (message.rest && !message.symbol_scoped)
             symbol = "__GLOBAL__";
@@ -278,65 +327,63 @@ class RawFile {
             sync_directory(path.parent_path());
         }
 
-        Json envelope = {
-            {"schema_version", "event-envelope.v1"},
-            {"venue", "binance"},
-            {"market", "spot"},
-            {"symbol", symbol},
-            {"stream", stream},
-            {"module", message.rest ? "binance.public.rest.v1" : "binance.public.websocket.v1"},
-            {"connection_id", connection_id(message, run_id)},
-            {"collector_instance_id", run_id},
-            {"collector_version", version},
-            {"receive_time_utc_ns", message.utc},
-            {"receive_monotonic_ns", message.mono},
-            {"exchange_event_time", message.exchange_time},
-            {"exchange_transaction_time", message.transaction_time},
-            {"exchange_trade_time", nullptr},
-            {"source_sequence", message.sequence},
-            {"payload_encoding", message.rest ? "utf-8-json-provenance" : "utf-8-json-combined.v1"},
-            {"capture_flags", message.flags},
-        };
-        if (message.rest) {
-            const auto provenance =
-                Json{
-                    {"schema_version", "binance-public-rest-provenance.v1"},
-                    {"representation", "http-body-base64.v1"},
-                    {"family", "S01"},
-                    {"source_stream", "exchange_info"},
-                    {"scope", symbol},
-                    {"venue_market", "spot"},
-                    {"request",
-                     {{"request_id", run_id + "-rest-" + std::to_string(message.request_mono)},
-                      {"method", "GET"},
-                      {"path", "/api/v3/exchangeInfo"},
-                      {"parameters",
-                       message.symbol_scoped ? Json{{"symbol", "BTCUSDT"}} : Json::object()},
-                      {"request_time_utc_ns", message.request_utc},
-                      {"request_monotonic_ns", message.request_mono},
-                      {"timeout_ms", 10000}}},
-                    {"response",
-                     {{"status", message.status},
-                      {"headers", message.retry_after.empty()
-                                      ? Json{{"content-type", message.content_type}}
-                                      : Json{{"content-type", message.content_type},
-                                             {"retry-after", message.retry_after}}},
-                      {"raw_body_base64", base64(message.body)},
-                      {"valid", message.rest_valid},
-                      {"error_type", message.rest_valid ? Json(nullptr) : Json("InvalidResponse")},
-                      {"receive_time_utc_ns", message.utc},
-                      {"receive_monotonic_ns", message.mono}}},
-                    {"transport",
-                     {{"kind", "libcurl_http_response_body"},
-                      {"raw_http_body_available", true},
-                      {"content_decoding", false}}},
-                }
-                    .dump();
-            envelope["raw_payload"] = Json::binary(Bytes(provenance.begin(), provenance.end()));
-        } else {
-            envelope["raw_payload"] = Json::binary(message.body);
+#ifdef SBMDR_DIAGNOSTICS
+        const auto preparation_start = ns<steady_clock>();
+#endif
+        if (envelope_.is_null()) {
+            envelope_ = canonical(Json{
+                {"schema_version", "event-envelope.v1"},
+                {"venue", "binance"},
+                {"market", "spot"},
+                {"symbol", symbol},
+                {"stream", stream},
+                {"module", message.rest ? "binance.public.rest.v1" : "binance.public.websocket.v1"},
+                {"connection_id", connection_id(message, run_id)},
+                {"collector_instance_id", run_id},
+                {"collector_version", version},
+                {"receive_time_utc_ns", message.utc},
+                {"receive_monotonic_ns", message.mono},
+                {"exchange_event_time", message.exchange_time},
+                {"exchange_transaction_time", message.transaction_time},
+                {"exchange_trade_time", nullptr},
+                {"source_sequence", message.sequence},
+                {"payload_encoding", message.rest ? "utf-8-json-provenance" : "utf-8-json-combined.v1"},
+                {"capture_flags", message.flags},
+                {"raw_payload", nullptr},
+            });
         }
-        write(framed(std::move(envelope), {}, frame_limit));
+        auto& envelope = envelope_;
+        envelope["connection_id"] = connection_id(message, run_id);
+        envelope["receive_time_utc_ns"] = message.utc;
+        envelope["receive_monotonic_ns"] = message.mono;
+        envelope["exchange_event_time"] = message.exchange_time;
+        envelope["exchange_transaction_time"] = message.transaction_time;
+        envelope["source_sequence"] = canonical(message.sequence);
+        envelope["capture_flags"] = message.flags;
+        envelope["raw_payload"] = Json::binary(std::move(message.body));
+#ifdef SBMDR_DIAGNOSTICS
+        const auto prepared = ns<steady_clock>();
+#endif
+        auto frame = framed(envelope, {}, frame_limit, true, scratch);
+#ifdef SBMDR_DIAGNOSTICS
+        const auto framed_at = ns<steady_clock>();
+#endif
+        write(frame);
+        if (scratch)
+            *scratch = std::move(frame[1]);
+#ifdef SBMDR_DIAGNOSTICS
+        const auto appended = ns<steady_clock>();
+        preparation_ns += prepared - preparation_start;
+        rest_preparation_ns += message.rest_preparation_ns;
+        framing_ns += framed_at - prepared;
+        digest_write_ns += appended - framed_at;
+        receive_to_enqueue_ns += message.enqueued - message.mono;
+        enqueue_to_append_ns += appended - message.enqueued;
+        if (message.mono < pending_since) {
+            pending_enqueue = message.enqueued;
+            pending_append = appended;
+        }
+#endif
         ++records;
         connections.insert(connection_id(message, run_id));
         update_range(utc_range, message.utc);
@@ -355,9 +402,25 @@ class RawFile {
     std::int64_t sync() {
         if (fd_ < 0 || pending_since == std::numeric_limits<std::int64_t>::max())
             return 0;
+#ifdef SBMDR_DIAGNOSTICS
+        const auto sync_start = ns<steady_clock>();
+#endif
         if (::fsync(fd_) != 0)
             throw std::runtime_error("Raw fsync failed");
         fsync_utc = ns<system_clock>();
+#ifdef SBMDR_DIAGNOSTICS
+        const auto sync_finish = ns<steady_clock>();
+        ++sync_count;
+        sync_total_ns += sync_finish - sync_start;
+        if (worst_sync.is_null() ||
+            sync_finish - pending_since > worst_sync["durability_ns"].get<std::int64_t>())
+            worst_sync = {{"receive_monotonic_ns", pending_since},
+                          {"enqueue_monotonic_ns", pending_enqueue},
+                          {"append_monotonic_ns", pending_append},
+                          {"fsync_start_monotonic_ns", sync_start},
+                          {"fsync_finish_monotonic_ns", sync_finish},
+                          {"durability_ns", sync_finish - pending_since}};
+#endif
         return ns<steady_clock>() -
                std::exchange(pending_since, std::numeric_limits<std::int64_t>::max());
     }
@@ -379,8 +442,16 @@ class RawFile {
     Json utc_range, mono_range, exchange_ranges = Json::object(), sequence_ranges = Json::object();
     std::set<std::string> flags, connections;
     Sha256 digest;
+#ifdef SBMDR_DIAGNOSTICS
+    std::int64_t preparation_ns = 0, framing_ns = 0, digest_write_ns = 0, rest_preparation_ns = 0;
+    std::int64_t receive_to_enqueue_ns = 0, enqueue_to_append_ns = 0, sync_total_ns = 0;
+    std::int64_t pending_enqueue = 0, pending_append = 0;
+    std::uint64_t sync_count = 0;
+    Json worst_sync;
+#endif
 
   private:
+    Json envelope_;
     static void update_range(Json& range, const Json& value) {
         if (range.is_null())
             range = {{"min", value}, {"max", value}};
@@ -391,12 +462,12 @@ class RawFile {
                 range["max"] = value;
         }
     }
-    void write(std::array<Bytes, 2> parts) {
+    void write(const std::array<Bytes, 2>& parts) {
         for (const auto& part : parts) {
             digest.add(part.data(), part.size());
             bytes += part.size();
         }
-        write_all(fd_, std::move(parts));
+        write_all(fd_, parts);
     }
     std::int64_t pending_since = std::numeric_limits<std::int64_t>::max();
     int fd_ = -1;
@@ -429,6 +500,9 @@ class Handoff {
         }
         if (closed_)
             throw std::runtime_error("storage handoff closed");
+#ifdef SBMDR_DIAGNOSTICS
+        message.enqueued = ns<steady_clock>();
+#endif
         bytes_ += size;
         pending_.push_back(std::move(message));
         peak_bytes = std::max(peak_bytes, bytes_);
@@ -722,7 +796,8 @@ RestMulti make_rest_multi() {
 }
 
 RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
-                        const std::optional<std::string>& ca = std::nullopt, bool bounded = false) {
+                        const std::optional<std::string>& ca = std::nullopt, bool bounded = false,
+                        const std::string& run_id = "c0") {
     using Easy = std::unique_ptr<CURL, decltype(&curl_easy_cleanup)>;
     Easy easy(curl_easy_init(), curl_easy_cleanup);
     if (!easy)
@@ -805,6 +880,13 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
     }
     message.sequence = {{"sourceStream", "exchange_info"}, {"sourceFamily", "S01"}};
     RestResult outcome{message.status, message.rest_valid, message.retry_after, {}};
+#ifdef SBMDR_DIAGNOSTICS
+    const auto rest_prepare_start = ns<steady_clock>();
+#endif
+    message.body = prepare_rest_payload(message, run_id);
+#ifdef SBMDR_DIAGNOSTICS
+    message.rest_preparation_ns = ns<steady_clock>() - rest_prepare_start;
+#endif
     queue.push(std::move(message), bounded);
     return outcome;
 }
@@ -825,7 +907,7 @@ void verify_golden(const char* path) {
     const auto frame = bytes.begin() + 24 + header_size;
     auto header = framed(Json::from_cbor(bytes.begin() + 24, frame),
                          Bytes(chunk_prefix.begin(), chunk_prefix.end()), 65536);
-    auto record = framed(Json::from_cbor(frame + 12, bytes.end()), {}, frame_limit);
+    auto record = framed(Json::from_cbor(frame + 12, bytes.end()), {}, frame_limit, true);
     Bytes rebuilt;
     for (const auto& parts : {header, record}) {
         for (const auto& part : parts)
@@ -930,7 +1012,7 @@ int main(int argc, char** argv) try {
         if (ws_count)
             receive_ws(argv[1], ws_count, queue);
         const auto multi = make_rest_multi();
-        receive_rest(multi.get(), argv[2], queue);
+        receive_rest(multi.get(), argv[2], queue, std::nullopt, false, run_id);
     } catch (...) {
         input_error = std::current_exception();
     }
@@ -949,8 +1031,9 @@ int main(int argc, char** argv) try {
     std::cout << Json{
         {"records", records}, {"wall_ms", duration<double, std::milli>(steady_clock::now() - start_wall).count()},
         {"cpu_ms", 1000.0 * (std::clock() - start_cpu) / CLOCKS_PER_SEC}, {"peak_rss_bytes", rss},
-        {"new_calls", allocations.load() - start_allocations},
-        {"new_requested_bytes", allocated_bytes.load() - start_bytes},
+        {"allocation_counter_enabled", allocation_counter_enabled},
+        {"new_calls", allocation_counter_enabled ? Json(allocations.load() - start_allocations) : Json(nullptr)},
+        {"new_requested_bytes", allocation_counter_enabled ? Json(allocated_bytes.load() - start_bytes) : Json(nullptr)},
         {"peak_queue_payload_bytes", queue.peak_bytes}, {"peak_queue_records", queue.peak_records},
         {"encode_write_ns", encode_write_ns}, {"final_fsync_close_ns", sync_ns},
         {"max_receive_to_final_fsync_ns", max_receive_to_sync_ns},

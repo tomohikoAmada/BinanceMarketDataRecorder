@@ -114,7 +114,8 @@ class Catalog {
             Json::array({now, raw.chunk_id}));
         Json evidence{{"verified_frames", raw.records},
                       {"process_boundary_before_first_frame", process_boundary}};
-        if (overload_gap) evidence["seal_forced_flags"] = Json::array({"sequence_gap"});
+        if (overload_gap)
+            evidence["seal_forced_flags"] = Json::array({"sequence_gap"});
         transition(raw.chunk_id, "ACTIVE", "SEALING", now, evidence.dump());
         exec("COMMIT");
     }
@@ -226,6 +227,7 @@ class RecorderStorage {
     milliseconds period_;
     std::uint64_t byte_limit_;
     std::array<Slot, 2> slots_{};
+    Bytes scratch_;
     steady_clock::time_point next_sync_ = steady_clock::now() + milliseconds(900);
 
     std::array<std::uint64_t, 1252> append_histogram_{};
@@ -234,6 +236,21 @@ class RecorderStorage {
     void rotate(Slot& slot, bool rest, const char* reason) {
         auto& raw = *slot.raw;
         max_durability_ns = std::max(max_durability_ns, raw.finish());
+#ifdef SBMDR_DIAGNOSTICS
+        const auto key = rest ? "rest" : "ws";
+        diagnostics[key] = {
+            {"records", raw.records},
+            {"rest_preparation_ns", raw.rest_preparation_ns},
+            {"preparation_ns", raw.preparation_ns},
+            {"framing_ns", raw.framing_ns},
+            {"digest_write_ns", raw.digest_write_ns},
+            {"receive_to_enqueue_ns_total", raw.receive_to_enqueue_ns},
+            {"enqueue_to_append_ns_total", raw.enqueue_to_append_ns},
+            {"fsync_count", raw.sync_count},
+            {"fsync_ns_total", raw.sync_total_ns},
+            {"worst_sync", raw.worst_sync},
+        };
+#endif
         catalog_.sealing(raw, slot.first, slot.overload_gap);
         const auto basename = hex(raw.identity);
         const auto sealed = fs::path("data/sealed") / (basename + ".bmdr.zst");
@@ -307,6 +324,9 @@ class RecorderStorage {
     std::uint64_t sealed_count = 0;
     std::int64_t max_durability_ns = 0, max_append_ns = 0;
     Json rotations = Json::object();
+#ifdef SBMDR_DIAGNOSTICS
+    Json diagnostics = Json::object();
+#endif
 
     std::uint64_t append_p99_ms() const {
         const auto threshold = (append_count_ * 99 + 99) / 100;
@@ -341,7 +361,7 @@ class RecorderStorage {
         }
     }
 
-    void append(const Message& message) {
+    void append(Message& message) {
         auto& slot = slots_[message.rest ? 1 : 0];
         const bool first = !slot.raw;
         if (first) {
@@ -349,7 +369,7 @@ class RecorderStorage {
             slot.active = fs::path("data/active") / (hex(slot.raw->identity) + ".bmdr.partial");
             slot.opened = steady_clock::now();
         }
-        slot.raw->append(root_ / slot.active, message, run_, "c1");
+        slot.raw->append(root_ / slot.active, message, run_, "c1", &scratch_);
         if (first)
             catalog_.active(*slot.raw, slot.active);
         const auto append_ns = ns<steady_clock>() - message.mono;

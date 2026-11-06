@@ -1,5 +1,7 @@
 # C2 可靠性进度
 
+本页早期 macOS sanitizer 通过记录属于当时版本。当前原生 Release 回归、TSan/SIGTERM 开放项及性能状态以[计划第十一节](cpp_rewrite_milestone_plan.md#cpp-performance-review-20261104)为准。
+
 | 项目 | 已实现与验证 | 待验收 |
 | --- | --- | --- |
 | C2.1 文件恢复 | `recover_raw.py` 持有与 C++ 记录器相同的锁，复用固定 Python 版本的 Raw 扫描、截尾、隔离和封存对账。C++ 封存故障后保留 active，夹具验证恢复有效帧、截去半帧、标记不完整和重复执行。 | C++ 自身在写入、fsync、rename、manifest、Catalog 各点的崩溃和系统调用故障矩阵。 |

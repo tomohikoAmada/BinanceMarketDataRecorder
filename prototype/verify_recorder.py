@@ -12,7 +12,7 @@ from functools import partial
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from threading import Thread
+from threading import Event, Thread
 
 from verify import (
     BINARY,
@@ -42,9 +42,8 @@ def check_output(root, depth, frame_size, directory, report, offered):
         iter_source_records,
         load_source_chunks,
     )
-    from binance_market_data_recorder.storage.layout import StorageLayout
-
     from binance_market_data_recorder.storage.catalog import Catalog
+    from binance_market_data_recorder.storage.layout import StorageLayout
 
     assert not list((root / "data").rglob("*.partial"))
     layout = StorageLayout.from_root(root)
@@ -111,27 +110,65 @@ async def scenario(
     rotation=None,
     interrupt=False,
     fail_seal=False,
+    rest_interval_ms=1000,
+    directory_bytes=None,
+    pause_ms=0,
+    capacity=False,
+    required_rest=None,
 ):
     depth = (FIXTURES / "spot/diff_depth.json").read_bytes()
     directory = (FIXTURES / "p2/spot-directory.json").read_bytes()
+    if directory_bytes is not None:
+        assert directory_bytes >= len(directory)
+        directory = directory.ljust(directory_bytes, b" ")
     served = 0
+    rest_started = Event()
+    rest_completed = Event()
+    rest_requests = 0
+    rest_responses = 0
     done = asyncio.Event()
+
+    class CountedResponse(Response):
+        def do_GET(self):
+            nonlocal rest_requests, rest_responses
+            rest_requests += 1
+            rest_started.set()
+            super().do_GET()
+            rest_responses += 1
+            rest_completed.set()
 
     async def publish(peer):
         nonlocal served
         assert peer.request.path == f"/stream?streams={WIRE}"
+        if required_rest is not None:
+            assert await asyncio.to_thread(rest_started.wait, 15)
         loop = asyncio.get_running_loop()
         start = loop.time()
-        for i in range(count):
-            if rate:
-                await asyncio.sleep(max(0, start + i / rate - loop.time()))
-            await peer.send(depth_frame(depth, i, frame_size))
+
+        async def send():
+            nonlocal served
+            if required_rest is not None and served == count - 1:
+                assert await asyncio.to_thread(rest_completed.wait, 15)
+            await peer.send(depth_frame(depth, served, frame_size))
             served += 1
+
+        if capacity:
+            for tick in range(duration * 128):
+                await asyncio.sleep(max(0, start + tick / 128 - loop.time()))
+                if tick % (60 * 128) == 0:
+                    for _ in range(8192):
+                        await send()
+                await send()
+        else:
+            for i in range(count):
+                if rate:
+                    await asyncio.sleep(max(0, start + i / rate - loop.time()))
+                await send()
         done.set()
         await peer.wait_closed()
 
     with ThreadingHTTPServer(
-        ("127.0.0.1", 0), partial(Response, directory, 200)
+        ("127.0.0.1", 0), partial(CountedResponse, directory, 200)
     ) as http:
         thread = Thread(target=http.serve_forever, kwargs={"poll_interval": 0.05})
         thread.start()
@@ -146,10 +183,12 @@ async def scenario(
                     str(http.server_port),
                     str(count + int(interrupt)),
                     root,
-                    "1000",
+                    str(rest_interval_ms),
                 ]
-                if rotation:
-                    args.extend(map(str, rotation))
+                if rotation or pause_ms:
+                    args.extend(map(str, rotation or (900000, 128 * 1024**2)))
+                if pause_ms:
+                    args.append(str(pause_ms))
                 proc = await asyncio.create_subprocess_exec(
                     *args,
                     stdout=asyncio.subprocess.PIPE,
@@ -233,11 +272,49 @@ async def scenario(
             "retained_active": True,
             "recovery": actions,
         }
+    if proc.returncode != 0:
+        print(
+            json.dumps(
+                {
+                    "recorder_exit_code": proc.returncode,
+                    "recorder_stdout": stdout.decode(errors="replace"),
+                    "recorder_stderr": stderr.decode(errors="replace"),
+                },
+                indent=2,
+            ),
+            flush=True,
+        )
     assert proc.returncode == 0, stderr.decode()
     assert served == count
     report = json.loads(stdout)
     report["samples"] = [json.loads(line) for line in stderr.splitlines()]
+    report["receive_to_append_p99_is_lower_bound"] = (
+        report["receive_to_append_p99_ms"] == 1251
+    )
+    report["input"] = {
+        "ws_records": served,
+        "ws_frame_bytes_except_malformed": frame_size,
+        "ws_payload_bytes": (count - 1) * frame_size
+        + len(depth_frame(depth, 1, frame_size)),
+        "http_body_bytes": len(directory),
+        "http_requests": rest_requests,
+        "http_complete_responses": rest_responses,
+        "rest_interval_ms": rest_interval_ms,
+        "injected_pause_ms": pause_ms,
+        "capacity_background_bytes_per_second": 1024**2 if capacity else 0,
+        "burst_every_seconds": 60 if capacity else None,
+    }
     report.update(check_output(root, depth, frame_size, directory, report, count))
+    if required_rest is not None:
+        assert (
+            rest_requests == rest_responses == report["rest_records"] == required_rest
+        )
+        assert report["records"] == count + required_rest
+        assert (
+            report["test_pause_finish_monotonic_ns"]
+            - report["test_pause_start_monotonic_ns"]
+            >= pause_ms * 1_000_000
+        )
     assert report["interrupted"] is interrupt
     assert report["stop_reason"] == ("SIGNAL" if interrupt else "INPUT_COMPLETE")
     assert report["peak_queue_records"] <= 8192
@@ -251,7 +328,30 @@ async def main():
         prefix="sbmdr-c1-", dir=os.environ.get("SBMDR_SCRATCH")
     ) as tmp:
         root = Path(tmp)
-        if seconds:
+        mode = os.environ.get("SBMDR_SCENARIO", "")
+        if mode in {"burst", "capacity"}:
+            capacity = mode == "capacity"
+            duration = seconds if capacity else 0
+            assert not capacity or duration > 0
+            cycles = (duration + 59) // 60 if capacity else 1
+            count = duration * 128 + cycles * 8192 if capacity else 8192
+            report = await scenario(
+                root / mode,
+                count,
+                8192,
+                duration=duration,
+                capacity=capacity,
+                rest_interval_ms=60000,
+                directory_bytes=17_817_762,
+                pause_ms=250,
+                required_rest=cycles,
+            )
+            report["scenario"] = mode
+            print(json.dumps(report, indent=2), flush=True)
+            assert report["receive_to_append_p99_ms"] <= 500
+            assert report["max_durability_ns"] <= 1_250_000_000
+            assert report["peak_rss_bytes"] <= 768 * 1024**2
+        elif seconds:
             report = await scenario(
                 root / "long", seconds * 10 + 1, 8192, rate=10, duration=seconds
             )
