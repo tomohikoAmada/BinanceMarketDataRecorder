@@ -123,7 +123,7 @@ int record(int argc, char** argv) {
             auto previous_cpu = cpu_start;
             double max_status_cpu = 0;
             bool disk_stop = false;
-            std::int64_t pause_start = 0, pause_finish = 0;
+            std::int64_t pause_start = 0, pause_finish = 0, pause_drained = 0;
             while (queue.take(batch)) {
                 if (!public_capture && !batch.empty() && test_pause.count() && !pause_start) {
                     pause_start = ns<steady_clock>();
@@ -136,6 +136,8 @@ int record(int argc, char** argv) {
                     ++records;
                     storage.tick();
                 }
+                if (pause_finish && !pause_drained && queue.snapshot().first == 0)
+                    pause_drained = ns<steady_clock>();
                 batch.clear();
                 const auto now = steady_clock::now();
                 if (now >= next_status) {
@@ -144,12 +146,15 @@ int record(int argc, char** argv) {
                         disk_stop = true;
                         stop.request_stop();
                     }
+                    const auto [queued_records, queued_bytes] = queue.snapshot();
                     const auto cpu = std::clock();
                     const double percent = 100.0 * (cpu - previous_cpu) / CLOCKS_PER_SEC /
                                            duration<double>(now - previous_status).count();
                     max_status_cpu = std::max(max_status_cpu, percent);
                     status_line(
                         Json{{"records", records},
+                             {"queued_records", queued_records},
+                             {"queued_payload_bytes", queued_bytes},
                              {"sealed", storage.sealed_count},
                              {"rss_bytes", peak_rss()},
                              {"cpu_percent", percent},
@@ -170,6 +175,8 @@ int record(int argc, char** argv) {
             Json result{{"records", records},
                         {"test_pause_start_monotonic_ns", pause_start},
                         {"test_pause_finish_monotonic_ns", pause_finish},
+                        {"test_pause_backlog_drain_ns",
+                         pause_drained ? Json(pause_drained - pause_finish) : Json(nullptr)},
                         {"sealed", storage.sealed_count},
                         {"rotations", storage.rotations},
                         {"max_durability_ns", storage.max_durability_ns},

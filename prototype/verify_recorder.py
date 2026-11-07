@@ -123,7 +123,6 @@ async def scenario(
         directory = directory.ljust(directory_bytes, b" ")
     served = 0
     rest_started = Event()
-    rest_completed = Event()
     rest_requests = 0
     rest_responses = 0
     done = asyncio.Event()
@@ -135,7 +134,6 @@ async def scenario(
             rest_started.set()
             super().do_GET()
             rest_responses += 1
-            rest_completed.set()
 
     async def publish(peer):
         nonlocal served
@@ -148,7 +146,10 @@ async def scenario(
         async def send():
             nonlocal served
             if required_rest is not None and served == count - 1:
-                assert await asyncio.to_thread(rest_completed.wait, 15)
+                deadline = loop.time() + 15
+                while rest_responses < required_rest and loop.time() < deadline:
+                    await asyncio.sleep(0.05)
+                assert rest_responses >= required_rest
             await peer.send(depth_frame(depth, served, frame_size))
             served += 1
 
@@ -347,10 +348,60 @@ async def main():
                 required_rest=cycles,
             )
             report["scenario"] = mode
+            accepted_latency = os.environ.get("SBMDR_ACCEPT_OBSERVED_LATENCY") == "1"
+            report["latency_acceptance"] = (
+                "owner accepts observed VPS latency, 2026-11-07"
+                if accepted_latency
+                else "original C0 limits"
+            )
+            report["original_latency_gates"] = {
+                "append_p99_500ms": report["receive_to_append_p99_ms"] <= 500,
+                "durability_1250ms": report["max_durability_ns"] <= 1_250_000_000,
+                "pause_backlog_drain_1s": (
+                    report["test_pause_backlog_drain_ns"] is not None
+                    and report["test_pause_backlog_drain_ns"] <= 1_000_000_000
+                ),
+            }
+            if capacity:
+                samples = report["samples"]
+                timeline = [sample["elapsed_seconds"] for sample in samples]
+                windows = [
+                    100
+                    * (sample["cpu_seconds"] - samples[index]["cpu_seconds"])
+                    / (sample["elapsed_seconds"] - timeline[index])
+                    for sample in samples
+                    if sample["elapsed_seconds"] >= 61
+                    for index in [
+                        bisect_left(timeline, sample["elapsed_seconds"] - 60) - 1
+                    ]
+                    if index >= 0
+                ]
+                report["max_60s_cpu_percent"] = max(windows, default=None)
+                complete_cycles = duration // 60
+                report["complete_cycles_with_sampled_empty_queue"] = [
+                    cycle
+                    for cycle in range(complete_cycles)
+                    if any(
+                        int(sample["elapsed_seconds"] // 60) == cycle
+                        and sample["queued_records"] == 0
+                        for sample in samples
+                    )
+                ]
+                report["all_complete_cycles_caught_up"] = (
+                    len(report["complete_cycles_with_sampled_empty_queue"])
+                    == complete_cycles
+                )
             print(json.dumps(report, indent=2), flush=True)
-            assert report["receive_to_append_p99_ms"] <= 500
-            assert report["max_durability_ns"] <= 1_250_000_000
+            assert accepted_latency or all(report["original_latency_gates"].values())
             assert report["peak_rss_bytes"] <= 768 * 1024**2
+            if capacity:
+                assert report["all_complete_cycles_caught_up"]
+                assert (
+                    report["max_60s_cpu_percent"] is None
+                    or report["max_60s_cpu_percent"] <= 120
+                )
+                assert report["max_status_cpu_percent"] <= 200
+                assert report["rotations"].get("size", 0) >= 1
         elif seconds:
             report = await scenario(
                 root / "long", seconds * 10 + 1, 8192, rate=10, duration=seconds

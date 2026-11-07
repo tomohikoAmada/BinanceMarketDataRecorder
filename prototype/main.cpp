@@ -510,6 +510,11 @@ class Handoff {
         ready_.notify_all();
     }
 
+    std::pair<std::size_t, std::size_t> snapshot() {
+        std::lock_guard lock(mutex_);
+        return {pending_.size(), bytes_};
+    }
+
     bool rest_admissible() {
         std::lock_guard lock(mutex_);
         return !closed_ && pending_.size() < queue_records / 2 && bytes_ < queue_limit / 2;
