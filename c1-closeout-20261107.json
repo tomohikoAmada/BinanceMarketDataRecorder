@@ -1,0 +1,251 @@
+{
+  "decision_date": "2026-11-08",
+  "scope": "C1 signed off for stable single Spot BTCUSDT WS/REST scope; full synthetic capacity qualification FAILED and is not required for this signoff by explicit owner decision",
+  "owner_decision": "按稳定的单源范围完成 C1，保留容量压力未通过的结论",
+  "source_commit": "b473af6a",
+  "native_cpp_source_commit": "ce7e4943 (same C++ source; b473af6a only adds steady-mode latency reporting/acceptance)",
+  "source_files_sha256": {
+    "prototype/.gitignore": "c6e4e440e24869a9e65fc569416d62de9667d434d63172039c8258f84ee9ecbe",
+    "prototype/CMakeLists.txt": "bdb59aede41d07cbae7833a6085b37396713b32ce861dbc9e8532285605ba012",
+    "prototype/CMakePresets.json": "c83cdef1c98dfa1e87ad866095d2860da4d18094161f55aa9b0eeb8a090f059a",
+    "prototype/main.cpp": "6653bb4b579dc3f212efa255da9476cb9fdc8e90c19f60da42339951cb31ca4a",
+    "prototype/read_raw.py": "b092b12608aa17f15cdeae7de4fbe5a867557095ba9aac02d4290e568410163c",
+    "prototype/recorder_run.hpp": "816f98ea1715d42b5a08328e80be75cb1d337c719033c17a89d20981a693d00b",
+    "prototype/recorder_storage.hpp": "f46b24c7a086e0ade9ab80c89a28654105bdec7fbaa648f1bb55d13948129cf7",
+    "prototype/recover_raw.py": "543783a11786aa4107915e52d0d6af9af700266928b25d29afd14b06ff63c075",
+    "prototype/vcpkg.json": "eadaa62229538aedd47c0f53f4d5122f8d9bffc961e3bc69be8cf0d26d63744e",
+    "prototype/verify.py": "a3a282a14d14e76d381b0ba20b280a91055c4d9bdd22c343d9d3ba51e6611027",
+    "prototype/verify_recorder.py": "ae2c648725d165c3a84990e30bf37beb1ef4b8fe4335822f2d4700afc28bbe74",
+    "prototype/verify_reliability.py": "5dee38988de170282a3c937e58a9b2e452b87a75746a2802789ad80c185eaf08"
+  },
+  "native_binary_sha256": "3adfce94c8f94e5efa65b9e6783e96a0e0caf1109e712996e1310b62c82f235a",
+  "python_baseline_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+  "environment": "Linux greencloud-tokyo-01 6.8.0-147-generic #147-Ubuntu SMP PREEMPT_DYNAMIC Thu Sep 24 11:33:16 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\nc++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\ncmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n8.5.0\n3.6.4\n3.11.3\n3.0.13\n3.45.1\n1.5.5\nTARGET SOURCE    FSTYPE OPTIONS\n/      /dev/vda1 ext4   rw,relatime,discard,errors=remount-ro,commit=30\nFilesystem         1B-blocks         Used     Available Use% Mounted on\n/dev/vda1        61285326848  40452435968   20816113664  67% /\n/dev/vdb1      2163348520960 100187152384 2041154379776   5% /srv/recorder-data\ninactive\ndisabled\nFilesystem       1B-blocks        Used   Available Use% Mounted on\n/dev/vda1      61285326848 40452505600 20816044032  67% /\n",
+  "build_commands": [
+    "/usr/bin/c++ -DSBMDR_NO_NEW_COUNTER -isystem /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/include -O3 -DNDEBUG -std=gnu++20 -Wall -Wextra -Wpedantic -DSIMDJSON_THREADS_ENABLED=1 -MD -MT CMakeFiles/sbmdr-c0.dir/main.cpp.o -MF CMakeFiles/sbmdr-c0.dir/main.cpp.o.d -o CMakeFiles/sbmdr-c0.dir/main.cpp.o -c /srv/recorder-data/sbmdr-c1-closeout.mhptBm/prototype/main.cpp",
+    ": && /usr/bin/c++ -O3 -DNDEBUG  CMakeFiles/sbmdr-c0.dir/main.cpp.o -o sbmdr-c0  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_crc32c.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_crc_internal.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_crc_cpu_detect.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_str_format_internal.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_strings.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_strings_internal.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_int128.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_base.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_spinlock_wait.a  -lrt  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_throw_delegate.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_raw_logging_internal.a  /srv/recorder-data/sbmdr-c1-closeout.mhptBm/abseil-install/lib/libabsl_log_severity.a  /usr/lib/x86_64-linux-gnu/libcurl.so  /usr/lib/x86_64-linux-gnu/libsimdjson.so  /usr/lib/x86_64-linux-gnu/libssl.so  /usr/lib/x86_64-linux-gnu/libcrypto.so  /usr/lib/x86_64-linux-gnu/libsqlite3.so  /usr/lib/x86_64-linux-gnu/libzstd.so && :"
+  ],
+  "instrumentation": "Native Release; allocation counters OFF; diagnostics OFF; no strace or sanitizer for performance",
+  "validation": {
+    "release_ctest": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c1-closeout.mhptBm/release\nTest project /srv/recorder-data/sbmdr-c1-closeout.mhptBm/release\n    Start 1: c0-loopback\n1/4 Test #1: c0-loopback ......................   Passed    9.04 sec\n    Start 2: c1-recorder\n2/4 Test #2: c1-recorder ......................   Passed    8.56 sec\n    Start 3: c2-reliability\n3/4 Test #3: c2-reliability ...................   Passed   18.97 sec\n    Start 4: c2-handoff-limit\n4/4 Test #4: c2-handoff-limit .................   Passed    0.28 sec\n\n100% tests passed, 0 tests failed out of 4\n\nTotal Test time (real) =  36.88 sec\n",
+    "asan_ubsan": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c1-closeout.mhptBm/asan\nTest project /srv/recorder-data/sbmdr-c1-closeout.mhptBm/asan\n    Start 2: c1-recorder\n1/3 Test #2: c1-recorder ......................   Passed   10.21 sec\n    Start 3: c2-reliability\n2/3 Test #3: c2-reliability ...................   Passed   19.42 sec\n    Start 4: c2-handoff-limit\n3/3 Test #4: c2-handoff-limit .................   Passed    0.68 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =  30.32 sec\n",
+    "tsan": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c1-closeout.mhptBm/tsan\nTest project /srv/recorder-data/sbmdr-c1-closeout.mhptBm/tsan\n    Start 2: c1-recorder\n1/3 Test #2: c1-recorder ......................   Passed   20.19 sec\n    Start 3: c2-reliability\n2/3 Test #3: c2-reliability ...................   Passed   19.79 sec\n    Start 4: c2-handoff-limit\n3/3 Test #4: c2-handoff-limit .................   Passed    0.75 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =  40.74 sec\n",
+    "tsan_runtime_note": "Default ASLR failed before golden with unexpected memory mapping; setarch x86_64 -R used only for test process; global ASLR unchanged",
+    "arm64_golden": "",
+    "arm64_focused_ctest": "Test project /var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/tmp.QzOv0O3TMh/arm-release\n    Start 2: c1-recorder\n1/2 Test #2: c1-recorder ......................   Passed    5.18 sec\n    Start 4: c2-handoff-limit\n2/2 Test #4: c2-handoff-limit .................   Passed    0.27 sec\n\n100% tests passed, 0 tests failed out of 2\n\nTotal Test time (real) =   5.45 sec\n"
+  },
+  "steady_long": {
+    "start_utc": "2026-11-07T16:24:27+00:00",
+    "finish_utc_including_readback": "2026-11-07T17:11:01+00:00",
+    "command": "SBMDR_ACCEPT_OBSERVED_LATENCY=1 SBMDR_SCRATCH=<isolated-system-disk-root> SBMDR_LONG_SECONDS=2760 venv/bin/python prototype/verify_recorder.py release/sbmdr-c0 python",
+    "report": {
+      "records": 30360,
+      "test_pause_start_monotonic_ns": 0,
+      "test_pause_finish_monotonic_ns": 0,
+      "test_pause_backlog_drain_ns": null,
+      "sealed": 20,
+      "rotations": {
+        "size": 15,
+        "time": 3,
+        "shutdown": 2
+      },
+      "max_durability_ns": 1562075132,
+      "max_receive_to_append_ns": 606821605,
+      "receive_to_append_p99_ms": 38,
+      "max_status_cpu_percent": 59.41484042549934,
+      "stop_reason": "INPUT_COMPLETE",
+      "peak_queue_payload_bytes": 808575,
+      "peak_queue_records": 7,
+      "wall_seconds": 2760.233262721,
+      "cpu_seconds": 120.721401,
+      "peak_rss_bytes": 72736768,
+      "allocation_counter_enabled": false,
+      "new_calls": null,
+      "new_requested_bytes": null,
+      "interrupted": false,
+      "receive_to_append_p99_is_lower_bound": false,
+      "input": {
+        "ws_records": 27601,
+        "ws_frame_bytes_except_malformed": 8192,
+        "ws_payload_bytes": 226099210,
+        "http_body_bytes": 581297,
+        "http_requests": 2759,
+        "http_complete_responses": 2759,
+        "rest_interval_ms": 1000,
+        "injected_pause_ms": 0,
+        "capacity_background_bytes_per_second": 0,
+        "burst_every_seconds": null
+      },
+      "ws_records": 27601,
+      "rest_records": 2759,
+      "max_60s_cpu_percent": 7.441953555793983,
+      "latency_acceptance": "owner accepts observed VPS latency, 2026-11-07",
+      "original_latency_gates": {
+        "append_p99_100ms": true,
+        "durability_1250ms": false
+      }
+    },
+    "status_samples": 2690,
+    "checks": {
+      "driver_exit_zero": true,
+      "payload_time_identity_crc_sha_catalog_verified": true,
+      "time_rotations_ge_3": true,
+      "multiple_size_rotations": true,
+      "cpu_60s_le_120": true,
+      "cpu_status_le_200": true,
+      "rss_le_768_mib": true,
+      "bounded_queue": true,
+      "normal_drain": true,
+      "no_sustained_backlog": true
+    },
+    "signed_off": true,
+    "original_latency_all_passed": false,
+    "raw_report_sha256": "f105ddc4e80808f0b4a057aaf8826a2133b3c32d60a3537fbb6b02b5d6e0a2b8"
+  },
+  "capacity_61s_precheck": {
+    "records": 24194,
+    "test_pause_start_monotonic_ns": 392836727340523,
+    "test_pause_finish_monotonic_ns": 392836977673953,
+    "test_pause_backlog_drain_ns": 1064732722,
+    "sealed": 3,
+    "rotations": {
+      "size": 1,
+      "shutdown": 2
+    },
+    "max_durability_ns": 1774042877,
+    "max_receive_to_append_ns": 1231762579,
+    "receive_to_append_p99_ms": 639,
+    "max_status_cpu_percent": 169.7101577586809,
+    "stop_reason": "INPUT_COMPLETE",
+    "peak_queue_payload_bytes": 64734143,
+    "peak_queue_records": 6457,
+    "wall_seconds": 61.288368541,
+    "cpu_seconds": 10.563508,
+    "peak_rss_bytes": 318402560,
+    "allocation_counter_enabled": false,
+    "new_calls": null,
+    "new_requested_bytes": null,
+    "interrupted": false,
+    "receive_to_append_p99_is_lower_bound": false,
+    "input": {
+      "ws_records": 24192,
+      "ws_frame_bytes_except_malformed": 8192,
+      "ws_payload_bytes": 198172682,
+      "http_body_bytes": 17817762,
+      "http_requests": 2,
+      "http_complete_responses": 2,
+      "rest_interval_ms": 60000,
+      "injected_pause_ms": 250,
+      "capacity_background_bytes_per_second": 1048576,
+      "burst_every_seconds": 60
+    },
+    "ws_records": 24192,
+    "rest_records": 2,
+    "scenario": "capacity",
+    "latency_acceptance": "owner accepts observed VPS latency, 2026-11-07",
+    "original_latency_gates": {
+      "append_p99_500ms": false,
+      "durability_1250ms": false,
+      "pause_backlog_drain_1s": false
+    },
+    "max_60s_cpu_percent": null,
+    "complete_cycles_with_sampled_empty_queue": [
+      0
+    ],
+    "all_complete_cycles_caught_up": true
+  },
+  "capacity_long_failed": {
+    "recorder_exit_code": 1,
+    "recorder_stdout": "",
+    "requested_duration_seconds": 2790,
+    "driver_exit": 1,
+    "last_status": {
+      "records": 340172,
+      "queued_records": 1001,
+      "queued_payload_bytes": 8200192,
+      "sealed": 25,
+      "rss_bytes": 347570176,
+      "cpu_percent": 135.79981617328153,
+      "max_durability_ns": 2167407478,
+      "elapsed_seconds": 1261.469474507,
+      "cpu_seconds": 200.774566
+    },
+    "status_samples": 1254,
+    "max_status_cpu_percent": 243.29147017555263,
+    "peak_sampled_rss_bytes": 347570176,
+    "cycles_with_sampled_empty_queue": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "events": [
+      "INGRESS_OVERLOAD WS S02 BTCUSDT"
+    ],
+    "end_utc": "2026-11-07T16:18:57+00:00",
+    "raw_report_sha256": "c46a22dfa2297ff9d5f62b6d5c7c2e5b3752023e90a7ae90944a3d43e775ecb1",
+    "diagnosis_limit": "Observed bounded WS enqueue timeout during repeated burst/rotation workload. No stage trace proves exact sealing/fsync/REST overlap; 0-ms arrival and a specific root-cause duration are not independently measured. Full independent readback was not reached."
+  },
+  "public_tls_smoke": {
+    "date_utc": "2026-11-07T16:23:46.925661+00:00",
+    "records": 3,
+    "modules": {
+      "binance.public.rest.v1": 1,
+      "binance.public.websocket.v1": 2
+    },
+    "recorder_report": {
+      "records": 3,
+      "test_pause_start_monotonic_ns": 0,
+      "test_pause_finish_monotonic_ns": 0,
+      "test_pause_backlog_drain_ns": null,
+      "sealed": 2,
+      "rotations": {
+        "shutdown": 2
+      },
+      "max_durability_ns": 215801858,
+      "max_receive_to_append_ns": 10759075,
+      "receive_to_append_p99_ms": 11,
+      "max_status_cpu_percent": 0.0,
+      "stop_reason": "INPUT_COMPLETE",
+      "peak_queue_payload_bytes": 7904,
+      "peak_queue_records": 1,
+      "wall_seconds": 0.368287873,
+      "cpu_seconds": 0.270179,
+      "peak_rss_bytes": 20180992,
+      "allocation_counter_enabled": false,
+      "new_calls": null,
+      "new_requested_bytes": null,
+      "interrupted": false
+    },
+    "independent_reader": "PASS",
+    "payload_identity_check": "BTCUSDT WS and exchangeInfo verified",
+    "ca_bundle": "/etc/ssl/certs/ca-certificates.crt",
+    "retained_real_data_root": "/root/.local/share/BinanceMarketDataRecorder/S-BMDR/c1-public-closeout.Cs4NoQ",
+    "ndjson_sha256": "d24c054587b9cf93d90a3e49d51107a8146a7ff6b52d54010a723449c3130606"
+  },
+  "post_c1_host_state": {
+    "old_production_service": "inactive/disabled",
+    "test_recorder_processes_running": 0,
+    "system_disk_available_bytes": 20815757312,
+    "real_smoke_data": "retained; synthetic temporary test roots cleaned by harness"
+  },
+  "evidence_root": "/srv/recorder-data/sbmdr-c1-closeout.mhptBm/results",
+  "next": "C2 reduced core reliability scope from owner-updated milestone plan; C3-C5 not implemented in this closeout"
+}

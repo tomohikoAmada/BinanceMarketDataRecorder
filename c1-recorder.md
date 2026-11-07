@@ -1,6 +1,6 @@
 # C1 最小端到端记录器与读取器
 
-本文的早期本机/长测结果属于历史版本。当前优化、GreenCloud 逐次结果与未关闭门槛见[计划第十一节](cpp_rewrite_milestone_plan.md#cpp-performance-review-20261104)和[2026-11-06 结果](c1-performance-20261106.json)。
+**C1 已于 2026-11-08 按稳定的单源范围正式签收。** 当前版本结果见文末与[收尾报告](c1-closeout-20261107.json)。本文的早期本机/长测结果属于历史版本。当前优化、GreenCloud 逐次结果与未关闭门槛见[计划第十一节](cpp_rewrite_milestone_plan.md#cpp-performance-review-20261104)和[2026-11-06 结果](c1-performance-20261106.json)。
 
 ## 实现
 
@@ -56,3 +56,21 @@ SBMDR_LONG_SECONDS=2760 "$py" prototype/verify_recorder.py \
 | receive → append p99 | 9 ms | 100 ms |
 | receive → 成功 fsync 最大值 | 994 ms | 1,250 ms |
 | 峰值队列 | 2 条 / 589,489 B | 8,192 条 / 64 MiB |
+
+
+## 当前版本签收（2026-11-08）
+
+`b473af6a`（C++ 与 `ce7e4943` 相同）的 GreenCloud 原生 Release 使用系统盘 /dev/vda1，关闭分配计数与阶段诊断，无 strace/sanitizer。单 WS 10 Hz × 8 KiB、每秒一条 581,297 B mock REST，真实墙钟运行 2,760.23 秒。独立 Python reader 完整核对 30,360 条记录的 payload、身份、时间、CRC/SHA、manifest 和 Catalog；无残留 partial，正常排空。20 个分片包含 3 次时间、15 次大小轮换和退出时 2 次封存；46 个完整分钟均采样到空队列。
+
+| 指标 | 当前实测 | 原门槛 / 结论 |
+| --- | ---: | --- |
+| 平均 CPU / 最大约 60 秒窗口 | 4.37% / 7.44% | ≤120%，通过 |
+| 最大状态 CPU 窗口 | 59.41% | ≤200%，通过 |
+| 峰值 RSS | 69.37 MiB | ≤768 MiB，通过 |
+| 追加 p99 | 38 ms | ≤100 ms，通过 |
+| 最大耐久延迟 | 1,562 ms | ≤1,250 ms，未通过；所有者接受实测表现 |
+| 峰值队列 | 7 条 / 808,575 B | 8,192 条 / 64 MiB，通过 |
+
+原生 Release 四项 CTest、ASan/UBSan 与独立 TSan 各三项相关回归通过。TSan 以 `setarch x86_64 -R` 解决测试运行时地址映射冲突，系统全局 ASLR 未改；ARM64 同一 golden 与聚焦正确性检查通过。当前二进制公开 TLS 烟测独立读回 2 WS + 1 REST，真实数据保留。
+
+完整合成容量长测在约第 21 分钟触发 `INGRESS_OVERLOAD WS`，约 1 秒 CPU 峰值 243.29%，未达到预定时长，也未完成全部读回。所有者明确选择将其保留为未通过的容量边界，按稳定的单源范围关闭 C1。该决定不等于全源生产资格，不扩大队列或增加异步封存线程池。原始报告、失败日志摘要、源码与二进制 SHA-256、具体命令见[收尾报告](c1-closeout-20261107.json)。
