@@ -57,6 +57,9 @@ async def exercise(root: Path, market: str):
                     ).encode()
             elif path.endswith("/openInterest"):
                 self.payload = b'{"symbol":"BTCUSDT","openInterest":"12","time":1}'
+                if sum(p == path for p, _, _ in calls) == 2:
+                    self.status = 429
+                    self.payload = b'{"code":-1003}'
             else:
                 # Deliberately old and legitimate empty buckets: retain, never fast retry.
                 self.payload = (
@@ -252,6 +255,10 @@ async def exercise(root: Path, market: str):
         first = [next(t for p, t in polls if p == name) for name in counts]
         assert all(b - a >= 0.20 for a, b in pairwise(first))
         assert len({address for _, _, address in calls}) < len(calls)
+        limited = [
+            i for i, (p, _, _) in enumerate(calls) if p.endswith("/openInterest")
+        ][1]
+        assert calls[limited + 1][1] - calls[limited][1] >= 0.99
     else:
         depth_calls = [t for p, t, _ in calls if p.endswith("/depth")]
         assert depth_calls[1] - depth_calls[0] >= 0.99
