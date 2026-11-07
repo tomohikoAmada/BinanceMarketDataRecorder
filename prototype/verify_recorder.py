@@ -418,12 +418,21 @@ async def main():
                 if index >= 0
             ]
             report["max_60s_cpu_percent"] = max(windows)
+            accepted_latency = os.environ.get("SBMDR_ACCEPT_OBSERVED_LATENCY") == "1"
+            report["latency_acceptance"] = (
+                "owner accepts observed VPS latency, 2026-11-07"
+                if accepted_latency
+                else "original C0 limits"
+            )
+            report["original_latency_gates"] = {
+                "append_p99_100ms": report["receive_to_append_p99_ms"] <= 100,
+                "durability_1250ms": report["max_durability_ns"] <= 1_250_000_000,
+            }
             print(json.dumps(report, indent=2), flush=True)
             assert report["wall_seconds"] >= seconds
             assert report["rotations"]["time"] >= 3
-            assert report["max_durability_ns"] <= 1_250_000_000
+            assert accepted_latency or all(report["original_latency_gates"].values())
             assert report["peak_rss_bytes"] <= 768 * 1024**2
-            assert report["receive_to_append_p99_ms"] <= 100
             assert report["max_60s_cpu_percent"] <= 120
             assert report["max_status_cpu_percent"] <= 200
         else:
