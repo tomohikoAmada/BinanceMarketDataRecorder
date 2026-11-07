@@ -16,39 +16,142 @@ std::int64_t peak_rss() {
 }
 
 class AttemptWindow {
-    std::deque<steady_clock::time_point> attempts_;
-    std::size_t limit_;
+    std::deque<std::pair<steady_clock::time_point, unsigned>> attempts_;
+    std::size_t limit_, used_ = 0;
     seconds period_;
 
   public:
     AttemptWindow(std::size_t limit, seconds period) : limit_(limit), period_(period) {}
-
-    steady_clock::time_point ready_at(steady_clock::time_point now) {
-        while (!attempts_.empty() && attempts_.front() + period_ <= now)
+    steady_clock::time_point ready_at(steady_clock::time_point now, unsigned weight = 1) {
+        while (!attempts_.empty() && attempts_.front().first + period_ <= now) {
+            used_ -= attempts_.front().second;
             attempts_.pop_front();
-        return attempts_.size() < limit_ ? now : attempts_.front() + period_;
+        }
+        return used_ + weight <= limit_ ? now : attempts_.front().first + period_;
     }
-
-    void charge(steady_clock::time_point now) { attempts_.push_back(now); }
+    void charge(steady_clock::time_point now, unsigned weight = 1) {
+        if (weight) {
+            attempts_.emplace_back(now, weight);
+            used_ += weight;
+        }
+    }
 };
 
 void status_line(const Json& event) { std::fprintf(stderr, "%s\n", event.dump().c_str()); }
 
+seconds cooldown_delay(const RestResult& result) {
+    std::uint64_t requested = 0;
+    const auto* end = result.retry_after.data() + result.retry_after.size();
+    const auto parsed = std::from_chars(result.retry_after.data(), end, requested);
+    if (parsed.ec == std::errc::result_out_of_range || requested > 86400)
+        throw std::overflow_error("REST Retry-After exceeds one day; operator restart required");
+    if (parsed.ec != std::errc{} || parsed.ptr != end) {
+        const auto date = curl_getdate(result.retry_after.c_str(), nullptr);
+        const auto now = std::time(nullptr);
+        if (date > now && date - now > 86400)
+            throw std::overflow_error("REST Retry-After exceeds one day; operator restart required");
+        requested = date > now ? static_cast<std::uint64_t>(date - now)
+                              : (result.status == 418 ? 3600 : 300);
+    }
+    return seconds(std::max<std::uint64_t>(1, requested));
+}
+
+void run_core_rest(const std::string& port, Handoff& queue, const std::optional<std::string>& ca,
+                   const std::string& run, std::stop_token stop, DepthRequests& depth, bool usdm,
+                   milliseconds period) {
+    struct Poll { RestSource source; steady_clock::time_point due; milliseconds period; };
+    const auto start = steady_clock::now();
+    std::vector<Poll> polls{{directory_source(usdm), start, duration_cast<milliseconds>(hours(24))}};
+    if (usdm) {
+        const auto sources = periodic_sources();
+        for (std::size_t i = 0; i < sources.size(); ++i)
+            polls.push_back({sources[i], start + period * (i + 1) / (sources.size() + 1), period});
+    }
+    const auto snapshot = depth_source(usdm);
+    auto snapshot_due = start, cooldown = start;
+    std::uint64_t completed_epoch = 0, observed_epoch = 0;
+    AttemptWindow requests(100, seconds(60)), weights(usdm ? 1200 : 2000, seconds(60)),
+                  statistics(800, seconds(300));
+    const auto multi = make_rest_multi();
+    while (!stop.stop_requested()) {
+        const auto epoch = depth.epoch.load();
+        if (epoch != observed_epoch) {
+            observed_epoch = epoch;
+            snapshot_due = steady_clock::now();
+        }
+        const bool take_snapshot = epoch != completed_epoch;
+        auto next = std::min_element(polls.begin(), polls.end(), [](const auto& a, const auto& b) { return a.due < b.due; });
+        const auto& source = take_snapshot ? snapshot : next->source;
+        const auto now = steady_clock::now();
+        auto due = std::max({take_snapshot ? snapshot_due : next->due, cooldown,
+                             requests.ready_at(now), weights.ready_at(now, source.weight)});
+        if (source.statistics)
+            due = std::max(due, statistics.ready_at(now));
+        depth.wake.until(stop, due, [&] { return depth.epoch.load() != observed_epoch; });
+        if (stop.stop_requested())
+            break;
+        if (depth.epoch.load() != observed_epoch)
+            continue;
+        if (!queue.rest_admissible()) {
+            depth.wake.until(stop, steady_clock::now() + milliseconds(100));
+            continue;
+        }
+        const auto dispatch = steady_clock::now();
+        requests.charge(dispatch);
+        weights.charge(dispatch, source.weight);
+        if (source.statistics)
+            statistics.charge(dispatch);
+        status_line(Json{{"event", "REST_DISPATCH"}, {"source", source.stream},
+                         {"snapshot_epoch", take_snapshot ? epoch : 0}, {"weight", source.weight}});
+        RestResult result{0, false, {}, {}};
+        try {
+            result = receive_rest(multi.get(), port, queue, ca, true, run, &source, usdm,
+                                  take_snapshot ? epoch : 0);
+        } catch (const IngressOverload&) { throw; }
+          catch (const std::runtime_error& error) {
+            status_line(Json{{"event", "REST_TRANSPORT_FAILURE"}, {"source", source.stream}, {"error", error.what()}});
+        }
+        if (result.status == 418 || result.status == 429) {
+            const auto delay = cooldown_delay(result);
+            cooldown = steady_clock::now() + delay;
+            status_line(Json{{"event", "REST_COOLDOWN"}, {"status", result.status}, {"retry_after_seconds", delay.count()}});
+        }
+        if (!result.transfer_error.empty())
+            status_line(Json{{"event", "REST_TRANSPORT_FAILURE"}, {"source", source.stream},
+                             {"status", result.status}, {"error", result.transfer_error}});
+        if (take_snapshot) {
+            if (result.valid)
+                completed_epoch = epoch;
+            snapshot_due = steady_clock::now() + seconds(1);
+        } else {
+            // A valid old/empty bucket is retained once. No catch-up or old-bucket retries.
+            next->due += next->period;
+            if (next->due <= steady_clock::now())
+                next->due = steady_clock::now() + next->period;
+        }
+    }
+}
+
 int record(int argc, char** argv) {
-    const bool public_capture = argc == 6 && std::string_view(argv[2]) == "--public";
-    if (!public_capture && argc != 7 && argc != 9 && argc != 10) {
+    const bool public_capture = (argc == 6 || argc == 7) && std::string_view(argv[2]) == "--public";
+    const bool core = public_capture || argc == 11;
+    const std::string market = core ? (public_capture ? (argc == 7 ? argv[6] : "spot") : argv[10]) : "spot";
+    if (market != "spot" && market != "usdm")
+        throw std::runtime_error("market must be spot or usdm");
+    const bool usdm = market == "usdm";
+    if (!public_capture && argc != 7 && argc != 9 && argc != 10 && argc != 11) {
         throw std::runtime_error(
             "usage: sbmdr-c0 record WS_PORT HTTP_PORT WS_COUNT OUTPUT_DIR REST_INTERVAL_MS "
-            "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS]] | record --public OUTPUT_DIR WS_COUNT CA_FILE");
+            "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS [spot|usdm]]] | record --public OUTPUT_DIR WS_COUNT CA_FILE [spot|usdm]");
     }
     const std::string ws_port = public_capture ? "" : argv[2], http_port = public_capture ? "" : argv[3];
     const auto ws_count = std::stoull(argv[4]);
     const fs::path root(public_capture ? argv[3] : argv[5]);
     const auto ca = public_capture ? std::optional<std::string>(argv[5]) : std::nullopt;
-    const auto rest_period = public_capture ? milliseconds(3600000) : milliseconds(std::stoll(argv[6]));
+    const auto rest_period = public_capture ? milliseconds(300000) : milliseconds(std::stoll(argv[6]));
     const auto rotation = argc >= 9 ? milliseconds(std::stoll(argv[7])) : milliseconds(900000);
     const auto rotation_bytes = argc >= 9 ? std::stoull(argv[8]) : 128ULL * 1024 * 1024;
-    const auto test_pause = argc == 10 ? milliseconds(std::stoll(argv[9])) : milliseconds(0);
+    const auto test_pause = !public_capture && argc >= 10 ? milliseconds(std::stoll(argv[9])) : milliseconds(0);
     if (test_pause.count() < 0 || test_pause > seconds(5))
         throw std::runtime_error("test pause must be between zero and five seconds");
     if (ws_count == 0 || rest_period.count() <= 0 || rotation.count() <= 0 ||
@@ -110,12 +213,13 @@ int record(int argc, char** argv) {
     const auto allocation_start = allocations.load();
     const auto allocated_start = allocated_bytes.load();
     Handoff queue;
+    DepthRequests depth_requests;
     std::stop_source stop;
     std::atomic<unsigned> overloads{0};
     std::size_t records = 0;
     auto writer = std::async(std::launch::async, [&] {
         try {
-            RecorderStorage storage(root, run_id, rotation, rotation_bytes);
+            RecorderStorage storage(root, run_id, rotation, rotation_bytes, core ? &depth_requests : nullptr);
             std::vector<Message> batch;
             batch.reserve(32);
             auto next_status = start + seconds(1);
@@ -168,9 +272,9 @@ int record(int argc, char** argv) {
             }
             const auto affected = overloads.load();
             if (affected & 1U)
-                storage.mark_overload(false, public_capture);
+                storage.mark_overload(false, public_capture, usdm ? "um_perpetual" : "spot");
             if (affected & 2U)
-                storage.mark_overload(true, public_capture);
+                storage.mark_overload(true, public_capture, usdm ? "um_perpetual" : "spot");
             storage.finish();
             Json result{{"records", records},
                         {"test_pause_start_monotonic_ns", pause_start},
@@ -199,18 +303,16 @@ int record(int argc, char** argv) {
         try {
             std::size_t accepted = 0;
             unsigned generation = 0, consecutive = 0;
-            std::mutex mutex;
-            std::condition_variable_any wake;
-            std::unique_lock lock(mutex);
+            RecorderWake wake;
             AttemptWindow budget(180, seconds(300));
             while (accepted < ws_count && !token.stop_requested()) {
-                wake.wait_until(lock, token, budget.ready_at(steady_clock::now()), [] { return false; });
+                wake.until(token, budget.ready_at(steady_clock::now()));
                 if (token.stop_requested())
                     break;
                 budget.charge(steady_clock::now());
                 const auto before = accepted;
                 try {
-                    receive_ws(ws_port, ws_count - accepted, queue, token, ca, &accepted, generation);
+                    receive_ws(ws_port, ws_count - accepted, queue, token, ca, &accepted, generation, usdm);
                     break;
                 } catch (const boost::system::system_error& error) {
                     if (token.stop_requested())
@@ -227,7 +329,7 @@ int record(int argc, char** argv) {
                                      {"generation", generation},
                                      {"accepted", accepted},
                                      {"error", error.code().message()}});
-                    wake.wait_for(lock, token, delay, [] { return false; });
+                    wake.until(token, steady_clock::now() + delay);
                 }
             }
         } catch (const IngressOverload&) {
@@ -241,16 +343,17 @@ int record(int argc, char** argv) {
     });
     auto rest = std::async(std::launch::async, [&] {
         try {
-            std::mutex mutex;
-            std::condition_variable_any wake;
-            std::unique_lock lock(mutex);
+            if (core) {
+                run_core_rest(http_port, queue, ca, run_id, token, depth_requests, usdm, rest_period);
+                return;
+            }
+            RecorderWake wake;
             auto due = steady_clock::now();
             unsigned failures = 0;
             AttemptWindow budget(100, seconds(60));
             const auto multi = make_rest_multi();
             while (!token.stop_requested()) {
-                wake.wait_until(lock, token, std::max(due, budget.ready_at(steady_clock::now())),
-                                [] { return false; });
+                wake.until(token, std::max(due, budget.ready_at(steady_clock::now())));
                 if (token.stop_requested())
                     break;
                 if (!queue.rest_admissible()) {

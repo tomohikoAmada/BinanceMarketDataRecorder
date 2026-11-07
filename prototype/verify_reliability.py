@@ -126,7 +126,9 @@ async def verify_shutdown_in_backoff(root: Path) -> None:
         await shutdown_recorder(root, reject, str(unavailable.getsockname()[1]))
 
 
-async def shutdown_recorder(root: Path, reject, http_port: str) -> None:
+async def shutdown_recorder(
+    root: Path, reject, http_port: str, *, settle=0.0, prompt=False
+) -> None:
     async with serve(reject, "127.0.0.1", 0) as ws:
         port = str(ws.sockets[0].getsockname()[1])
         proc = await asyncio.create_subprocess_exec(
@@ -146,15 +148,44 @@ async def shutdown_recorder(root: Path, reject, http_port: str) -> None:
                 assert line
                 if json.loads(line).get("event") == "WS_RECONNECT":
                     break
+            await asyncio.sleep(settle)
+            started = monotonic()
             proc.send_signal(signal.SIGTERM)
             # The recorder drains a started HTTP transfer, which has a 10 s timeout.
             stdout, stderr = await asyncio.wait_for(proc.communicate(), 12)
             assert proc.returncode == 0, stderr.decode()
             assert json.loads(stdout)["stop_reason"] == "SIGNAL"
+            if prompt:
+                assert monotonic() - started < 1.5
         finally:
             if proc.returncode is None:
                 proc.kill()
                 await proc.wait()
+
+
+async def verify_backoff_wakeups(root: Path) -> None:
+    async def reject(peer):
+        peer.transport.abort()
+
+    directory = (FIXTURES / "p2/spot-directory.json").read_bytes()
+    with ThreadingHTTPServer(
+        ("127.0.0.1", 0), partial(Response, directory, 200)
+    ) as http:
+        thread = Thread(target=http.serve_forever, kwargs={"poll_interval": 0.05})
+        thread.start()
+        try:
+            # Hit stop-before-wait, the middle of backoff, and its boundary.
+            for i, delay in enumerate([0.0, 0.01, 0.15, 0.28] * 3):
+                await shutdown_recorder(
+                    root / str(i),
+                    reject,
+                    str(http.server_port),
+                    settle=delay,
+                    prompt=True,
+                )
+        finally:
+            http.shutdown()
+            thread.join()
 
 
 if __name__ == "__main__":
@@ -162,3 +193,4 @@ if __name__ == "__main__":
     with TemporaryDirectory(prefix="sbmdr-reliability-") as scratch:
         asyncio.run(verify_reconnect(Path(scratch) / "reconnect"))
         asyncio.run(verify_shutdown_in_backoff(Path(scratch) / "shutdown"))
+        asyncio.run(verify_backoff_wakeups(Path(scratch) / "wakeups"))

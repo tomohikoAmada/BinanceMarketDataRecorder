@@ -1,4 +1,4 @@
-// C1 storage lifecycle for the two homogeneous Raw v1 streams.
+// One homogeneous Raw v1 chunk per market/symbol/stream, owned by the writer.
 namespace fs = std::filesystem;
 
 class Catalog {
@@ -86,14 +86,14 @@ class Catalog {
                   Json::array({run, ns<system_clock>(), Json{{"collector_instance_id", run}}.dump()}));
     }
 
-    void overload(const std::string& run, bool rest, bool symbol_scoped) {
+    void overload(const std::string& run, bool rest, bool symbol_scoped, const std::string& market) {
         const auto symbol = rest && !symbol_scoped ? "__GLOBAL__" : "BTCUSDT";
         const auto stream = rest ? "exchange_info" : "diff_depth";
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
-                  "evidence_json,market,symbol,stream) VALUES(?,'INGRESS_OVERLOAD',?,?, 'spot',?,?)",
+                  "evidence_json,market,symbol,stream) VALUES(?,'INGRESS_OVERLOAD',?,?,?,?,?)",
                   Json::array({run + "-overload-" + stream, ns<system_clock>(),
                                Json{{"collector_instance_id", run}, {"wait_limit_ms", 250}}.dump(),
-                               symbol, stream}));
+                               market, symbol, stream}));
     }
 
     void active(const RawFile& raw, const fs::path& path) {
@@ -226,7 +226,8 @@ class RecorderStorage {
     std::string run_;
     milliseconds period_;
     std::uint64_t byte_limit_;
-    std::array<Slot, 2> slots_{};
+    std::map<std::string, Slot> slots_;
+    DepthBridge depth_;
     Bytes scratch_;
     steady_clock::time_point next_sync_ = steady_clock::now() + milliseconds(900);
 
@@ -271,7 +272,7 @@ class RecorderStorage {
             {"created_at_utc_ns", raw.created},
             {"sealed_at_utc_ns", sealed_at},
             {"fsync_completed_at_utc_ns", raw.fsync_utc},
-            {"market", "spot"},
+            {"market", raw.market},
             {"symbol", raw.symbol},
             {"stream", rest ? "rest_observations" : "ws_market_c0_depth"},
             {"receive_time_utc_range_ns", raw.utc_range},
@@ -281,7 +282,7 @@ class RecorderStorage {
             {"capture_flags", raw.flags},
             {"gap", raw.flags.contains("sequence_gap")},
             {"overlap", false},
-            {"resync", false},
+            {"resync", raw.flags.contains("depth_bridge")},
             {"complete", !raw.flags.contains("sequence_gap")},
             {"recovered", false},
             {"recovery", nullptr},
@@ -339,30 +340,32 @@ class RecorderStorage {
         return append_histogram_.size() - 1;
     }
 
-    RecorderStorage(fs::path root, std::string run, milliseconds period, std::uint64_t bytes)
+    RecorderStorage(fs::path root, std::string run, milliseconds period, std::uint64_t bytes,
+                    DepthRequests* depth_requests = nullptr)
         : root_(std::move(root)), catalog_(root_ / "state/catalog.sqlite"), run_(std::move(run)),
-          period_(period), byte_limit_(bytes) {
+          period_(period), byte_limit_(bytes), depth_(depth_requests) {
         catalog_.startup(run_);
     }
 
     void tick() {
         const auto now = steady_clock::now();
         if (now >= next_sync_) {
-            for (auto& slot : slots_) {
+            for (auto& [key, slot] : slots_) {
                 if (slot.raw)
                     max_durability_ns = std::max(max_durability_ns, slot.raw->sync());
             }
             next_sync_ = now + milliseconds(900);
         }
-        for (std::size_t i = 0; i < slots_.size(); ++i) {
-            auto& slot = slots_[i];
+        for (auto& [key, slot] : slots_) {
             if (slot.raw && now - slot.opened >= period_)
-                rotate(slot, i == 1, "time");
+                rotate(slot, slot.raw->stream == "rest_observations", "time");
         }
     }
 
     void append(Message& message) {
-        auto& slot = slots_[message.rest ? 1 : 0];
+        depth_.observe(message);
+        const auto symbol = message.rest && !message.symbol_scoped ? "__GLOBAL__" : "BTCUSDT";
+        auto& slot = slots_[message.market + "/" + symbol + (message.rest ? "/rest" : "/ws")];
         const bool first = !slot.raw;
         if (first) {
             slot.raw = std::make_unique<RawFile>();
@@ -381,19 +384,20 @@ class RecorderStorage {
             rotate(slot, message.rest, "size");
     }
 
-    void mark_overload(bool rest, bool symbol_scoped) {
-        catalog_.overload(run_, rest, symbol_scoped);
-        auto& slot = slots_[rest ? 1 : 0];
-        if (slot.raw) {
-            slot.overload_gap = true;
-            slot.raw->flags.insert("sequence_gap");
+    void mark_overload(bool rest, bool symbol_scoped, const std::string& market) {
+        catalog_.overload(run_, rest, symbol_scoped, market);
+        for (auto& [key, slot] : slots_) {
+            if (slot.raw && (slot.raw->stream == "rest_observations") == rest) {
+                slot.overload_gap = true;
+                slot.raw->flags.insert("sequence_gap");
+            }
         }
     }
 
     void finish() {
-        for (std::size_t i = 0; i < slots_.size(); ++i) {
-            if (slots_[i].raw)
-                rotate(slots_[i], i == 1, "shutdown");
+        for (auto& [key, slot] : slots_) {
+            if (slot.raw)
+                rotate(slot, slot.raw->stream == "rest_observations", "shutdown");
         }
     }
 };

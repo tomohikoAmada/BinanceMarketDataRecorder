@@ -33,3 +33,15 @@ add_test(NAME c1-recorder COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURC
 add_test(NAME c2-reliability COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_reliability.py"
     "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}")
 add_test(NAME c2-handoff-limit COMMAND "$<TARGET_FILE:sbmdr-c0>" --check-handoff)
+add_test(NAME c2-core COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_core.py"
+    "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}")
+add_test(NAME c2-depth-edges COMMAND "$<TARGET_FILE:sbmdr-c0>" --check-depth-bridge)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CXX_FLAGS MATCHES "fsanitize")
+    # LD_PRELOAD syscall interposition runs in the unsanitized Release process.
+    # The real recorder/queue/bridge suites run separately with ASan/UBSan/TSan.
+    add_library(sbmdr-fault-io SHARED fault_io.cpp)
+    target_link_libraries(sbmdr-fault-io PRIVATE ${CMAKE_DL_LIBS})
+    add_test(NAME c2-recovery-boundaries COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_recovery_boundaries.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>")
+endif()

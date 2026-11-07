@@ -31,6 +31,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <map>
 #include <optional>
 #include <set>
 #include <stdexcept>
@@ -178,7 +179,13 @@ struct Message {
     long status = 0;
     bool rest_valid = false;
     std::string content_type, retry_after;
+    std::string market = "spot", source_stream = "exchange_info", family = "S01";
+    std::string path = "/api/v3/exchangeInfo";
+    Json parameters = Json::object();
+    std::uint64_t snapshot_epoch = 0;
 };
+
+#include "recorder_core.hpp"
 
 std::string base64(const Bytes& body) {
     std::string out(4 * ((body.size() + 2) / 3) + 1, '\0');
@@ -250,15 +257,15 @@ Bytes prepare_rest_payload(const Message& message, const std::string& run_id) {
         Json{
             {"schema_version", "binance-public-rest-provenance.v1"},
             {"representation", "http-body-base64.v1"},
-            {"family", "S01"},
-            {"source_stream", "exchange_info"},
+            {"family", message.family},
+            {"source_stream", message.source_stream},
             {"scope", message.symbol_scoped ? "BTCUSDT" : "__GLOBAL__"},
-            {"venue_market", "spot"},
+            {"venue_market", message.market == "spot" ? "spot" : "usdm"},
             {"request",
              {{"request_id", run_id + "-rest-" + std::to_string(message.request_mono)},
               {"method", "GET"},
-              {"path", "/api/v3/exchangeInfo"},
-              {"parameters", message.symbol_scoped ? Json{{"symbol", "BTCUSDT"}} : Json::object()},
+              {"path", message.path},
+              {"parameters", message.parameters},
               {"request_time_utc_ns", message.request_utc},
               {"request_monotonic_ns", message.request_mono},
               {"timeout_ms", 10000}}},
@@ -298,7 +305,8 @@ class RawFile {
 
     void append(const std::filesystem::path& path, Message& message, const std::string& run_id,
                 std::string_view version = "c0", Bytes* scratch = nullptr) {
-        const auto stream = message.rest ? "rest_observations" : "ws_market_c0_depth";
+        stream = message.rest ? "rest_observations" : "ws_market_c0_depth";
+        market = message.market;
         if (message.rest && !message.symbol_scoped)
             symbol = "__GLOBAL__";
         if (fd_ < 0) {
@@ -316,7 +324,7 @@ class RawFile {
                     {"created_at_utc_ns", created},
                     {"collector_instance_id", run_id},
                     {"collector_version", version},
-                    {"market", "spot"},
+                    {"market", market},
                     {"symbol", symbol},
                     {"stream", stream},
                     {"max_frame_bytes", frame_limit},
@@ -334,7 +342,7 @@ class RawFile {
             envelope_ = canonical(Json{
                 {"schema_version", "event-envelope.v1"},
                 {"venue", "binance"},
-                {"market", "spot"},
+                {"market", market},
                 {"symbol", symbol},
                 {"stream", stream},
                 {"module", message.rest ? "binance.public.rest.v1" : "binance.public.websocket.v1"},
@@ -434,7 +442,7 @@ class RawFile {
         return latency;
     }
 
-    std::string symbol = "BTCUSDT";
+    std::string symbol = "BTCUSDT", market = "spot", stream;
     const Bytes identity = uuid_bytes();
     const std::string chunk_id = uuid_text(identity);
     std::uint64_t bytes = 0, records = 0;
@@ -477,10 +485,10 @@ class RawFile {
 
 class IngressOverload : public std::runtime_error {
   public:
-    explicit IngressOverload(bool rest_source)
-        : std::runtime_error(rest_source ? "INGRESS_OVERLOAD REST S01"
-                                         : "INGRESS_OVERLOAD WS S02 BTCUSDT"),
-          rest(rest_source) {}
+    explicit IngressOverload(const Message& message)
+        : std::runtime_error(message.rest ? "INGRESS_OVERLOAD REST " + message.family
+                                         : "INGRESS_OVERLOAD WS " + std::string(message.market == "spot" ? "S02" : "D02") + " BTCUSDT"),
+          rest(message.rest) {}
     const bool rest;
 };
 
@@ -494,7 +502,7 @@ class Handoff {
         };
         if (bounded) {
             if (!ready_.wait_for(lock, milliseconds(250), available))
-                throw IngressOverload(message.rest);
+                throw IngressOverload(message);
         } else {
             ready_.wait(lock, available);
         }
@@ -570,7 +578,7 @@ class Handoff {
 
 template <class Stream>
 void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue, std::stop_token stop,
-             std::size_t* accepted, unsigned generation) {
+             std::size_t* accepted, unsigned generation, bool usdm = false) {
     ws.read_message_max(frame_limit - max_encoded_metadata);
     simdjson::dom::parser parser;
     beast::flat_buffer buffer;
@@ -603,13 +611,14 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
             ws.read(buffer);
         }
         Message message;
+        message.market = usdm ? "um_perpetual" : "spot";
         message.utc = ns<system_clock>();
         message.mono = ns<steady_clock>();
         const std::string_view wire(static_cast<const char*>(buffer.data().data()), buffer.size());
         message.body.assign(wire.begin(), wire.end());
         simdjson::dom::element root, data;
         std::string_view stream, event, symbol;
-        std::uint64_t time, first, last;
+        std::uint64_t time = 0, first = 0, last = 0;
         simdjson::dom::array bids, asks;
         if (parser.parse(wire.data(), wire.size()).get(root) || root["stream"].get(stream) ||
             stream != "btcusdt@depth@100ms" || root["data"].get(data) || data["e"].get(event) ||
@@ -623,7 +632,7 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
             message.sequence = {{"U", first},
                                 {"u", last},
                                 {"sourceStream", "diff_depth"},
-                                {"sourceFamily", "S02"},
+                                {"sourceFamily", usdm ? "D02" : "S02"},
                                 {"wireStream", stream}};
             auto transaction = data["T"];
             std::uint64_t value;
@@ -636,12 +645,20 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
                 }
             }
         }
+        if (usdm && message.flags.empty()) {
+            std::uint64_t previous_final;
+            if (data["pu"].get(previous_final))
+                message.flags.push_back("malformed");
+            else
+                message.sequence["pu"] = previous_final;
+        }
         if (stop.stop_possible()) {
             if (!message.flags.empty()) {
                 message.flags.push_back("sequence_gap");
                 previous.reset();
             } else {
-                if (previous && first > *previous && first - *previous > 1)
+                if (previous && (usdm ? message.sequence.at("pu").get<std::uint64_t>() != *previous
+                                     : first > *previous && first - *previous > 1))
                     message.flags.push_back("sequence_gap");
                 previous = previous ? std::max(*previous, last) : last;
             }
@@ -660,9 +677,10 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
 
 void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std::stop_token stop = {},
                 const std::optional<std::string>& ca = std::nullopt, std::size_t* accepted = nullptr,
-                unsigned generation = 0) {
+                unsigned generation = 0, bool usdm = false) {
     asio::io_context io;
-    constexpr auto target = "/stream?streams=btcusdt@depth@100ms";
+    const auto target = usdm ? "/public/stream?streams=btcusdt@depth@100ms"
+                             : "/stream?streams=btcusdt@depth@100ms";
     auto bounded = [&](auto start, auto cancel) {
         std::optional<boost::system::error_code> result;
         io.restart();
@@ -683,7 +701,8 @@ void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std:
         return true;
     };
     if (ca) {
-        constexpr auto host = "stream.binance.com";
+        const auto host = usdm ? "fstream.binance.com" : "stream.binance.com";
+        const auto service = usdm ? "443" : "9443";
         asio::ssl::context tls(asio::ssl::context::tls_client);
         tls.set_verify_mode(asio::ssl::verify_peer);
         tls.load_verify_file(*ca);
@@ -700,7 +719,7 @@ void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std:
         asio::ip::tcp::resolver::results_type addresses;
         if (!bounded(
                 [&](auto done) {
-                    resolver.async_resolve(host, "9443", [&, done](auto error, auto found) {
+                    resolver.async_resolve(host, service, [&, done](auto error, auto found) {
                         addresses = std::move(found);
                         done(error);
                     });
@@ -716,10 +735,10 @@ void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std:
                 close_socket))
             return;
         ws.set_option(beast::websocket::stream_base::timeout::suggested(beast::role_type::client));
-        if (!bounded([&](auto done) { ws.async_handshake("stream.binance.com:9443", target, done); },
+        if (!bounded([&](auto done) { ws.async_handshake(std::string(host) + ":" + service, target, done); },
                      close_socket))
             return;
-        read_ws(ws, io, count, queue, stop, accepted, generation);
+        read_ws(ws, io, count, queue, stop, accepted, generation, usdm);
     } else {
         beast::websocket::stream<beast::tcp_stream> ws(io);
         auto& tcp = beast::get_lowest_layer(ws);
@@ -738,7 +757,7 @@ void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std:
             tcp.connect(endpoint);
             ws.handshake(host, target);
         }
-        read_ws(ws, io, count, queue, stop, accepted, generation);
+        read_ws(ws, io, count, queue, stop, accepted, generation, usdm);
     }
 }
 
@@ -802,7 +821,8 @@ RestMulti make_rest_multi() {
 
 RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
                         const std::optional<std::string>& ca = std::nullopt, bool bounded = false,
-                        const std::string& run_id = "c0") {
+                        const std::string& run_id = "c0", const RestSource* source = nullptr,
+                        bool usdm = false, std::uint64_t snapshot_epoch = 0) {
     using Easy = std::unique_ptr<CURL, decltype(&curl_easy_cleanup)>;
     Easy easy(curl_easy_init(), curl_easy_cleanup);
     if (!easy)
@@ -814,10 +834,30 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
 
     Message message;
     message.rest = true;
-    message.symbol_scoped = ca.has_value();
+    message.market = usdm ? "um_perpetual" : "spot";
+    message.snapshot_epoch = snapshot_epoch;
+    message.symbol_scoped = source ? source->parameters.contains("symbol") : ca.has_value();
+    if (source) {
+        message.source_stream = source->stream;
+        message.family = source->family;
+        message.path = source->path;
+        message.parameters = source->parameters;
+    } else if (message.symbol_scoped) {
+        message.parameters = {{"symbol", "BTCUSDT"}};
+    }
+    if (usdm && !message.symbol_scoped)
+        message.market = "um_shared";
     HttpBody response;
-    const auto url = ca ? "https://api.binance.com/api/v3/exchangeInfo?symbol=BTCUSDT"
-                        : "http://127.0.0.1:" + port + "/api/v3/exchangeInfo";
+    std::string url = ca ? (usdm ? "https://fapi.binance.com" : "https://api.binance.com")
+                         : "http://127.0.0.1:" + port;
+    url += message.path;
+    bool first_parameter = true;
+    for (auto it = message.parameters.begin(); it != message.parameters.end(); ++it) {
+        url += first_parameter ? '?' : '&';
+        first_parameter = false;
+        // Parameters are fixed ASCII constants, never user input.
+        url += it.key() + "=" + (it.value().is_string() ? it.value().get<std::string>() : it.value().dump());
+    }
     auto option = [&](CURLoption key, auto value) {
         const auto code = curl_easy_setopt(easy.get(), key, value);
         if (code != CURLE_OK)
@@ -874,16 +914,39 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
     simdjson::dom::element root;
     simdjson::dom::array symbols, limits;
     message.flags = {"rest_poll", "exact_rest_http_body_preserved"};
-    if (message.status != 200 ||
-        parser.parse(reinterpret_cast<const char*>(message.body.data()), message.body.size())
-            .get(root) ||
-        root["symbols"].get(symbols) || root["rateLimits"].get(limits)) {
+    bool valid = message.status == 200 && !parser.parse(
+        reinterpret_cast<const char*>(message.body.data()), message.body.size()).get(root);
+    if (valid && message.source_stream == "exchange_info")
+        valid = !root["symbols"].get(symbols) && !root["rateLimits"].get(limits);
+    else if (valid && message.source_stream == "depth_snapshot") {
+        std::uint64_t last;
+        valid = !root["lastUpdateId"].get(last) && !root["bids"].get(symbols) && !root["asks"].get(limits);
+        if (valid)
+            message.sequence["lastUpdateId"] = last;
+    } else if (valid && message.source_stream == "open_interest") {
+        std::string_view symbol, interest;
+        valid = !root["symbol"].get(symbol) && symbol == "BTCUSDT" && !root["openInterest"].get(interest);
+    } else if (valid) {
+        simdjson::dom::array rows;
+        valid = !root.get(rows); // Keep legitimate empty/old buckets; no retry state machine.
+        if (valid) {
+            for (auto row : rows) {
+                std::uint64_t timestamp;
+                if (!row.is_object() || row["timestamp"].get(timestamp)) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+    }
+    if (!valid) {
         message.flags.push_back("source_failed");
         message.flags.push_back("malformed");
     } else {
         message.rest_valid = true;
     }
-    message.sequence = {{"sourceStream", "exchange_info"}, {"sourceFamily", "S01"}};
+    message.sequence["sourceStream"] = message.source_stream;
+    message.sequence["sourceFamily"] = message.family;
     RestResult outcome{message.status, message.rest_valid, message.retry_after, {}};
 #ifdef SBMDR_DIAGNOSTICS
     const auto rest_prepare_start = ns<steady_clock>();
@@ -950,6 +1013,10 @@ void verify_handoff_limit() {
 }
 
 int main(int argc, char** argv) try {
+    if (argc == 2 && std::string_view(argv[1]) == "--check-depth-bridge") {
+        verify_depth_edges();
+        return 0;
+    }
     if (argc == 2 && std::string_view(argv[1]) == "--check-handoff") {
         verify_handoff_limit();
         return 0;
