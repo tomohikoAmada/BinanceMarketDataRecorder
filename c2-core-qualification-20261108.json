@@ -1,0 +1,698 @@
+{
+  "date_local": "2026-11-08 Asia/Shanghai",
+  "scope": "Reduced C2 core reliability only: stop wakeups, Spot/USD-M depth snapshot sequence bridging, lightweight REST staggering, file recovery boundaries",
+  "status": "COMPLETE",
+  "source_commit": "2acdc915",
+  "cpp_source_commit": "700a8c09 (later commits only update test driver)",
+  "source_files_sha256": {
+    "prototype/.gitignore": "c6e4e440e24869a9e65fc569416d62de9667d434d63172039c8258f84ee9ecbe",
+    "prototype/CMakeLists.txt": "7f8272bddb3b54ac98983368cba037ad29e38ec4cfabfd3e28964c6f6ff69182",
+    "prototype/CMakePresets.json": "c83cdef1c98dfa1e87ad866095d2860da4d18094161f55aa9b0eeb8a090f059a",
+    "prototype/fault_io.cpp": "3a2bd6b4319f642144bafaa444268cda76252ecd007316092763198da1aeb98a",
+    "prototype/main.cpp": "b80a366931e96b451a6f4e5a1bbb61933c19ef3d3459ac7339047f38a4dd1ca6",
+    "prototype/read_raw.py": "b092b12608aa17f15cdeae7de4fbe5a867557095ba9aac02d4290e568410163c",
+    "prototype/recorder_core.hpp": "f0099c1395192da113111171eac0c2d6e4e1d2ff078b09aefdc7f98ea9886fbe",
+    "prototype/recorder_run.hpp": "eafaec8cd92835a50f2dc61660d9dae5aa53fc6b2a9441402b36ca538e4db9ea",
+    "prototype/recorder_storage.hpp": "014bc1512e80900557a476913c0bdf46e44d6b4c12e1088254bcf166bd596f5c",
+    "prototype/recover_raw.py": "543783a11786aa4107915e52d0d6af9af700266928b25d29afd14b06ff63c075",
+    "prototype/vcpkg.json": "eadaa62229538aedd47c0f53f4d5122f8d9bffc961e3bc69be8cf0d26d63744e",
+    "prototype/verify.py": "a3a282a14d14e76d381b0ba20b280a91055c4d9bdd22c343d9d3ba51e6611027",
+    "prototype/verify_core.py": "a648a994639fa05f8785e4285d6f111e81b852fac32096edb9f7f642afdd9e40",
+    "prototype/verify_recorder.py": "ae2c648725d165c3a84990e30bf37beb1ef4b8fe4335822f2d4700afc28bbe74",
+    "prototype/verify_recovery_boundaries.py": "cfcd5291dbe9e9e21cccad54a077dd72d53659cddf18ff31d6ff87dce74e9b5b",
+    "prototype/verify_reliability.py": "479caac117099f78d95d68df6a593ed50326303bd492479bb4b0df5585cc1ae1"
+  },
+  "native_source_verification": [
+    "prototype/.gitignore: OK",
+    "prototype/CMakeLists.txt: OK",
+    "prototype/CMakePresets.json: OK",
+    "prototype/fault_io.cpp: OK",
+    "prototype/main.cpp: OK",
+    "prototype/read_raw.py: OK",
+    "prototype/recorder_core.hpp: OK",
+    "prototype/recorder_run.hpp: OK",
+    "prototype/recorder_storage.hpp: OK",
+    "prototype/recover_raw.py: OK",
+    "prototype/vcpkg.json: OK",
+    "prototype/verify.py: OK",
+    "prototype/verify_core.py: OK",
+    "prototype/verify_recorder.py: OK",
+    "prototype/verify_recovery_boundaries.py: OK",
+    "prototype/verify_reliability.py: OK"
+  ],
+  "binary_sha256": {
+    "release/sbmdr-c0": "69659be331aef65379e031c684c799f96f663119ce82dac760d5197301debc3a",
+    "asan/sbmdr-c0": "30636e0b98003791deccdfb8fbd6745d09004b7e5dacfa50c57faa8bf6ee7348",
+    "tsan/sbmdr-c0": "09cc6e49c3c12e42092fa4ba81e0c9efef831581b6656add6f03c45e38c1e531"
+  },
+  "environment": {
+    "host": "greencloud-tokyo-01",
+    "os": "Ubuntu 24.04 x86_64",
+    "compiler": "GCC 13.3.0",
+    "cmake": "3.28.3",
+    "python_baseline": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+    "release_allocation_counter": false,
+    "release_diagnostics": false,
+    "sanitizers": "Debug ASan/UBSan and independent TSan; per-process setarch x86_64 -R for TSan, global ASLR unchanged"
+  },
+  "build_commands": [
+    "/usr/bin/c++ -DSBMDR_NO_NEW_COUNTER -isystem /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/include -O3 -DNDEBUG -std=gnu++20 -Wall -Wextra -Wpedantic -DSIMDJSON_THREADS_ENABLED=1 -MD -MT CMakeFiles/sbmdr-c0.dir/main.cpp.o -MF CMakeFiles/sbmdr-c0.dir/main.cpp.o.d -o CMakeFiles/sbmdr-c0.dir/main.cpp.o -c /srv/recorder-data/sbmdr-c2-core.V3JFct/prototype/main.cpp",
+    ": && /usr/bin/c++ -O3 -DNDEBUG  CMakeFiles/sbmdr-c0.dir/main.cpp.o -o sbmdr-c0  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_crc32c.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_crc_internal.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_crc_cpu_detect.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_str_format_internal.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_strings.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_strings_internal.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_int128.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_base.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_spinlock_wait.a  -lrt  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_throw_delegate.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_raw_logging_internal.a  /srv/recorder-data/sbmdr-c2-core.V3JFct/abseil-install/lib/libabsl_log_severity.a  /usr/lib/x86_64-linux-gnu/libcurl.so  /usr/lib/x86_64-linux-gnu/libsimdjson.so  /usr/lib/x86_64-linux-gnu/libssl.so  /usr/lib/x86_64-linux-gnu/libcrypto.so  /usr/lib/x86_64-linux-gnu/libsqlite3.so  /usr/lib/x86_64-linux-gnu/libzstd.so && :",
+    "/usr/bin/c++ -Dsbmdr_fault_io_EXPORTS  -O3 -DNDEBUG -fPIC -MD -MT CMakeFiles/sbmdr-fault-io.dir/fault_io.cpp.o -MF CMakeFiles/sbmdr-fault-io.dir/fault_io.cpp.o.d -o CMakeFiles/sbmdr-fault-io.dir/fault_io.cpp.o -c /srv/recorder-data/sbmdr-c2-core.V3JFct/prototype/fault_io.cpp",
+    ": && /usr/bin/c++ -fPIC -O3 -DNDEBUG   -shared -Wl,-soname,libsbmdr-fault-io.so -o libsbmdr-fault-io.so CMakeFiles/sbmdr-fault-io.dir/fault_io.cpp.o  -ldl && :"
+  ],
+  "required_checks": {
+    "release_7_tests": true,
+    "recovery_10_cases": true,
+    "asan_6_tests": true,
+    "tsan_unchanged_5_tests_passed": true,
+    "final_core_release": true,
+    "final_core_asan": true,
+    "final_core_tsan": true,
+    "public_readback": true,
+    "old_service_inactive_disabled": true,
+    "no_test_recorders_left": true,
+    "native_sources_match": true
+  },
+  "validation": {
+    "release_initial_final_binary_7_tests": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/release\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/release\n    Start 1: c0-loopback\n1/7 Test #1: c0-loopback ......................   Passed   13.82 sec\n    Start 2: c1-recorder\n2/7 Test #2: c1-recorder ......................   Passed    9.08 sec\n    Start 3: c2-reliability\n3/7 Test #3: c2-reliability ...................   Passed   22.41 sec\n    Start 4: c2-handoff-limit\n4/7 Test #4: c2-handoff-limit .................   Passed    0.30 sec\n    Start 5: c2-core\n5/7 Test #5: c2-core ..........................   Passed    7.97 sec\n    Start 6: c2-depth-edges\n6/7 Test #6: c2-depth-edges ...................   Passed    0.06 sec\n    Start 7: c2-recovery-boundaries\n7/7 Test #7: c2-recovery-boundaries ...........   Passed   16.19 sec\n\n100% tests passed, 0 tests failed out of 7\n\nTotal Test time (real) =  69.86 sec\n",
+    "final_recovery_10_cases": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/release\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/release\n    Start 7: c2-recovery-boundaries\n1/1 Test #7: c2-recovery-boundaries ...........   Passed   14.68 sec\n\n100% tests passed, 0 tests failed out of 1\n\nTotal Test time (real) =  14.69 sec\n",
+    "recovery_cases": [
+      {
+        "fault": "eintr",
+        "exit": 0,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/manifests/4b0a5fa48ec0499a87844e151db08593.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/4b0a5fa48ec0499a87844e151db08593.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "short",
+        "exit": 0,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/manifests/feb26c9df7624930ab87f294d8182f54.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/feb26c9df7624930ab87f294d8182f54.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "enospc",
+        "exit": 1,
+        "records_read": 0,
+        "recovery": [
+          [
+            {
+              "source": "data/active/eb141fdf78494145a6f8abb07d982ac1.bmdr.partial",
+              "action": "quarantined",
+              "detail": "invalid_header:truncated fixed header"
+            }
+          ],
+          []
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "fsync_eio",
+        "exit": 1,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/cd643da9b0f54fc1bb8b51396f9b35e1.bmdr.partial",
+              "action": "unchanged",
+              "detail": "clean"
+            },
+            {
+              "path": "cd643da9b0f54fc1bb8b51396f9b35e1.bmdr.partial",
+              "action": "sealed_after_stop",
+              "chunk_id": "cd643da9-b0f5-4fc1-bb8b-51396f9b35e1"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/cd643da9b0f54fc1bb8b51396f9b35e1.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "after_raw_fsync",
+        "exit": 86,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/1bc2146d6e51490fb25856423b566885.bmdr.partial",
+              "action": "unchanged",
+              "detail": "clean"
+            },
+            {
+              "path": "1bc2146d6e51490fb25856423b566885.bmdr.partial",
+              "action": "sealed_after_stop",
+              "chunk_id": "1bc2146d-6e51-490f-b258-56423b566885"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/1bc2146d6e51490fb25856423b566885.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "torn_frame",
+        "exit": 86,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/3278e33731fe460f9e6f9101a76b3da7.bmdr.partial",
+              "action": "tail_truncated",
+              "detail": "removed 7 bytes"
+            },
+            {
+              "path": "3278e33731fe460f9e6f9101a76b3da7.bmdr.partial",
+              "action": "sealed_after_stop",
+              "chunk_id": "3278e337-31fe-460f-9e6f-9101a76b3da7"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/3278e33731fe460f9e6f9101a76b3da7.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "before_sealed_rename",
+        "exit": 86,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/97164433279744b0b4de48248ea8e095.bmdr.partial",
+              "action": "unchanged",
+              "detail": "clean"
+            },
+            {
+              "source": "data/active/97164433279744b0b4de48248ea8e095.bmdr.partial",
+              "action": "seal_completed_after_crash",
+              "detail": "97164433-2797-44b0-b4de-48248ea8e095"
+            },
+            {
+              "source": "data/manifests/97164433279744b0b4de48248ea8e095.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/97164433279744b0b4de48248ea8e095.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "after_sealed_rename",
+        "exit": 86,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/911bf1b055d64adfb5c3725b5582a46f.bmdr.partial",
+              "action": "unchanged",
+              "detail": "clean"
+            },
+            {
+              "source": "data/active/911bf1b055d64adfb5c3725b5582a46f.bmdr.partial",
+              "action": "seal_completed_after_crash",
+              "detail": "911bf1b0-55d6-4adf-b5c3-725b5582a46f"
+            },
+            {
+              "source": "data/manifests/911bf1b055d64adfb5c3725b5582a46f.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/911bf1b055d64adfb5c3725b5582a46f.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "after_manifest_rename",
+        "exit": 86,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/5e7448b8501d4588b58c6f28732d80da.bmdr.partial",
+              "action": "unchanged",
+              "detail": "clean"
+            },
+            {
+              "source": "data/active/5e7448b8501d4588b58c6f28732d80da.bmdr.partial",
+              "action": "seal_completed_after_crash",
+              "detail": "5e7448b8-501d-4588-b58c-6f28732d80da"
+            },
+            {
+              "source": "data/manifests/5e7448b8501d4588b58c6f28732d80da.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/5e7448b8501d4588b58c6f28732d80da.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      },
+      {
+        "fault": "after_catalog_commit",
+        "exit": 86,
+        "records_read": 1,
+        "recovery": [
+          [
+            {
+              "source": "data/active/c3d95b9362694c20ad4fad36a011bc00.bmdr.partial",
+              "action": "unchanged",
+              "detail": "clean"
+            },
+            {
+              "source": "data/active/c3d95b9362694c20ad4fad36a011bc00.bmdr.partial",
+              "action": "seal_completed_after_crash",
+              "detail": "c3d95b93-6269-4c20-ad4f-ad36a011bc00"
+            },
+            {
+              "source": "data/manifests/c3d95b9362694c20ad4fad36a011bc00.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ],
+          [
+            {
+              "source": "data/manifests/c3d95b9362694c20ad4fad36a011bc00.manifest.json",
+              "action": "catalog_unchanged",
+              "detail": "SEALED"
+            }
+          ]
+        ],
+        "status": "PASS"
+      }
+    ],
+    "asan_ubsan_initial_6_tests": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/asan\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/asan\n    Start 1: c0-loopback\n1/6 Test #1: c0-loopback ......................   Passed   24.54 sec\n    Start 2: c1-recorder\n2/6 Test #2: c1-recorder ......................   Passed    9.94 sec\n    Start 3: c2-reliability\n3/6 Test #3: c2-reliability ...................   Passed   24.28 sec\n    Start 4: c2-handoff-limit\n4/6 Test #4: c2-handoff-limit .................   Passed    0.86 sec\n    Start 5: c2-core\n5/6 Test #5: c2-core ..........................   Passed    8.05 sec\n    Start 6: c2-depth-edges\n6/6 Test #6: c2-depth-edges ...................   Passed    1.61 sec\n\n100% tests passed, 0 tests failed out of 6\n\nTotal Test time (real) =  69.29 sec\n",
+    "tsan_initial_5_pass_1_fixture_timing_failure": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/tsan\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/tsan\n    Start 1: c0-loopback\n1/6 Test #1: c0-loopback ......................   Passed   51.55 sec\n    Start 2: c1-recorder\n2/6 Test #2: c1-recorder ......................   Passed   18.71 sec\n    Start 3: c2-reliability\n3/6 Test #3: c2-reliability ...................   Passed   27.27 sec\n    Start 4: c2-handoff-limit\n4/6 Test #4: c2-handoff-limit .................   Passed    0.84 sec\n    Start 5: c2-core\n5/6 Test #5: c2-core ..........................***Failed    8.44 sec\nTraceback (most recent call last):\n  File \"/srv/recorder-data/sbmdr-c2-core.V3JFct/prototype/verify_core.py\", line 286, in <module>\n    asyncio.run(exercise(Path(tmp) / market, market))\n  File \"/usr/lib/python3.12/asyncio/runners.py\", line 194, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/asyncio/base_events.py\", line 687, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/srv/recorder-data/sbmdr-c2-core.V3JFct/prototype/verify_core.py\", line 256, in exercise\n    assert all(b - a >= 0.20 for a, b in pairwise(first))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n\n    Start 6: c2-depth-edges\n6/6 Test #6: c2-depth-edges ...................   Passed    1.25 sec\n\n83% tests passed, 1 tests failed out of 6\n\nTotal Test time (real) = 108.05 sec\n\nThe following tests FAILED:\n\t  5 - c2-core (Failed)\nErrors while running CTest\n",
+    "fixture_timing_diagnosis": {
+      "old_test_period_ms": 1800,
+      "old_phase_spacing_ms": 300,
+      "observed_tsan_first_directory_to_depth_seconds": 0.444,
+      "first_poll_offsets_seconds": [
+        0.455,
+        0.594,
+        0.893,
+        1.194,
+        1.494
+      ],
+      "cause": "TSan directory preparation delayed first due poll; original pairwise >=200ms assertion saw only 139ms before second phase. No race diagnostic.",
+      "new_test_period_ms": 6000,
+      "new_phase_spacing_ms": 1000,
+      "production_period_ms": 300000,
+      "assertion_preserved_ms": 200,
+      "shutdown_deadlines_unchanged": true,
+      "diagnostic_log": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/tsan\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/tsan\n    Start 5: c2-core\n1/1 Test #5: c2-core ..........................***Failed    8.22 sec\nTraceback (most recent call last):\n  File \"/srv/recorder-data/sbmdr-c2-core.V3JFct/prototype/verify_core.py\", line 289, in <module>\n    asyncio.run(exercise(Path(tmp) / market, market))\n  File \"/usr/lib/python3.12/asyncio/runners.py\", line 194, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/asyncio/base_events.py\", line 687, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/srv/recorder-data/sbmdr-c2-core.V3JFct/prototype/verify_core.py\", line 256, in exercise\n    assert all(b - a >= 0.20 for a, b in pairwise(first)), {\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: {'first_poll_offsets': [0.455, 0.594, 0.893, 1.194, 1.494], 'requests': [('/fapi/v1/exchangeInfo', 0.0), ('/fapi/v1/depth', 0.444), ('/fapi/v1/openInterest', 0.455), ('/futures/data/topLongShortAccountRatio', 0.594), ('/fapi/v1/depth', 0.666), ('/futures/data/topLongShortPositionRatio', 0.893), ('/futures/data/globalLongShortAccountRatio', 1.194), ('/fapi/v1/depth', 1.28), ('/futures/data/takerlongshortRatio', 1.494), ('/fapi/v1/openInterest', 2.093), ('/futures/data/topLongShortAccountRatio', 3.097), ('/futures/data/topLongShortPositionRatio', 3.104), ('/futures/data/globalLongShortAccountRatio', 3.152), ('/futures/data/takerlongshortRatio', 3.294)]}\n\n\n0% tests passed, 1 tests failed out of 1\n\nTotal Test time (real) =   8.22 sec\n\nThe following tests FAILED:\n\t  5 - c2-core (Failed)\nErrors while running CTest\n"
+    },
+    "final_core_release": {
+      "log": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/release\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/release\n    Start 5: c2-core\n1/1 Test #5: c2-core ..........................   Passed   15.19 sec\n\n100% tests passed, 0 tests failed out of 1\n\nTotal Test time (real) =  15.20 sec\n",
+      "report": [
+        {
+          "market": "spot",
+          "records": 15,
+          "snapshots_bridged": 3,
+          "http_requests": 6,
+          "test_poll_period_ms": 6000,
+          "rest_sources": [
+            "depth_snapshot",
+            "exchange_info"
+          ],
+          "status": "PASS"
+        },
+        {
+          "market": "usdm",
+          "records": 23,
+          "snapshots_bridged": 3,
+          "http_requests": 14,
+          "test_poll_period_ms": 6000,
+          "rest_sources": [
+            "depth_snapshot",
+            "exchange_info",
+            "global_long_short_ratio_5m",
+            "open_interest",
+            "taker_buy_sell_volume_5m",
+            "top_long_short_account_ratio_5m",
+            "top_long_short_position_ratio_5m"
+          ],
+          "status": "PASS"
+        }
+      ]
+    },
+    "final_core_asan": {
+      "log": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/asan\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/asan\n    Start 5: c2-core\n1/1 Test #5: c2-core ..........................   Passed   15.83 sec\n\n100% tests passed, 0 tests failed out of 1\n\nTotal Test time (real) =  15.84 sec\n",
+      "report": [
+        {
+          "market": "spot",
+          "records": 15,
+          "snapshots_bridged": 3,
+          "http_requests": 6,
+          "test_poll_period_ms": 6000,
+          "rest_sources": [
+            "depth_snapshot",
+            "exchange_info"
+          ],
+          "status": "PASS"
+        },
+        {
+          "market": "usdm",
+          "records": 23,
+          "snapshots_bridged": 3,
+          "http_requests": 14,
+          "test_poll_period_ms": 6000,
+          "rest_sources": [
+            "depth_snapshot",
+            "exchange_info",
+            "global_long_short_ratio_5m",
+            "open_interest",
+            "taker_buy_sell_volume_5m",
+            "top_long_short_account_ratio_5m",
+            "top_long_short_position_ratio_5m"
+          ],
+          "status": "PASS"
+        }
+      ]
+    },
+    "final_core_tsan": {
+      "log": "Internal ctest changing into directory: /srv/recorder-data/sbmdr-c2-core.V3JFct/tsan\nTest project /srv/recorder-data/sbmdr-c2-core.V3JFct/tsan\n    Start 5: c2-core\n1/1 Test #5: c2-core ..........................   Passed   15.95 sec\n\n100% tests passed, 0 tests failed out of 1\n\nTotal Test time (real) =  15.95 sec\n",
+      "report": [
+        {
+          "market": "spot",
+          "records": 15,
+          "snapshots_bridged": 3,
+          "http_requests": 6,
+          "test_poll_period_ms": 6000,
+          "rest_sources": [
+            "depth_snapshot",
+            "exchange_info"
+          ],
+          "status": "PASS"
+        },
+        {
+          "market": "usdm",
+          "records": 23,
+          "snapshots_bridged": 3,
+          "http_requests": 14,
+          "test_poll_period_ms": 6000,
+          "rest_sources": [
+            "depth_snapshot",
+            "exchange_info",
+            "global_long_short_ratio_5m",
+            "open_interest",
+            "taker_buy_sell_volume_5m",
+            "top_long_short_account_ratio_5m",
+            "top_long_short_position_ratio_5m"
+          ],
+          "status": "PASS"
+        }
+      ]
+    },
+    "sigterm_cases": "12 stop-before-wait/backoff-boundary attempts per Release/ASan/TSan reliability suite, <1.5s on healthy HTTP; existing 12s allowance for draining a started 10s HTTP request unchanged",
+    "fault_injection": "Linux-only LD_PRELOAD on isolated loopback child, excluded from sanitizer test list because runtime interposition must be a separate unsanitized process; public processes never preload it"
+  },
+  "public_functional_smoke": [
+    {
+      "market": "spot",
+      "report": {
+        "records": 198,
+        "test_pause_start_monotonic_ns": 0,
+        "test_pause_finish_monotonic_ns": 0,
+        "test_pause_backlog_drain_ns": null,
+        "sealed": 2,
+        "rotations": {
+          "shutdown": 2
+        },
+        "max_durability_ns": 961388210,
+        "max_receive_to_append_ns": 48331227,
+        "receive_to_append_p99_ms": 13,
+        "max_status_cpu_percent": 44.690525380862965,
+        "stop_reason": "SIGNAL",
+        "peak_queue_payload_bytes": 427519,
+        "peak_queue_records": 1,
+        "wall_seconds": 20.085595221,
+        "cpu_seconds": 0.83382,
+        "peak_rss_bytes": 22536192,
+        "allocation_counter_enabled": false,
+        "new_calls": null,
+        "new_requested_bytes": null,
+        "interrupted": true
+      },
+      "ws_records": 196,
+      "rest_records": 2,
+      "rest_source_counts": {
+        "exchange_info": 1,
+        "depth_snapshot": 1
+      },
+      "response_statuses": {
+        "exchange_info": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "depth_snapshot": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ]
+      },
+      "ws_depth_bridge_records": 195,
+      "ws_sequence_gap_records": 0,
+      "independent_raw_readback": "PASS",
+      "retained_real_data_root": "/root/.local/share/BinanceMarketDataRecorder/S-BMDR/c2-core-spot.sdiBre",
+      "readback_sha256": "d1ad0995a62ded36406e853608da17e11e3531d2e7f21ad5086bdff159964a4b",
+      "rest_request_offsets_seconds": [
+        {
+          "source": "exchange_info",
+          "seconds": 0.0
+        },
+        {
+          "source": "depth_snapshot",
+          "seconds": 0.279195479
+        }
+      ]
+    },
+    {
+      "market": "usdm",
+      "report": {
+        "records": 3046,
+        "test_pause_start_monotonic_ns": 0,
+        "test_pause_finish_monotonic_ns": 0,
+        "test_pause_backlog_drain_ns": null,
+        "sealed": 3,
+        "rotations": {
+          "shutdown": 3
+        },
+        "max_durability_ns": 1127441682,
+        "max_receive_to_append_ns": 86382825,
+        "receive_to_append_p99_ms": 9,
+        "max_status_cpu_percent": 23.574563609398872,
+        "stop_reason": "SIGNAL",
+        "peak_queue_payload_bytes": 1563732,
+        "peak_queue_records": 3,
+        "wall_seconds": 310.213726877,
+        "cpu_seconds": 4.936537,
+        "peak_rss_bytes": 30380032,
+        "allocation_counter_enabled": false,
+        "new_calls": null,
+        "new_requested_bytes": null,
+        "interrupted": true
+      },
+      "ws_records": 3039,
+      "rest_records": 7,
+      "rest_source_counts": {
+        "exchange_info": 1,
+        "depth_snapshot": 1,
+        "open_interest": 1,
+        "top_long_short_account_ratio_5m": 1,
+        "top_long_short_position_ratio_5m": 1,
+        "global_long_short_ratio_5m": 1,
+        "taker_buy_sell_volume_5m": 1
+      },
+      "response_statuses": {
+        "exchange_info": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "depth_snapshot": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "open_interest": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "top_long_short_account_ratio_5m": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "top_long_short_position_ratio_5m": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "global_long_short_ratio_5m": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ],
+        "taker_buy_sell_volume_5m": [
+          {
+            "status": 200,
+            "valid": true
+          }
+        ]
+      },
+      "ws_depth_bridge_records": 3038,
+      "ws_sequence_gap_records": 0,
+      "independent_raw_readback": "PASS",
+      "retained_real_data_root": "/root/.local/share/BinanceMarketDataRecorder/S-BMDR/c2-core-usdm.AMQWAT",
+      "readback_sha256": "0411a1e36129e2b273656540b0d6994390de7dde984fa57e068db4aec23cfb99",
+      "rest_request_offsets_seconds": [
+        {
+          "source": "exchange_info",
+          "seconds": 0.0
+        },
+        {
+          "source": "depth_snapshot",
+          "seconds": 0.183502158
+        },
+        {
+          "source": "open_interest",
+          "seconds": 50.000551283
+        },
+        {
+          "source": "top_long_short_account_ratio_5m",
+          "seconds": 100.000477337
+        },
+        {
+          "source": "top_long_short_position_ratio_5m",
+          "seconds": 150.000744914
+        },
+        {
+          "source": "global_long_short_ratio_5m",
+          "seconds": 200.00088545
+        },
+        {
+          "source": "taker_buy_sell_volume_5m",
+          "seconds": 250.00100166
+        }
+      ]
+    }
+  ],
+  "public_smoke_measurement_scope": "Functional evidence. May overlap sanitizer compilation; not a production performance benchmark. Real Raw retained at listed roots.",
+  "core_limits": {
+    "workers": 3,
+    "queue_records": 8192,
+    "queue_payload_bytes": 67108864,
+    "depth_sequence_ranges": 8192,
+    "depth_range_data_bytes_upper_bound": 196608,
+    "rest_requests_per_minute": 100,
+    "spot_weight_per_minute": 2000,
+    "usdm_weight_per_minute": 1200,
+    "stats_requests_per_5_minutes": 800,
+    "directory_period_hours": 24,
+    "periodic_rest_seconds": 300,
+    "periodic_offsets_seconds": [
+      50,
+      100,
+      150,
+      200,
+      250
+    ]
+  },
+  "source_access_note": "Official current REST catalog says topLongShortAccountRatio requires API key; this native unkeyed smoke nevertheless returned HTTP 200 valid for all 7 sources. Record both; no API key support added and no promise of permanent unkeyed access.",
+  "final_host_state": {
+    "old_service_active": "inactive",
+    "old_service_enabled": "disabled",
+    "space": "Filesystem       1B-blocks        Used   Available Use% Mounted on\n/dev/vda1      61285326848 40442499072 20826050560  67% /\n",
+    "remaining_test_recorders": "",
+    "finish_utc": "2026-11-08T09:05:33+00:00"
+  },
+  "evidence_root": "/srv/recorder-data/sbmdr-c2-core.V3JFct/results",
+  "raw_evidence_sha256": {
+    "release-ctest-final.log": "77d251e01ce76c502f835ed74542fbd19fea3881e8f3759236b6f6a4b3a27f72",
+    "recovery-10-cases-detail.log": "813295f8216f93e0e90eb90312a81c15ca9b4395ace1971bc402f4f08c98368e",
+    "ctest-asan.log": "cd50bd6f7bb19561bd27fc703cf7ef8b9bd7afbf60eb30b47c54630b2ad59c36",
+    "ctest-tsan.log": "c4afb0151e97fff98c75c7d49263b553f3c6e2c3ca83198773bcaacc20707912",
+    "final-core-tsan-detail.log": "93d91d0e4b1be53bc2ae11051b6c6aace012fb72744639eb3156c7fd55dc5d06",
+    "public-core-summary.json": "1e76610520652b29e0ab1f1cfaa8e1786f3520eb921de868839e7c69fc9c86fd"
+  },
+  "next": "C3 explicit symbol whitelist and multiple scarce streams. C4/C5 not implemented; natural 23h renewal/24h production qualification remains in C5. No kline backfill or old-bucket retry state machine.",
+  "c1_capacity_boundary": "Retained as failed in c1-closeout-20261107.json; this C2 signoff does not reopen or relabel the synthetic capacity test."
+}

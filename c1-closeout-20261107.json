@@ -201,7 +201,8 @@
     ],
     "end_utc": "2026-11-07T16:18:57+00:00",
     "raw_report_sha256": "c46a22dfa2297ff9d5f62b6d5c7c2e5b3752023e90a7ae90944a3d43e775ecb1",
-    "diagnosis_limit": "Observed bounded WS enqueue timeout during repeated burst/rotation workload. No stage trace proves exact sealing/fsync/REST overlap; 0-ms arrival and a specific root-cause duration are not independently measured. Full independent readback was not reached."
+    "diagnosis_limit": "Observed bounded WS enqueue timeout during repeated burst/rotation workload. No stage trace proves exact sealing/fsync/REST overlap; 0-ms arrival and a specific root-cause duration are not independently measured. Full independent readback was not reached.",
+    "max_cpu_sample_elapsed_seconds": 1201.122884063
   },
   "public_tls_smoke": {
     "date_utc": "2026-11-07T16:23:46.925661+00:00",

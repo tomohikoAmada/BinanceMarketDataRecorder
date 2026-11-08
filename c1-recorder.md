@@ -4,7 +4,7 @@
 
 ## 实现
 
-- 公开入口使用 Spot BTCUSDT S02 100 ms 深度流与 S01 `exchangeInfo?symbol=BTCUSDT`。WS 使用 Boost.Beast TLS，REST 使用 libcurl multi。两个连接均校验证书，使用只读公开市场端点。完整响应仅保留一份 base64 主体表示。公开模式每小时发起一次 REST 请求，并在 HTTP 418/429 后按服务端指示冷却。完整响应可封存，截断响应记录传输失败并保留冷却约束。REST 工作线程跨请求复用 libcurl 连接缓存。[官方端点记录](docs/binance_sources.md)
+- 公开入口使用 Spot BTCUSDT S02 100 ms 深度流与 S01 `exchangeInfo?symbol=BTCUSDT`。WS 使用 Boost.Beast TLS，REST 使用 libcurl multi。两个连接均校验证书，使用只读公开市场端点。完整响应仅保留一份 base64 主体表示。C1 签收版本每小时发起一次 REST 请求；后续 C2 公共入口改为启动/每日目录、按需 depth 快照及 5 分钟衍生品轮询，见[核心可靠性](c2-reliability.md)。HTTP 418/429 后按服务端指示冷却。完整响应可封存，截断响应记录传输失败并保留冷却约束。REST 工作线程跨请求复用 libcurl 连接缓存。[官方端点记录](docs/binance_sources.md)
 - WS、REST、存储各占一个工作线程。拥有型 payload 经 8,192 条 / 64 MiB 队列移交，写线程分批消费。网络线程不写 Raw。存储端用单调时钟在最多约 900 ms 间隔调度 fsync，并计算真实接收至成功同步的延迟。SIGINT/SIGTERM 停止接收，等待在途 HTTP 完成，排空队列后封存。
 - 首条记录才打开同源 Raw active 文件。时间或大小先到即轮换，默认 **900 秒 / 128 MiB**。写入时计算 Raw SHA-256，封存时流式压缩为 Zstd level 3 并计算压缩 SHA-256。压缩文件、manifest 和 Catalog 依序发布，最后移除已封存的内部 active。封存中断时保留 active，启动检查会提示处理残留。崩溃恢复和重连后自动补齐在 C2。
 - SQLite 使用 WAL + NORMAL，记录进程启动、chunk 生命周期与摘要。独立读取器在只读 Catalog 下复用冻结的 Python Raw reader，检查压缩和解压哈希、CBOR、CRC、记录数量与身份，按 chunk 导出 NDJSON。
