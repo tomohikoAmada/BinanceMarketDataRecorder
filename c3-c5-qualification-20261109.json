@@ -752,7 +752,20 @@
     "system_minimum_free_bytes": 20396797952,
     "error": "RuntimeError('usdm recorder exited early: 1')",
     "finish_utc": "2026-11-08T21:57:29.889877+00:00",
-    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-third-preflight"
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-third-preflight",
+    "stored_raw_readback": {
+      "spot": {
+        "status": "PASS",
+        "records": 334600,
+        "chunks": 50
+      },
+      "usdm": {
+        "status": "PASS",
+        "records": 630424,
+        "chunks": 75
+      }
+    },
+    "catalog_repair_required": false
   },
   "c4_ten_timer_preflight": {
     "status": "SUPERSEDED_ARCHIVE_TIMER_FIX",
