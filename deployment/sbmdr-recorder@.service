@@ -1,0 +1,31 @@
+[Unit]
+Description=S-BMDR configured %i recorder
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/srv/recorder-data
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=exec
+User=bmdr
+Group=bmdr
+EnvironmentFile=/etc/sbmdr/%i.env
+Environment=PYTHONPATH=/opt/sbmdr/current/python/src
+WorkingDirectory=/var/lib/binance-market-data-recorder/S-BMDR
+ExecStartPre=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/prototype/recover_raw.py ${ROOT}
+ExecStart=/opt/sbmdr/current/release/sbmdr-c0 record --public ${ROOT} 9223372036854775807 /etc/ssl/certs/ca-certificates.crt %i /etc/sbmdr/config.json
+Restart=no
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=180
+KillSignal=SIGTERM
+UMask=0027
+NoNewPrivileges=true
+CPUAccounting=true
+MemoryAccounting=true
+StandardOutput=append:/var/log/sbmdr/%i.stdout.jsonl
+StandardError=append:/var/log/sbmdr/%i.status.jsonl
+
+[Install]
+WantedBy=multi-user.target

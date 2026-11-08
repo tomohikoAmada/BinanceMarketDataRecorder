@@ -1,0 +1,291 @@
+"""Bounded real-time qualification; completion requires stopped-process full Raw readback."""
+
+import argparse
+import hashlib
+import json
+import signal
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def save(path, value):
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n")
+    temporary.replace(path)
+
+
+class SystemdChild:
+    def __init__(self, market):
+        self.unit = f"sbmdr-recorder@{market}.service"
+        subprocess.run(["systemctl", "start", self.unit], check=True)
+        self.pid = int(self.property("MainPID"))
+        if not self.pid:
+            raise RuntimeError(f"{self.unit} did not start")
+        self.returncode = None
+
+    def property(self, name):
+        return subprocess.check_output(
+            ["systemctl", "show", self.unit, "--property", name, "--value"], text=True
+        ).strip()
+
+    def poll(self):
+        if self.property("ActiveState") == "active":
+            if (
+                int(self.property("MainPID")) == self.pid
+                and int(self.property("NRestarts")) == 0
+            ):
+                return None
+            self.returncode = 1
+        else:
+            self.returncode = (
+                0
+                if self.property("Result") == "success"
+                and self.property("ExecMainStatus") == "0"
+                else 1
+            )
+        return self.returncode
+
+    def send_signal(self, sig):
+        subprocess.run(["systemctl", "kill", f"--signal={sig}", self.unit], check=True)
+
+    def wait(self, timeout):
+        deadline = time.monotonic() + timeout
+        while self.poll() is None:
+            if time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(self.unit, timeout)
+            time.sleep(0.2)
+        return self.returncode
+
+    def kill(self):
+        self.send_signal(signal.SIGKILL)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--release", type=Path, required=True)
+    p.add_argument("--config", type=Path, required=True)
+    p.add_argument("--root", type=Path, required=True)
+    p.add_argument("--evidence", type=Path, required=True)
+    p.add_argument("--seconds", type=int, required=True)
+    p.add_argument("--services", action="store_true")
+    p.add_argument("--rss-limit-mib", type=int, default=768)
+    p.add_argument("--cpu-limit-percent", type=float, default=200)
+    a = p.parse_args()
+    a.evidence.mkdir(parents=True, exist_ok=True)
+    symbols = json.loads(a.config.read_text())
+    children = {}
+    handles = []
+    report = {
+        "status": "RUNNING",
+        "start_utc": datetime.now(timezone.utc).isoformat(),
+        "seconds_required": a.seconds,
+        "config": symbols,
+        "binary_sha256": hashlib.sha256(
+            (a.release / "release/sbmdr-c0").read_bytes()
+        ).hexdigest(),
+        "markets": {},
+    }
+    save(a.evidence / "progress.json", report)
+    try:
+        for market in ("spot", "usdm"):
+            root = a.root / market
+            root.mkdir(parents=True, exist_ok=True)
+            if a.services:
+                child = SystemdChild(market)
+            else:
+                out = (a.evidence / f"{market}.json").open("w")
+                err = (a.evidence / f"{market}.jsonl").open("w")
+                handles.extend([out, err])
+                child = subprocess.Popen(
+                    [
+                        a.release / "release/sbmdr-c0",
+                        "record",
+                        "--public",
+                        root,
+                        "9223372036854775807",
+                        "/etc/ssl/certs/ca-certificates.crt",
+                        market,
+                        a.config,
+                    ],
+                    stdout=out,
+                    stderr=err,
+                )
+            children[market] = child
+            report["markets"][market] = {"pid": child.pid, "root": str(root)}
+        start = time.monotonic()
+        while time.monotonic() - start < a.seconds:
+            for market, child in children.items():
+                if child.poll() is not None:
+                    raise RuntimeError(
+                        f"{market} recorder exited early: {child.returncode}"
+                    )
+                status = Path(f"/proc/{child.pid}/status").read_text()
+                report["markets"][market]["rss_kib"] = int(
+                    status.split("VmRSS:")[1].split()[0]
+                )
+            report["elapsed_seconds"] = time.monotonic() - start
+            save(a.evidence / "progress.json", report)
+            time.sleep(min(30, max(0, a.seconds - report["elapsed_seconds"])))
+        for child in children.values():
+            child.send_signal(signal.SIGTERM)
+        if a.services:
+            subprocess.run(["systemctl", "stop", "sbmdr-archive.timer"], check=True)
+            deadline = time.monotonic() + 180
+            while subprocess.check_output(
+                [
+                    "systemctl",
+                    "show",
+                    "sbmdr-archive.service",
+                    "--property",
+                    "ActiveState",
+                    "--value",
+                ],
+                text=True,
+            ).strip() in {"active", "activating", "deactivating"}:
+                if time.monotonic() > deadline:
+                    raise RuntimeError("archive worker did not quiesce")
+                time.sleep(1)
+        for market, child in children.items():
+            child.wait(timeout=180)
+            if a.services:
+                import shutil
+
+                shutil.copyfile(
+                    f"/var/log/sbmdr/{market}.stdout.jsonl",
+                    a.evidence / f"{market}.json",
+                )
+                shutil.copyfile(
+                    f"/var/log/sbmdr/{market}.status.jsonl",
+                    a.evidence / f"{market}.jsonl",
+                )
+            if child.returncode != 0:
+                raise RuntimeError(f"{market} exit {child.returncode}")
+            result = json.loads((a.evidence / f"{market}.json").read_text())
+            assert result["wall_seconds"] >= a.seconds
+            report["markets"][market]["recorder"] = result
+        report["status"] = "VERIFYING"
+        save(a.evidence / "progress.json", report)
+        for market in children:
+            target = a.evidence / f"{market}-readback.json"
+            with target.open("w") as out:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        a.release / "prototype/operations.py",
+                        "verify",
+                        a.root / market,
+                    ],
+                    stdout=out,
+                    check=True,
+                )
+            readback = json.loads(target.read_text())
+            assert (
+                readback["records"] == report["markets"][market]["recorder"]["records"]
+            )
+            for symbol in symbols[market]:
+                prefix = f"{'spot' if market == 'spot' else 'um_perpetual'}/{symbol}/"
+                for stream in (
+                    ("diff_depth", "book_ticker", "agg_trade")
+                    if market == "spot"
+                    else ("diff_depth", "book_ticker", "agg_trade", "mark_price")
+                ):
+                    assert readback["source_counts"].get(prefix + stream, 0) > 0, (
+                        market,
+                        symbol,
+                        stream,
+                    )
+                assert any(
+                    key.startswith(prefix) and key.endswith("/depth_bridge") and value
+                    for key, value in readback["capture_flags"].items()
+                )
+            report["markets"][market]["readback"] = readback
+        report["cpu_mean_percent"] = sum(
+            100 * m["recorder"]["cpu_seconds"] / m["recorder"]["wall_seconds"]
+            for m in report["markets"].values()
+        )
+        report["peak_rss_sum_bytes"] = sum(
+            m["recorder"]["peak_rss_bytes"] for m in report["markets"].values()
+        )
+        assert report["cpu_mean_percent"] <= a.cpu_limit_percent
+        assert report["peak_rss_sum_bytes"] <= a.rss_limit_mib * 1024**2
+        if a.services:
+            import shutil
+
+            archive_log = Path("/var/log/sbmdr/archive.jsonl")
+            archived = (
+                [json.loads(line) for line in archive_log.read_text().splitlines()]
+                if archive_log.exists()
+                else []
+            )
+            shutil.copyfile(archive_log, a.evidence / "archive.jsonl")
+            report["archival"] = {
+                "passes": len(archived),
+                "failed_passes": sum(row["failed"] for row in archived),
+                "cpu_seconds": sum(row["cpu_seconds"] for row in archived),
+                "peak_rss_upper_bound_bytes": max(
+                    (row["peak_rss_upper_bound_bytes"] for row in archived), default=0
+                ),
+            }
+            report["cpu_mean_with_archive_percent"] = (
+                report["cpu_mean_percent"]
+                + 100 * report["archival"]["cpu_seconds"] / a.seconds
+            )
+            report["rss_with_archive_upper_bound_bytes"] = (
+                report["peak_rss_sum_bytes"]
+                + report["archival"]["peak_rss_upper_bound_bytes"]
+            )
+            assert report["cpu_mean_with_archive_percent"] <= a.cpu_limit_percent
+            assert (
+                report["rss_with_archive_upper_bound_bytes"]
+                <= a.rss_limit_mib * 1024**2
+            )
+            assert archived and any(not row["failed"] for row in archived)
+            for market in children:
+                assert (
+                    report["markets"][market]["readback"]["archive_states"].get(
+                        "LOCAL_DELETED", 0
+                    )
+                    > 0
+                ), "no verified production archival"
+        if a.services and a.seconds >= 86400:
+            renewal = []
+            for market in children:
+                elapsed = 0
+                for line in (a.evidence / f"{market}.jsonl").read_text().splitlines():
+                    event = json.loads(line)
+                    elapsed = event.get("elapsed_seconds", elapsed)
+                    if event.get("event") == "WS_RECONNECT":
+                        renewal.append(
+                            {"market": market, "elapsed_seconds": elapsed, **event}
+                        )
+            report["reconnections"] = renewal
+            assert any(
+                e["elapsed_seconds"] >= 82740 and e.get("accepted", 0) > 0
+                for e in renewal
+            ), "23h connection renewal not observed"
+        report["status"] = "PASS"
+    except BaseException as error:
+        report["status"] = "FAILED"
+        report["error"] = repr(error)
+        raise
+    finally:
+        for child in children.values():
+            if child.poll() is None:
+                child.send_signal(signal.SIGTERM)
+        for child in children.values():
+            try:
+                child.wait(timeout=180)
+            except subprocess.TimeoutExpired:
+                child.kill()
+                child.wait()
+        for handle in handles:
+            handle.close()
+        report["finish_utc"] = datetime.now(timezone.utc).isoformat()
+        save(a.evidence / "progress.json", report)
+
+
+if __name__ == "__main__":
+    main()

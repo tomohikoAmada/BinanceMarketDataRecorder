@@ -218,6 +218,7 @@ class RecorderStorage {
         std::unique_ptr<RawFile> raw;
         fs::path active;
         steady_clock::time_point opened;
+        std::int64_t last_append = 0;
         bool first = true;
         bool overload_gap = false;
     };
@@ -228,6 +229,8 @@ class RecorderStorage {
     std::uint64_t byte_limit_;
     std::map<std::string, Slot> slots_;
     DepthBridge depth_;
+    DepthRequests* requests_;
+    std::map<std::string, std::unique_ptr<DepthBridge>> bridges_;
     Bytes scratch_;
     steady_clock::time_point next_sync_ = steady_clock::now() + milliseconds(900);
 
@@ -274,7 +277,7 @@ class RecorderStorage {
             {"fsync_completed_at_utc_ns", raw.fsync_utc},
             {"market", raw.market},
             {"symbol", raw.symbol},
-            {"stream", rest ? "rest_observations" : "ws_market_c0_depth"},
+            {"stream", raw.stream},
             {"receive_time_utc_range_ns", raw.utc_range},
             {"receive_monotonic_range_ns", raw.mono_range},
             {"exchange_time_ranges", raw.exchange_ranges},
@@ -343,7 +346,7 @@ class RecorderStorage {
     RecorderStorage(fs::path root, std::string run, milliseconds period, std::uint64_t bytes,
                     DepthRequests* depth_requests = nullptr)
         : root_(std::move(root)), catalog_(root_ / "state/catalog.sqlite"), run_(std::move(run)),
-          period_(period), byte_limit_(bytes), depth_(depth_requests) {
+          period_(period), byte_limit_(bytes), depth_(depth_requests), requests_(depth_requests) {
         catalog_.startup(run_);
     }
 
@@ -363,9 +366,13 @@ class RecorderStorage {
     }
 
     void append(Message& message) {
-        depth_.observe(message);
-        const auto symbol = message.rest && !message.symbol_scoped ? "__GLOBAL__" : "BTCUSDT";
-        auto& slot = slots_[message.market + "/" + symbol + (message.rest ? "/rest" : "/ws")];
+        if (requests_ && !requests_->children.empty() && (message.stream == "diff_depth" || message.source_stream == "depth_snapshot")) {
+            auto& bridge = bridges_[message.symbol];
+            if (!bridge) bridge = std::make_unique<DepthBridge>(&requests_->for_symbol(message.symbol));
+            bridge->observe(message);
+        } else if (!requests_ || requests_->children.empty()) depth_.observe(message);
+        const std::string symbol = message.rest && !message.symbol_scoped ? "__GLOBAL__" : message.symbol;
+        auto& slot = slots_[message.market + "/" + symbol + (message.rest ? "/rest" : "/" + message.stream)];
         const bool first = !slot.raw;
         if (first) {
             slot.raw = std::make_unique<RawFile>();
@@ -376,12 +383,23 @@ class RecorderStorage {
         if (first)
             catalog_.active(*slot.raw, slot.active);
         const auto append_ns = ns<steady_clock>() - message.mono;
+        slot.last_append = append_ns + message.mono;
         max_append_ns = std::max(max_append_ns, append_ns);
         const auto bucket = static_cast<std::size_t>((append_ns + 999999) / 1000000);
         ++append_histogram_[std::min(bucket, append_histogram_.size() - 1)];
         ++append_count_;
         if (slot.raw->bytes >= byte_limit_)
             rotate(slot, message.rest, "size");
+    }
+
+    Json source_status() const {
+        Json rows = Json::object();
+        for (const auto& [key, slot] : slots_) if (slot.raw) {
+            const auto& raw = *slot.raw;
+            rows[key] = {{"active_chunk_records", raw.records}, {"last_receive_utc_ns", raw.utc_range.at("max")},
+                         {"last_append_monotonic_ns", slot.last_append}, {"fsync_completed_utc_ns", raw.fsync_utc}, {"capture_flags", raw.flags}};
+        }
+        return rows;
     }
 
     void mark_overload(bool rest, bool symbol_scoped, const std::string& market) {

@@ -1,0 +1,14 @@
+[Unit]
+Description=S-BMDR verified cross-disk archival
+RequiresMountsFor=/srv/recorder-data
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=bmdr
+Group=bmdr
+Environment=PYTHONPATH=/opt/sbmdr/current/python/src
+ExecStart=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/deployment/archive_tick.py
+TimeoutStartSec=130
+UMask=0027
+NoNewPrivileges=true

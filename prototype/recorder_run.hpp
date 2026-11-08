@@ -58,39 +58,52 @@ seconds cooldown_delay(const RestResult& result) {
 
 void run_core_rest(const std::string& port, Handoff& queue, const std::optional<std::string>& ca,
                    const std::string& run, std::stop_token stop, DepthRequests& depth, bool usdm,
-                   milliseconds period) {
+                   milliseconds period, const CaptureConfig* config = nullptr) {
     struct Poll { RestSource source; steady_clock::time_point due; milliseconds period; };
     const auto start = steady_clock::now();
-    std::vector<Poll> polls{{directory_source(usdm), start, duration_cast<milliseconds>(hours(24))}};
+    const auto symbols = config ? config->symbols : std::vector<std::string>{"BTCUSDT"};
+    std::vector<Poll> polls;
+    auto directory = directory_source(usdm);
+    if (config) directory.parameters = usdm ? Json::object() : Json{{"symbols", config->symbols}};
+    polls.push_back({directory, config ? start + hours(24) : start, duration_cast<milliseconds>(hours(24))});
+    const auto sources = periodic_sources();
     if (usdm) {
-        const auto sources = periodic_sources();
-        for (std::size_t i = 0; i < sources.size(); ++i)
-            polls.push_back({sources[i], start + period * (i + 1) / (sources.size() + 1), period});
+        std::size_t index = 0;
+        for (const auto& symbol : symbols) for (auto source : sources) {
+            source.parameters["symbol"] = symbol;
+            polls.push_back({source, start + period * (++index) / (symbols.size()*sources.size()+1), period});
+        }
     }
-    const auto snapshot = depth_source(usdm);
-    auto snapshot_due = start, cooldown = start;
-    std::uint64_t completed_epoch = 0, observed_epoch = 0;
+    std::vector<std::uint64_t> completed(symbols.size(), 0);
+    std::vector<steady_clock::time_point> retry(symbols.size(), start);
+    auto cooldown = start;
+    auto epochs = [&] {
+        std::vector<std::uint64_t> result;
+        for (const auto& symbol : symbols) result.push_back(depth.for_symbol(symbol).epoch.load());
+        return result;
+    };
     AttemptWindow requests(100, seconds(60)), weights(usdm ? 1200 : 2000, seconds(60)),
                   statistics(800, seconds(300));
     const auto multi = make_rest_multi();
     while (!stop.stop_requested()) {
-        const auto epoch = depth.epoch.load();
-        if (epoch != observed_epoch) {
-            observed_epoch = epoch;
-            snapshot_due = steady_clock::now();
-        }
-        const bool take_snapshot = epoch != completed_epoch;
+        const auto observed = epochs();
         auto next = std::min_element(polls.begin(), polls.end(), [](const auto& a, const auto& b) { return a.due < b.due; });
-        const auto& source = take_snapshot ? snapshot : next->source;
+        std::size_t selected = symbols.size();
+        for (std::size_t i = 0; i < symbols.size(); ++i)
+            if (observed[i] != completed[i] && (selected == symbols.size() || retry[i] < retry[selected])) selected = i;
+        const bool take_snapshot = selected != symbols.size();
+        auto source = take_snapshot ? depth_source(usdm) : next->source;
+        const auto epoch = take_snapshot ? observed[selected] : 0;
+        if (take_snapshot) source.parameters["symbol"] = symbols[selected];
         const auto now = steady_clock::now();
-        auto due = std::max({take_snapshot ? snapshot_due : next->due, cooldown,
+        auto due = std::max({take_snapshot ? retry[selected] : next->due, cooldown,
                              requests.ready_at(now), weights.ready_at(now, source.weight)});
         if (source.statistics)
             due = std::max(due, statistics.ready_at(now));
-        depth.wake.until(stop, due, [&] { return depth.epoch.load() != observed_epoch; });
+        depth.wake.until(stop, due, [&] { return epochs() != observed; });
         if (stop.stop_requested())
             break;
-        if (depth.epoch.load() != observed_epoch)
+        if (epochs() != observed)
             continue;
         if (!queue.rest_admissible()) {
             depth.wake.until(stop, steady_clock::now() + milliseconds(100));
@@ -106,7 +119,7 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
         RestResult result{0, false, {}, {}};
         try {
             result = receive_rest(multi.get(), port, queue, ca, true, run, &source, usdm,
-                                  take_snapshot ? epoch : 0);
+                                  take_snapshot ? epoch : 0, source.stream == "exchange_info" ? config : nullptr);
         } catch (const IngressOverload&) { throw; }
           catch (const std::runtime_error& error) {
             status_line(Json{{"event", "REST_TRANSPORT_FAILURE"}, {"source", source.stream}, {"error", error.what()}});
@@ -121,8 +134,8 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
                              {"status", result.status}, {"error", result.transfer_error}});
         if (take_snapshot) {
             if (result.valid)
-                completed_epoch = epoch;
-            snapshot_due = steady_clock::now() + seconds(1);
+                completed[selected] = epoch;
+            retry[selected] = steady_clock::now() + seconds(1);
         } else {
             // A valid old/empty bucket is retained once. No catch-up or old-bucket retries.
             next->due += next->period;
@@ -133,13 +146,14 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
 }
 
 int record(int argc, char** argv) {
-    const bool public_capture = (argc == 6 || argc == 7) && std::string_view(argv[2]) == "--public";
-    const bool core = public_capture || argc == 11;
-    const std::string market = core ? (public_capture ? (argc == 7 ? argv[6] : "spot") : argv[10]) : "spot";
+    const bool public_capture = (argc == 6 || argc == 7 || argc == 8) && std::string_view(argv[2]) == "--public";
+    const bool core = public_capture || argc == 11 || argc == 12;
+    const std::string market = core ? (public_capture ? (argc >= 7 ? argv[6] : "spot") : argv[10]) : "spot";
     if (market != "spot" && market != "usdm")
         throw std::runtime_error("market must be spot or usdm");
     const bool usdm = market == "usdm";
-    if (!public_capture && argc != 7 && argc != 9 && argc != 10 && argc != 11) {
+    const auto config = (public_capture && argc == 8) || (!public_capture && argc == 12) ? std::optional<CaptureConfig>(CaptureConfig::load(public_capture ? argv[7] : argv[11], usdm)) : std::nullopt;
+    if (!public_capture && argc != 7 && argc != 9 && argc != 10 && argc != 11 && argc != 12) {
         throw std::runtime_error(
             "usage: sbmdr-c0 record WS_PORT HTTP_PORT WS_COUNT OUTPUT_DIR REST_INTERVAL_MS "
             "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS [spot|usdm]]] | record --public OUTPUT_DIR WS_COUNT CA_FILE [spot|usdm]");
@@ -214,6 +228,13 @@ int record(int argc, char** argv) {
     const auto allocated_start = allocated_bytes.load();
     Handoff queue;
     DepthRequests depth_requests;
+    if (config) {
+        depth_requests.initialize(*config);
+        auto directory = directory_source(usdm);
+        directory.parameters = usdm ? Json::object() : Json{{"symbols", config->symbols}};
+        auto multi = make_rest_multi();
+        receive_rest(multi.get(), http_port, queue, ca, true, run_id, &directory, usdm, 0, &*config);
+    }
     std::stop_source stop;
     std::atomic<unsigned> overloads{0};
     std::size_t records = 0;
@@ -223,6 +244,7 @@ int record(int argc, char** argv) {
             std::vector<Message> batch;
             batch.reserve(32);
             auto next_status = start + seconds(1);
+            auto next_sources = start + seconds(60);
             auto previous_status = start;
             auto previous_cpu = cpu_start;
             double max_status_cpu = 0;
@@ -265,6 +287,10 @@ int record(int argc, char** argv) {
                              {"max_durability_ns", storage.max_durability_ns},
                              {"elapsed_seconds", duration<double>(now - start).count()},
                              {"cpu_seconds", static_cast<double>(cpu - cpu_start) / CLOCKS_PER_SEC}});
+                    if (config && now >= next_sources) {
+                        status_line(Json{{"event", "SOURCE_STATUS"}, {"sources", storage.source_status()}});
+                        next_sources = now + seconds(60);
+                    }
                     previous_status = now;
                     previous_cpu = cpu;
                     next_status = now + seconds(1);
@@ -299,7 +325,7 @@ int record(int argc, char** argv) {
         }
     });
     const auto token = stop.get_token();
-    auto ws = std::async(std::launch::async, [&] {
+    auto launch_ws = [&](std::string target) { return std::async(std::launch::async, [&, target] {
         try {
             std::size_t accepted = 0;
             unsigned generation = 0, consecutive = 0;
@@ -312,7 +338,7 @@ int record(int argc, char** argv) {
                 budget.charge(steady_clock::now());
                 const auto before = accepted;
                 try {
-                    receive_ws(ws_port, ws_count - accepted, queue, token, ca, &accepted, generation, usdm);
+                    receive_ws(ws_port, ws_count - accepted, queue, token, ca, &accepted, generation, usdm, config ? &*config : nullptr, target);
                     break;
                 } catch (const boost::system::system_error& error) {
                     if (token.stop_requested())
@@ -341,10 +367,14 @@ int record(int argc, char** argv) {
             throw;
         }
     });
+    };
+    auto ws = launch_ws(config ? config->target(usdm, false) : "");
+    std::optional<std::future<void>> ws_market;
+    if (config && usdm) ws_market.emplace(launch_ws(config->target(true, true)));
     auto rest = std::async(std::launch::async, [&] {
         try {
             if (core) {
-                run_core_rest(http_port, queue, ca, run_id, token, depth_requests, usdm, rest_period);
+                run_core_rest(http_port, queue, ca, run_id, token, depth_requests, usdm, rest_period, config ? &*config : nullptr);
                 return;
             }
             RecorderWake wake;
@@ -431,6 +461,9 @@ int record(int argc, char** argv) {
             if (!failure)
                 failure = std::current_exception();
         }
+    }
+    if (ws_market) {
+        try { ws_market->get(); } catch (...) { if (!failure) failure = std::current_exception(); }
     }
     queue.close();
     auto report = writer.get();

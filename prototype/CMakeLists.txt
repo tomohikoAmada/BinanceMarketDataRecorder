@@ -45,3 +45,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CXX_FLAGS MATCHES "fsanitize
         "${CMAKE_CURRENT_SOURCE_DIR}/verify_recovery_boundaries.py"
         "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>")
 endif()
+add_test(NAME c3-configured COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_configured.py"
+    "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}")
+add_test(NAME c4-candles COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_candles.py")

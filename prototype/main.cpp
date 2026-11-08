@@ -16,6 +16,7 @@
 #include <array>
 #include <atomic>
 #include <charconv>
+#include <cctype>
 #include <chrono>
 #include <condition_variable>
 #include <csignal>
@@ -175,10 +176,13 @@ struct Message {
     Json flags = Json::array();
     Json exchange_time = nullptr;
     Json transaction_time = nullptr;
+    Json trade_time = nullptr;
     std::int64_t utc = 0, mono = 0, request_utc = 0, request_mono = 0;
     long status = 0;
     bool rest_valid = false;
     std::string content_type, retry_after;
+    std::string connection_group;
+    std::string symbol = "BTCUSDT", stream = "ws_market_c0_depth";
     std::string market = "spot", source_stream = "exchange_info", family = "S01";
     std::string path = "/api/v3/exchangeInfo";
     Json parameters = Json::object();
@@ -259,7 +263,7 @@ Bytes prepare_rest_payload(const Message& message, const std::string& run_id) {
             {"representation", "http-body-base64.v1"},
             {"family", message.family},
             {"source_stream", message.source_stream},
-            {"scope", message.symbol_scoped ? "BTCUSDT" : "__GLOBAL__"},
+            {"scope", message.symbol_scoped ? message.symbol : "__GLOBAL__"},
             {"venue_market", message.market == "spot" ? "spot" : "usdm"},
             {"request",
              {{"request_id", run_id + "-rest-" + std::to_string(message.request_mono)},
@@ -291,7 +295,7 @@ Bytes prepare_rest_payload(const Message& message, const std::string& run_id) {
 std::string connection_id(const Message& message, const std::string& run_id) {
     if (message.rest)
         return run_id + "-rest";
-    return run_id + "-ws" + (message.generation ? "-" + std::to_string(message.generation) : "");
+    return run_id + "-ws" + message.connection_group + (message.generation ? "-" + std::to_string(message.generation) : "");
 }
 
 class RawFile {
@@ -305,7 +309,8 @@ class RawFile {
 
     void append(const std::filesystem::path& path, Message& message, const std::string& run_id,
                 std::string_view version = "c0", Bytes* scratch = nullptr) {
-        stream = message.rest ? "rest_observations" : "ws_market_c0_depth";
+        stream = message.rest ? "rest_observations" : message.stream;
+        symbol = message.symbol;
         market = message.market;
         if (message.rest && !message.symbol_scoped)
             symbol = "__GLOBAL__";
@@ -353,7 +358,7 @@ class RawFile {
                 {"receive_monotonic_ns", message.mono},
                 {"exchange_event_time", message.exchange_time},
                 {"exchange_transaction_time", message.transaction_time},
-                {"exchange_trade_time", nullptr},
+                {"exchange_trade_time", message.trade_time},
                 {"source_sequence", message.sequence},
                 {"payload_encoding", message.rest ? "utf-8-json-provenance" : "utf-8-json-combined.v1"},
                 {"capture_flags", message.flags},
@@ -366,6 +371,7 @@ class RawFile {
         envelope["receive_monotonic_ns"] = message.mono;
         envelope["exchange_event_time"] = message.exchange_time;
         envelope["exchange_transaction_time"] = message.transaction_time;
+        envelope["exchange_trade_time"] = message.trade_time;
         envelope["source_sequence"] = canonical(message.sequence);
         envelope["capture_flags"] = message.flags;
         envelope["raw_payload"] = Json::binary(std::move(message.body));
@@ -578,10 +584,12 @@ class Handoff {
 
 template <class Stream>
 void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue, std::stop_token stop,
-             std::size_t* accepted, unsigned generation, bool usdm = false) {
+             std::size_t* accepted, unsigned generation, bool usdm = false, const CaptureConfig* config = nullptr, std::string group = "") {
     ws.read_message_max(frame_limit - max_encoded_metadata);
     simdjson::dom::parser parser;
     beast::flat_buffer buffer;
+    std::set<std::string> seen_streams;
+    std::map<std::string, std::uint64_t> previous_by_symbol;
     std::optional<std::uint64_t> previous;
     const auto renew = steady_clock::now() + hours(23);
     for (std::size_t i = 0; i < count && !stop.stop_requested(); ++i) {
@@ -612,6 +620,7 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
         }
         Message message;
         message.market = usdm ? "um_perpetual" : "spot";
+        message.connection_group = group;
         message.utc = ns<system_clock>();
         message.mono = ns<steady_clock>();
         const std::string_view wire(static_cast<const char*>(buffer.data().data()), buffer.size());
@@ -620,6 +629,18 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
         std::string_view stream, event, symbol;
         std::uint64_t time = 0, first = 0, last = 0;
         simdjson::dom::array bids, asks;
+        if (config) {
+            parse_configured_ws(message, wire, parser, *config, usdm);
+            if (message.stream == "diff_depth" && message.flags.empty()) {
+                const auto f = message.sequence.at("U").get<std::uint64_t>();
+                const auto l = message.sequence.at("u").get<std::uint64_t>();
+                auto found = previous_by_symbol.find(message.symbol);
+                if (found != previous_by_symbol.end() &&
+                    (usdm ? message.sequence.at("pu").get<std::uint64_t>() != found->second : f > found->second + 1))
+                    message.flags.push_back("sequence_gap");
+                previous_by_symbol[message.symbol] = l;
+            }
+        } else {
         if (parser.parse(wire.data(), wire.size()).get(root) || root["stream"].get(stream) ||
             stream != "btcusdt@depth@100ms" || root["data"].get(data) || data["e"].get(event) ||
             event != "depthUpdate" || data["s"].get(symbol) || symbol != "BTCUSDT" ||
@@ -663,8 +684,9 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
                 previous = previous ? std::max(*previous, last) : last;
             }
         }
+        }
         message.generation = generation;
-        if (generation && i == 0)
+        if (generation && (config ? seen_streams.insert(message.symbol + "/" + message.stream).second : i == 0))
             message.flags.push_back("sequence_gap");
         queue.push(std::move(message), stop.stop_possible());
         if (accepted)
@@ -677,9 +699,10 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
 
 void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std::stop_token stop = {},
                 const std::optional<std::string>& ca = std::nullopt, std::size_t* accepted = nullptr,
-                unsigned generation = 0, bool usdm = false) {
+                unsigned generation = 0, bool usdm = false, const CaptureConfig* config = nullptr,
+                const std::string& configured_target = "") {
     asio::io_context io;
-    const auto target = usdm ? "/public/stream?streams=btcusdt@depth@100ms"
+    const std::string target = !configured_target.empty() ? configured_target : usdm ? "/public/stream?streams=btcusdt@depth@100ms"
                              : "/stream?streams=btcusdt@depth@100ms";
     auto bounded = [&](auto start, auto cancel) {
         std::optional<boost::system::error_code> result;
@@ -738,7 +761,7 @@ void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std:
         if (!bounded([&](auto done) { ws.async_handshake(std::string(host) + ":" + service, target, done); },
                      close_socket))
             return;
-        read_ws(ws, io, count, queue, stop, accepted, generation, usdm);
+        read_ws(ws, io, count, queue, stop, accepted, generation, usdm, config, config ? (target.starts_with("/market") ? "-market" : "-public") : "");
     } else {
         beast::websocket::stream<beast::tcp_stream> ws(io);
         auto& tcp = beast::get_lowest_layer(ws);
@@ -757,7 +780,7 @@ void receive_ws(const std::string& port, std::size_t count, Handoff& queue, std:
             tcp.connect(endpoint);
             ws.handshake(host, target);
         }
-        read_ws(ws, io, count, queue, stop, accepted, generation, usdm);
+        read_ws(ws, io, count, queue, stop, accepted, generation, usdm, config, config ? (target.starts_with("/market") ? "-market" : "-public") : "");
     }
 }
 
@@ -822,7 +845,8 @@ RestMulti make_rest_multi() {
 RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
                         const std::optional<std::string>& ca = std::nullopt, bool bounded = false,
                         const std::string& run_id = "c0", const RestSource* source = nullptr,
-                        bool usdm = false, std::uint64_t snapshot_epoch = 0) {
+                        bool usdm = false, std::uint64_t snapshot_epoch = 0,
+                        const CaptureConfig* config = nullptr) {
     using Easy = std::unique_ptr<CURL, decltype(&curl_easy_cleanup)>;
     Easy easy(curl_easy_init(), curl_easy_cleanup);
     if (!easy)
@@ -845,6 +869,8 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
     } else if (message.symbol_scoped) {
         message.parameters = {{"symbol", "BTCUSDT"}};
     }
+    if (message.symbol_scoped)
+        message.symbol = message.parameters.at("symbol").get<std::string>();
     if (usdm && !message.symbol_scoped)
         message.market = "um_shared";
     HttpBody response;
@@ -855,8 +881,10 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
     for (auto it = message.parameters.begin(); it != message.parameters.end(); ++it) {
         url += first_parameter ? '?' : '&';
         first_parameter = false;
-        // Parameters are fixed ASCII constants, never user input.
-        url += it.key() + "=" + (it.value().is_string() ? it.value().get<std::string>() : it.value().dump());
+        const auto value = it.value().is_string() ? it.value().get<std::string>() : it.value().dump();
+        std::unique_ptr<char, decltype(&curl_free)> escaped(curl_easy_escape(easy.get(), value.c_str(), static_cast<int>(value.size())), curl_free);
+        if (!escaped) throw std::runtime_error("URL parameter encoding failed");
+        url += it.key() + "=" + escaped.get();
     }
     auto option = [&](CURLoption key, auto value) {
         const auto code = curl_easy_setopt(easy.get(), key, value);
@@ -925,7 +953,7 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
             message.sequence["lastUpdateId"] = last;
     } else if (valid && message.source_stream == "open_interest") {
         std::string_view symbol, interest;
-        valid = !root["symbol"].get(symbol) && symbol == "BTCUSDT" && !root["openInterest"].get(interest);
+        valid = !root["symbol"].get(symbol) && symbol == message.symbol && !root["openInterest"].get(interest);
     } else if (valid) {
         simdjson::dom::array rows;
         valid = !root.get(rows); // Keep legitimate empty/old buckets; no retry state machine.
@@ -938,6 +966,19 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
                 }
             }
         }
+    }
+    if (config && message.source_stream == "exchange_info") {
+        std::set<std::string> trading;
+        if (valid) {
+            for (auto row : symbols) {
+                std::string_view name, status;
+                if (!row["symbol"].get(name) && !row["status"].get(status) && status == "TRADING")
+                    trading.emplace(name);
+            }
+        }
+        for (const auto& symbol : config->symbols)
+            if (!trading.contains(symbol))
+                throw std::runtime_error("configured symbol not TRADING: " + symbol);
     }
     if (!valid) {
         message.flags.push_back("source_failed");

@@ -1,3 +1,81 @@
+struct CaptureConfig {
+    std::vector<std::string> symbols;
+    static CaptureConfig load(const char* path, bool usdm) {
+        std::ifstream input(path);
+        const auto json = Json::parse(input);
+        CaptureConfig config{json.at(usdm ? "usdm" : "spot").get<std::vector<std::string>>()};
+        std::set<std::string> unique;
+        if (config.symbols.empty() || config.symbols.size() > 20)
+            throw std::runtime_error("whitelist requires 1..20 symbols per market");
+        for (const auto& name : config.symbols) {
+            if (name.empty() || name.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != std::string::npos || !unique.insert(name).second)
+                throw std::runtime_error("invalid or duplicate whitelist symbol");
+        }
+        return config;
+    }
+    std::string target(bool usdm, bool market_route) const {
+        std::string result = usdm ? (market_route ? "/market" : "/public") : "";
+        result += "/stream?streams=";
+        bool first = true;
+        for (auto symbol : symbols) {
+            std::transform(symbol.begin(), symbol.end(), symbol.begin(), [](unsigned char c) { return std::tolower(c); });
+            const std::vector<std::string> streams = !usdm ? std::vector<std::string>{"depth@100ms", "bookTicker", "aggTrade"} : market_route ? std::vector<std::string>{"aggTrade", "markPrice@1s", "forceOrder"} : std::vector<std::string>{"depth@100ms", "bookTicker"};
+            for (const auto& stream : streams) {
+                if (!first) result += '/';
+                first = false;
+                result += symbol + "@" + stream;
+            }
+        }
+        return result;
+    }
+};
+
+void parse_configured_ws(Message& message, std::string_view wire, simdjson::dom::parser& parser,
+                         const CaptureConfig& config, bool usdm) {
+    message.symbol = "__GLOBAL__";
+    message.stream = "ws_malformed";
+    simdjson::dom::element root, data, event_data;
+    std::string_view stream, symbol;
+    const auto malformed = [&] { message.flags.push_back("malformed"); };
+    if (parser.parse(wire.data(), wire.size()).get(root) || root["stream"].get(stream) || root["data"].get(data)) { malformed(); return; }
+    const auto separator = stream.find('@');
+    if (separator == std::string_view::npos) { malformed(); return; }
+    std::string routed_symbol(stream.substr(0, separator));
+    std::transform(routed_symbol.begin(), routed_symbol.end(), routed_symbol.begin(), [](unsigned char c) { return std::toupper(c); });
+    if (std::find(config.symbols.begin(), config.symbols.end(), routed_symbol) == config.symbols.end())
+        throw std::runtime_error("WS returned symbol outside whitelist");
+    message.symbol = routed_symbol;
+    const auto kind = stream.substr(separator + 1);
+    message.stream = kind == "depth@100ms" ? "diff_depth" : kind == "bookTicker" ? "book_ticker" : kind == "aggTrade" ? "agg_trade" : kind == "markPrice@1s" ? "mark_price" : kind == "forceOrder" ? "liquidation" : "unknown";
+    message.sequence = {{"sourceStream", message.stream}, {"wireStream", stream}};
+    if (message.stream == "unknown") { malformed(); return; }
+    event_data = data;
+    if (message.stream == "liquidation" && data["o"].get(event_data)) { malformed(); return; }
+    if (event_data["s"].get(symbol) || symbol != message.symbol) { malformed(); return; }
+    auto integer = [&](simdjson::dom::element source, const char* field, bool required) {
+        std::uint64_t value;
+        const auto result = source[field].get(value);
+        if (!result) message.sequence[field] = value;
+        else if (required) malformed();
+    };
+    std::uint64_t time;
+    if (!data["E"].get(time)) message.exchange_time = time;
+    if (!data["T"].get(time)) message.transaction_time = time;
+    if (message.stream == "agg_trade") { message.trade_time = message.transaction_time; message.transaction_time = nullptr; }
+    if (message.stream == "liquidation" && !event_data["T"].get(time)) message.trade_time = time;
+    if (message.stream == "diff_depth") {
+        message.sequence["sourceFamily"] = usdm ? "D02" : "S02";
+        integer(data, "U", true); integer(data, "u", true);
+        if (usdm) integer(data, "pu", true);
+        simdjson::dom::array bids, asks;
+        if (data["b"].get(bids) || data["a"].get(asks) || (message.flags.empty() && message.sequence["U"] > message.sequence["u"])) malformed();
+    } else {
+        message.sequence["sourceFamily"] = message.stream == "book_ticker" ? (usdm ? "D08" : "S05") : message.stream == "agg_trade" ? (usdm ? "D05" : "S03") : message.stream == "mark_price" ? "D09" : "D11";
+        if (message.stream == "book_ticker") integer(data, "u", true);
+        if (message.stream == "agg_trade") integer(data, "a", true);
+    }
+}
+
 // C2: one depth sequence (no order book) and the existing REST thread's wakeup.
 class RecorderWake {
     std::mutex mutex_;
@@ -24,9 +102,22 @@ class RecorderWake {
 struct DepthRequests {
     std::atomic<std::uint64_t> epoch{0};
     RecorderWake wake;
+    RecorderWake* parent = nullptr;
+    std::map<std::string, std::unique_ptr<DepthRequests>> children;
+    DepthRequests& for_symbol(const std::string& symbol) {
+        return children.empty() ? *this : *children.at(symbol);
+    }
+    void initialize(const CaptureConfig& config) {
+        for (const auto& symbol : config.symbols) {
+            auto child = std::make_unique<DepthRequests>();
+            child->parent = &wake;
+            children.emplace(symbol, std::move(child));
+        }
+    }
     void request() {
         ++epoch;
         wake.notify();
+        if (parent) parent->notify();
     }
 };
 
@@ -97,6 +188,7 @@ class DepthBridge {
             pending_.clear();
             return;
         }
+        if (message.stream != "ws_market_c0_depth" && message.stream != "diff_depth") return;
         if (!generation_ || *generation_ != message.generation) {
             generation_ = message.generation;
             reset();
