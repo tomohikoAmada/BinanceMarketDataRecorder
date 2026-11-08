@@ -255,6 +255,9 @@ def main():
         report["peak_rss_sum_bytes"] = sum(
             m["recorder"]["peak_rss_bytes"] for m in report["markets"].values()
         )
+        report["status_cpu_peak_sum_upper_bound_percent"] = sum(
+            m["recorder"]["max_status_cpu_percent"] for m in report["markets"].values()
+        )
         assert report["cpu_mean_percent"] <= a.cpu_limit_percent
         assert report["peak_rss_sum_bytes"] <= a.rss_limit_mib * 1024**2
         if a.services:
@@ -312,6 +315,25 @@ def main():
                 e["elapsed_seconds"] >= 82740 and e.get("accepted", 0) > 0
                 for e in renewal
             ), "23h connection renewal not observed"
+            assert any(
+                (span[1] - span[0]) / 1e9 >= 82790
+                for m in report["markets"].values()
+                for span in m["readback"]["connection_monotonic_ranges_ns"].values()
+            ), "no independently verified 23h connection lifetime"
+            for market in children:
+                readback = report["markets"][market]["readback"]
+                for symbol in symbols[market]:
+                    key = f"{'spot' if market == 'spot' else 'um_perpetual'}/{symbol}/diff_depth"
+                    connections = readback["connections"][key]
+                    assert len(connections) >= 2, (key, "no depth reconnection")
+                    latest = max(
+                        connections,
+                        key=lambda c: readback["connection_monotonic_ranges_ns"][c][1],
+                    )
+                    assert latest in readback["bridge_connections"].get(key, []), (
+                        key,
+                        "latest depth connection unbridged",
+                    )
         report["status"] = "PASS"
     except BaseException as error:
         report["status"] = "FAILED"

@@ -85,6 +85,7 @@ def main():
         total = 0
         connections = {}
         bridge_connections = {}
+        connection_ranges = {}
         stored_bytes = sum(c.manifest["stored_bytes"] for c in chunks)
         ws_ranges = [
             c.manifest["receive_monotonic_range_ns"]
@@ -105,6 +106,13 @@ def main():
                 key = f"{e.market}/{e.symbol}/{e.stream}"
                 counts[key] += 1
                 connections.setdefault(key, set()).add(e.connection_id)
+                if e.module != "binance.public.rest.v1":
+                    span = connection_ranges.setdefault(
+                        e.connection_id,
+                        [e.receive_monotonic_ns, e.receive_monotonic_ns],
+                    )
+                    span[0] = min(span[0], e.receive_monotonic_ns)
+                    span[1] = max(span[1], e.receive_monotonic_ns)
                 if "depth_bridge" in e.capture_flags:
                     bridge_connections.setdefault(key, set()).add(e.connection_id)
                 for flag in e.capture_flags:
@@ -125,6 +133,7 @@ def main():
                     "ws_receive_span_seconds": ws_span,
                     "archive_states": archive_states,
                     "connections": {k: sorted(v) for k, v in connections.items()},
+                    "connection_monotonic_ranges_ns": connection_ranges,
                     "bridge_connections": {
                         k: sorted(v) for k, v in bridge_connections.items()
                     },
