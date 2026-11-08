@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_SECOND_PRECHECK_FAILED_FIX_VALIDATING",
+  "status": "C3_PASS_C4_C5_32MIB_24H_RUNNING",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,28 +597,29 @@
     }
   },
   "c5": {
-    "status": "FAILED_PRECHECK",
+    "status": "RUNNING",
     "deployment": {
       "status": "INSTALLED_NOT_QUALIFIED",
-      "release": "/opt/sbmdr/releases/20261109-854745e6",
-      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-854745e6",
+      "release": "/opt/sbmdr/releases/20261109-a1507458",
+      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-a1507458",
       "roots": {
-        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/spot",
-        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/usdm"
+        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T215622Z/spot",
+        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T215622Z/usdm"
       },
-      "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
       "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
       "resource_policy": {
         "slice_cpu_quota_percent": 175,
         "archive_cpu_quota_percent": 25,
-        "archive_timeout_seconds": 240
+        "archive_timeout_seconds": 240,
+        "public_seal_target_bytes": 33554432
       },
       "config_sha256": "758771236314d0f2e28e47026fb9e3d7b396ed870752555eb0fada6afabc8740",
       "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
     },
     "start_snapshot": {
       "status": "RUNNING",
-      "start_utc": "2026-11-08T21:08:22.118841+00:00",
+      "start_utc": "2026-11-08T21:56:25.211307+00:00",
       "seconds_required": 86410,
       "config": {
         "spot": [
@@ -650,31 +651,30 @@
           "ETHUSDC"
         ]
       },
-      "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
       "markets": {
         "spot": {
-          "pid": 210681,
-          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/spot",
-          "rss_kib": 31512,
+          "pid": 214450,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T215622Z/spot",
+          "rss_kib": 34664,
           "threads_peak": 5,
-          "wal_peak_bytes": 1248392
+          "wal_peak_bytes": 1124792
         },
         "usdm": {
-          "pid": 210694,
-          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/usdm",
-          "rss_kib": 31376,
+          "pid": 214460,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T215622Z/usdm",
+          "rss_kib": 44632,
           "threads_peak": 7,
-          "wal_peak_bytes": 1577992
+          "wal_peak_bytes": 1845792
         }
       },
-      "slice_cpu_peak_percent": 92.48775690282599,
-      "slice_cpu_60s_peak_percent": 37.93552727592559,
-      "elapsed_seconds": 90.59331867698347,
-      "system_minimum_free_bytes": 20606697472
+      "slice_cpu_peak_percent": 174.24218678352995,
+      "slice_cpu_60s_peak_percent": 0,
+      "elapsed_seconds": 30.228304743999615,
+      "system_minimum_free_bytes": 20396797952
     },
-    "capture_expected_end_utc": "2026-11-09T21:08:32+00:00",
-    "not_yet_signed_off": true,
-    "failure_reason": "USD-M INGRESS_OVERLOAD on a single 128 MiB size seal at about minute 26"
+    "capture_expected_end_utc": "2026-11-09T21:56:35+00:00",
+    "not_yet_signed_off": true
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",
@@ -710,8 +710,41 @@
   "c4_candidate": {
     "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
     "release_tests_passed": 12,
-    "sanitizers": "RUNNING",
-    "public_seal_target_bytes": 33554432
+    "sanitizers": {
+      "asan_ubsan_passed": 6,
+      "tsan_passed": 6
+    },
+    "public_seal_target_bytes": 33554432,
+    "native_tests": {
+      "status": "PASS",
+      "source_commit": "a1507458d25e06a4edbbc9bd4d5cd546ed110e3c",
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "cpp_files": {
+        "prototype/fault_io.cpp": "b44195d0c020933a5b667202437e11317a0719ceed4519583c38bf956975fa72",
+        "prototype/main.cpp": "bf90eb8c7ebf00bbd2a0f2e20d56a4ab0ba20bd8beaccf84667314bde2829f67",
+        "prototype/recorder_core.hpp": "422109035359fe4f109bf1ba4469772b0af9fd14b88f97f5f2af247dc0181126",
+        "prototype/recorder_run.hpp": "6fee32b2e1587764cffac64977d44c0146cd5663feda1501399c5e9c12cec8e5",
+        "prototype/recorder_storage.hpp": "9a40f43e147bae61a25d4b80aade2bf5c877f6a522aa2d377ad74485963c1866"
+      },
+      "tests": {
+        "release": {
+          "exit_code": 0,
+          "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+          "test_count": 12
+        },
+        "asan": {
+          "exit_code": 0,
+          "binary_sha256": "c883df94c4b8664a0dfbd9d93e9b3c3fbccb470612b05b46b52e85f32a833b10",
+          "test_count": 6
+        },
+        "tsan": {
+          "exit_code": 0,
+          "binary_sha256": "a30276013cf563b00e230b165e93598156549a38441aef8a5f90648dc877c689",
+          "test_count": 6
+        }
+      },
+      "utc": "2026-11-08T21:54:06.057507+00:00"
+    }
   },
   "c4_second_preflight": {
     "status": "FAILED",
