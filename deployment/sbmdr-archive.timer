@@ -2,7 +2,7 @@
 Description=S-BMDR periodic sealed-file archival
 
 [Timer]
-OnBootSec=120
+OnActiveSec=120
 OnUnitInactiveSec=60
 AccuracySec=5
 Persistent=true
