@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -51,7 +51,7 @@ class SystemdChild:
     def send_signal(self, sig):
         subprocess.run(["systemctl", "kill", f"--signal={sig}", self.unit], check=True)
 
-    def wait(self, timeout):
+    def wait(self, timeout=180):
         deadline = time.monotonic() + timeout
         while self.poll() is None:
             if time.monotonic() >= deadline:
@@ -61,6 +61,22 @@ class SystemdChild:
 
     def kill(self):
         self.send_signal(signal.SIGKILL)
+
+
+def host_sample():
+    values = [
+        int(v) for v in Path("/proc/stat").read_text().splitlines()[0].split()[1:9]
+    ]
+    memory = {
+        line.split(":", 1)[0]: int(line.split()[1]) * 1024
+        for line in Path("/proc/meminfo").read_text().splitlines()
+        if line.startswith(("MemTotal:", "MemAvailable:"))
+    }
+    return {
+        "cpu_total": sum(values),
+        "cpu_busy": sum(values) - values[3] - values[4],
+        **memory,
+    }
 
 
 def main():
@@ -80,7 +96,7 @@ def main():
     handles = []
     report = {
         "status": "RUNNING",
-        "start_utc": datetime.now(timezone.utc).isoformat(),
+        "start_utc": datetime.now(UTC).isoformat(),
         "seconds_required": a.seconds,
         "config": symbols,
         "binary_sha256": hashlib.sha256(
@@ -116,6 +132,8 @@ def main():
             children[market] = child
             report["markets"][market] = {"pid": child.pid, "root": str(root)}
         start = time.monotonic()
+        host_start = host_sample()
+        minimum_available = host_start["MemAvailable"]
         while time.monotonic() - start < a.seconds:
             for market, child in children.items():
                 if child.poll() is not None:
@@ -126,6 +144,7 @@ def main():
                 report["markets"][market]["rss_kib"] = int(
                     status.split("VmRSS:")[1].split()[0]
                 )
+            minimum_available = min(minimum_available, host_sample()["MemAvailable"])
             report["elapsed_seconds"] = time.monotonic() - start
             save(a.evidence / "progress.json", report)
             time.sleep(min(30, max(0, a.seconds - report["elapsed_seconds"])))
@@ -166,6 +185,17 @@ def main():
             result = json.loads((a.evidence / f"{market}.json").read_text())
             assert result["wall_seconds"] >= a.seconds
             report["markets"][market]["recorder"] = result
+        host_end = host_sample()
+        report["host"] = {
+            "busy_percent_of_machine": 100
+            * (host_end["cpu_busy"] - host_start["cpu_busy"])
+            / (host_end["cpu_total"] - host_start["cpu_total"]),
+            "minimum_available_bytes": minimum_available,
+            "total_memory_bytes": host_start["MemTotal"],
+        }
+        if a.services:
+            assert report["host"]["busy_percent_of_machine"] <= 50
+            assert minimum_available >= host_start["MemTotal"] / 2
         report["status"] = "VERIFYING"
         save(a.evidence / "progress.json", report)
         for market in children:
@@ -185,6 +215,8 @@ def main():
             assert (
                 readback["records"] == report["markets"][market]["recorder"]["records"]
             )
+            if not a.services:
+                assert readback["ws_receive_span_seconds"] >= a.seconds - 5
             for symbol in symbols[market]:
                 prefix = f"{'spot' if market == 'spot' else 'um_perpetual'}/{symbol}/"
                 for stream in (
@@ -201,6 +233,20 @@ def main():
                     key.startswith(prefix) and key.endswith("/depth_bridge") and value
                     for key, value in readback["capture_flags"].items()
                 )
+                if market == "usdm":
+                    for source in (
+                        "open_interest",
+                        "top_long_short_account_ratio_5m",
+                        "top_long_short_position_ratio_5m",
+                        "global_long_short_ratio_5m",
+                        "taker_buy_sell_volume_5m",
+                    ):
+                        assert (
+                            readback["rest_statuses"].get(
+                                f"um_perpetual/{symbol}/{source}/200/True", 0
+                            )
+                            > 0
+                        ), (symbol, source, "no successful REST observation")
             report["markets"][market]["readback"] = readback
         report["cpu_mean_percent"] = sum(
             100 * m["recorder"]["cpu_seconds"] / m["recorder"]["wall_seconds"]
@@ -283,7 +329,7 @@ def main():
                 child.wait()
         for handle in handles:
             handle.close()
-        report["finish_utc"] = datetime.now(timezone.utc).isoformat()
+        report["finish_utc"] = datetime.now(UTC).isoformat()
         save(a.evidence / "progress.json", report)
 
 

@@ -9,10 +9,9 @@ from pathlib import Path
 from binance_market_data_recorder.spool.format import scan_chunk
 from binance_market_data_recorder.spool.recovery import _quarantine, recover_storage
 from binance_market_data_recorder.spool.seal import seal_partial
+from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.catalog.types import ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
-
-from binance_market_data_recorder.storage.catalog import Catalog
 
 
 def recover(root: Path) -> list[dict[str, object]]:
@@ -68,8 +67,11 @@ def recover(root: Path) -> list[dict[str, object]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
-    actions = recover(parser.parse_args().root)
-    print(json.dumps(actions, indent=2))
+    parser.add_argument("--quiet", action="store_true")
+    args = parser.parse_args()
+    actions = recover(args.root)
+    if not args.quiet:
+        print(json.dumps(actions, indent=2))
     return int(any(action["action"] == "reconcile_failed" for action in actions))
 
 

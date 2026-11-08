@@ -85,6 +85,11 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
     AttemptWindow requests(100, seconds(60)), weights(usdm ? 1200 : 2000, seconds(60)),
                   statistics(800, seconds(300));
     const auto multi = make_rest_multi();
+    if (config) {
+        // The preflight directory request already consumed this market's IP budget.
+        requests.charge(start);
+        weights.charge(start, directory.weight);
+    }
     while (!stop.stop_requested()) {
         const auto observed = epochs();
         auto next = std::min_element(polls.begin(), polls.end(), [](const auto& a, const auto& b) { return a.due < b.due; });
@@ -330,7 +335,7 @@ int record(int argc, char** argv) {
             std::size_t accepted = 0;
             unsigned generation = 0, consecutive = 0;
             RecorderWake wake;
-            AttemptWindow budget(180, seconds(300));
+            AttemptWindow budget(config && usdm ? 90 : 180, seconds(300));
             while (accepted < ws_count && !token.stop_requested()) {
                 wake.until(token, budget.ready_at(steady_clock::now()));
                 if (token.stop_requested())

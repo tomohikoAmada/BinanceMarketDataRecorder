@@ -51,6 +51,15 @@ async def exercise(root, market, config):
         for stream in streams:
             symbol, kind = stream.split("@", 1)
             data = {
+                "e": "depthUpdate"
+                if kind == "depth@100ms"
+                else "aggTrade"
+                if kind == "aggTrade"
+                else "markPriceUpdate"
+                if kind == "markPrice@1s"
+                else "forceOrder"
+                if kind == "forceOrder"
+                else "bookTicker",
                 "s": symbol.upper(),
                 "E": 1000,
                 "U": 100,

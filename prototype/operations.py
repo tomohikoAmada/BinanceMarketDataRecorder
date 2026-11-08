@@ -86,6 +86,16 @@ def main():
         connections = {}
         bridge_connections = {}
         stored_bytes = sum(c.manifest["stored_bytes"] for c in chunks)
+        ws_ranges = [
+            c.manifest["receive_monotonic_range_ns"]
+            for c in chunks
+            if c.manifest["stream"] != "rest_observations"
+        ]
+        ws_span = (
+            (max(r["max"] for r in ws_ranges) - min(r["min"] for r in ws_ranges)) / 1e9
+            if ws_ranges
+            else 0
+        )
         for chunk in chunks:
             seen = 0
             for record in iter_source_records(chunk):
@@ -112,6 +122,7 @@ def main():
                     "chunks": len(chunks),
                     "records": total,
                     "stored_bytes": stored_bytes,
+                    "ws_receive_span_seconds": ws_span,
                     "archive_states": archive_states,
                     "connections": {k: sorted(v) for k, v in connections.items()},
                     "bridge_connections": {

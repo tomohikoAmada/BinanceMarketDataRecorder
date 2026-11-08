@@ -406,6 +406,8 @@ class RawFile {
             update_range(exchange_ranges["event"], message.exchange_time);
         if (!message.transaction_time.is_null())
             update_range(exchange_ranges["transaction"], message.transaction_time);
+        if (!message.trade_time.is_null())
+            update_range(exchange_ranges["trade"], message.trade_time);
         for (auto it = message.sequence.begin(); it != message.sequence.end(); ++it)
             update_range(sequence_ranges[it.key()], it.value());
         for (const auto& flag : message.flags)

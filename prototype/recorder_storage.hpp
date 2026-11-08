@@ -43,6 +43,7 @@ class Catalog {
             sqlite3_open_v2(path.c_str(), &raw, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
         db_.reset(raw);
         check(status);
+        check(sqlite3_busy_timeout(raw, 30000));
         exec(R"SQL(
             PRAGMA journal_mode=WAL;
             PRAGMA synchronous=NORMAL;

@@ -49,6 +49,11 @@ void parse_configured_ws(Message& message, std::string_view wire, simdjson::dom:
     message.stream = kind == "depth@100ms" ? "diff_depth" : kind == "bookTicker" ? "book_ticker" : kind == "aggTrade" ? "agg_trade" : kind == "markPrice@1s" ? "mark_price" : kind == "forceOrder" ? "liquidation" : "unknown";
     message.sequence = {{"sourceStream", message.stream}, {"wireStream", stream}};
     if (message.stream == "unknown") { malformed(); return; }
+    if (message.stream != "book_ticker") {
+        std::string_view event;
+        const std::string_view expected = message.stream == "diff_depth" ? "depthUpdate" : message.stream == "agg_trade" ? "aggTrade" : message.stream == "mark_price" ? "markPriceUpdate" : "forceOrder";
+        if (data["e"].get(event) || event != expected) { malformed(); return; }
+    }
     event_data = data;
     if (message.stream == "liquidation" && data["o"].get(event_data)) { malformed(); return; }
     if (event_data["s"].get(symbol) || symbol != message.symbol) { malformed(); return; }
@@ -60,6 +65,7 @@ void parse_configured_ws(Message& message, std::string_view wire, simdjson::dom:
     };
     std::uint64_t time;
     if (!data["E"].get(time)) message.exchange_time = time;
+    else if (message.stream != "book_ticker") { malformed(); return; }
     if (!data["T"].get(time)) message.transaction_time = time;
     if (message.stream == "agg_trade") { message.trade_time = message.transaction_time; message.transaction_time = nullptr; }
     if (message.stream == "liquidation" && !event_data["T"].get(time)) message.trade_time = time;

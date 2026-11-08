@@ -13,7 +13,7 @@ Group=bmdr
 EnvironmentFile=/etc/sbmdr/%i.env
 Environment=PYTHONPATH=/opt/sbmdr/current/python/src
 WorkingDirectory=/var/lib/binance-market-data-recorder/S-BMDR
-ExecStartPre=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/prototype/recover_raw.py ${ROOT}
+ExecStartPre=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/prototype/recover_raw.py ${ROOT} --quiet
 ExecStart=/opt/sbmdr/current/release/sbmdr-c0 record --public ${ROOT} 9223372036854775807 /etc/ssl/certs/ca-certificates.crt %i /etc/sbmdr/config.json
 Restart=no
 RestartSec=10
