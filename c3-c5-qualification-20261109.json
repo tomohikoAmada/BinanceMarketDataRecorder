@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_C5_32MIB_24H_RUNNING",
+  "status": "C3_PASS_C4_C5_TENPAIR_24H_RUNNING",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,10 +597,99 @@
     }
   },
   "c5": {
-    "status": "PREPARING_TIMER_FIXED_RUN",
-    "not_yet_signed_off": true,
-    "source_commit": "2cfbb7e6d8e258b21b99c0dcca450a34b734d24a",
-    "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1"
+    "status": "RUNNING",
+    "deployment": {
+      "status": "INSTALLED_NOT_QUALIFIED",
+      "release": "/opt/sbmdr/releases/20261109-2cfbb7e6",
+      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-2cfbb7e6",
+      "roots": {
+        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T223532Z/spot",
+        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T223532Z/usdm"
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+      "resource_policy": {
+        "slice_cpu_quota_percent": 175,
+        "archive_cpu_quota_percent": 25,
+        "archive_timeout_seconds": 240,
+        "public_seal_target_bytes": 33554432
+      },
+      "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+      "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
+    },
+    "start_snapshot": {
+      "status": "RUNNING",
+      "start_utc": "2026-11-08T22:35:35.180623+00:00",
+      "seconds_required": 86410,
+      "config": {
+        "spot": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ],
+        "usdm": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ]
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "markets": {
+        "spot": {
+          "pid": 218578,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T223532Z/spot",
+          "rss_kib": 36396,
+          "threads_peak": 5,
+          "wal_peak_bytes": 2142432
+        },
+        "usdm": {
+          "pid": 218609,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T223532Z/usdm",
+          "rss_kib": 39324,
+          "threads_peak": 7,
+          "wal_peak_bytes": 1977632
+        }
+      },
+      "slice_cpu_peak_percent": 175.62944433649312,
+      "slice_cpu_60s_peak_percent": 99.81065733795843,
+      "elapsed_seconds": 905.5813200410339,
+      "system_minimum_free_bytes": 19937124352
+    },
+    "early_archival_observation": {
+      "observed_utc": "2026-11-08T22:51:42.304987+00:00",
+      "passes": 6,
+      "failed_passes": 0,
+      "cpu_seconds": 65.087512,
+      "peak_rss_upper_bound_bytes": 94232576,
+      "spot": {
+        "processed_files": 5,
+        "successful_transactions": 5,
+        "failed_transactions": 0,
+        "last_backlog_files_after": 0
+      },
+      "usdm": {
+        "processed_files": 46,
+        "successful_transactions": 46,
+        "failed_transactions": 0,
+        "last_backlog_files_after": 2
+      }
+    },
+    "capture_expected_end_utc": "2026-11-09T22:35:45+00:00",
+    "not_yet_signed_off": true
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",
