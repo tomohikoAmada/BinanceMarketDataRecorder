@@ -597,80 +597,10 @@
     }
   },
   "c5": {
-    "status": "RUNNING",
-    "deployment": {
-      "status": "INSTALLED_NOT_QUALIFIED",
-      "release": "/opt/sbmdr/releases/20261109-dc68ddd2",
-      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-dc68ddd2",
-      "roots": {
-        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/spot",
-        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/usdm"
-      },
-      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
-      "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
-      "resource_policy": {
-        "slice_cpu_quota_percent": 175,
-        "archive_cpu_quota_percent": 25,
-        "archive_timeout_seconds": 240,
-        "public_seal_target_bytes": 33554432
-      },
-      "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
-      "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
-    },
-    "start_snapshot": {
-      "status": "RUNNING",
-      "start_utc": "2026-11-08T22:10:41.191759+00:00",
-      "seconds_required": 86410,
-      "config": {
-        "spot": [
-          "BTCUSDT",
-          "ETHUSDT",
-          "SOLUSDT",
-          "BNBUSDT",
-          "ZECUSDT",
-          "XRPUSDT",
-          "NEARUSDT",
-          "UNIUSDT",
-          "DOGEUSDT",
-          "LINKUSDT"
-        ],
-        "usdm": [
-          "BTCUSDT",
-          "ETHUSDT",
-          "SOLUSDT",
-          "BNBUSDT",
-          "ZECUSDT",
-          "XRPUSDT",
-          "NEARUSDT",
-          "UNIUSDT",
-          "DOGEUSDT",
-          "LINKUSDT"
-        ]
-      },
-      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
-      "markets": {
-        "spot": {
-          "pid": 216077,
-          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/spot",
-          "rss_kib": 31816,
-          "threads_peak": 5,
-          "wal_peak_bytes": 1050632
-        },
-        "usdm": {
-          "pid": 216087,
-          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/usdm",
-          "rss_kib": 39664,
-          "threads_peak": 7,
-          "wal_peak_bytes": 1586232
-        }
-      },
-      "slice_cpu_peak_percent": 163.72585500633227,
-      "slice_cpu_60s_peak_percent": 99.03814634994691,
-      "elapsed_seconds": 60.35086563898949,
-      "system_minimum_free_bytes": 20433879040
-    },
-    "capture_expected_end_utc": "2026-11-09T22:10:51+00:00",
-    "not_yet_signed_off": true
+    "status": "PREPARING_TIMER_FIXED_RUN",
+    "not_yet_signed_off": true,
+    "source_commit": "2cfbb7e6d8e258b21b99c0dcca450a34b734d24a",
+    "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1"
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",
@@ -823,5 +753,87 @@
     "error": "RuntimeError('usdm recorder exited early: 1')",
     "finish_utc": "2026-11-08T21:57:29.889877+00:00",
     "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-third-preflight"
+  },
+  "c4_ten_timer_preflight": {
+    "status": "SUPERSEDED_ARCHIVE_TIMER_FIX",
+    "deployment": {
+      "status": "INSTALLED_NOT_QUALIFIED",
+      "release": "/opt/sbmdr/releases/20261109-dc68ddd2",
+      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-dc68ddd2",
+      "roots": {
+        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/spot",
+        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/usdm"
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+      "resource_policy": {
+        "slice_cpu_quota_percent": 175,
+        "archive_cpu_quota_percent": 25,
+        "archive_timeout_seconds": 240,
+        "public_seal_target_bytes": 33554432
+      },
+      "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+      "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
+    },
+    "start_snapshot": {
+      "status": "RUNNING",
+      "start_utc": "2026-11-08T22:10:41.191759+00:00",
+      "seconds_required": 86410,
+      "config": {
+        "spot": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ],
+        "usdm": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ]
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "markets": {
+        "spot": {
+          "pid": 216077,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/spot",
+          "rss_kib": 31816,
+          "threads_peak": 5,
+          "wal_peak_bytes": 1050632
+        },
+        "usdm": {
+          "pid": 216087,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T221038Z/usdm",
+          "rss_kib": 39664,
+          "threads_peak": 7,
+          "wal_peak_bytes": 1586232
+        }
+      },
+      "slice_cpu_peak_percent": 163.72585500633227,
+      "slice_cpu_60s_peak_percent": 99.03814634994691,
+      "elapsed_seconds": 60.35086563898949,
+      "system_minimum_free_bytes": 20433879040
+    },
+    "capture_expected_end_utc": "2026-11-09T22:10:51+00:00",
+    "not_yet_signed_off": true,
+    "reason": "Operator stopped normally to replace expired boot-relative first trigger with activation-relative timer; original controller failure retained.",
+    "records_at_stop": {
+      "spot": 832381,
+      "usdm": 2779959
+    },
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-ten-timer-preflight"
   }
 }
