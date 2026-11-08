@@ -79,5 +79,14 @@
     "BTCUSDC",
     "ETHUSDC"
   ],
-  "excluded": "Stablecoin pairs and transient volume alone do not select a product. No live universe changes."
+  "excluded": "Stablecoin pairs and transient volume alone do not select a product. No live universe changes.",
+  "qualification_scope_adjustment": {
+    "date": "2026-11-09",
+    "reason": "Twelve-pair public capture hit bounded ingress overload during real bursts; qualify ten USDT pairs within the requested 10\u201320 range.",
+    "removed_pairs": [
+      "BTCUSDC",
+      "ETHUSDC"
+    ],
+    "selection_is_fixed": true
+  }
 }
