@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+from collections import deque
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -88,7 +89,7 @@ def main():
     p.add_argument("--seconds", type=int, required=True)
     p.add_argument("--services", action="store_true")
     p.add_argument("--rss-limit-mib", type=int, default=768)
-    p.add_argument("--cpu-limit-percent", type=float, default=200)
+    p.add_argument("--cpu-limit-percent", type=float, default=120)
     a = p.parse_args()
     a.evidence.mkdir(parents=True, exist_ok=True)
     symbols = json.loads(a.config.read_text())
@@ -132,22 +133,94 @@ def main():
             children[market] = child
             report["markets"][market] = {"pid": child.pid, "root": str(root)}
         start = time.monotonic()
+        cpu_samples = deque()
+        slice_cpu = None
+        if a.services:
+            group = subprocess.check_output(
+                [
+                    "systemctl",
+                    "show",
+                    "sbmdr.slice",
+                    "--property",
+                    "ControlGroup",
+                    "--value",
+                ],
+                text=True,
+            ).strip()
+            slice_cpu = Path("/sys/fs/cgroup") / group.lstrip("/") / "cpu.stat"
+
+        def cpu_sample():
+            values = dict(line.split() for line in slice_cpu.read_text().splitlines())
+            return time.monotonic(), int(values["usage_usec"]) / 1e6
+
+        previous_sample = cpu_sample() if slice_cpu else None
+        report["slice_cpu_peak_percent"] = 0
+        report["slice_cpu_60s_peak_percent"] = 0
         host_start = host_sample()
         minimum_available = host_start["MemAvailable"]
+        next_check = start
         while time.monotonic() - start < a.seconds:
-            for market, child in children.items():
-                if child.poll() is not None:
-                    raise RuntimeError(
-                        f"{market} recorder exited early: {child.returncode}"
-                    )
-                status = Path(f"/proc/{child.pid}/status").read_text()
-                report["markets"][market]["rss_kib"] = int(
-                    status.split("VmRSS:")[1].split()[0]
-                )
-            minimum_available = min(minimum_available, host_sample()["MemAvailable"])
             report["elapsed_seconds"] = time.monotonic() - start
-            save(a.evidence / "progress.json", report)
-            time.sleep(min(30, max(0, a.seconds - report["elapsed_seconds"])))
+            if slice_cpu:
+                current = cpu_sample()
+                percent = (
+                    100
+                    * (current[1] - previous_sample[1])
+                    / (current[0] - previous_sample[0])
+                )
+                if current[0] - previous_sample[0] >= 0.9:
+                    report["slice_cpu_peak_percent"] = max(
+                        report["slice_cpu_peak_percent"], percent
+                    )
+                cpu_samples.append(current)
+                while len(cpu_samples) > 1 and current[0] - cpu_samples[1][0] >= 60:
+                    cpu_samples.popleft()
+                if current[0] - cpu_samples[0][0] >= 60:
+                    rolling = (
+                        100
+                        * (current[1] - cpu_samples[0][1])
+                        / (current[0] - cpu_samples[0][0])
+                    )
+                    report["slice_cpu_60s_peak_percent"] = max(
+                        report["slice_cpu_60s_peak_percent"], rolling
+                    )
+                previous_sample = current
+            if time.monotonic() >= next_check:
+                for market, child in children.items():
+                    if child.poll() is not None:
+                        raise RuntimeError(
+                            f"{market} recorder exited early: {child.returncode}"
+                        )
+                    status = Path(f"/proc/{child.pid}/status").read_text()
+                    report["markets"][market]["rss_kib"] = int(
+                        status.split("VmRSS:")[1].split()[0]
+                    )
+                    report["markets"][market]["threads_peak"] = max(
+                        report["markets"][market].get("threads_peak", 0),
+                        int(status.split("Threads:")[1].split()[0]),
+                    )
+                    wal = a.root / market / "state/catalog.sqlite-wal"
+                    report["markets"][market]["wal_peak_bytes"] = max(
+                        report["markets"][market].get("wal_peak_bytes", 0),
+                        wal.stat().st_size if wal.exists() else 0,
+                    )
+                import shutil
+
+                free = shutil.disk_usage(a.root).free
+                report["system_minimum_free_bytes"] = min(
+                    report.get("system_minimum_free_bytes", free), free
+                )
+                minimum_available = min(
+                    minimum_available, host_sample()["MemAvailable"]
+                )
+                next_check = time.monotonic() + 30
+                save(a.evidence / "progress.json", report)
+            time.sleep(
+                min(
+                    1 if a.services else 30,
+                    max(0, a.seconds - report["elapsed_seconds"]),
+                )
+            )
         for child in children.values():
             child.send_signal(signal.SIGTERM)
         if a.services:
@@ -184,6 +257,7 @@ def main():
                 raise RuntimeError(f"{market} exit {child.returncode}")
             result = json.loads((a.evidence / f"{market}.json").read_text())
             assert result["wall_seconds"] >= a.seconds
+            assert result["stop_reason"] == "INPUT_COMPLETE"
             report["markets"][market]["recorder"] = result
         host_end = host_sample()
         report["host"] = {
@@ -196,6 +270,8 @@ def main():
         if a.services:
             assert report["host"]["busy_percent_of_machine"] <= 50
             assert minimum_available >= host_start["MemTotal"] / 2
+            assert report["slice_cpu_peak_percent"] <= 200
+            assert report["slice_cpu_60s_peak_percent"] <= a.cpu_limit_percent
         report["status"] = "VERIFYING"
         save(a.evidence / "progress.json", report)
         for market in children:
@@ -258,6 +334,21 @@ def main():
         report["status_cpu_peak_sum_upper_bound_percent"] = sum(
             m["recorder"]["max_status_cpu_percent"] for m in report["markets"].values()
         )
+        import shutil
+
+        report["storage"] = {
+            "stored_bytes": sum(
+                m["readback"]["stored_bytes"] for m in report["markets"].values()
+            ),
+            "archive_available_bytes": shutil.disk_usage("/srv/recorder-data").free,
+            "system_available_bytes": shutil.disk_usage(a.root).free,
+        }
+        daily = report["storage"]["stored_bytes"] * 86400 / a.seconds
+        report["storage"]["compressed_gb_per_day"] = daily / 1e9
+        report["storage"]["additional_retention_days_at_observed_rate"] = (
+            report["storage"]["archive_available_bytes"] / daily
+        )
+        assert report["system_minimum_free_bytes"] >= 13 * 1024**3
         assert report["cpu_mean_percent"] <= a.cpu_limit_percent
         assert report["peak_rss_sum_bytes"] <= a.rss_limit_mib * 1024**2
         if a.services:

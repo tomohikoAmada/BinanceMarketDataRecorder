@@ -83,6 +83,9 @@ def main():
         flags = Counter()
         statuses = Counter()
         total = 0
+        ws_payload_bytes = 0
+        rest_body_bytes = 0
+        source_payload_bytes = Counter()
         connections = {}
         bridge_connections = {}
         connection_ranges = {}
@@ -105,6 +108,7 @@ def main():
                 total += 1
                 key = f"{e.market}/{e.symbol}/{e.stream}"
                 counts[key] += 1
+                source_payload_bytes[key] += len(e.raw_payload)
                 connections.setdefault(key, set()).add(e.connection_id)
                 if e.module != "binance.public.rest.v1":
                     span = connection_ranges.setdefault(
@@ -119,9 +123,19 @@ def main():
                     flags[f"{key}/{flag}"] += 1
                 if e.module == "binance.public.rest.v1":
                     provenance = json.loads(e.raw_payload)
+                    encoded = provenance["response"]["raw_body_base64"]
+                    rest_body_bytes += len(encoded) // 4 * 3 - (
+                        2
+                        if encoded.endswith("==")
+                        else 1
+                        if encoded.endswith("=")
+                        else 0
+                    )
                     statuses[
                         f"{e.market}/{e.symbol}/{e.source_sequence.get('sourceStream')}/{provenance['response']['status']}/{provenance['response']['valid']}"
                     ] += 1
+                else:
+                    ws_payload_bytes += len(e.raw_payload)
             assert seen == chunk.manifest["record_count"]
         print(
             json.dumps(
@@ -130,6 +144,12 @@ def main():
                     "chunks": len(chunks),
                     "records": total,
                     "stored_bytes": stored_bytes,
+                    "uncompressed_bytes": sum(
+                        c.manifest["uncompressed_bytes"] for c in chunks
+                    ),
+                    "ws_payload_bytes": ws_payload_bytes,
+                    "rest_body_bytes": rest_body_bytes,
+                    "source_payload_bytes": dict(source_payload_bytes),
                     "ws_receive_span_seconds": ws_span,
                     "archive_states": archive_states,
                     "connections": {k: sorted(v) for k, v in connections.items()},

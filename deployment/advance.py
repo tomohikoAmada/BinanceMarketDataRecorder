@@ -128,7 +128,7 @@ def main():
             "--rss-limit-mib",
             "256",
             "--cpu-limit-percent",
-            "200",
+            "120",
             env={**os.environ, "PYTHONPATH": str(release / "python/src")},
         )
         qualification = json.loads((evidence / "progress.json").read_text())

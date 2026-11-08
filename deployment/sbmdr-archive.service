@@ -12,3 +12,4 @@ ExecStart=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/deployment/archi
 TimeoutStartSec=130
 UMask=0027
 NoNewPrivileges=true
+Slice=sbmdr.slice

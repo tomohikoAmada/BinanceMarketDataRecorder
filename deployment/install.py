@@ -108,6 +108,7 @@ def main():
         "sbmdr-recorder@.service",
         "sbmdr-archive.service",
         "sbmdr-archive.timer",
+        "sbmdr.slice",
     ):
         shutil.copy2(release / "deployment" / name, Path("/etc/systemd/system") / name)
     subprocess.run(["systemctl", "daemon-reload"], check=True)

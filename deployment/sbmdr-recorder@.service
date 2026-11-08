@@ -24,6 +24,7 @@ UMask=0027
 NoNewPrivileges=true
 CPUAccounting=true
 MemoryAccounting=true
+Slice=sbmdr.slice
 StandardOutput=append:/var/log/sbmdr/%i.stdout.jsonl
 StandardError=append:/var/log/sbmdr/%i.status.jsonl
 
