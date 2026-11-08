@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_TENPAIR_FAILED_C5_NOT_ENABLED",
+  "status": "C3_PASS_C4_WEIGHTED_TENPAIR_PREPARING_C5_NOT_ENABLED",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,8 +597,16 @@
     }
   },
   "c5": {
-    "status": "BLOCKED_BY_TEN_PAIR_INGRESS_OVERLOAD",
-    "not_yet_signed_off": true
+    "status": "PREPARING_WEIGHTED_RUN",
+    "source_commit": "7fbae5bdf62f50ca53868a595dc1c565559d43c8",
+    "cpp_commit": "a1507458d25e06a4edbbc9bd4d5cd546ed110e3c",
+    "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+    "not_yet_signed_off": true,
+    "cpu_weight": {
+      "spot": 100,
+      "usdm": 200
+    },
+    "slice_cpu_quota_percent": 175
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",
@@ -996,5 +1004,155 @@
       "finish_utc": "2026-11-08T23:00:18.647546+00:00"
     },
     "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-ten-overload"
+  },
+  "c4_poll_experiment": {
+    "status": "REVERTED_NO_CONSISTENT_GAIN",
+    "fixture": "30000 WS with existing 80 ms slow-seal shim; no perf or allocation counter",
+    "runs": [
+      {
+        "label": "original",
+        "index": 0,
+        "exit": 0,
+        "status": "PASS",
+        "ws_records": 30000,
+        "chunks": 80,
+        "rotations": {
+          "time": 37,
+          "shutdown": 43
+        },
+        "peak_queue_records": 634,
+        "cpu_seconds": 5.870012,
+        "wall_seconds": 14.370164295
+      },
+      {
+        "label": "poll",
+        "index": 0,
+        "exit": 0,
+        "status": "PASS",
+        "ws_records": 30000,
+        "chunks": 72,
+        "rotations": {
+          "time": 29,
+          "shutdown": 43
+        },
+        "peak_queue_records": 2017,
+        "cpu_seconds": 6.362884,
+        "wall_seconds": 15.410493967
+      },
+      {
+        "label": "original",
+        "index": 1,
+        "exit": 0,
+        "status": "PASS",
+        "ws_records": 30000,
+        "chunks": 79,
+        "rotations": {
+          "time": 37,
+          "shutdown": 42
+        },
+        "peak_queue_records": 599,
+        "cpu_seconds": 6.076528,
+        "wall_seconds": 14.998498387
+      },
+      {
+        "label": "poll",
+        "index": 1,
+        "exit": 0,
+        "status": "PASS",
+        "ws_records": 30000,
+        "chunks": 61,
+        "rotations": {
+          "time": 19,
+          "shutdown": 42
+        },
+        "peak_queue_records": 1450,
+        "cpu_seconds": 9.314449,
+        "wall_seconds": 14.865096731
+      },
+      {
+        "label": "original",
+        "index": 2,
+        "exit": 0,
+        "status": "PASS",
+        "ws_records": 30000,
+        "chunks": 69,
+        "rotations": {
+          "time": 27,
+          "shutdown": 42
+        },
+        "peak_queue_records": 2816,
+        "cpu_seconds": 8.857114,
+        "wall_seconds": 14.945805179
+      },
+      {
+        "label": "poll",
+        "index": 2,
+        "exit": 0,
+        "status": "PASS",
+        "ws_records": 30000,
+        "chunks": 74,
+        "rotations": {
+          "time": 33,
+          "shutdown": 41
+        },
+        "peak_queue_records": 1115,
+        "cpu_seconds": 7.102638,
+        "wall_seconds": 14.464003035
+      }
+    ],
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/poll-comparison.json"
+  },
+  "c4_sync_diagnostic": {
+    "status": "DIAGNOSTIC_ONLY",
+    "seconds": 179.938678185,
+    "markets": {
+      "spot": {
+        "records": 154901,
+        "peak_queue_records": 1606,
+        "cpu_seconds": 36.379193,
+        "wall_seconds": 181.72379238,
+        "sync_calls_during_observation": 5293,
+        "max_sync_wall_ns_during_observation": 116382446,
+        "writer_tid": 224255,
+        "writer_wchan_samples": {
+          "futex_wait_queue": 1280,
+          "0": 272,
+          "folio_wait_bit_common": 21,
+          "jbd2_log_wait_commit": 67,
+          "do_get_write_access": 1,
+          "submit_bio_wait": 3
+        }
+      },
+      "usdm": {
+        "records": 734225,
+        "peak_queue_records": 6607,
+        "cpu_seconds": 108.376858,
+        "wall_seconds": 182.718316262,
+        "sync_calls_during_observation": 7884,
+        "max_sync_wall_ns_during_observation": 73995223,
+        "writer_tid": 224259,
+        "writer_wchan_samples": {
+          "futex_wait_queue": 937,
+          "jbd2_log_wait_commit": 77,
+          "0": 575,
+          "folio_wait_bit_common": 45,
+          "submit_bio_wait": 2,
+          "do_get_write_access": 7
+        }
+      }
+    },
+    "cpu_stat_delta": {
+      "usage_usec": 141702715,
+      "user_usec": 94548667,
+      "system_usec": 47154048,
+      "core_sched.force_idle_usec": 0,
+      "nr_periods": 1799,
+      "nr_throttled": 94,
+      "throttled_usec": 4908717,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    },
+    "host_steal_percent_of_reported_ticks": 14.69716277013497,
+    "note": "Different 180-second instrumented public run, not the failed capture or C4 qualification; does not establish old failure root cause."
   }
 }
