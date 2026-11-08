@@ -17,6 +17,8 @@ from urllib.parse import urlsplit
 from verify import BINARY, FIXTURES, Response, verify_baseline
 from websockets.asyncio.server import serve
 
+TEST_POLL_MS = 6000  # 1 s phase spacing: keep TSan's startup serialization out of it.
+
 
 async def until(predicate, timeout=12):
     deadline = monotonic() + timeout
@@ -174,7 +176,7 @@ async def exercise(root: Path, market: str):
                     str(http.server_port),
                     "10",
                     root,
-                    "1800",
+                    str(TEST_POLL_MS),
                     "900000",
                     "134217728",
                     "0",
@@ -253,7 +255,10 @@ async def exercise(root: Path, market: str):
         counts = Counter(p for p, _ in polls)
         assert len(counts) == 5 and set(counts.values()) == {2}
         first = [next(t for p, t in polls if p == name) for name in counts]
-        assert all(b - a >= 0.20 for a, b in pairwise(first))
+        assert all(b - a >= 0.20 for a, b in pairwise(first)), {
+            "first_poll_offsets": [round(t - calls[0][1], 3) for t in first],
+            "requests": [(p, round(t - calls[0][1], 3)) for p, t, _ in calls],
+        }
         assert len({address for _, _, address in calls}) < len(calls)
         limited = [
             i for i, (p, _, _) in enumerate(calls) if p.endswith("/openInterest")
@@ -272,6 +277,7 @@ async def exercise(root: Path, market: str):
         "records": len(records),
         "snapshots_bridged": 3,
         "http_requests": len(calls),
+        "test_poll_period_ms": TEST_POLL_MS,
         "rest_sources": sorted({r.source_sequence["sourceStream"] for r in rest}),
         "status": "PASS",
     }
