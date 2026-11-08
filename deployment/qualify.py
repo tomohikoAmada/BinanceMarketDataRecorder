@@ -304,6 +304,8 @@ def main():
                 )
             children[market] = child
             report["markets"][market] = {"pid": child.pid, "root": str(root)}
+            if a.services:
+                report["markets"][market]["cpu_weight"] = int(child.property("CPUWeight"))
         start = time.monotonic()
         cpu_samples = deque()
         slice_cpu = None

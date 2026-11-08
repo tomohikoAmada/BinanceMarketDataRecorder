@@ -148,12 +148,19 @@ def main():
         "sbmdr.slice",
     ):
         shutil.copy2(release / "deployment" / name, Path("/etc/systemd/system") / name)
+    usdm_drop = Path("/etc/systemd/system/sbmdr-recorder@usdm.service.d")
+    usdm_drop.mkdir(exist_ok=True)
+    shutil.copy2(
+        release / "deployment/sbmdr-recorder@usdm.service.d/cpu-weight.conf",
+        usdm_drop / "cpu-weight.conf",
+    )
     subprocess.run(["systemctl", "daemon-reload"], check=True)
     subprocess.run(
         [
             "systemd-analyze",
             "verify",
             "/etc/systemd/system/sbmdr-recorder@spot.service",
+            "/etc/systemd/system/sbmdr-recorder@usdm.service",
             "/etc/systemd/system/sbmdr-archive.service",
         ],
         check=True,
@@ -170,6 +177,8 @@ def main():
         "resource_policy": {
             "slice_cpu_quota_percent": 175,
             "archive_cpu_quota_percent": 25,
+            "spot_cpu_weight": 100,
+            "usdm_cpu_weight": 200,
             "archive_timeout_seconds": 240,
             "public_seal_target_bytes": 32 * 1024**2,
         },
