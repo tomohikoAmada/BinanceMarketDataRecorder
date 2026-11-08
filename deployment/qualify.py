@@ -76,6 +76,7 @@ def host_sample():
     return {
         "cpu_total": sum(values),
         "cpu_busy": sum(values) - values[3] - values[4],
+        "cpu_steal": values[7],
         **memory,
     }
 
@@ -435,6 +436,9 @@ def main():
         report["host"] = {
             "busy_percent_of_machine": 100
             * (host_end["cpu_busy"] - host_start["cpu_busy"])
+            / (host_end["cpu_total"] - host_start["cpu_total"]),
+            "stolen_percent_of_machine": 100
+            * (host_end["cpu_steal"] - host_start["cpu_steal"])
             / (host_end["cpu_total"] - host_start["cpu_total"]),
             "minimum_available_bytes": minimum_available,
             "total_memory_bytes": host_start["MemTotal"],
