@@ -171,6 +171,7 @@ def main():
             "slice_cpu_quota_percent": 175,
             "archive_cpu_quota_percent": 25,
             "archive_timeout_seconds": 240,
+            "public_seal_target_bytes": 32 * 1024**2,
         },
         "config_sha256": hashlib.sha256(
             Path("/etc/sbmdr/config.json").read_bytes()

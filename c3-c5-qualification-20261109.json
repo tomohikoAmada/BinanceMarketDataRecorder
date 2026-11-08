@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_C5_24H_RUNNING",
+  "status": "C3_PASS_C4_SECOND_PRECHECK_FAILED_FIX_VALIDATING",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,7 +597,7 @@
     }
   },
   "c5": {
-    "status": "RUNNING",
+    "status": "FAILED_PRECHECK",
     "deployment": {
       "status": "INSTALLED_NOT_QUALIFIED",
       "release": "/opt/sbmdr/releases/20261109-854745e6",
@@ -673,7 +673,8 @@
       "system_minimum_free_bytes": 20606697472
     },
     "capture_expected_end_utc": "2026-11-09T21:08:32+00:00",
-    "not_yet_signed_off": true
+    "not_yet_signed_off": true,
+    "failure_reason": "USD-M INGRESS_OVERLOAD on a single 128 MiB size seal at about minute 26"
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",
@@ -707,52 +708,19 @@
     "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-first-preflight"
   },
   "c4_candidate": {
-    "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+    "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
     "release_tests_passed": 12,
-    "sanitizers": {
-      "asan_ubsan_passed": 6,
-      "tsan_passed": 6
-    },
-    "slow_seal_regression": {
-      "old_binary": "INGRESS_OVERLOAD reproduced",
-      "new_ws_frames_read": 30000,
-      "peak_queue_records": 2800
-    },
-    "forced_overload_readable_prefix_ws_frames": 23231,
-    "native_tests": {
-      "status": "PASS",
-      "source_commit": "854745e60ef1bee200234669d68015fc4e4241f2",
-      "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
-      "cpp_files": {
-        "prototype/fault_io.cpp": "b44195d0c020933a5b667202437e11317a0719ceed4519583c38bf956975fa72",
-        "prototype/main.cpp": "bf90eb8c7ebf00bbd2a0f2e20d56a4ab0ba20bd8beaccf84667314bde2829f67",
-        "prototype/recorder_core.hpp": "422109035359fe4f109bf1ba4469772b0af9fd14b88f97f5f2af247dc0181126",
-        "prototype/recorder_run.hpp": "87e4c8b059d7ae73533be5f9404e2d9570dadf9e2873d5a8b59338deaefd37c0",
-        "prototype/recorder_storage.hpp": "9a40f43e147bae61a25d4b80aade2bf5c877f6a522aa2d377ad74485963c1866"
-      },
-      "tests": {
-        "release": {
-          "exit_code": 0,
-          "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
-          "test_count": 12
-        },
-        "asan": {
-          "exit_code": 0,
-          "binary_sha256": "c15686ef0691dc83c63d5132a4853363e6631312ebc6bf80a78685b7fa61eea5",
-          "test_count": 6
-        },
-        "tsan": {
-          "exit_code": 0,
-          "binary_sha256": "f8b2cb856e1bc720f9172f6005d8957604e37e65385049e5631f09085ea571b1",
-          "test_count": 6
-        }
-      },
-      "utc": "2026-11-08T21:05:17.676757+00:00"
-    },
-    "resource_policy": {
-      "slice_cpu_quota_percent": 175,
-      "archive_cpu_quota_percent": 25,
-      "archive_timeout_seconds": 240
-    }
+    "sanitizers": "RUNNING",
+    "public_seal_target_bytes": 33554432
+  },
+  "c4_second_preflight": {
+    "status": "FAILED",
+    "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+    "seal_chunk_id": "a884a0cc-c564-40b0-9ba9-1eb062c96ef4",
+    "seal_symbol": "ZECUSDT",
+    "seal_stream": "book_ticker",
+    "seal_uncompressed_bytes": 134217843,
+    "seal_utc": "2026-11-08T21:34:55.364866+00:00",
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-second-preflight"
   }
 }

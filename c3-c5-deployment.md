@@ -52,3 +52,6 @@ C4 首轮 03:33–04:03 上海时间真实十二币对试运行失败：USD-M �
 
 
 新 24h T0：**2026-11-09 05:08:22 上海时间**。release `/opt/sbmdr/releases/20261109-854745e6`，二进制 `6488d9…`，配置 SHA `758771…`；根 `/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/{spot,usdm}`，目标 `/srv/recorder-data/S-BMDR/live-20261108T210819Z-{spot,usdm}`。资格报告在原生 `results/c4-c5-24h/progress.json`，主流程在 `results/promotion-progress.json`。预计 11-10 05:08:32 满足连续采集时长，再进行全量读取；尚未签收或启用开机常驻。
+
+
+第二轮在 05:35 上海时间过载，新的 24h 未完成。此时定时封存已分散，只新增一个大小封存；实际 ZECUSDT/book_ticker manifest 为 134,217,843 字节，时间 UTC 21:34:55，对应最后约 2.5 秒日志空档和队列满。公开采集默认大小目标现降为 32 MiB，900 秒和队列/格式不变；候选 `700f0b…` Release 十二项通过，sanitizer 复验进行中。更多分片带来的 metadata/归档开销将实测，不承诺未经验证的吞吐或延迟成绩。
