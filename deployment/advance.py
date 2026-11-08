@@ -21,6 +21,7 @@ def main():
     p.add_argument("--source", type=Path, required=True)
     p.add_argument("--version", required=True)
     p.add_argument("--c3-report", type=Path, required=True)
+    p.add_argument("--archive-root", type=Path, action="append", default=[])
     a = p.parse_args()
     state = a.source / "results/promotion-progress.json"
     report = {"status": "WAIT_C3", "version": a.version}
@@ -49,10 +50,7 @@ def main():
             shutil.copyfile(path, a.source / f"results/ctest-{mode}.exit")
         env = {**os.environ, "PYTHONPATH": str(a.source / "python/src")}
         # Release system space only through the existing verified archive transaction.
-        for root in [Path(v["root"]) for v in c3["markets"].values()] + [
-            Path("/var/lib/binance-market-data-recorder/S-BMDR/c3-20261108") / m
-            for m in ("spot", "usdm")
-        ]:
+        for root in [Path(v["root"]) for v in c3["markets"].values()] + a.archive_root:
             target = (
                 Path("/srv/recorder-data/S-BMDR") / f"{root.parent.name}-{root.name}"
             )
