@@ -33,6 +33,11 @@ def main():
     (release / "release").mkdir()
     shutil.copy2(a.source / "release/sbmdr-c0", release / "release/sbmdr-c0")
     os.chmod(release / "release/sbmdr-c0", 0o755)
+    (release / "bin").mkdir()
+    (release / "bin/binance-market-recorder").symlink_to("../release/sbmdr-c0")
+    shutil.copy2(
+        a.source / "results/source-ledger.json", release / "source-ledger.json"
+    )
     for folder in ("prototype", "deployment", "config"):
         shutil.copytree(
             a.source / folder,
