@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_PRECHECK_FAILED_FIX_VALIDATING",
+  "status": "C3_PASS_C4_C5_24H_RUNNING",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,7 +597,83 @@
     }
   },
   "c5": {
-    "status": "NOT_STARTED"
+    "status": "RUNNING",
+    "deployment": {
+      "status": "INSTALLED_NOT_QUALIFIED",
+      "release": "/opt/sbmdr/releases/20261109-854745e6",
+      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-854745e6",
+      "roots": {
+        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/spot",
+        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/usdm"
+      },
+      "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+      "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+      "resource_policy": {
+        "slice_cpu_quota_percent": 175,
+        "archive_cpu_quota_percent": 25,
+        "archive_timeout_seconds": 240
+      },
+      "config_sha256": "758771236314d0f2e28e47026fb9e3d7b396ed870752555eb0fada6afabc8740",
+      "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
+    },
+    "start_snapshot": {
+      "status": "RUNNING",
+      "start_utc": "2026-11-08T21:08:22.118841+00:00",
+      "seconds_required": 86410,
+      "config": {
+        "spot": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT",
+          "BTCUSDC",
+          "ETHUSDC"
+        ],
+        "usdm": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT",
+          "BTCUSDC",
+          "ETHUSDC"
+        ]
+      },
+      "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+      "markets": {
+        "spot": {
+          "pid": 210681,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/spot",
+          "rss_kib": 31512,
+          "threads_peak": 5,
+          "wal_peak_bytes": 1248392
+        },
+        "usdm": {
+          "pid": 210694,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/usdm",
+          "rss_kib": 31376,
+          "threads_peak": 7,
+          "wal_peak_bytes": 1577992
+        }
+      },
+      "slice_cpu_peak_percent": 92.48775690282599,
+      "slice_cpu_60s_peak_percent": 37.93552727592559,
+      "elapsed_seconds": 90.59331867698347,
+      "system_minimum_free_bytes": 20606697472
+    },
+    "capture_expected_end_utc": "2026-11-09T21:08:32+00:00",
+    "not_yet_signed_off": true
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",

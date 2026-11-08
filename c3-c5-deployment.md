@@ -49,3 +49,6 @@ C4 首轮 03:33–04:03 上海时间真实十二币对试运行失败：USD-M �
 
 
 当前 C4 候选 `6488d9…` 已完成 Release 十二项、ASan/UBSan 六项、TSan 六项，结果按 `native-candidate-tests.json` 绑定源码及三份二进制；C3 已签收基线仍为 `234264…`。新的 C4/C5 十二币对 24h 将使用固定配额、独立新根与清空并备份后的实例日志，不拼接首轮失败数据。
+
+
+新 24h T0：**2026-11-09 05:08:22 上海时间**。release `/opt/sbmdr/releases/20261109-854745e6`，二进制 `6488d9…`，配置 SHA `758771…`；根 `/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T210819Z/{spot,usdm}`，目标 `/srv/recorder-data/S-BMDR/live-20261108T210819Z-{spot,usdm}`。资格报告在原生 `results/c4-c5-24h/progress.json`，主流程在 `results/promotion-progress.json`。预计 11-10 05:08:32 满足连续采集时长，再进行全量读取；尚未签收或启用开机常驻。
