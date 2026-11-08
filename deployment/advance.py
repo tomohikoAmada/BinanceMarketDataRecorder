@@ -48,6 +48,22 @@ def main():
             if path.read_text().strip() != "0":
                 raise RuntimeError(f"{mode} failed")
             shutil.copyfile(path, a.source / f"results/ctest-{mode}.exit")
+        for market in ("spot", "usdm"):
+            consumer = json.loads(
+                (a.source / f"results/normalize-{market}-sources.json").read_text()
+            )
+            assert consumer["source_adapter"] == "sbmdr-combined-ws.v1"
+            assert consumer["valid_rows"] > 0 and consumer["invalid_rows"] == 0
+        faults = json.loads(
+            (a.source / "results/archive-faults-final.json").read_text()
+        )
+        assert len(faults) == 2 and all(
+            f["source_preserved_after_failure"] and f["retry_completed"] for f in faults
+        )
+        assert (
+            json.loads((a.source / "results/history-smoke.json").read_text())["status"]
+            == "IMPORTED"
+        )
         env = {**os.environ, "PYTHONPATH": str(a.source / "python/src")}
         # Release system space only through the existing verified archive transaction.
         for root in [Path(v["root"]) for v in c3["markets"].values()] + a.archive_root:

@@ -639,6 +639,6 @@ GreenCloud 组合容量运行在约第 21 分钟触发 `INGRESS_OVERLOAD WS`。�
 
 首版候选（SHA-256 `2051b262fa831c02a35aad5bda580db9d44c4bbb07382b487a941f4326e515a3`）已于 11 月 8 日 17:57:39 至 19:00:55 上海时间完成 60 分钟公网与独立全量读回：Spot 356,069 条/64 分片，USD-M 1,298,443 条/92 分片；CPU 均值合计约单核 17.03%，峰值 RSS 合计约 61.38 MiB。此后补充重连配额分摊、启动扣账、成交时间范围、配置流事件类型检查和归档 SQL 并发等待；**必须用最终固定二进制重新跑满，不拼接首版时长签收**。首轮原生八项回归与适用 ASan/UBSan、TSan 各五项通过；新增第九项离线 K 线测试首轮失败原因为测试缺 PYTHONPATH，修正环境后复验，不能把首轮写成全部通过。
 
-C4 工具已复用冻结 Python ArchiveManager、Raw reader、Normalizer 和回放。隔离夹具完成实际双盘归档、复制中断/目标损坏保源和重试；真实采集样本 Parquet/回放、Decimal OHLCV 与官方历史 CHECKSUM 下载导入已通过。十二币对名单与快照依据固定于 config；仅扩配置，不引入动态 Top-N。
+C4 工具已复用冻结 Python ArchiveManager、Raw reader、Normalizer 和回放。隔离夹具完成实际双盘归档、复制中断/目标损坏保源和重试；真实采集样本的首轮 Parquet/回放只检查构建与计数，补查发现组合 WS 外层未展开，行情行 valid=False；现用离线 data 视图适配冻结解析器，保留原 Raw 和 payload hash。原生字段回归与 Spot 29,508 行零无效补验已通过，USD-M 逐流语义补验进行中。旧错误派生构建保留，在独立消费夹具验证修复，不覆盖 immutable manifest。Decimal OHLCV 与官方历史 CHECKSUM 下载导入已通过。十二币对名单与快照依据固定于 config；仅扩配置，不引入动态 Top-N。
 
 C5 已准备独立 sbmdr systemd unit、只处理封存分片的归档 timer 和有门禁的部署脚本：最终 C3 + sanitizer 通过后才安装，资格期间 Restart=no、PID 固定；24h 实际采集、全部 Raw 独立校验、两盘归档、23h 换连桥接、资源与磁盘测算完成后才启用常驻 Restart=on-failure。C++ SQLite 连接设置与现有 Python Catalog 一致的 30 秒 busy timeout，避免归档并发登记时立即 SQLITE_BUSY 退出；不新增写线程。当前 **C3 最终签收待复验，C4/C5 未签收**，旧 Python 服务与历史数据保留。详见 [实施与运行记录](c3-c5-deployment.md)。
