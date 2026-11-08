@@ -87,9 +87,9 @@ class Catalog {
                   Json::array({run, ns<system_clock>(), Json{{"collector_instance_id", run}}.dump()}));
     }
 
-    void overload(const std::string& run, bool rest, bool symbol_scoped, const std::string& market) {
-        const auto symbol = rest && !symbol_scoped ? "__GLOBAL__" : "BTCUSDT";
-        const auto stream = rest ? "exchange_info" : "diff_depth";
+    void overload(const std::string& run, bool rest, bool symbol_scoped, const std::string& market, bool configured) {
+        const auto symbol = configured || (rest && !symbol_scoped) ? "__GLOBAL__" : "BTCUSDT";
+        const auto stream = configured ? (rest ? "rest_observations" : "__ALL_WS__") : (rest ? "exchange_info" : "diff_depth");
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
                   "evidence_json,market,symbol,stream) VALUES(?,'INGRESS_OVERLOAD',?,?,?,?,?)",
                   Json::array({run + "-overload-" + stream, ns<system_clock>(),
@@ -403,8 +403,8 @@ class RecorderStorage {
         return rows;
     }
 
-    void mark_overload(bool rest, bool symbol_scoped, const std::string& market) {
-        catalog_.overload(run_, rest, symbol_scoped, market);
+    void mark_overload(bool rest, bool symbol_scoped, const std::string& market, bool configured = false) {
+        catalog_.overload(run_, rest, symbol_scoped, market, configured);
         for (auto& [key, slot] : slots_) {
             if (slot.raw && (slot.raw->stream == "rest_observations") == rest) {
                 slot.overload_gap = true;

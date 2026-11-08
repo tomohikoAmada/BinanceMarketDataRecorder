@@ -494,8 +494,9 @@ class RawFile {
 class IngressOverload : public std::runtime_error {
   public:
     explicit IngressOverload(const Message& message)
-        : std::runtime_error(message.rest ? "INGRESS_OVERLOAD REST " + message.family
-                                         : "INGRESS_OVERLOAD WS " + std::string(message.market == "spot" ? "S02" : "D02") + " BTCUSDT"),
+        : std::runtime_error(std::string("INGRESS_OVERLOAD ") + (message.rest ? "REST " : "WS ") +
+                             message.market + " " + message.symbol + " " +
+                             (message.rest ? message.source_stream : message.stream)),
           rest(message.rest) {}
     const bool rest;
 };
@@ -1040,9 +1041,14 @@ void verify_handoff_limit() {
     if (queue.rest_admissible())
         throw std::runtime_error("saturated queue admitted REST");
     try {
-        queue.push(Message{}, true);
+        Message extra;
+        extra.symbol = "ETHUSDT";
+        extra.stream = "agg_trade";
+        queue.push(std::move(extra), true);
         throw std::runtime_error("saturated queue accepted an extra record");
-    } catch (const IngressOverload&) {
+    } catch (const IngressOverload& error) {
+        if (std::string(error.what()).find("ETHUSDT agg_trade") == std::string::npos)
+            throw std::runtime_error("overload did not identify the configured source");
     }
     queue.close();
     Message message;

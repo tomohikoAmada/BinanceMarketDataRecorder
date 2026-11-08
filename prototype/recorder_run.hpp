@@ -303,9 +303,9 @@ int record(int argc, char** argv) {
             }
             const auto affected = overloads.load();
             if (affected & 1U)
-                storage.mark_overload(false, public_capture, usdm ? "um_perpetual" : "spot");
+                storage.mark_overload(false, public_capture, usdm ? "um_perpetual" : "spot", config.has_value());
             if (affected & 2U)
-                storage.mark_overload(true, public_capture, usdm ? "um_perpetual" : "spot");
+                storage.mark_overload(true, public_capture, usdm ? "um_perpetual" : "spot", config.has_value());
             storage.finish();
             Json result{{"records", records},
                         {"test_pause_start_monotonic_ns", pause_start},
