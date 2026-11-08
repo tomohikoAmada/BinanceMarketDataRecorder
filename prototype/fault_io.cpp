@@ -76,6 +76,15 @@ extern "C" int rename(const char *before, const char *after) {
         fixture && std::strstr(after, ".manifest.json") && !std::strstr(after, ".partial");
     if (sealed && mode("before_sealed_rename"))
         _exit(86);
+    if (sealed && mode("slow_seal"))
+        usleep(80000);
+    if (sealed && mode("stalled_seal")) {
+        static bool stalled = false;
+        if (!stalled) {
+            stalled = true;
+            usleep(3500000);
+        }
+    }
     const int result = real(before, after);
     if (result == 0 &&
         ((sealed && mode("after_sealed_rename")) || (manifest && mode("after_manifest_rename"))))

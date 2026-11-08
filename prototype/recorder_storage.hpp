@@ -91,10 +91,10 @@ class Catalog {
         const auto symbol = configured || (rest && !symbol_scoped) ? "__GLOBAL__" : "BTCUSDT";
         const auto stream = configured ? (rest ? "rest_observations" : "__ALL_WS__") : (rest ? "exchange_info" : "diff_depth");
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
-                  "evidence_json,market,symbol,stream) VALUES(?,'INGRESS_OVERLOAD',?,?,?,?,?)",
+                  "evidence_json) VALUES(?,'INGRESS_OVERLOAD',?,?)",
                   Json::array({run + "-overload-" + stream, ns<system_clock>(),
-                               Json{{"collector_instance_id", run}, {"wait_limit_ms", 250}}.dump(),
-                               market, symbol, stream}));
+                               Json{{"collector_instance_id", run}, {"wait_limit_ms", 250},
+                                    {"market", market}, {"symbol", symbol}, {"stream", stream}}.dump()}));
     }
 
     void active(const RawFile& raw, const fs::path& path) {
@@ -351,7 +351,7 @@ class RecorderStorage {
         catalog_.startup(run_);
     }
 
-    void tick() {
+    void tick(bool allow_time_rotation = true) {
         const auto now = steady_clock::now();
         if (now >= next_sync_) {
             for (auto& [key, slot] : slots_) {
@@ -360,9 +360,18 @@ class RecorderStorage {
             }
             next_sync_ = now + milliseconds(900);
         }
-        for (auto& [key, slot] : slots_) {
-            if (slot.raw && now - slot.opened >= period_)
-                rotate(slot, slot.raw->stream == "rest_observations", "time");
+        if (!allow_time_rotation)
+            return;
+        auto oldest = slots_.end();
+        for (auto it = slots_.begin(); it != slots_.end(); ++it) {
+            const auto& slot = it->second;
+            if (slot.raw && now - slot.opened >= period_ &&
+                (oldest == slots_.end() || slot.opened < oldest->second.opened))
+                oldest = it;
+        }
+        if (oldest != slots_.end()) {
+            auto& slot = oldest->second;
+            rotate(slot, slot.raw->stream == "rest_observations", "time");
         }
     }
 

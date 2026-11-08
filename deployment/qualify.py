@@ -397,7 +397,7 @@ def main():
             child.send_signal(signal.SIGTERM)
         if a.services:
             subprocess.run(["systemctl", "stop", "sbmdr-archive.timer"], check=True)
-            deadline = time.monotonic() + 180
+            deadline = time.monotonic() + 300
             while subprocess.check_output(
                 [
                     "systemctl",

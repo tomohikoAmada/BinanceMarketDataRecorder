@@ -261,11 +261,12 @@ int record(int argc, char** argv) {
                     std::this_thread::sleep_for(test_pause);
                     pause_finish = ns<steady_clock>();
                 }
-                storage.tick();
+                // Drain ingress between seals; a market-wide rotation must not monopolize the writer.
+                storage.tick(queue.snapshot().first == 0);
                 for (auto& message : batch) {
                     storage.append(message);
                     ++records;
-                    storage.tick();
+                    storage.tick(false);
                 }
                 if (pause_finish && !pause_drained && queue.snapshot().first == 0)
                     pause_drained = ns<steady_clock>();

@@ -4,3 +4,4 @@ Description=S-BMDR recorder and archive resource accounting
 [Slice]
 CPUAccounting=true
 MemoryAccounting=true
+CPUQuota=175%

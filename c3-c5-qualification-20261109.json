@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_C5_PENDING",
+  "status": "C3_PASS_C4_PRECHECK_FAILED_FIX_VALIDATING",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -604,5 +604,41 @@
     "C3 collector durations and complete Raw readback qualify this exact run; original harness SIGNAL error is retained.",
     "C3 cgroup sampler was not used; zero placeholder fields do not indicate measured zero CPU.",
     "C3 compiler/sanitizer/offline checks overlapped; C5 steady resource evidence must be measured without those jobs."
-  ]
+  ],
+  "c4_first_preflight": {
+    "status": "FAILED",
+    "start_utc": "2026-11-08T19:33:10.358112+00:00",
+    "failure_utc": "2026-11-08T20:03:32+00:00",
+    "binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+    "qualification_cpu_1s_peak_percent": 225.77583461778497,
+    "qualification_cpu_60s_peak_percent": 84.91339479682298,
+    "diagnostic_cpu_peak_percent_different_window": 253.393709685062,
+    "reason": "USD-M INGRESS_OVERLOAD during concentrated time sealing",
+    "catalog_scope_row_repaired_with_backup": true,
+    "raw_files_modified": false,
+    "stored_raw_readback": {
+      "spot": {
+        "records": 372553,
+        "chunks": 119,
+        "status": "PASS"
+      },
+      "usdm": {
+        "records": 1158416,
+        "chunks": 167,
+        "status": "PASS"
+      }
+    },
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-first-preflight"
+  },
+  "c4_candidate": {
+    "binary_sha256": "6488d9ff492a70b56f7a42695e60927454e17a90f8fd5f06b6f7adcbc014fab0",
+    "release_tests_passed": 12,
+    "sanitizers": "RUNNING",
+    "slow_seal_regression": {
+      "old_binary": "INGRESS_OVERLOAD reproduced",
+      "new_ws_frames_read": 30000,
+      "peak_queue_records": 2800
+    },
+    "forced_overload_readable_prefix_ws_frames": 23231
+  }
 }

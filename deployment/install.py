@@ -19,13 +19,32 @@ def main():
     a = p.parse_args()
     c3 = json.loads(a.c3_report.read_text())
     assert c3["status"] == "PASS", "C3 not signed off"
-    assert (
-        hashlib.sha256((a.source / "release/sbmdr-c0").read_bytes()).hexdigest()
-        == c3["binary_sha256"]
-    )
+    binary_sha256 = hashlib.sha256(
+        (a.source / "release/sbmdr-c0").read_bytes()
+    ).hexdigest()
+    # C4 may contain its own fixes. Bind that candidate to current native checks;
+    # retain the actual C3 baseline identity instead of relabeling its capture.
+    checks = json.loads((a.source / "results/native-candidate-tests.json").read_text())
+    assert checks["status"] == "PASS" and checks["binary_sha256"] == binary_sha256
+    for path, digest in checks["cpp_files"].items():
+        assert hashlib.sha256((a.source / path).read_bytes()).hexdigest() == digest
+    for mode in ("release", "asan", "tsan"):
+        assert checks["tests"][mode]["exit_code"] == 0
+        assert (
+            hashlib.sha256((a.source / mode / "sbmdr-c0").read_bytes()).hexdigest()
+            == checks["tests"][mode]["binary_sha256"]
+        )
     for mode in ("asan", "tsan"):
         assert (a.source / f"results/ctest-{mode}.exit").read_text().strip() == "0"
     user = pwd.getpwnam("bmdr")
+    for unit in ("sbmdr-recorder@spot", "sbmdr-recorder@usdm", "sbmdr-archive.service"):
+        state = subprocess.run(
+            ["systemctl", "is-active", unit],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.strip()
+        assert state not in {"active", "activating", "deactivating"}, (unit, state)
     release = Path("/opt/sbmdr/releases") / a.version
     if release.exists():
         raise ValueError("immutable release already exists")
@@ -37,6 +56,10 @@ def main():
     (release / "bin/binance-market-recorder").symlink_to("../release/sbmdr-c0")
     shutil.copy2(
         a.source / "results/source-ledger.json", release / "source-ledger.json"
+    )
+    shutil.copy2(
+        a.source / "results/native-candidate-tests.json",
+        release / "native-candidate-tests.json",
     )
     for folder in ("prototype", "deployment", "config"):
         shutil.copytree(
@@ -66,6 +89,20 @@ def main():
     log.mkdir(parents=True, exist_ok=True)
     os.chown(log, 0, 0)
     os.chmod(log, 0o755)
+    old_logs = a.source / "results" / f"logs-before-{a.version}"
+    old_logs.mkdir()
+    for name in (
+        "spot.stdout.jsonl",
+        "spot.status.jsonl",
+        "usdm.stdout.jsonl",
+        "usdm.status.jsonl",
+        "archive.jsonl",
+    ):
+        path = log / name
+        if path.exists():
+            if path.stat().st_size:
+                shutil.copy2(path, old_logs / name)
+            path.write_bytes(b"")
     archive_log = log / "archive.jsonl"
     archive_log.touch()
     os.chown(archive_log, user.pw_uid, user.pw_gid)
@@ -128,7 +165,13 @@ def main():
         "release": str(release),
         "runtime": str(runtime),
         "roots": roots,
-        "binary_sha256": c3["binary_sha256"],
+        "binary_sha256": binary_sha256,
+        "c3_baseline_binary_sha256": c3["binary_sha256"],
+        "resource_policy": {
+            "slice_cpu_quota_percent": 175,
+            "archive_cpu_quota_percent": 25,
+            "archive_timeout_seconds": 240,
+        },
         "config_sha256": hashlib.sha256(
             Path("/etc/sbmdr/config.json").read_bytes()
         ).hexdigest(),
