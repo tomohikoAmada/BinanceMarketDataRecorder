@@ -1,5 +1,5 @@
 {
-  "selection": "Explicit frozen whitelist; ten familiar liquid USDT pairs among current top-20 Spot quote-volume intersection with TRADING USD-M perpetuals, plus BTCUSDC/ETHUSDC. Not automatic top-N.",
+  "selection": "Explicit frozen whitelist: ten liquid USDT pairs selected from the recorded top-20 Spot quote-volume intersection with TRADING USD-M perpetuals. Not automatic top-N.",
   "source": "https://api.binance.com/api/v3/ticker/24hr",
   "perpetual_listing_source": "https://fapi.binance.com/fapi/v1/exchangeInfo",
   "snapshot_sha256": "790b7f342c56543a32d9940bdd75f049457d237e59e344f48e0049615cc7cba3",
@@ -75,18 +75,30 @@
     "NEARUSDT",
     "UNIUSDT",
     "DOGEUSDT",
-    "LINKUSDT",
-    "BTCUSDC",
-    "ETHUSDC"
+    "LINKUSDT"
   ],
   "excluded": "Stablecoin pairs and transient volume alone do not select a product. No live universe changes.",
   "qualification_scope_adjustment": {
     "date": "2026-11-09",
-    "reason": "Twelve-pair public capture hit bounded ingress overload during real bursts; qualify ten USDT pairs within the requested 10\u201320 range.",
+    "reason": "Twelve-pair public capture hit bounded ingress overload during real bursts; qualify ten USDT pairs within the requested 10–20 range.",
     "removed_pairs": [
       "BTCUSDC",
       "ETHUSDC"
     ],
     "selection_is_fixed": true
-  }
+  },
+  "original_twelve_pair_symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "ZECUSDT",
+    "XRPUSDT",
+    "NEARUSDT",
+    "UNIUSDT",
+    "DOGEUSDT",
+    "LINKUSDT",
+    "BTCUSDC",
+    "ETHUSDC"
+  ]
 }
