@@ -1,0 +1,608 @@
+{
+  "status": "C3_PASS_C4_C5_PENDING",
+  "source_cpp_commit": "ca0dc849",
+  "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
+  "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+  "native_evidence_root": "/srv/recorder-data/sbmdr-c3.geZknS/results",
+  "c3": {
+    "status": "PASS",
+    "start_utc": "2026-11-08T17:45:22.884438+00:00",
+    "seconds_required": 3605,
+    "config": {
+      "spot": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "BNBUSDT"
+      ],
+      "usdm": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "BNBUSDT"
+      ]
+    },
+    "binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+    "markets": {
+      "spot": {
+        "pid": 197779,
+        "root": "/var/lib/binance-market-data-recorder/S-BMDR/c3-release-20261109/spot",
+        "rss_kib": 30824,
+        "threads_peak": 5,
+        "wal_peak_bytes": 3250712,
+        "recorder": {
+          "records": 453598,
+          "test_pause_start_monotonic_ns": 0,
+          "test_pause_finish_monotonic_ns": 0,
+          "test_pause_backlog_drain_ns": null,
+          "sealed": 63,
+          "rotations": {
+            "time": 51,
+            "shutdown": 12
+          },
+          "max_durability_ns": 1868532214,
+          "max_receive_to_append_ns": 1517395547,
+          "receive_to_append_p99_ms": 47,
+          "max_status_cpu_percent": 74.6957534940171,
+          "stop_reason": "SIGNAL",
+          "peak_queue_payload_bytes": 427519,
+          "peak_queue_records": 441,
+          "wall_seconds": 3605.453153939,
+          "cpu_seconds": 244.033806,
+          "peak_rss_bytes": 31399936,
+          "allocation_counter_enabled": false,
+          "new_calls": null,
+          "new_requested_bytes": null,
+          "interrupted": true
+        },
+        "readback": {
+          "status": "PASS",
+          "chunks": 63,
+          "records": 453598,
+          "stored_bytes": 22175869,
+          "uncompressed_bytes": 378416040,
+          "ws_payload_bytes": 99821266,
+          "rest_body_bytes": 1226421,
+          "source_payload_bytes": {
+            "spot/BNBUSDT/book_ticker": 3880430,
+            "spot/SOLUSDT/book_ticker": 8596026,
+            "spot/ETHUSDT/rest_observations": 414603,
+            "spot/ETHUSDT/diff_depth": 16190767,
+            "spot/SOLUSDT/diff_depth": 6200933,
+            "spot/SOLUSDT/agg_trade": 651633,
+            "spot/BNBUSDT/diff_depth": 6863839,
+            "spot/BTCUSDT/rest_observations": 427519,
+            "spot/ETHUSDT/book_ticker": 13781795,
+            "spot/__GLOBAL__/rest_observations": 27640,
+            "spot/ETHUSDT/agg_trade": 1414629,
+            "spot/BTCUSDT/diff_depth": 20048957,
+            "spot/BTCUSDT/agg_trade": 2491053,
+            "spot/BNBUSDT/agg_trade": 1006049,
+            "spot/BTCUSDT/book_ticker": 18695155,
+            "spot/BNBUSDT/rest_observations": 401591,
+            "spot/SOLUSDT/rest_observations": 367811
+          },
+          "ws_receive_span_seconds": 3604.790873704,
+          "archive_states": {},
+          "connections": {
+            "spot/BNBUSDT/book_ticker": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/SOLUSDT/book_ticker": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/ETHUSDT/rest_observations": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-rest"
+            ],
+            "spot/ETHUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/SOLUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/SOLUSDT/agg_trade": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BNBUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BTCUSDT/rest_observations": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-rest"
+            ],
+            "spot/ETHUSDT/book_ticker": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/__GLOBAL__/rest_observations": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-rest"
+            ],
+            "spot/ETHUSDT/agg_trade": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BTCUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BTCUSDT/agg_trade": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BNBUSDT/agg_trade": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BTCUSDT/book_ticker": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BNBUSDT/rest_observations": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-rest"
+            ],
+            "spot/SOLUSDT/rest_observations": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-rest"
+            ]
+          },
+          "connection_monotonic_ranges_ns": {
+            "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public": [
+              486245707997768,
+              489850498871472
+            ]
+          },
+          "bridge_connections": {
+            "spot/ETHUSDT/rest_observations": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-rest"
+            ],
+            "spot/ETHUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/SOLUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BNBUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ],
+            "spot/BTCUSDT/diff_depth": [
+              "c1-c222db9a-d011-4342-b468-45fcc466fbbb-ws-public"
+            ]
+          },
+          "source_counts": {
+            "spot/BNBUSDT/book_ticker": 27075,
+            "spot/SOLUSDT/book_ticker": 59558,
+            "spot/ETHUSDT/rest_observations": 1,
+            "spot/ETHUSDT/diff_depth": 34399,
+            "spot/SOLUSDT/diff_depth": 24113,
+            "spot/SOLUSDT/agg_trade": 3246,
+            "spot/BNBUSDT/diff_depth": 23361,
+            "spot/BTCUSDT/rest_observations": 1,
+            "spot/ETHUSDT/book_ticker": 94780,
+            "spot/__GLOBAL__/rest_observations": 1,
+            "spot/ETHUSDT/agg_trade": 6952,
+            "spot/BTCUSDT/diff_depth": 35845,
+            "spot/BTCUSDT/agg_trade": 12178,
+            "spot/BNBUSDT/agg_trade": 4990,
+            "spot/BTCUSDT/book_ticker": 127096,
+            "spot/BNBUSDT/rest_observations": 1,
+            "spot/SOLUSDT/rest_observations": 1
+          },
+          "capture_flags": {
+            "spot/ETHUSDT/rest_observations/rest_poll": 1,
+            "spot/ETHUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+            "spot/ETHUSDT/rest_observations/depth_bridge": 1,
+            "spot/ETHUSDT/diff_depth/depth_bridge": 34396,
+            "spot/SOLUSDT/diff_depth/depth_bridge": 24111,
+            "spot/BNBUSDT/diff_depth/depth_bridge": 23359,
+            "spot/BNBUSDT/diff_depth/depth_snapshot_pending": 2,
+            "spot/BTCUSDT/rest_observations/rest_poll": 1,
+            "spot/BTCUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+            "spot/BTCUSDT/rest_observations/depth_snapshot_pending": 1,
+            "spot/__GLOBAL__/rest_observations/rest_poll": 1,
+            "spot/__GLOBAL__/rest_observations/exact_rest_http_body_preserved": 1,
+            "spot/BTCUSDT/diff_depth/depth_bridge": 35843,
+            "spot/SOLUSDT/diff_depth/depth_snapshot_pending": 2,
+            "spot/ETHUSDT/diff_depth/depth_snapshot_pending": 3,
+            "spot/BNBUSDT/rest_observations/rest_poll": 1,
+            "spot/BNBUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+            "spot/BNBUSDT/rest_observations/depth_snapshot_pending": 1,
+            "spot/SOLUSDT/rest_observations/rest_poll": 1,
+            "spot/SOLUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+            "spot/SOLUSDT/rest_observations/depth_snapshot_pending": 1,
+            "spot/BTCUSDT/diff_depth/depth_snapshot_pending": 2
+          },
+          "rest_statuses": {
+            "spot/ETHUSDT/depth_snapshot/200/True": 1,
+            "spot/BTCUSDT/depth_snapshot/200/True": 1,
+            "spot/__GLOBAL__/exchange_info/200/True": 1,
+            "spot/BNBUSDT/depth_snapshot/200/True": 1,
+            "spot/SOLUSDT/depth_snapshot/200/True": 1
+          },
+          "archive_roots": {}
+        }
+      },
+      "usdm": {
+        "pid": 197780,
+        "root": "/var/lib/binance-market-data-recorder/S-BMDR/c3-release-20261109/usdm",
+        "rss_kib": 35876,
+        "threads_peak": 7,
+        "wal_peak_bytes": 4128272,
+        "recorder": {
+          "records": 2049024,
+          "test_pause_start_monotonic_ns": 0,
+          "test_pause_finish_monotonic_ns": 0,
+          "test_pause_backlog_drain_ns": null,
+          "sealed": 92,
+          "rotations": {
+            "time": 65,
+            "size": 6,
+            "shutdown": 21
+          },
+          "max_durability_ns": 4476426153,
+          "max_receive_to_append_ns": 3743582051,
+          "receive_to_append_p99_ms": 189,
+          "max_status_cpu_percent": 130.4070064555131,
+          "stop_reason": "SIGNAL",
+          "peak_queue_payload_bytes": 1563732,
+          "peak_queue_records": 4068,
+          "wall_seconds": 3608.973044304,
+          "cpu_seconds": 744.982041,
+          "peak_rss_bytes": 36036608,
+          "allocation_counter_enabled": false,
+          "new_calls": null,
+          "new_requested_bytes": null,
+          "interrupted": true
+        },
+        "readback": {
+          "status": "PASS",
+          "chunks": 92,
+          "records": 2049024,
+          "stored_bytes": 105623632,
+          "uncompressed_bytes": 1798315702,
+          "ws_payload_bytes": 529122551,
+          "rest_body_bytes": 1360920,
+          "source_payload_bytes": {
+            "um_perpetual/BNBUSDT/mark_price": 774860,
+            "um_perpetual/SOLUSDT/mark_price": 760444,
+            "um_perpetual/SOLUSDT/diff_depth": 21885869,
+            "um_perpetual/BTCUSDT/liquidation": 4452,
+            "um_perpetual/BTCUSDT/book_ticker": 149496423,
+            "um_perpetual/BNBUSDT/agg_trade": 914129,
+            "um_perpetual/ETHUSDT/mark_price": 789276,
+            "um_perpetual/BTCUSDT/rest_observations": 114302,
+            "um_perpetual/SOLUSDT/rest_observations": 113622,
+            "um_perpetual/BTCUSDT/agg_trade": 3119983,
+            "um_perpetual/SOLUSDT/liquidation": 3645,
+            "um_perpetual/SOLUSDT/agg_trade": 2646992,
+            "um_perpetual/ETHUSDT/rest_observations": 112870,
+            "um_perpetual/ETHUSDT/diff_depth": 48098359,
+            "um_perpetual/BNBUSDT/book_ticker": 15670656,
+            "um_perpetual/ETHUSDT/book_ticker": 151111942,
+            "um_perpetual/ETHUSDT/agg_trade": 2894874,
+            "um_shared/__GLOBAL__/rest_observations": 1563732,
+            "um_perpetual/SOLUSDT/book_ticker": 58979807,
+            "um_perpetual/BNBUSDT/rest_observations": 109962,
+            "um_perpetual/BTCUSDT/diff_depth": 56219558,
+            "um_perpetual/BTCUSDT/mark_price": 803692,
+            "um_perpetual/BNBUSDT/diff_depth": 14942198,
+            "um_perpetual/BNBUSDT/liquidation": 486,
+            "um_perpetual/ETHUSDT/liquidation": 4906
+          },
+          "ws_receive_span_seconds": 3604.655636031,
+          "archive_states": {},
+          "connections": {
+            "um_perpetual/BNBUSDT/mark_price": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/SOLUSDT/mark_price": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/SOLUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BTCUSDT/liquidation": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/BTCUSDT/book_ticker": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BNBUSDT/agg_trade": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/ETHUSDT/mark_price": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/BTCUSDT/rest_observations": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-rest"
+            ],
+            "um_perpetual/SOLUSDT/rest_observations": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-rest"
+            ],
+            "um_perpetual/BTCUSDT/agg_trade": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/SOLUSDT/liquidation": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/SOLUSDT/agg_trade": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/ETHUSDT/rest_observations": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-rest"
+            ],
+            "um_perpetual/ETHUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BNBUSDT/book_ticker": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/ETHUSDT/book_ticker": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/ETHUSDT/agg_trade": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_shared/__GLOBAL__/rest_observations": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-rest"
+            ],
+            "um_perpetual/SOLUSDT/book_ticker": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BNBUSDT/rest_observations": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-rest"
+            ],
+            "um_perpetual/BTCUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BTCUSDT/mark_price": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/BNBUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BNBUSDT/liquidation": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ],
+            "um_perpetual/ETHUSDT/liquidation": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market"
+            ]
+          },
+          "connection_monotonic_ranges_ns": {
+            "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-market": [
+              486245951131310,
+              489850441192080
+            ],
+            "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public": [
+              486245834087561,
+              489850489723592
+            ]
+          },
+          "bridge_connections": {
+            "um_perpetual/SOLUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/ETHUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BTCUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ],
+            "um_perpetual/BNBUSDT/diff_depth": [
+              "c1-b09d21cb-fe34-43a0-822b-4226df638695-ws-public"
+            ]
+          },
+          "source_counts": {
+            "um_perpetual/BNBUSDT/mark_price": 3604,
+            "um_perpetual/SOLUSDT/mark_price": 3604,
+            "um_perpetual/SOLUSDT/diff_depth": 33716,
+            "um_perpetual/BTCUSDT/liquidation": 18,
+            "um_perpetual/BTCUSDT/book_ticker": 737015,
+            "um_perpetual/BNBUSDT/agg_trade": 4557,
+            "um_perpetual/ETHUSDT/mark_price": 3604,
+            "um_perpetual/BTCUSDT/rest_observations": 61,
+            "um_perpetual/SOLUSDT/rest_observations": 61,
+            "um_perpetual/BTCUSDT/agg_trade": 15252,
+            "um_perpetual/SOLUSDT/liquidation": 15,
+            "um_perpetual/SOLUSDT/agg_trade": 13085,
+            "um_perpetual/ETHUSDT/rest_observations": 61,
+            "um_perpetual/ETHUSDT/diff_depth": 35238,
+            "um_perpetual/BNBUSDT/book_ticker": 78619,
+            "um_perpetual/ETHUSDT/book_ticker": 745081,
+            "um_perpetual/ETHUSDT/agg_trade": 14217,
+            "um_shared/__GLOBAL__/rest_observations": 1,
+            "um_perpetual/SOLUSDT/book_ticker": 290096,
+            "um_perpetual/BNBUSDT/rest_observations": 61,
+            "um_perpetual/BTCUSDT/diff_depth": 35323,
+            "um_perpetual/BTCUSDT/mark_price": 3604,
+            "um_perpetual/BNBUSDT/diff_depth": 32109,
+            "um_perpetual/BNBUSDT/liquidation": 2,
+            "um_perpetual/ETHUSDT/liquidation": 20
+          },
+          "capture_flags": {
+            "um_perpetual/SOLUSDT/diff_depth/depth_bridge": 33715,
+            "um_perpetual/BTCUSDT/rest_observations/rest_poll": 61,
+            "um_perpetual/BTCUSDT/rest_observations/exact_rest_http_body_preserved": 61,
+            "um_perpetual/SOLUSDT/rest_observations/rest_poll": 61,
+            "um_perpetual/SOLUSDT/rest_observations/exact_rest_http_body_preserved": 61,
+            "um_perpetual/SOLUSDT/rest_observations/depth_snapshot_pending": 1,
+            "um_perpetual/ETHUSDT/rest_observations/rest_poll": 61,
+            "um_perpetual/ETHUSDT/rest_observations/exact_rest_http_body_preserved": 61,
+            "um_perpetual/ETHUSDT/diff_depth/depth_bridge": 35237,
+            "um_perpetual/BTCUSDT/rest_observations/depth_snapshot_pending": 1,
+            "um_shared/__GLOBAL__/rest_observations/rest_poll": 1,
+            "um_shared/__GLOBAL__/rest_observations/exact_rest_http_body_preserved": 1,
+            "um_perpetual/BNBUSDT/rest_observations/rest_poll": 61,
+            "um_perpetual/BNBUSDT/rest_observations/exact_rest_http_body_preserved": 61,
+            "um_perpetual/BNBUSDT/rest_observations/depth_snapshot_pending": 1,
+            "um_perpetual/BTCUSDT/diff_depth/depth_bridge": 35322,
+            "um_perpetual/BNBUSDT/diff_depth/depth_snapshot_pending": 1,
+            "um_perpetual/BNBUSDT/diff_depth/depth_bridge": 32108,
+            "um_perpetual/ETHUSDT/rest_observations/depth_snapshot_pending": 1,
+            "um_perpetual/ETHUSDT/diff_depth/depth_snapshot_pending": 1,
+            "um_perpetual/SOLUSDT/diff_depth/depth_snapshot_pending": 1,
+            "um_perpetual/BTCUSDT/diff_depth/depth_snapshot_pending": 1
+          },
+          "rest_statuses": {
+            "um_perpetual/BTCUSDT/top_long_short_account_ratio_5m/200/True": 12,
+            "um_perpetual/BTCUSDT/top_long_short_position_ratio_5m/200/True": 12,
+            "um_perpetual/BTCUSDT/global_long_short_ratio_5m/200/True": 12,
+            "um_perpetual/BTCUSDT/taker_buy_sell_volume_5m/200/True": 12,
+            "um_perpetual/BTCUSDT/open_interest/200/True": 12,
+            "um_perpetual/SOLUSDT/depth_snapshot/200/True": 1,
+            "um_perpetual/SOLUSDT/open_interest/200/True": 12,
+            "um_perpetual/SOLUSDT/top_long_short_account_ratio_5m/200/True": 12,
+            "um_perpetual/SOLUSDT/top_long_short_position_ratio_5m/200/True": 12,
+            "um_perpetual/SOLUSDT/global_long_short_ratio_5m/200/True": 12,
+            "um_perpetual/SOLUSDT/taker_buy_sell_volume_5m/200/True": 12,
+            "um_perpetual/ETHUSDT/open_interest/200/True": 12,
+            "um_perpetual/ETHUSDT/top_long_short_account_ratio_5m/200/True": 12,
+            "um_perpetual/ETHUSDT/top_long_short_position_ratio_5m/200/True": 12,
+            "um_perpetual/ETHUSDT/global_long_short_ratio_5m/200/True": 12,
+            "um_perpetual/ETHUSDT/taker_buy_sell_volume_5m/200/True": 12,
+            "um_perpetual/BTCUSDT/depth_snapshot/200/True": 1,
+            "um_shared/__GLOBAL__/exchange_info/200/True": 1,
+            "um_perpetual/BNBUSDT/depth_snapshot/200/True": 1,
+            "um_perpetual/BNBUSDT/open_interest/200/True": 12,
+            "um_perpetual/BNBUSDT/top_long_short_account_ratio_5m/200/True": 12,
+            "um_perpetual/BNBUSDT/top_long_short_position_ratio_5m/200/True": 12,
+            "um_perpetual/BNBUSDT/global_long_short_ratio_5m/200/True": 12,
+            "um_perpetual/BNBUSDT/taker_buy_sell_volume_5m/200/True": 12,
+            "um_perpetual/ETHUSDT/depth_snapshot/200/True": 1
+          },
+          "archive_roots": {}
+        }
+      }
+    },
+    "slice_cpu_peak_percent": 0,
+    "slice_cpu_60s_peak_percent": 0,
+    "elapsed_seconds": 3600.7540925010107,
+    "system_minimum_free_bytes": 19524366336,
+    "finish_utc": "2026-11-08T19:11:40.159289+00:00",
+    "capture_finish_utc": "2026-11-08T18:45:31.982083+00:00",
+    "prior_harness_failure": {
+      "error": "AssertionError()",
+      "reason": "Expected graceful SIGTERM is SIGNAL, not INPUT_COMPLETE",
+      "original_report": "/srv/recorder-data/sbmdr-c3.geZknS/results/c3-release-60m/progress-before-stop-reason-fix.json"
+    },
+    "verification_started_utc": "2026-11-08T19:04:03.412192+00:00",
+    "cpu_mean_percent": 27.41095811398729,
+    "peak_rss_sum_bytes": 67436544,
+    "status_cpu_peak_sum_upper_bound_percent": 205.1027599495302,
+    "storage": {
+      "stored_bytes": 127799501,
+      "archive_available_bytes": 2040153493504,
+      "system_available_bytes": 20437516288,
+      "compressed_gb_per_day": 3.062933949070735,
+      "additional_retention_days_at_observed_rate": 666.0781875897007
+    }
+  },
+  "offline_semantic_checks": {
+    "spot": {
+      "source_adapter": "sbmdr-combined-ws.v1",
+      "normalization": {
+        "status": "BUILT",
+        "dataset_version": "normalized-dataset.v2",
+        "build_id": "bef29d9a794d2ed013eff85f930a6d120098d2e56f764ebf37e3028fa3ea74c8",
+        "build_manifest": "data/normalized/normalized-dataset.v2/builds/bef29d9a794d2ed013eff85f930a6d120098d2e56f764ebf37e3028fa3ea74c8.manifest.json",
+        "source_chunks": 5,
+        "partitions": 7,
+        "normalized_rows": 29508,
+        "duplicate_rows_removed": 0,
+        "identity_conflicts": 0
+      },
+      "replay_symbol": "BTCUSDT",
+      "replayed_events": 29507,
+      "source_root": "/var/lib/binance-market-data-recorder/S-BMDR/c3-20261108/spot",
+      "consumer_root": "/var/lib/binance-market-data-recorder/S-BMDR/c4-consumer-spot-yroni_pc",
+      "source_streams": [
+        [
+          "spot",
+          "BTCUSDT",
+          "diff_depth"
+        ],
+        [
+          "spot",
+          "BTCUSDT",
+          "rest_observations"
+        ],
+        [
+          "spot",
+          "BTCUSDT",
+          "agg_trade"
+        ],
+        [
+          "spot",
+          "BTCUSDT",
+          "book_ticker"
+        ],
+        [
+          "spot",
+          "__GLOBAL__",
+          "rest_observations"
+        ]
+      ],
+      "valid_rows": 29508,
+      "invalid_rows": 0,
+      "errors": {}
+    },
+    "usdm": {
+      "source_adapter": "sbmdr-combined-ws.v1",
+      "normalization": {
+        "status": "BUILT",
+        "dataset_version": "normalized-dataset.v2",
+        "build_id": "155352ae024ae5ac539b256952ea09a4b416785bf3e86b4205a4ae6f0d8b1881",
+        "build_manifest": "data/normalized/normalized-dataset.v2/builds/155352ae024ae5ac539b256952ea09a4b416785bf3e86b4205a4ae6f0d8b1881.manifest.json",
+        "source_chunks": 7,
+        "partitions": 12,
+        "normalized_rows": 115116,
+        "duplicate_rows_removed": 0,
+        "identity_conflicts": 0
+      },
+      "replay_symbol": "BTCUSDT",
+      "replayed_events": 115115,
+      "source_root": "/var/lib/binance-market-data-recorder/S-BMDR/c3-20261108/usdm",
+      "consumer_root": "/var/lib/binance-market-data-recorder/S-BMDR/c4-consumer-usdm-nh6wyzjh",
+      "source_streams": [
+        [
+          "um_perpetual",
+          "BTCUSDT",
+          "rest_observations"
+        ],
+        [
+          "um_perpetual",
+          "BTCUSDT",
+          "liquidation"
+        ],
+        [
+          "um_perpetual",
+          "BTCUSDT",
+          "book_ticker"
+        ],
+        [
+          "um_perpetual",
+          "BTCUSDT",
+          "agg_trade"
+        ],
+        [
+          "um_perpetual",
+          "BTCUSDT",
+          "mark_price"
+        ],
+        [
+          "um_perpetual",
+          "BTCUSDT",
+          "diff_depth"
+        ],
+        [
+          "um_shared",
+          "__GLOBAL__",
+          "rest_observations"
+        ]
+      ],
+      "valid_rows": 115116,
+      "invalid_rows": 0,
+      "errors": {}
+    }
+  },
+  "c5": {
+    "status": "NOT_STARTED"
+  },
+  "notes": [
+    "Original C1 synthetic capacity and durability failures remain failed.",
+    "C3 collector durations and complete Raw readback qualify this exact run; original harness SIGNAL error is retained.",
+    "C3 cgroup sampler was not used; zero placeholder fields do not indicate measured zero CPU.",
+    "C3 compiler/sanitizer/offline checks overlapped; C5 steady resource evidence must be measured without those jobs."
+  ]
+}
