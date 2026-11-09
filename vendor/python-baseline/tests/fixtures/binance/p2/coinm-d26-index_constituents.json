@@ -1,0 +1,103 @@
+{
+  "source": {
+    "family": "D26",
+    "venue_market": "coinm",
+    "market": "cm_delivery",
+    "symbol": "BTCUSD",
+    "stream": "index_constituents",
+    "transport": "rest",
+    "endpoint": "/dapi/v1/constituents",
+    "cadence_seconds": 3600,
+    "parameters": {
+      "symbol": "BTCUSD"
+    },
+    "weight": 2,
+    "required_fields": [
+      "constituents"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSD_261225",
+      "BTCUSD_PERP"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "symbol": "BTCUSD"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D26",
+    "source_stream": "index_constituents",
+    "scope": "BTCUSD",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/dapi/v1/constituents",
+      "parameters": {
+        "symbol": "BTCUSD"
+      },
+      "request_time_utc_ns": 1793097603975935000,
+      "request_monotonic_ns": 398080639374833,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:04 GMT",
+        "content-type": "application/json",
+        "x-mbx-used-weight-1m": "3",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "symbol": "BTCUSD",
+        "time": 1793097602438,
+        "constituents": [
+          {
+            "exchange": "binance_cross",
+            "symbol": "BTCUSDT*uindex(USDTUSD)",
+            "price": "79717.10584418",
+            "weight": "0.33333333"
+          },
+          {
+            "exchange": "okex",
+            "symbol": "BTC-USDT*uindex(USDTUSD)",
+            "price": "79707.63163718",
+            "weight": "0.16666667"
+          },
+          {
+            "exchange": "coinbase",
+            "symbol": "BTC-USD",
+            "price": "79713.36000000",
+            "weight": "0.33333333"
+          },
+          {
+            "exchange": "bitstamp",
+            "symbol": "btcusd",
+            "price": "79718.10000000",
+            "weight": "0.16666667"
+          }
+        ]
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097604068419000,
+      "receive_monotonic_ns": 398080731858125
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

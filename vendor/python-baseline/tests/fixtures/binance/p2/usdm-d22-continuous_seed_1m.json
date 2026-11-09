@@ -1,0 +1,123 @@
+{
+  "source": {
+    "family": "D22",
+    "venue_market": "usdm",
+    "market": "um_delivery",
+    "symbol": "BTCUSDT_CURRENT_QUARTER",
+    "stream": "continuous_seed_1m",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/continuousKlines",
+    "cadence_seconds": 0,
+    "parameters": {
+      "contractType": "CURRENT_QUARTER",
+      "interval": "1m",
+      "limit": 2,
+      "pair": "BTCUSDT"
+    },
+    "weight": 1,
+    "required_fields": [],
+    "priority": "bar_repair",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "contractType": "CURRENT_QUARTER",
+    "interval": "1m",
+    "limit": 3,
+    "pair": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D22",
+    "source_stream": "continuous_seed_1m",
+    "scope": "BTCUSDT_CURRENT_QUARTER",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/continuousKlines",
+      "parameters": {
+        "contractType": "CURRENT_QUARTER",
+        "interval": "1m",
+        "limit": 3,
+        "pair": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097608477618000,
+      "request_monotonic_ns": 398085141029708,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Tue, 27 Oct 2026 10:40:08 GMT",
+        "x-mbx-used-weight-1m": "52",
+        "x-response-time": "0ms"
+      },
+      "model": [
+        [
+          1793097480000,
+          "80415.7",
+          "80472.5",
+          "80415.7",
+          "80472.5",
+          "0.004",
+          1793097539999,
+          "321.7896",
+          3,
+          "0.004",
+          "321.7896",
+          "0"
+        ],
+        [
+          1793097540000,
+          "80498.5",
+          "80563.3",
+          "80498.5",
+          "80563.3",
+          "0.109",
+          1793097599999,
+          "8778.9806",
+          17,
+          "0.039",
+          "3141.2049",
+          "0"
+        ],
+        [
+          1793097600000,
+          "80574.3",
+          "80574.3",
+          "80565.9",
+          "80565.9",
+          "0.002",
+          1793097659999,
+          "161.1402",
+          2,
+          "0",
+          "0",
+          "0"
+        ]
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097608572691000,
+      "receive_monotonic_ns": 398085236103000
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

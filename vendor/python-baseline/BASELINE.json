@@ -1,0 +1,12 @@
+{
+  "commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
+  "schema_version": "sbmdr-python-baseline.v1",
+  "scope": [
+    "src",
+    "tests/fixtures/binance",
+    "tests/golden",
+    "pyproject.toml",
+    "requirements"
+  ],
+  "tree_sha256": "4590dc9461d9b9631bf9ef20d8da3ba0b5f2e045dfed56fe3864cb4688fbc855"
+}

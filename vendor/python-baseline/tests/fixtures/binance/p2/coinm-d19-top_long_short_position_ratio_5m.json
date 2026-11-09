@@ -1,0 +1,101 @@
+{
+  "source": {
+    "family": "D19",
+    "venue_market": "coinm",
+    "market": "cm_delivery",
+    "symbol": "BTCUSD",
+    "stream": "top_long_short_position_ratio_5m",
+    "transport": "rest",
+    "endpoint": "/futures/data/topLongShortPositionRatio",
+    "cadence_seconds": 300,
+    "parameters": {
+      "limit": 2,
+      "pair": "BTCUSD",
+      "period": "5m"
+    },
+    "weight": 1,
+    "required_fields": [
+      "timestamp",
+      "longShortRatio"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSD_261225",
+      "BTCUSD_PERP"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "pair": "BTCUSD",
+    "period": "5m"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D19",
+    "source_stream": "top_long_short_position_ratio_5m",
+    "scope": "BTCUSD",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/topLongShortPositionRatio",
+      "parameters": {
+        "limit": 3,
+        "pair": "BTCUSD",
+        "period": "5m"
+      },
+      "request_time_utc_ns": 1793097604265870000,
+      "request_monotonic_ns": 398080929307458,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:04 GMT",
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "model": [
+        {
+          "shortPosition": "0.2792",
+          "longShortRatio": "2.5811",
+          "longPosition": "0.7208",
+          "pair": "BTCUSD",
+          "timestamp": 1793096700000
+        },
+        {
+          "shortPosition": "0.2789",
+          "longShortRatio": "2.5859",
+          "longPosition": "0.7211",
+          "pair": "BTCUSD",
+          "timestamp": 1793097000000
+        },
+        {
+          "shortPosition": "0.2789",
+          "longShortRatio": "2.5860",
+          "longPosition": "0.7211",
+          "pair": "BTCUSD",
+          "timestamp": 1793097300000
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097604366369000,
+      "receive_monotonic_ns": 398081029807291
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

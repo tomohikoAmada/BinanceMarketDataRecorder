@@ -1,0 +1,122 @@
+{
+  "source": {
+    "family": "D02",
+    "venue_market": "coinm",
+    "market": "cm_delivery",
+    "symbol": "BTCUSD_261225",
+    "stream": "depth_snapshot",
+    "transport": "rest",
+    "endpoint": "/dapi/v1/depth",
+    "cadence_seconds": 0,
+    "parameters": {
+      "symbol": "BTCUSD_261225",
+      "limit": 5
+    },
+    "weight": 1,
+    "required_fields": [
+      "lastUpdateId",
+      "bids",
+      "asks"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D02",
+    "source_stream": "depth_snapshot",
+    "scope": "BTCUSD_261225",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/dapi/v1/depth",
+      "parameters": {
+        "symbol": "BTCUSD_261225",
+        "limit": 5
+      },
+      "request_time_utc_ns": 1793097849224498000,
+      "request_monotonic_ns": 398325886480916,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:44:09 GMT",
+        "content-type": "application/json",
+        "x-mbx-used-weight-1m": "4",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "symbol": "BTCUSD_261225",
+        "pair": "BTCUSD",
+        "lastUpdateId": 11936439282369,
+        "E": 1793097848937,
+        "T": 1793097848933,
+        "bids": [
+          [
+            "80411.5",
+            "106"
+          ],
+          [
+            "80411.4",
+            "120"
+          ],
+          [
+            "80396.5",
+            "1"
+          ],
+          [
+            "80391.6",
+            "20"
+          ],
+          [
+            "80388.5",
+            "1"
+          ]
+        ],
+        "asks": [
+          [
+            "80411.6",
+            "79"
+          ],
+          [
+            "80414.2",
+            "120"
+          ],
+          [
+            "80420.6",
+            "1"
+          ],
+          [
+            "80428.4",
+            "15"
+          ],
+          [
+            "80428.5",
+            "48"
+          ]
+        ]
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097849576305000,
+      "receive_monotonic_ns": 398326238288666
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

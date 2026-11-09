@@ -116,7 +116,10 @@ def main():
             json.loads((a.source / "results/history-smoke.json").read_text())["status"]
             == "IMPORTED"
         )
-        env = {**os.environ, "PYTHONPATH": str(a.source / "python/src")}
+        env = {
+            **os.environ,
+            "PYTHONPATH": str(a.source / "vendor/python-baseline/src"),
+        }
         # Release system space only through the existing verified archive transaction.
         for root in [Path(v["root"]) for v in c3["markets"].values()] + a.archive_root:
             target = (

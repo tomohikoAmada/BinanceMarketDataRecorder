@@ -1,0 +1,145 @@
+{
+  "source": {
+    "family": "D31",
+    "venue_market": "usdm",
+    "market": "um_delivery",
+    "symbol": "BTCUSDT",
+    "stream": "delivery_price",
+    "transport": "rest",
+    "endpoint": "/futures/data/delivery-price",
+    "cadence_seconds": 60,
+    "parameters": {
+      "pair": "BTCUSDT"
+    },
+    "weight": 1,
+    "required_fields": [
+      "deliveryTime",
+      "deliveryPrice"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "after_delivery",
+    "products": [
+      "BTCUSDT_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "pair": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D31",
+    "source_stream": "delivery_price",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/delivery-price",
+      "parameters": {
+        "pair": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097606776725000,
+      "request_monotonic_ns": 398083440147166,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:06 GMT"
+      },
+      "model": [
+        {
+          "deliveryTime": 1782432000000,
+          "deliveryPrice": 60608.3
+        },
+        {
+          "deliveryTime": 1774569600000,
+          "deliveryPrice": 68656.7
+        },
+        {
+          "deliveryTime": 1766707200000,
+          "deliveryPrice": 88832.7
+        },
+        {
+          "deliveryTime": 1758844800000,
+          "deliveryPrice": 109049.7
+        },
+        {
+          "deliveryTime": 1750982400000,
+          "deliveryPrice": 107046.1
+        },
+        {
+          "deliveryTime": 1743120000000,
+          "deliveryPrice": 85302.8
+        },
+        {
+          "deliveryTime": 1735257600000,
+          "deliveryPrice": 95168.7
+        },
+        {
+          "deliveryTime": 1727395200000,
+          "deliveryPrice": 65422.7
+        },
+        {
+          "deliveryTime": 1719532800000,
+          "deliveryPrice": 61479.2
+        },
+        {
+          "deliveryTime": 1711670400000,
+          "deliveryPrice": 70151.5
+        },
+        {
+          "deliveryTime": 1703808000000,
+          "deliveryPrice": 42388.0
+        },
+        {
+          "deliveryTime": 1695945600000,
+          "deliveryPrice": 27103.0
+        },
+        {
+          "deliveryTime": 1688083200000,
+          "deliveryPrice": 30733.6
+        },
+        {
+          "deliveryTime": 1680220800000,
+          "deliveryPrice": 27814.2
+        },
+        {
+          "deliveryTime": 1648166400000,
+          "deliveryPrice": 44066.3
+        },
+        {
+          "deliveryTime": 1656028800000,
+          "deliveryPrice": 20867.1
+        },
+        {
+          "deliveryTime": 1664496000000,
+          "deliveryPrice": 19546.0
+        },
+        {
+          "deliveryTime": 1672358400000,
+          "deliveryPrice": 16503.6
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097606879059000,
+      "receive_monotonic_ns": 398083542482166
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

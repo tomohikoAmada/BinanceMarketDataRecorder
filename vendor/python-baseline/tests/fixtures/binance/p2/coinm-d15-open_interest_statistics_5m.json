@@ -1,0 +1,104 @@
+{
+  "source": {
+    "family": "D15",
+    "venue_market": "coinm",
+    "market": "cm_delivery",
+    "symbol": "BTCUSD_CURRENT_QUARTER",
+    "stream": "open_interest_statistics_5m",
+    "transport": "rest",
+    "endpoint": "/futures/data/openInterestHist",
+    "cadence_seconds": 300,
+    "parameters": {
+      "contractType": "CURRENT_QUARTER",
+      "limit": 2,
+      "pair": "BTCUSD",
+      "period": "5m"
+    },
+    "weight": 1,
+    "required_fields": [
+      "sumOpenInterest",
+      "sumOpenInterestValue",
+      "timestamp"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSD_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "contractType": "CURRENT_QUARTER",
+    "limit": 3,
+    "pair": "BTCUSD",
+    "period": "5m"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D15",
+    "source_stream": "open_interest_statistics_5m",
+    "scope": "BTCUSD_CURRENT_QUARTER",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/openInterestHist",
+      "parameters": {
+        "contractType": "CURRENT_QUARTER",
+        "limit": 3,
+        "pair": "BTCUSD",
+        "period": "5m"
+      },
+      "request_time_utc_ns": 1793097605261074000,
+      "request_monotonic_ns": 398081924505000,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:05 GMT",
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "model": [
+        {
+          "contractType": "CURRENT_QUARTER",
+          "sumOpenInterest": "764597.00000000",
+          "sumOpenInterestValue": "954.00577900",
+          "pair": "BTCUSD",
+          "timestamp": 1793096700000
+        },
+        {
+          "contractType": "CURRENT_QUARTER",
+          "sumOpenInterest": "764603.00000000",
+          "sumOpenInterestValue": "953.14899288",
+          "pair": "BTCUSD",
+          "timestamp": 1793097000000
+        },
+        {
+          "contractType": "CURRENT_QUARTER",
+          "sumOpenInterest": "764633.00000000",
+          "sumOpenInterestValue": "953.07349906",
+          "pair": "BTCUSD",
+          "timestamp": 1793097300000
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097605400483000,
+      "receive_monotonic_ns": 398082063915708
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

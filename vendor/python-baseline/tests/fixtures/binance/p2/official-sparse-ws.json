@@ -1,0 +1,60 @@
+[
+  {
+    "family": "S06",
+    "venue": "spot",
+    "symbol": "BNBBTC",
+    "stream": "block_trade",
+    "wire": "bnbbtc@blockTrade",
+    "source": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~#block-trade",
+    "payload": {
+      "e": "blockTrade",
+      "E": 1772506983582,
+      "s": "BNBBTC",
+      "t": 582,
+      "p": "0.052",
+      "q": "5838",
+      "T": 1772506983321,
+      "m": true
+    }
+  },
+  {
+    "family": "D10",
+    "venue": "coinm",
+    "symbol": "BTCUSD",
+    "stream": "index_price",
+    "wire": "btcusd@indexPrice@1s",
+    "source": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~#index-price",
+    "payload": {
+      "e": "indexPriceUpdate",
+      "E": 1591261236000,
+      "i": "BTCUSD",
+      "p": "9636.57860000"
+    }
+  },
+  {
+    "family": "D11-C",
+    "venue": "coinm",
+    "symbol": "BTCUSD_200925",
+    "stream": "liquidation",
+    "wire": "btcusd_200925@forceOrder",
+    "source": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~",
+    "payload": {
+      "e": "forceOrder",
+      "E": 1591154240950,
+      "o": {
+        "s": "BTCUSD_200925",
+        "ps": "BTCUSD",
+        "S": "SELL",
+        "o": "LIMIT",
+        "f": "IOC",
+        "q": "1",
+        "p": "9425.5",
+        "ap": "9496.5",
+        "X": "FILLED",
+        "l": "1",
+        "z": "1",
+        "T": 1591154240949
+      }
+    }
+  }
+]

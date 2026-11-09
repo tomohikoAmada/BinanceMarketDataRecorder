@@ -1,0 +1,64 @@
+{
+  "source": {
+    "family": "D13",
+    "venue_market": "coinm",
+    "market": "cm_perpetual",
+    "symbol": "__GLOBAL__",
+    "stream": "funding_info",
+    "transport": "rest",
+    "endpoint": "/dapi/v1/fundingInfo",
+    "cadence_seconds": 3600,
+    "parameters": {},
+    "weight": 1,
+    "required_fields": [
+      "symbol",
+      "fundingIntervalHours"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {},
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D13",
+    "source_stream": "funding_info",
+    "scope": "__GLOBAL__",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/dapi/v1/fundingInfo",
+      "parameters": {},
+      "request_time_utc_ns": 1793097605707258000,
+      "request_monotonic_ns": 398082370686666,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:05 GMT",
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "model": [],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097605805630000,
+      "receive_monotonic_ns": 398082469059333
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "source": {
+    "family": "D31",
+    "venue_market": "usdm",
+    "market": "um_delivery",
+    "symbol": "BTCUSDT",
+    "stream": "delivery_price",
+    "transport": "rest",
+    "endpoint": "/futures/data/delivery-price",
+    "cadence_seconds": 60,
+    "parameters": {
+      "pair": "BTCUSDT"
+    },
+    "weight": 1,
+    "required_fields": [
+      "deliveryTime",
+      "deliveryPrice"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [],
+    "representation": "sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "http-body-base64.v1",
+    "family": "D31",
+    "source_stream": "delivery_price",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/delivery-price",
+      "parameters": {
+        "pair": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793100550476342000,
+      "request_monotonic_ns": 399532925040500,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 11:29:11 GMT"
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793100551465756000,
+      "receive_monotonic_ns": 399533914451166,
+      "raw_body_base64": "W3siZGVsaXZlcnlUaW1lIjoxNzgyNDMyMDAwMDAwLCJkZWxpdmVyeVByaWNlIjo2MDYwOC4zMDAwMDAwMH0seyJkZWxpdmVyeVRpbWUiOjE3NzQ1Njk2MDAwMDAsImRlbGl2ZXJ5UHJpY2UiOjY4NjU2LjcwMDAwMDAwfSx7ImRlbGl2ZXJ5VGltZSI6MTc2NjcwNzIwMDAwMCwiZGVsaXZlcnlQcmljZSI6ODg4MzIuNzAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNzU4ODQ0ODAwMDAwLCJkZWxpdmVyeVByaWNlIjoxMDkwNDkuNzAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNzUwOTgyNDAwMDAwLCJkZWxpdmVyeVByaWNlIjoxMDcwNDYuMTAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNzQzMTIwMDAwMDAwLCJkZWxpdmVyeVByaWNlIjo4NTMwMi44MDAwMDAwMH0seyJkZWxpdmVyeVRpbWUiOjE3MzUyNTc2MDAwMDAsImRlbGl2ZXJ5UHJpY2UiOjk1MTY4LjcwMDAwMDAwfSx7ImRlbGl2ZXJ5VGltZSI6MTcyNzM5NTIwMDAwMCwiZGVsaXZlcnlQcmljZSI6NjU0MjIuNzAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNzE5NTMyODAwMDAwLCJkZWxpdmVyeVByaWNlIjo2MTQ3OS4yMDAwMDAwMH0seyJkZWxpdmVyeVRpbWUiOjE3MTE2NzA0MDAwMDAsImRlbGl2ZXJ5UHJpY2UiOjcwMTUxLjUwMDAwMDAwfSx7ImRlbGl2ZXJ5VGltZSI6MTcwMzgwODAwMDAwMCwiZGVsaXZlcnlQcmljZSI6NDIzODguMDAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNjk1OTQ1NjAwMDAwLCJkZWxpdmVyeVByaWNlIjoyNzEwMy4wMDAwMDAwMH0seyJkZWxpdmVyeVRpbWUiOjE2ODgwODMyMDAwMDAsImRlbGl2ZXJ5UHJpY2UiOjMwNzMzLjYwMDAwMDAwfSx7ImRlbGl2ZXJ5VGltZSI6MTY4MDIyMDgwMDAwMCwiZGVsaXZlcnlQcmljZSI6Mjc4MTQuMjAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNjQ4MTY2NDAwMDAwLCJkZWxpdmVyeVByaWNlIjo0NDA2Ni4zMDAwMDAwMH0seyJkZWxpdmVyeVRpbWUiOjE2NTYwMjg4MDAwMDAsImRlbGl2ZXJ5UHJpY2UiOjIwODY3LjEwMDAwMDAwfSx7ImRlbGl2ZXJ5VGltZSI6MTY2NDQ5NjAwMDAwMCwiZGVsaXZlcnlQcmljZSI6MTk1NDYuMDAwMDAwMDB9LHsiZGVsaXZlcnlUaW1lIjoxNjcyMzU4NDAwMDAwLCJkZWxpdmVyeVByaWNlIjoxNjUwMy42MDAwMDAwMH1d"
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_response_body",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": true,
+      "receive_boundary": "response_body_received_before_sdk_parse"
+    }
+  }
+}

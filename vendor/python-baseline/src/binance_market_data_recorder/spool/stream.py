@@ -1,0 +1,366 @@
+"""流 spool 编排: 有界入队, 旋转和密封。
+
+StreamSpool 将 RawChunkWriter、BoundedEventQueue 和共享 seal 协议组装为一个生命周期:
+
+1. 事件从 asyncio 回调通过 enqueue() 入队, 若队列满则抛出 IngressQueueFull。
+2. drain 循环从队列取出事件, append 到活跃 chunk, 按 durability_interval_seconds
+   fsync, 并在 should_rotate 触发时用一次性 clean evidence 密封当前 chunk 并创建新 chunk。
+3. 空闲时 sync_if_due() 确保低流量流也能在间隔内持久化。
+4. 关闭流程: 停止 drain, final fsync/close 后密封活跃 chunk, 等待密封完成。
+5. 不直接管理 WebSocket 连接或 Catalog 事务; 这些由 Collector 和 Catalog 分别处理。
+"""
+
+from __future__ import annotations
+
+import time
+from collections.abc import Callable
+from contextlib import suppress
+from dataclasses import dataclass
+from threading import Lock
+from uuid import UUID, uuid4
+
+from ..domain.event import EventEnvelope
+from ..storage.catalog import Catalog
+from ..storage.layout import StorageLayout
+from .queue import BoundedEventQueue
+from .seal import RECONNECT_GAP_FLAG, _seal_clean_writer, seal_partial
+from .writer import RawChunkWriter, RotationPolicy
+
+
+@dataclass(frozen=True, slots=True)
+class SpoolOperationStats:
+    append_last_ns: int
+    append_max_ns: int
+    write_last_ns: int
+    write_max_ns: int
+    fsync_last_ns: int
+    fsync_max_ns: int
+    seal_last_ns: int
+    seal_max_ns: int
+
+
+@dataclass(frozen=True, slots=True)
+class PersistenceProgress:
+    written_frames: int
+    synchronized_frames: int
+
+
+class StreamSpool:
+    """One homogeneous stream's queue and current chunk; no network ownership."""
+
+    def __init__(
+        self,
+        *,
+        layout: StorageLayout,
+        catalog: Catalog,
+        market: str,
+        symbol: str,
+        stream: str,
+        collector_instance_id: str,
+        collector_version: str,
+        queue_capacity: int,
+        rotation: RotationPolicy,
+        durability_interval_seconds: float,
+        max_frame_bytes: int,
+        writer_factory: Callable[..., RawChunkWriter] = RawChunkWriter,
+        event_observer: Callable[[EventEnvelope, int, int], None] | None = None,
+        operation_observer: Callable[[str, int], None] | None = None,
+        seal_observer: Callable[[dict[str, object]], None] | None = None,
+    ) -> None:
+        self.layout = layout
+        self.catalog = catalog
+        self.market = market
+        self.symbol = symbol
+        self.stream = stream
+        self.collector_instance_id = collector_instance_id
+        self.collector_version = collector_version
+        self.rotation = rotation
+        self.durability_interval_seconds = durability_interval_seconds
+        self.max_frame_bytes = max_frame_bytes
+        self.queue = BoundedEventQueue(queue_capacity)
+        self._writer_factory = writer_factory
+        self._event_observer = event_observer
+        self._operation_observer = operation_observer
+        self._seal_observer = seal_observer
+        self._writer: RawChunkWriter | None = None
+        self._operation_lock = Lock()
+        self._operation_last_ns = {
+            "append_latency_ns": 0,
+            "write_latency_ns": 0,
+            "fsync_latency_ns": 0,
+            "seal_latency_ns": 0,
+        }
+        self._operation_max_ns = dict(self._operation_last_ns)
+        self._written_frames = 0
+        self._synchronized_frames = 0
+        self._writer_written = 0
+        self._writer_synchronized = 0
+        self._process_boundary_pending = True
+
+    def enqueue(self, envelope: EventEnvelope) -> None:
+        self.queue.put_nowait(envelope)
+
+    def _new_writer(
+        self,
+        *,
+        chunk_id: UUID | None = None,
+        created_at_utc_ns: int | None = None,
+    ) -> RawChunkWriter:
+        writer_kwargs: dict[str, object] = {
+            "layout": self.layout,
+            "catalog": self.catalog,
+            "market": self.market,
+            "symbol": self.symbol,
+            "stream": self.stream,
+            "collector_instance_id": self.collector_instance_id,
+            "collector_version": self.collector_version,
+            "rotation": self.rotation,
+            "durability_interval_seconds": self.durability_interval_seconds,
+            "max_frame_bytes": self.max_frame_bytes,
+            "operation_observer": self._observe_writer_operation,
+        }
+        if chunk_id is not None:
+            writer_kwargs["chunk_id"] = chunk_id
+        if created_at_utc_ns is not None:
+            writer_kwargs["created_at_utc_ns"] = created_at_utc_ns
+        writer = self._writer_factory(
+            **writer_kwargs,
+        )
+        self._writer_written = self._writer_synchronized = 0
+        return writer
+
+    def _observe_progress(self, writer: RawChunkWriter) -> None:
+        with self._operation_lock:
+            self._written_frames += writer.record_count - self._writer_written
+            self._synchronized_frames += writer.synced_record_count - self._writer_synchronized
+            self._writer_written = writer.record_count
+            self._writer_synchronized = writer.synced_record_count
+
+    def persistence_progress(self) -> PersistenceProgress:
+        """Conservative completed-operation counters; memory receipt is separate."""
+
+        with self._operation_lock:
+            return PersistenceProgress(self._written_frames, self._synchronized_frames)
+
+    def _observe_duration(self, name: str, duration_ns: int) -> None:
+        with self._operation_lock:
+            self._operation_last_ns[name] = duration_ns
+            self._operation_max_ns[name] = max(
+                self._operation_max_ns[name], duration_ns
+            )
+
+    def _observe_writer_operation(self, name: str, duration_ns: int) -> None:
+        self._observe_duration(name, duration_ns)
+        if self._operation_observer is not None:
+            self._operation_observer(name, duration_ns)
+
+    def operation_stats(self) -> SpoolOperationStats:
+        with self._operation_lock:
+            return SpoolOperationStats(
+                append_last_ns=self._operation_last_ns["append_latency_ns"],
+                append_max_ns=self._operation_max_ns["append_latency_ns"],
+                write_last_ns=self._operation_last_ns["write_latency_ns"],
+                write_max_ns=self._operation_max_ns["write_latency_ns"],
+                fsync_last_ns=self._operation_last_ns["fsync_latency_ns"],
+                fsync_max_ns=self._operation_max_ns["fsync_latency_ns"],
+                seal_last_ns=self._operation_last_ns["seal_latency_ns"],
+                seal_max_ns=self._operation_max_ns["seal_latency_ns"],
+            )
+
+    def drain_one(self) -> bool:
+        envelope = self.queue.get_nowait()
+        if envelope is None:
+            if self._writer is not None:
+                if self._writer.should_rotate():
+                    self._seal_current()
+                else:
+                    self._writer.sync_if_due()
+                    self._observe_progress(self._writer)
+            return False
+        writer_created = self._writer is None
+        if writer_created:
+            self._writer = self._new_writer()
+        writer = self._writer
+        if writer is None:
+            raise RuntimeError("stream writer was not created")
+        before = 0 if writer_created else writer.bytes_written
+        append_started = time.perf_counter_ns()
+        try:
+            writer.append(envelope)
+        finally:
+            self._observe_progress(writer)
+            self._observe_duration(
+                "append_latency_ns", time.perf_counter_ns() - append_started
+            )
+        raw_frame_bytes = writer.bytes_written - before
+        if self._event_observer is not None:
+            self._event_observer(envelope, raw_frame_bytes, self.queue.depth)
+        if writer.should_rotate():
+            self._seal_current()
+        return True
+
+    def maintenance_due(self) -> bool:
+        """Pending frames, an unsynced tail or rotation require worker I/O."""
+        return self.queue.depth > 0 or (
+            self._writer is not None and self._writer.maintenance_due()
+        )
+
+    def drain_all(self) -> int:
+        count = 0
+        while True:
+            batch: list[EventEnvelope] = []
+            payload_bytes = 0
+            while len(batch) < 256 and payload_bytes < 1024 * 1024:
+                envelope = self.queue.get_nowait()
+                if envelope is None:
+                    break
+                batch.append(envelope)
+                payload_bytes += len(envelope.raw_payload)
+            if not batch:
+                if self._writer is not None:
+                    if self._writer.should_rotate():
+                        self._seal_current()
+                    else:
+                        self._writer.sync_if_due()
+                        self._observe_progress(self._writer)
+                return count
+            offset = 0
+            while offset < len(batch):
+                writer_created = self._writer is None
+                if writer_created:
+                    self._writer = self._new_writer()
+                writer = self._writer
+                if writer is None:
+                    raise RuntimeError("stream writer was not created")
+                started = time.perf_counter_ns()
+                try:
+                    sizes = writer.append_batch(batch[offset:])
+                finally:
+                    self._observe_progress(writer)
+                    self._observe_duration("append_latency_ns", time.perf_counter_ns() - started)
+                header_bytes = writer.bytes_written - sum(sizes) if writer_created else 0
+                for index, size in enumerate(sizes):
+                    if self._event_observer is not None:
+                        self._event_observer(
+                            batch[offset + index],
+                            size + (header_bytes if index == 0 else 0),
+                            self.queue.depth + len(batch) - offset - index - 1,
+                        )
+                offset += len(sizes)
+                count += len(sizes)
+                if writer.should_rotate():
+                    self._seal_current()
+
+    def sync(self) -> None:
+        """Make the current partial durable before committing external progress."""
+
+        if self._writer is not None:
+            self._writer.sync()
+            self._observe_progress(self._writer)
+
+    def _seal_current(
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        if self._writer is None:
+            if seal_intent is None:
+                return None
+            # M21.4.11-R2.2/IR-001: preallocate the marker identity and commit
+            # ACTIVE + SEALING seal-intent evidence atomically BEFORE Raw v1
+            # header creation.  There is no crash phase with a durable ACTIVE
+            # marker artifact but no recoverable reconnect identity.
+            intent_flags = seal_intent.get("required_forced_flags")
+            if not isinstance(intent_flags, list) or not all(
+                isinstance(flag, str) and flag for flag in intent_flags
+            ):
+                raise ValueError("boundary marker seal intent has invalid flags")
+            marker_flags = frozenset(
+                {*forced_flags, *intent_flags, RECONNECT_GAP_FLAG}
+            )
+            marker_intent = dict(seal_intent)
+            marker_intent["required_forced_flags"] = sorted(marker_flags)
+            marker_chunk_id = uuid4()
+            marker_created_at_utc_ns = time.time_ns()
+            marker_path = (
+                self.layout.active / f"{marker_chunk_id.hex}.bmdr.partial"
+            )
+            self.catalog.register_boundary_marker_sealing(
+                chunk_id=str(marker_chunk_id),
+                partial_path=self.layout.relative(marker_path),
+                created_at_utc_ns=marker_created_at_utc_ns,
+                seal_intent=marker_intent,
+            )
+            marker = self._new_writer(
+                chunk_id=marker_chunk_id,
+                created_at_utc_ns=marker_created_at_utc_ns,
+            )
+            try:
+                marker.close()
+                manifest = seal_partial(
+                    marker.path,
+                    layout=self.layout,
+                    catalog=self.catalog,
+                    forced_flags=marker_flags,
+                    seal_intent=marker_intent,
+                )
+            except BaseException:
+                with suppress(OSError):
+                    marker.abort()
+                raise
+            if self._seal_observer is not None:
+                self._seal_observer(manifest)
+            return manifest
+        writer = self._writer
+        seal_started = time.perf_counter_ns()
+        process_boundary = False
+        if self._process_boundary_pending and writer is not None and writer.record_count > 0:
+            process_boundary = True
+        try:
+            manifest = _seal_clean_writer(
+                writer,
+                layout=self.layout,
+                catalog=self.catalog,
+                forced_flags=forced_flags,
+                seal_intent=seal_intent,
+                process_boundary_before_first_frame=process_boundary,
+            )
+            if process_boundary:
+                self._process_boundary_pending = False
+        except BaseException:
+            with suppress(OSError):
+                writer.abort()
+            raise
+        finally:
+            self._observe_progress(writer)
+            self._writer = None
+            self._observe_duration(
+                "seal_latency_ns", time.perf_counter_ns() - seal_started
+            )
+        if self._seal_observer is not None:
+            self._seal_observer(manifest)
+        return manifest
+
+    def seal_capture_startup(self) -> dict[str, object]:
+        """Deprecated in M2.2 (superseded by process_boundary_before_first_frame).
+
+        Startup 0-record chunks were removed in M2.2 (updating ADR-0038).
+        Retained as a no-op for backward compatibility; creates 0 files on disk.
+        """
+        return {}
+
+    def close_and_seal(
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        self.drain_all()
+        return self._seal_current(forced_flags=forced_flags, seal_intent=seal_intent)
+
+    def abort_writer(self) -> None:
+        """Release a failed writer descriptor while retaining its recoverable partial."""
+
+        writer = self._writer
+        self._writer = None
+        if writer is not None:
+            writer.abort()

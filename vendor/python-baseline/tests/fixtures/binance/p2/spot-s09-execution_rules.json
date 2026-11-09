@@ -1,0 +1,84 @@
+{
+  "source": {
+    "family": "S09",
+    "venue_market": "spot",
+    "market": "spot",
+    "symbol": "__BATCH_0__",
+    "stream": "execution_rules",
+    "transport": "rest",
+    "endpoint": "/api/v3/executionRules",
+    "cadence_seconds": 3600,
+    "parameters": {
+      "symbols": "[\"BTCUSDT\"]"
+    },
+    "weight": 20,
+    "required_fields": [],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "symbols": "[\"BTCUSDT\"]"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "S09",
+    "source_stream": "execution_rules",
+    "scope": "__BATCH_0__",
+    "venue_market": "spot",
+    "request": {
+      "method": "GET",
+      "path": "/api/v3/executionRules",
+      "parameters": {
+        "symbols": "[\"BTCUSDT\"]"
+      },
+      "request_time_utc_ns": 1793097606478898000,
+      "request_monotonic_ns": 398083142321958,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:06 GMT",
+        "x-mbx-used-weight": "19",
+        "x-mbx-used-weight-1m": "19"
+      },
+      "model": {
+        "symbolRules": [
+          {
+            "symbol": "BTCUSDT",
+            "rules": [
+              {
+                "ruleType": "PRICE_RANGE",
+                "bidLimitMultUp": "1.1500",
+                "bidLimitMultDown": "0.8500",
+                "askLimitMultUp": "1.1500",
+                "askLimitMultDown": "0.8500"
+              }
+            ]
+          }
+        ]
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097606572050000,
+      "receive_monotonic_ns": 398083235474958
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

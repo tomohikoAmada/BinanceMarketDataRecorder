@@ -22,7 +22,7 @@ C3 白名单尚未实施。本阶段一次运行固定 BTCUSDT、一个市场；
 ```sh
 root="$HOME/.local/share/BinanceMarketDataRecorder/S-BMDR/core-usdm"
 "$build/sbmdr-c0" record --public "$root" 1000000 /etc/ssl/certs/ca-certificates.crt usdm
-PYTHONPATH="$scratch/python/src" "$py" prototype/read_raw.py "$root"
+PYTHONPATH="$PWD/vendor/python-baseline/src" "$py" prototype/read_raw.py "$root"
 ```
 
 五路轮询为 openInterest、topLongShortAccountRatio、topLongShortPositionRatio、globalLongShortAccountRatio、takerlongshortRatio，统计请求使用 period=5m、limit=1。未收到合法响应会保留失败响应及 source_failed；不把合法旧桶伪装成已补齐，也不实现旧桶重试。
@@ -34,8 +34,8 @@ PYTHONPATH="$scratch/python/src" "$py" prototype/read_raw.py "$root"
 先停止目标根上的记录器，再运行：
 
 ```sh
-PYTHONPATH="$scratch/python/src" "$py" prototype/recover_raw.py "$root"
-PYTHONPATH="$scratch/python/src" "$py" prototype/read_raw.py "$root"
+PYTHONPATH="$PWD/vendor/python-baseline/src" "$py" prototype/recover_raw.py "$root"
+PYTHONPATH="$PWD/vendor/python-baseline/src" "$py" prototype/read_raw.py "$root"
 ```
 
 恢复可封存或隔离原 active，保留截尾和不完整标记。十个新边界案例之外，原 c1-recorder 仍验证封存失败后的半帧截尾、重复恢复，以及 artifact 缺失时退出 1、恢复 artifact 后退出 0。LD_PRELOAD 仅作用于独立 loopback 夹具子进程；测试库不是记录器依赖，不载入公开采集进程。系统全局 ASLR 和旧生产服务均保持原状态。

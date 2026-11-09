@@ -56,17 +56,19 @@ Apple M3、8 核、24 GiB、macOS arm64，AppleClang 21 Release。下表为最�
 
 ## 复跑
 
-使用 C0.1 的独立 Python 工作树和具备其依赖的 Python 3.12。由 S-BMDR 根目录执行，`scratch` 为独立临时目录，`py` 为虚拟环境中 Python 的绝对路径。CMake 用 pkg-config 发现依赖，现有版本记录在测量 JSON 中。C1 再固定跨架构工具链与 vcpkg baseline。
+使用具备依赖的 Python 3.12。S-BMDR 现已内置 `vendor/python-baseline`（固定 main 提交 `38acb1d0`），默认构建与测试不再指向其他分支或工作树。由 S-BMDR 根目录执行，`scratch` 为独立临时目录，`py` 为虚拟环境中 Python 的绝对路径。CMake 用 pkg-config 发现依赖，现有版本记录在测量 JSON 中。C1 再固定跨架构工具链与 vcpkg baseline。
 
 ```sh
 cmake -S prototype -B "$scratch/c0-release" -DCMAKE_BUILD_TYPE=Release \
-  -DPython3_EXECUTABLE="$py" -DPYTHON_BASELINE="$scratch/python"
+  -DPython3_EXECUTABLE="$py"
 cmake --build "$scratch/c0-release"
 ctest --test-dir "$scratch/c0-release" --output-on-failure
 for n in 1 2 3; do
-  "$py" prototype/verify.py "$scratch/c0-release/sbmdr-c0" "$scratch/python" \
+  "$py" prototype/verify.py "$scratch/c0-release/sbmdr-c0" "$PWD/vendor/python-baseline" \
     > "$scratch/c0-release-$n.json"
 done
 ```
+
+需要对照旧的外部 Python 检出时，仍可显式传 `-DPYTHON_BASELINE=/path/to/checkout`；该路径仅作历史对照，不是默认依赖。
 
 ASan/UBSan 和 TSan 分开构建，使用 Debug，分别设置 `CMAKE_CXX_FLAGS` 为 `-fsanitize=address,undefined -fno-omit-frame-pointer -DSBMDR_NO_NEW_COUNTER` 和 `-fsanitize=thread -fno-omit-frame-pointer -DSBMDR_NO_NEW_COUNTER`，运行相同 CTest。sanitizer 结果用于正确性检查，预算比较使用 Release。

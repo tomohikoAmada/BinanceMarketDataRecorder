@@ -1,0 +1,75 @@
+{
+  "source": {
+    "family": "D03",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "rpi_depth_snapshot",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/rpiDepth",
+    "cadence_seconds": 0,
+    "parameters": {
+      "symbol": "BTCUSDT",
+      "limit": 5
+    },
+    "weight": 1,
+    "required_fields": [
+      "lastUpdateId",
+      "bids",
+      "asks"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D03",
+    "source_stream": "rpi_depth_snapshot",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/rpiDepth",
+      "parameters": {
+        "symbol": "BTCUSDT",
+        "limit": 5
+      },
+      "request_time_utc_ns": 1793097849872829000,
+      "request_monotonic_ns": 398326534808083,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 400,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Tue, 27 Oct 2026 10:44:10 GMT",
+        "x-mbx-used-weight-1m": "8",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "code": -4021,
+        "msg": "5 is not valid depth limit"
+      },
+      "valid": false,
+      "error_type": "HttpResponseError",
+      "receive_time_utc_ns": 1793097850146698000,
+      "receive_monotonic_ns": 398326808676583
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

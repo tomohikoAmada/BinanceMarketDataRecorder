@@ -1,0 +1,79 @@
+{
+  "source": {
+    "family": "D14",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "open_interest",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/openInterest",
+    "cadence_seconds": 60,
+    "parameters": {
+      "symbol": "BTCUSDT"
+    },
+    "weight": 1,
+    "required_fields": [
+      "symbol",
+      "openInterest",
+      "time"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D14",
+    "source_stream": "open_interest",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/openInterest",
+      "parameters": {
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097607625541000,
+      "request_monotonic_ns": 398084288958416,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Tue, 27 Oct 2026 10:40:07 GMT",
+        "x-mbx-used-weight-1m": "24",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "symbol": "BTCUSDT",
+        "openInterest": "98378.693",
+        "time": 1793097602179
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097607725076000,
+      "receive_monotonic_ns": 398084388493541
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

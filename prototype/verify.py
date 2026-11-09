@@ -14,8 +14,14 @@ from threading import Thread
 
 from websockets.asyncio.server import serve
 
+from baseline import (
+    BASELINE_COMMIT as COMMIT,
+    BASELINE_SCHEMA_VERSION,
+    BASELINE_SCOPE,
+    tree_digest,
+)
+
 BINARY, BASELINE = (Path(arg).resolve() for arg in sys.argv[1:3])
-COMMIT = "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85"
 sys.path.insert(0, str(BASELINE / "src"))
 from binance_market_data_recorder.normalize.parser import parse_envelope
 from binance_market_data_recorder.spool.format import (
@@ -164,23 +170,33 @@ async def run_case(root, name, frames, rest, *, pause=0, status=200, rejected=Fa
 
 
 def verify_baseline():
-    source = subprocess.check_output(
-        ["git", "-C", BASELINE, "rev-parse", "HEAD"], text=True
-    )
-    assert source.strip() == COMMIT
-    assert not subprocess.check_output(
-        [
-            "git",
-            "-C",
-            BASELINE,
-            "status",
-            "--porcelain",
-            "--",
-            "src",
-            "tests/fixtures",
-            "tests/golden",
-        ]
-    )
+    if (BASELINE / ".git").exists():
+        source = subprocess.check_output(
+            ["git", "-C", BASELINE, "rev-parse", "HEAD"], text=True
+        )
+        assert source.strip() == COMMIT
+        assert not subprocess.check_output(
+            [
+                "git",
+                "-C",
+                BASELINE,
+                "status",
+                "--porcelain",
+                "--",
+                "src",
+                "tests/fixtures",
+                "tests/golden",
+            ]
+        )
+    else:
+        marker = json.loads((BASELINE / "BASELINE.json").read_text())
+        assert marker["schema_version"] == BASELINE_SCHEMA_VERSION
+        assert marker["commit"] == COMMIT
+        assert tuple(marker["scope"]) == BASELINE_SCOPE
+        assert marker["tree_sha256"] == tree_digest(BASELINE), (
+            "vendored Python baseline was modified; regenerate it with "
+            "scripts/vendor_python_baseline.py"
+        )
     subprocess.run(
         [BINARY, "--golden", BASELINE / "tests/golden/raw_chunk_v1.json"], check=True
     )

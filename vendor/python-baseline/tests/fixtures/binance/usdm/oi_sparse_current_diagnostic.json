@@ -1,0 +1,35 @@
+{
+  "note": "Later current-attempt public diagnostic; not original failure response or every-event completeness proof. Exact response bodies retained for OI sparse contract regression.",
+  "records": [
+    {
+      "symbol": "BTCUSDT",
+      "url": "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&startTime=1792068300000&endTime=1792069799999&limit=5",
+      "parameters": {
+        "symbol": "BTCUSDT",
+        "period": "5m",
+        "startTime": 1792068300000,
+        "endTime": 1792069799999,
+        "limit": 5
+      },
+      "ended_at_utc_ns": 1792079000153814035,
+      "status": 200,
+      "body_sha256": "131564a4944ce8a5de00d51f2a646981c58bf0a75ada1afbb78bdde52f569fb7",
+      "body_utf8": "[{\"symbol\":\"BTCUSDT\",\"sumOpenInterest\":\"92267.46400000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"20098368.00000000\",\"timestamp\":1792069784000},{\"symbol\":\"BTCUSDT\",\"sumOpenInterest\":\"91579.41300000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"20098368.00000000\",\"timestamp\":1792069790000},{\"symbol\":\"BTCUSDT\",\"sumOpenInterest\":\"92267.48400000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"20098368.00000000\",\"timestamp\":1792069795000},{\"symbol\":\"BTCUSDT\",\"sumOpenInterest\":\"92496.37900000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"20098368.00000000\",\"timestamp\":1792069798000},{\"symbol\":\"BTCUSDT\",\"sumOpenInterest\":\"91579.47400000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"20098368.00000000\",\"timestamp\":1792069799000}]"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "url": "https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=5m&startTime=1792068300000&endTime=1792069799999&limit=5",
+      "parameters": {
+        "symbol": "ETHUSDT",
+        "period": "5m",
+        "startTime": 1792068300000,
+        "endTime": 1792069799999,
+        "limit": 5
+      },
+      "ended_at_utc_ns": 1792079000237233201,
+      "status": 200,
+      "body_sha256": "cc89560d3bc0406d6601bcb3fd4fa07b9e9aefe317dfd93b585ab028bc31c0e9",
+      "body_utf8": "[{\"symbol\":\"ETHUSDT\",\"sumOpenInterest\":\"2330200.72200000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"122133648.45963953\",\"timestamp\":1792069788000},{\"symbol\":\"ETHUSDT\",\"sumOpenInterest\":\"2358822.64200000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"122133648.45963953\",\"timestamp\":1792069791000},{\"symbol\":\"ETHUSDT\",\"sumOpenInterest\":\"2360005.75600000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"122133648.45963953\",\"timestamp\":1792069796000},{\"symbol\":\"ETHUSDT\",\"sumOpenInterest\":\"2336114.38200000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"122133648.45963953\",\"timestamp\":1792069797000},{\"symbol\":\"ETHUSDT\",\"sumOpenInterest\":\"2331773.60100000\",\"sumOpenInterestValue\":\"0.00000000\",\"CMCCirculatingSupply\":\"122133648.45963953\",\"timestamp\":1792069798000}]"
+    }
+  ]
+}

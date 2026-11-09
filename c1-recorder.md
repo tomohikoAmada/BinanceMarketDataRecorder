@@ -11,14 +11,16 @@
 
 ## 构建与运行
 
-在 S-BMDR 根目录执行。Python 使用 [C0.1 的固定工作树](c0.1-baseline.md)及其依赖。`scratch` 为独立临时目录，`py` 为 Python 3.12 虚拟环境的绝对路径。系统依赖包括 Boost、libcurl、simdjson、nlohmann JSON、Abseil CRC32C、OpenSSL、SQLite 和 Zstd。
+在 S-BMDR 根目录执行。S-BMDR 已内置 `vendor/python-baseline`，默认构建/测试不再依赖其他分支；`py` 仍为具备 WebSocket、pyarrow 等依赖的 Python 3.12 虚拟环境。`scratch` 为独立临时目录。系统依赖包括 Boost、libcurl、simdjson、nlohmann JSON、Abseil CRC32C、OpenSSL、SQLite 和 Zstd。
 
 ```sh
 cmake -S prototype -B "$scratch/c1-build" -DCMAKE_BUILD_TYPE=Release \
-  -DPython3_EXECUTABLE="$py" -DPYTHON_BASELINE="$scratch/python"
+  -DPython3_EXECUTABLE="$py"
 cmake --build "$scratch/c1-build"
 ctest --test-dir "$scratch/c1-build" --output-on-failure
 ```
+
+需要对照旧的外部 Python 检出时，可显式传 `-DPYTHON_BASELINE=/path/to/checkout`；默认不再要求该路径。
 
 `prototype` 提供 `release` 与 `vcpkg-release` CMake presets。vcpkg 方案由 `prototype/vcpkg.json` 固定 baseline。使用该方案时在 `prototype` 内设置 `VCPKG_ROOT`，运行 `cmake --preset vcpkg-release` 并传入相同的 Python 参数。
 
@@ -27,7 +29,7 @@ ctest --test-dir "$scratch/c1-build" --output-on-failure
 ```sh
 root="$HOME/Library/Application Support/BinanceMarketDataRecorder/S-BMDR/c1"
 "$scratch/c1-build/sbmdr-c0" record --public "$root" 1000 /etc/ssl/cert.pem
-PYTHONPATH="$scratch/python/src" "$py" prototype/read_raw.py "$root"
+PYTHONPATH="$PWD/vendor/python-baseline/src" "$py" prototype/read_raw.py "$root"
 ```
 
 最后两个参数分别是 WS 帧数上限和信任的 PEM CA bundle。每秒在 stderr 输出采集/封存计数和 CPU、RSS、耐久摘要，退出时在 stdout 输出最终 JSON。NDJSON 中的 `raw_payload_base64` 是原 Raw payload，REST payload 内含响应主体表示。

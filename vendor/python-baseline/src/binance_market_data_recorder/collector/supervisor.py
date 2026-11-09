@@ -1,0 +1,116 @@
+"""故障隔离的 market Collector 协调。
+
+MarketCollectorSupervisor 以独立 asyncio 任务运行 Spot 和 USD-M 两个 Collector。
+若任一终止(正常或异常),它设置所有子 stop 事件、等待剩余任务完成,
+然后抛出 CoreMarketTerminalFailure。这种 fail-closed 方法(ADR-0023)
+由 launchd 执行全进程重启,而非依赖单市场的进程中恢复。
+
+正常路径在首个 Collector 提前终止时即抛出 CoreMarketTerminalFailure;
+AllMarketCollectorsStopped 仅是循环意外到达无任务状态时的防御性保护。
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Callable, Mapping
+from typing import Protocol
+
+from ..domain.product import ProductKey
+
+
+class MarketCollector(Protocol):
+    async def run(self, stop: asyncio.Event) -> None: ...
+
+
+class AllMarketCollectorsStopped(RuntimeError):
+    """No core market Collector remains for launchd to supervise."""
+
+
+class CoreMarketTerminalFailure(RuntimeError):
+    """A core market terminated, so launchd must restart the whole service."""
+
+
+class MarketCollectorSupervisor:
+    """Run core markets and fail the process if either terminates unexpectedly."""
+
+    def __init__(
+        self,
+        collectors: Mapping[ProductKey, MarketCollector],
+        terminal_failure_observer: Callable[[ProductKey, BaseException], None] | None = None,
+    ) -> None:
+        if not collectors:
+            raise ValueError("at least one market Collector is required")
+        self.collectors = dict(collectors)
+        self.failures: dict[ProductKey, BaseException] = {}
+        self.terminal_failure_observer = terminal_failure_observer
+
+    async def run(self, stop: asyncio.Event) -> None:
+        child_stops = {name: asyncio.Event() for name in self.collectors}
+        tasks = {
+            name: asyncio.create_task(
+                collector.run(child_stops[name]),
+                name=f"collector:{name.market}:{name.symbol}",
+            )
+            for name, collector in self.collectors.items()
+        }
+        stop_task = asyncio.create_task(stop.wait(), name="GLOBAL:collector-supervisor-stop")
+        primary_failure = False
+        try:
+            while tasks and not stop.is_set():
+                done, _pending = await asyncio.wait(
+                    {*tasks.values(), stop_task}, return_when=asyncio.FIRST_COMPLETED
+                )
+                if stop_task in done:
+                    break
+                for name, task in list(tasks.items()):
+                    if task not in done:
+                        continue
+                    tasks.pop(name)
+                    try:
+                        task.result()
+                    except asyncio.CancelledError:
+                        raise
+                    except BaseException as exc:
+                        self.failures[name] = exc
+                        if self.terminal_failure_observer is not None:
+                            self.terminal_failure_observer(name, exc)
+                        for child_stop in child_stops.values():
+                            child_stop.set()
+                        await asyncio.gather(*tasks.values(), return_exceptions=True)
+                        raise CoreMarketTerminalFailure(
+                            f"core market Collector terminated: {name}"
+                        ) from exc
+                    normal_exit = RuntimeError(
+                        "core market Collector returned before global stop"
+                    )
+                    self.failures[name] = normal_exit
+                    if self.terminal_failure_observer is not None:
+                        self.terminal_failure_observer(name, normal_exit)
+                    for child_stop in child_stops.values():
+                        child_stop.set()
+                    await asyncio.gather(*tasks.values(), return_exceptions=True)
+                    raise CoreMarketTerminalFailure(
+                        f"core market Collector terminated: {name}"
+                    ) from normal_exit
+            if not tasks and not stop.is_set():
+                failed = ",".join(str(key) for key in sorted(self.failures)) or "all"
+                raise AllMarketCollectorsStopped(
+                    f"all core market Collectors stopped; failed={failed}"
+                )
+        except BaseException:
+            primary_failure = True
+            raise
+        finally:
+            stop_task.cancel()
+            for child_stop in child_stops.values():
+                child_stop.set()
+            results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+            for name, result in zip(tasks, results, strict=True):
+                if isinstance(result, BaseException):
+                    self.failures[name] = result
+                    if not primary_failure:
+                        if self.terminal_failure_observer is not None:
+                            self.terminal_failure_observer(name, result)
+                        raise CoreMarketTerminalFailure(
+                            f"core market Collector failed while draining: {name}"
+                        ) from result

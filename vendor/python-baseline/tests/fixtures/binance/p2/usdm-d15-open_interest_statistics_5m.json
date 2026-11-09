@@ -1,0 +1,101 @@
+{
+  "source": {
+    "family": "D15",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "open_interest_statistics_5m",
+    "transport": "rest",
+    "endpoint": "/futures/data/openInterestHist",
+    "cadence_seconds": 300,
+    "parameters": {
+      "limit": 2,
+      "period": "5m",
+      "symbol": "BTCUSDT"
+    },
+    "weight": 0,
+    "required_fields": [
+      "sumOpenInterest",
+      "sumOpenInterestValue",
+      "timestamp"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "period": "5m",
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D15",
+    "source_stream": "open_interest_statistics_5m",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/openInterestHist",
+      "parameters": {
+        "limit": 3,
+        "period": "5m",
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097607728185000,
+      "request_monotonic_ns": 398084391601875,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:07 GMT"
+      },
+      "model": [
+        {
+          "symbol": "BTCUSDT",
+          "sumOpenInterest": "98441.67900000",
+          "sumOpenInterestValue": "7832777941.50794900",
+          "CMCCirculatingSupply": "20104081.00000000",
+          "timestamp": 1793096700000
+        },
+        {
+          "symbol": "BTCUSDT",
+          "sumOpenInterest": "98483.33500000",
+          "sumOpenInterestValue": "7840366631.01850000",
+          "CMCCirculatingSupply": "20104081.00000000",
+          "timestamp": 1793097000000
+        },
+        {
+          "symbol": "BTCUSDT",
+          "sumOpenInterest": "98503.79700000",
+          "sumOpenInterestValue": "7843461105.74162000",
+          "CMCCirculatingSupply": "20104081.00000000",
+          "timestamp": 1793097300000
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097607829463000,
+      "receive_monotonic_ns": 398084492880708
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

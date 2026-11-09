@@ -1,0 +1,80 @@
+{
+  "source": {
+    "family": "D23",
+    "venue_market": "coinm",
+    "market": "cm_delivery",
+    "symbol": "BTCUSD_261225",
+    "stream": "premium_price_bars_1m",
+    "transport": "rest",
+    "endpoint": "/dapi/v1/premiumIndexKlines",
+    "cadence_seconds": 60,
+    "parameters": {
+      "interval": "1m",
+      "limit": 2,
+      "symbol": "BTCUSD_261225"
+    },
+    "weight": 1,
+    "required_fields": [],
+    "priority": "native_bars",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSD_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "interval": "1m",
+    "limit": 3,
+    "symbol": "BTCUSD_261225"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D23",
+    "source_stream": "premium_price_bars_1m",
+    "scope": "BTCUSD_261225",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/dapi/v1/premiumIndexKlines",
+      "parameters": {
+        "interval": "1m",
+        "limit": 3,
+        "symbol": "BTCUSD_261225"
+      },
+      "request_time_utc_ns": 1793097604867677000,
+      "request_monotonic_ns": 398081531110583,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 400,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:04 GMT",
+        "content-type": "application/json",
+        "x-mbx-used-weight-1m": "9",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "code": -1121,
+        "msg": "Invalid symbol."
+      },
+      "valid": false,
+      "error_type": "HttpResponseError",
+      "receive_time_utc_ns": 1793097604960230000,
+      "receive_monotonic_ns": 398081623665708
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

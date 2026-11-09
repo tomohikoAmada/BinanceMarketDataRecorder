@@ -68,7 +68,13 @@ def main():
             ignore=shutil.ignore_patterns("__pycache__", "._*"),
         )
     (release / "python").mkdir()
-    shutil.copytree(a.source / "python/src", release / "python/src")
+    baseline = a.source / "vendor/python-baseline"
+    if not (baseline / "BASELINE.json").is_file():
+        raise RuntimeError(f"missing vendored Python baseline: {baseline}")
+    shutil.copytree(baseline / "src", release / "python/src")
+    for name in ("BASELINE.json", "README.md", "pyproject.toml"):
+        shutil.copy2(baseline / name, release / "python" / name)
+    shutil.copytree(baseline / "requirements", release / "python/requirements")
     runtime = Path("/srv/recorder-data/S-BMDR/runtime") / a.version
     runtime.mkdir(parents=True)
     shutil.copytree((a.source / "venv").resolve(), runtime / "venv", symlinks=True)
