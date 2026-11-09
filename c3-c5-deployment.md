@@ -129,4 +129,25 @@ fb2d2501 仅把公开采集的大小封存目标改为 16 MiB，沿用 900 秒�
 
 fb2d2501 的新二进制 SHA-256 为 `40df2dc2f6100aeeed0ab0cc58e88198cd59b854b7215fe0f2295ed8d38d976e`。原生 Release 十二项全部通过（131.65 s），ASan/UBSan 六项（70.34 s）与 TSan 六项（88.55 s）通过；源码、构建与三份二进制摘要绑定于 `native-candidate-tests.json`。这些是本次新构建的实际回归，C3 已签收基线仍为原 `234264…`。
 
-**新的固定 T0：2026-11-09 10:56:12.8 上海时间。** release `20261109-fb2d2501`，根 `live-20261109T025607Z`，白名单仍为十个 USDT 对，两个市场共 20 产品；CPU 权重 100/200、合计配额 175%、归档 25%，大小目标 16 MiB、周期 900 s。驱动显式使用所有者接受的 CPU 口径 200，仍报告原 120% 的逐项结果。24h 采集预计 **11-10 10:56:22.8** 满足，完整读回另计。当前 RUNNING，C4/C5 尚未签收或启用开机常驻。
+**新的固定 T0：2026-11-09 10:56:12.8 上海时间。** release `20261109-fb2d2501`，根 `live-20261109T025607Z`，白名单仍为十个 USDT 对，两个市场共 20 产品；CPU 权重 100/200、合计配额 175%、归档 25%，大小目标 16 MiB、周期 900 s。驱动显式使用所有者接受的 CPU 口径 200，仍报告原 120% 的逐项结果。24h 采集预计 **11-10 10:56:22.8** 满足，完整读回另计。该轮启动时状态为 RUNNING，C4/C5 尚未签收或启用开机常驻。
+
+
+### C4-A 写路径修复与 10:56 轮提前退出（2026-11-09）
+
+10:56:12.8 轮于 **11:15:11 上海时间**提前退出：USD-M 运行 18m56s 后以 exit 1 结束，Spot 同时停止。按定稿第 5 节，本轮不做全量读回、不调参，24h 计时作废；失败根与日志保留在原运行根，C4/C5 仍未签收。
+
+C4-A 按定稿 6.2 完成以下改动：
+
+- 配置模式交接队列按 `body.size()+1024` 计费，字节上限保持 64 MiB、条数保险上限 65,536；单源模式保持 8,192 条。`push`/`try_push`/`pop`/`take`/`rest_admissible` 使用同一计费。
+- `DepthBridge` 使用独立 `depth_pending_limit=8192`，不再随交接队列放大。
+- 配置模式满队列改为非阻塞 `try_push`：WS/REST 丢弃当前帧并继续运行；WS 按 `(symbol,stream)` 累计丢弃数和首末时间，下一条被接受消息带 `sequence_gap`、`ingress_drop` 和 `ingressDropped`；每连接每秒最多一条 `INGRESS_DROP` status_line；写线程写入 Catalog `INGRESS_DROP` 事件，身份列留 NULL、范围在 `evidence_json`。depth 丢弃后由现有 `DepthBridge::reset()` 重新请求快照。
+- 周期耐久同步在配置模式改为 5,000 ms，单源保持 900 ms；启动磁盘门槛改为 15 GiB；每秒 status_line 增加 `writer_sync_ms`、`writer_seal_ms`、`dropped_total`。
+- `c4-overload-catalog`（`--stall-one`）改为断言“进程不退出、无丢弃、30,000 条全部按原字节读回”；新增 `c4-ingress-drop`（测试专用队列 1,024 条 + 3.5 s 封存阻塞），验证丢弃计数、逐流 `ingress_drop`/`sequence_gap`、Catalog 事件、冻结 Catalog 可读，以及丢弃后新的 depth 快照请求和桥接恢复。
+
+**验证结果（原生 GreenCloud Linux x86_64）：** Release **13/13**（原 12 项 + 新增 `c4-ingress-drop`，127.56 s），ASan/UBSan **9/9**，TSan **9/9**（117.26 s）；`c4-ingress-drop` 连续运行 3 次通过。C4-A 代码提交 `f68a2f47`，Release 二进制 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b`。C4-B 60 分钟公网验证、C4-C 24h 资格和 C5 启用尚未开始，C4/C5 仍未签收。
+
+**测试环境遇到的问题（均为夹具/验证脚本问题，不改记录器结论）：**
+
+- macOS 打包到 Linux 时带入 AppleDouble `._*` 文件，导致 vendored Python baseline 树哈希不匹配；清理后通过。
+- 丢弃测试的回环流名需使用归一化后的 `diff_depth`/`book_ticker`/`agg_trade`；depth 快照夹具需返回比最新流早一拍的 `lastUpdateId`，否则会按 `depth_snapshot_too_old` 反复重试。
+- Spot depth 快照权重为 250、窗口 2,000/60s，12 个 symbol 在短测内最多完成约 7 次快照；丢弃测试改用 3 个 symbol，以便观察到丢弃后的第二次快照请求和桥接恢复。该权重与生产配置未改。
