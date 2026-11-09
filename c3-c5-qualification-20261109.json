@@ -1003,7 +1003,20 @@
       "error": "RuntimeError('usdm recorder exited early: 1')",
       "finish_utc": "2026-11-08T23:00:18.647546+00:00"
     },
-    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-ten-overload"
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-ten-overload",
+    "stored_raw_readback": {
+      "spot": {
+        "status": "PASS",
+        "records": 992411,
+        "chunks": 76
+      },
+      "usdm": {
+        "status": "PASS",
+        "records": 3463316,
+        "chunks": 173
+      }
+    },
+    "catalog_repair_required": false
   },
   "c4_poll_experiment": {
     "status": "REVERTED_NO_CONSISTENT_GAIN",
