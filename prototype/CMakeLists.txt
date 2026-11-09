@@ -53,6 +53,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CXX_FLAGS MATCHES "fsanitize
     add_test(NAME c4-overload-catalog COMMAND "${Python3_EXECUTABLE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
         "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --stall-one)
+    add_test(NAME c4-ingress-drop COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --drop-path)
 endif()
 add_test(NAME c3-configured COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_configured.py"
     "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}")

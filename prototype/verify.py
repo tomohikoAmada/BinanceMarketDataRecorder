@@ -157,7 +157,8 @@ async def run_case(root, name, frames, rest, *, pause=0, status=200, rejected=Fa
     if name in {"ordinary", "http-error"}:
         assert parse_envelope(record)[0].valid == (status == 200)
     if name == "large":
-        assert stats["peak_queue_payload_bytes"] == len(record.raw_payload)
+        # Handoff bills each record as body + 1 KiB fixed message overhead.
+        assert stats["peak_queue_payload_bytes"] == len(record.raw_payload) + 1024
     assert stats["records"] == len(frames) + 1
     assert stats["peak_queue_records"] <= 8192
     assert stats["peak_queue_payload_bytes"] <= 64 * 1024**2

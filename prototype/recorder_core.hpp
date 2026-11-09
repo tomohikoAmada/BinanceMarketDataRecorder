@@ -1,3 +1,5 @@
+constexpr std::size_t depth_pending_limit = 8192;
+
 struct CaptureConfig {
     std::vector<std::string> symbols;
     static CaptureConfig load(const char* path, bool usdm) {
@@ -220,7 +222,7 @@ class DepthBridge {
                 }
             }
             if (!snapshot_) {
-                if (pending_.size() == queue_records) {
+                if (pending_.size() == depth_pending_limit) {
                     message.flags.push_back("sequence_gap");
                     message.flags.push_back("depth_sequence_buffer_overflow");
                     reset();
@@ -324,8 +326,8 @@ void verify_depth_edges() {
     require(has(event(303, 305, 1), "depth_bridge"));
     require(has(event(303, 305, 1), "depth_stale"));
     event(400, 402, 2);
-    for (std::size_t i = 1; i < queue_records; ++i)
+    for (std::size_t i = 1; i < depth_pending_limit; ++i)
         event(400 + i * 3, 402 + i * 3, 2);
-    require(has(event(400 + queue_records * 3, 402 + queue_records * 3, 2),
+    require(has(event(400 + depth_pending_limit * 3, 402 + depth_pending_limit * 3, 2),
                 "depth_sequence_buffer_overflow"));
 }

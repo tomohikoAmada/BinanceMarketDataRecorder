@@ -97,6 +97,26 @@ class Catalog {
                                     {"market", market}, {"symbol", symbol}, {"stream", stream}}.dump()}));
     }
 
+    void ingress_drop(const std::string& event_id, const std::string& run,
+                      const Message& message) {
+        const auto& first = message.sequence.at("ingressDropFirstUtcNs");
+        const auto& last = message.sequence.at("ingressDropLastUtcNs");
+        statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
+                  "evidence_json) VALUES(?,'INGRESS_DROP',?,?)",
+                  Json::array({event_id, ns<system_clock>(),
+                               Json{{"collector_instance_id", run},
+                                    {"market", message.market},
+                                    {"symbol", message.symbol},
+                                    {"stream", message.stream},
+                                    {"dropped", message.sequence.at("ingressDropped")},
+                                    {"first_drop_utc_ns", first},
+                                    {"last_drop_utc_ns", last},
+                                    {"first_drop_monotonic_ns",
+                                     message.sequence.at("ingressDropFirstMonotonicNs")},
+                                    {"last_drop_monotonic_ns",
+                                     message.sequence.at("ingressDropLastMonotonicNs")}}.dump()}));
+    }
+
     void active(const RawFile& raw, const fs::path& path) {
         const auto now = ns<system_clock>();
         exec("BEGIN IMMEDIATE");
@@ -228,17 +248,22 @@ class RecorderStorage {
     std::string run_;
     milliseconds period_;
     std::uint64_t byte_limit_;
+    milliseconds sync_period_;
     std::map<std::string, Slot> slots_;
     DepthBridge depth_;
     DepthRequests* requests_;
     std::map<std::string, std::unique_ptr<DepthBridge>> bridges_;
     Bytes scratch_;
-    steady_clock::time_point next_sync_ = steady_clock::now() + milliseconds(900);
+    steady_clock::time_point next_sync_;
+    std::int64_t sync_ns_ = 0, seal_ns_ = 0;
+    std::uint64_t ingress_drop_sequence_ = 0;
 
     std::array<std::uint64_t, 1252> append_histogram_{};
     std::uint64_t append_count_ = 0;
 
     void rotate(Slot& slot, bool rest, const char* reason) {
+        (void)rest;
+        const auto rotate_start = ns<steady_clock>();
         auto& raw = *slot.raw;
         max_durability_ns = std::max(max_durability_ns, raw.finish());
 #ifdef SBMDR_DIAGNOSTICS
@@ -323,6 +348,7 @@ class RecorderStorage {
         slot.first = false;
         ++sealed_count;
         rotations[reason] = rotations.value(reason, 0) + 1;
+        seal_ns_ += ns<steady_clock>() - rotate_start;
     }
 
   public:
@@ -345,20 +371,27 @@ class RecorderStorage {
     }
 
     RecorderStorage(fs::path root, std::string run, milliseconds period, std::uint64_t bytes,
-                    DepthRequests* depth_requests = nullptr)
+                    milliseconds sync_period, DepthRequests* depth_requests = nullptr)
         : root_(std::move(root)), catalog_(root_ / "state/catalog.sqlite"), run_(std::move(run)),
-          period_(period), byte_limit_(bytes), depth_(depth_requests), requests_(depth_requests) {
+          period_(period), byte_limit_(bytes), sync_period_(sync_period), depth_(depth_requests),
+          requests_(depth_requests) {
+        next_sync_ = steady_clock::now() + sync_period_;
         catalog_.startup(run_);
     }
+
+    double take_sync_ms() { return static_cast<double>(std::exchange(sync_ns_, 0)) / 1e6; }
+    double take_seal_ms() { return static_cast<double>(std::exchange(seal_ns_, 0)) / 1e6; }
 
     void tick(bool allow_time_rotation = true) {
         const auto now = steady_clock::now();
         if (now >= next_sync_) {
+            const auto sync_start = ns<steady_clock>();
             for (auto& [key, slot] : slots_) {
                 if (slot.raw)
                     max_durability_ns = std::max(max_durability_ns, slot.raw->sync());
             }
-            next_sync_ = now + milliseconds(900);
+            sync_ns_ += ns<steady_clock>() - sync_start;
+            next_sync_ = now + sync_period_;
         }
         if (!allow_time_rotation)
             return;
@@ -376,6 +409,12 @@ class RecorderStorage {
     }
 
     void append(Message& message) {
+        if (std::any_of(message.flags.begin(), message.flags.end(),
+                        [](const auto& flag) { return flag == "ingress_drop"; })) {
+            const auto event_id =
+                run_ + "-ingress-drop-" + std::to_string(++ingress_drop_sequence_);
+            catalog_.ingress_drop(event_id, run_, message);
+        }
         if (requests_ && !requests_->children.empty() && (message.stream == "diff_depth" || message.source_stream == "depth_snapshot")) {
             auto& bridge = bridges_[message.symbol];
             if (!bridge) bridge = std::make_unique<DepthBridge>(&requests_->for_symbol(message.symbol));

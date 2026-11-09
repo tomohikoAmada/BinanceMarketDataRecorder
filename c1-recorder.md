@@ -24,7 +24,7 @@ ctest --test-dir "$scratch/c1-build" --output-on-failure
 
 `prototype` 提供 `release` 与 `vcpkg-release` CMake presets。vcpkg 方案由 `prototype/vcpkg.json` 固定 baseline。使用该方案时在 `prototype` 内设置 `VCPKG_ROOT`，运行 `cmake --preset vcpkg-release` 并传入相同的 Python 参数。
 
-公开采集只接受 Recorder 内部数据根下的独立 `S-BMDR` 子目录。路径示例适用于 macOS，Linux 交互根使用 `~/.local/share/BinanceMarketDataRecorder`，系统服务根使用 `/var/lib/binance-market-data-recorder`。公开采集启动要求至少 18 GiB 可用，降至 13 GiB 时停止接收并排空，为 10 GiB 硬保留留下封存和队列空间。
+公开采集只接受 Recorder 内部数据根下的独立 `S-BMDR` 子目录。路径示例适用于 macOS，Linux 交互根使用 `~/.local/share/BinanceMarketDataRecorder`，系统服务根使用 `/var/lib/binance-market-data-recorder`。公开采集启动要求至少 15 GiB 可用，降至 13 GiB 时停止接收并排空，为 10 GiB 硬保留留下封存和队列空间。
 
 ```sh
 root="$HOME/Library/Application Support/BinanceMarketDataRecorder/S-BMDR/c1"

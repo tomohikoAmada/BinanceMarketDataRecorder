@@ -55,7 +55,10 @@ using namespace std::chrono;
 constexpr std::size_t frame_limit = 32 * 1024 * 1024;
 constexpr std::size_t queue_limit = 64 * 1024 * 1024;
 constexpr std::size_t queue_records = 8192;
+constexpr std::size_t configured_queue_records = 65536;
+constexpr std::size_t queue_message_overhead = 1024;
 constexpr std::size_t max_encoded_metadata = 4096;
+void status_line(const Json& event);
 std::atomic<std::uint64_t> allocations{}, allocated_bytes{};
 #ifdef SBMDR_NO_NEW_COUNTER
 constexpr bool allocation_counter_enabled = false;
@@ -501,13 +504,21 @@ class IngressOverload : public std::runtime_error {
     const bool rest;
 };
 
+enum class PushResult { accepted, full, closed };
+
 class Handoff {
   public:
+    explicit Handoff(std::size_t records = queue_records) : records_(records) {}
+
+    static std::size_t billing(const Message& message) {
+        return message.body.size() + queue_message_overhead;
+    }
+
     void push(Message message, bool bounded = false) {
         std::unique_lock lock(mutex_);
-        const auto size = message.body.size();
+        const auto size = billing(message);
         const auto available = [&] {
-            return closed_ || (pending_.size() < queue_records && bytes_ + size <= queue_limit);
+            return closed_ || (pending_.size() < records_ && bytes_ + size <= queue_limit);
         };
         if (bounded) {
             if (!ready_.wait_for(lock, milliseconds(250), available))
@@ -517,14 +528,18 @@ class Handoff {
         }
         if (closed_)
             throw std::runtime_error("storage handoff closed");
-#ifdef SBMDR_DIAGNOSTICS
-        message.enqueued = ns<steady_clock>();
-#endif
-        bytes_ += size;
-        pending_.push_back(std::move(message));
-        peak_bytes = std::max(peak_bytes, bytes_);
-        peak_records = std::max(peak_records, pending_.size());
-        ready_.notify_all();
+        enqueue(std::move(message), size);
+    }
+
+    PushResult try_push(Message message) {
+        std::lock_guard lock(mutex_);
+        if (closed_)
+            return PushResult::closed;
+        const auto size = billing(message);
+        if (pending_.size() >= records_ || bytes_ + size > queue_limit)
+            return PushResult::full;
+        enqueue(std::move(message), size);
+        return PushResult::accepted;
     }
 
     std::pair<std::size_t, std::size_t> snapshot() {
@@ -534,7 +549,7 @@ class Handoff {
 
     bool rest_admissible() {
         std::lock_guard lock(mutex_);
-        return !closed_ && pending_.size() < queue_records / 2 && bytes_ < queue_limit / 2;
+        return !closed_ && pending_.size() < records_ / 2 && bytes_ < queue_limit / 2;
     }
 
     bool pop(Message& message) {
@@ -542,7 +557,7 @@ class Handoff {
         ready_.wait(lock, [&] { return closed_ || !pending_.empty(); });
         if (pending_.empty())
             return false;
-        bytes_ -= pending_.front().body.size();
+        bytes_ -= billing(pending_.front());
         message = std::move(pending_.front());
         pending_.pop_front();
         ready_.notify_all();
@@ -555,7 +570,7 @@ class Handoff {
         std::size_t batch_bytes = 0;
         constexpr std::size_t batch_limit = 1024 * 1024;
         while (!pending_.empty() && batch.size() < 32) {
-            const auto next = pending_.front().body.size();
+            const auto next = billing(pending_.front());
             if (!batch.empty() && batch_bytes + next > batch_limit)
                 break;
             batch_bytes += next;
@@ -575,13 +590,30 @@ class Handoff {
         ready_.notify_all();
     }
 
+    std::uint64_t dropped_total() const {
+        return dropped_ws.load(std::memory_order_relaxed) +
+               dropped_rest.load(std::memory_order_relaxed);
+    }
+
     std::size_t peak_bytes = 0, peak_records = 0;
+    std::atomic<std::uint64_t> dropped_ws{0}, dropped_rest{0};
 
   private:
+    void enqueue(Message message, std::size_t size) {
+#ifdef SBMDR_DIAGNOSTICS
+        message.enqueued = ns<steady_clock>();
+#endif
+        bytes_ += size;
+        pending_.push_back(std::move(message));
+        peak_bytes = std::max(peak_bytes, bytes_);
+        peak_records = std::max(peak_records, pending_.size());
+        ready_.notify_all();
+    }
+
     std::mutex mutex_;
     std::condition_variable ready_;
     std::deque<Message> pending_;
-    std::size_t bytes_ = 0;
+    std::size_t records_, bytes_ = 0;
     bool closed_ = false;
 };
 
@@ -594,6 +626,13 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
     std::set<std::string> seen_streams;
     std::map<std::string, std::uint64_t> previous_by_symbol;
     std::optional<std::uint64_t> previous;
+    struct DropState {
+        std::uint64_t count = 0;
+        std::int64_t first_utc = 0, last_utc = 0, first_mono = 0, last_mono = 0;
+    };
+    std::map<std::string, DropState> drops;
+    std::uint64_t connection_dropped = 0;
+    std::optional<steady_clock::time_point> last_drop_status;
     const auto renew = steady_clock::now() + hours(23);
     for (std::size_t i = 0; i < count && !stop.stop_requested(); ++i) {
         if (stop.stop_possible()) {
@@ -691,9 +730,60 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
         message.generation = generation;
         if (generation && (config ? seen_streams.insert(message.symbol + "/" + message.stream).second : i == 0))
             message.flags.push_back("sequence_gap");
-        queue.push(std::move(message), stop.stop_possible());
-        if (accepted)
-            ++*accepted;
+        if (!config) {
+            queue.push(std::move(message), stop.stop_possible());
+            if (accepted)
+                ++*accepted;
+            buffer.consume(buffer.size());
+            continue;
+        }
+        const auto stream_key = message.symbol + "/" + message.stream;
+        auto pending = drops.find(stream_key);
+        if (pending != drops.end() && pending->second.count) {
+            message.flags.push_back("sequence_gap");
+            message.flags.push_back("ingress_drop");
+            message.sequence["ingressDropped"] = pending->second.count;
+            message.sequence["ingressDropFirstUtcNs"] = pending->second.first_utc;
+            message.sequence["ingressDropLastUtcNs"] = pending->second.last_utc;
+            message.sequence["ingressDropFirstMonotonicNs"] = pending->second.first_mono;
+            message.sequence["ingressDropLastMonotonicNs"] = pending->second.last_mono;
+        }
+        const auto drop_market = message.market;
+        const auto drop_symbol = message.symbol;
+        const auto drop_stream = message.stream;
+        const auto drop_utc = message.utc;
+        const auto drop_mono = message.mono;
+        const auto outcome = queue.try_push(std::move(message));
+        if (outcome == PushResult::closed)
+            throw std::runtime_error("storage handoff closed");
+        if (outcome == PushResult::full) {
+            auto& state = drops[stream_key];
+            if (!state.count) {
+                state.first_utc = drop_utc;
+                state.first_mono = drop_mono;
+            }
+            state.last_utc = drop_utc;
+            state.last_mono = drop_mono;
+            ++state.count;
+            ++connection_dropped;
+            queue.dropped_ws.fetch_add(1, std::memory_order_relaxed);
+            const auto now = steady_clock::now();
+            if (!last_drop_status || now - *last_drop_status >= seconds(1)) {
+                last_drop_status = now;
+                status_line(Json{{"event", "INGRESS_DROP"},
+                                 {"transport", "ws"},
+                                 {"market", drop_market},
+                                 {"symbol", drop_symbol},
+                                 {"stream", drop_stream},
+                                 {"connection_dropped", connection_dropped},
+                                 {"dropped_total", queue.dropped_total()}});
+            }
+        } else {
+            if (pending != drops.end())
+                pending->second.count = 0;
+            if (accepted)
+                ++*accepted;
+        }
         buffer.consume(buffer.size());
     }
     if (!stop.stop_possible())
@@ -834,6 +924,7 @@ struct RestResult {
     bool valid;
     std::string retry_after;
     std::string transfer_error;
+    bool dropped = false;
 };
 
 using RestMulti = std::unique_ptr<CURLM, decltype(&curl_multi_cleanup)>;
@@ -849,7 +940,7 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
                         const std::optional<std::string>& ca = std::nullopt, bool bounded = false,
                         const std::string& run_id = "c0", const RestSource* source = nullptr,
                         bool usdm = false, std::uint64_t snapshot_epoch = 0,
-                        const CaptureConfig* config = nullptr) {
+                        const CaptureConfig* config = nullptr, bool configured = false) {
     using Easy = std::unique_ptr<CURL, decltype(&curl_easy_cleanup)>;
     Easy easy(curl_easy_init(), curl_easy_cleanup);
     if (!easy)
@@ -992,6 +1083,9 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
     message.sequence["sourceStream"] = message.source_stream;
     message.sequence["sourceFamily"] = message.family;
     RestResult outcome{message.status, message.rest_valid, message.retry_after, {}};
+    const auto drop_market = message.market;
+    const auto drop_symbol = message.symbol;
+    const auto drop_source = message.source_stream;
 #ifdef SBMDR_DIAGNOSTICS
     const auto rest_prepare_start = ns<steady_clock>();
 #endif
@@ -999,7 +1093,23 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
 #ifdef SBMDR_DIAGNOSTICS
     message.rest_preparation_ns = ns<steady_clock>() - rest_prepare_start;
 #endif
-    queue.push(std::move(message), bounded);
+    if (configured) {
+        const auto result = queue.try_push(std::move(message));
+        if (result == PushResult::closed)
+            throw std::runtime_error("storage handoff closed");
+        if (result == PushResult::full) {
+            outcome.dropped = true;
+            queue.dropped_rest.fetch_add(1, std::memory_order_relaxed);
+            status_line(Json{{"event", "INGRESS_DROP"},
+                             {"transport", "rest"},
+                             {"market", drop_market},
+                             {"symbol", drop_symbol},
+                             {"source", drop_source},
+                             {"dropped_total", queue.dropped_total()}});
+        }
+    } else {
+        queue.push(std::move(message), bounded);
+    }
     return outcome;
 }
 
@@ -1032,6 +1142,11 @@ void verify_golden(const char* path) {
 #include "recorder_run.hpp"
 
 void verify_handoff_limit() {
+    Message billed;
+    billed.body = Bytes(64);
+    if (Handoff::billing(billed) != billed.body.size() + queue_message_overhead)
+        throw std::runtime_error("queue billing does not include fixed message overhead");
+
     Handoff queue;
     for (std::size_t i = 0; i < queue_records; ++i) {
         Message message;
@@ -1059,6 +1174,30 @@ void verify_handoff_limit() {
     }
     if (drained != queue_records)
         throw std::runtime_error("overload dropped queued records");
+
+    Handoff configured(1024);
+    for (std::size_t i = 0; i < 1024; ++i) {
+        Message queued;
+        queued.mono = static_cast<std::int64_t>(i);
+        configured.push(std::move(queued));
+    }
+    if (configured.rest_admissible())
+        throw std::runtime_error("saturated configured queue admitted REST");
+    const auto before = steady_clock::now();
+    if (configured.try_push(Message{}) != PushResult::full)
+        throw std::runtime_error("saturated configured queue accepted an extra record");
+    if (steady_clock::now() - before > milliseconds(50))
+        throw std::runtime_error("configured queue rejection blocked");
+    drained = 0;
+    configured.close();
+    while (configured.pop(message)) {
+        if (message.mono != static_cast<std::int64_t>(drained++))
+            throw std::runtime_error("configured queue changed record order");
+    }
+    if (drained != 1024)
+        throw std::runtime_error("configured queue lost queued records");
+    if (configured.try_push(Message{}) != PushResult::closed)
+        throw std::runtime_error("closed configured queue did not reject ingress");
 }
 
 int main(int argc, char** argv) try {

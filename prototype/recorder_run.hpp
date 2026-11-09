@@ -124,7 +124,8 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
         RestResult result{0, false, {}, {}};
         try {
             result = receive_rest(multi.get(), port, queue, ca, true, run, &source, usdm,
-                                  take_snapshot ? epoch : 0, source.stream == "exchange_info" ? config : nullptr);
+                                  take_snapshot ? epoch : 0, source.stream == "exchange_info" ? config : nullptr,
+                                  config != nullptr);
         } catch (const IngressOverload&) { throw; }
           catch (const std::runtime_error& error) {
             status_line(Json{{"event", "REST_TRANSPORT_FAILURE"}, {"source", source.stream}, {"error", error.what()}});
@@ -138,7 +139,7 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
             status_line(Json{{"event", "REST_TRANSPORT_FAILURE"}, {"source", source.stream},
                              {"status", result.status}, {"error", result.transfer_error}});
         if (take_snapshot) {
-            if (result.valid)
+            if (result.valid && !result.dropped)
                 completed[selected] = epoch;
             retry[selected] = steady_clock::now() + seconds(1);
         } else {
@@ -152,16 +153,18 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
 
 int record(int argc, char** argv) {
     const bool public_capture = (argc == 6 || argc == 7 || argc == 8) && std::string_view(argv[2]) == "--public";
-    const bool core = public_capture || argc == 11 || argc == 12;
+    const bool core = public_capture || argc == 11 || argc == 12 || argc == 13;
     const std::string market = core ? (public_capture ? (argc >= 7 ? argv[6] : "spot") : argv[10]) : "spot";
     if (market != "spot" && market != "usdm")
         throw std::runtime_error("market must be spot or usdm");
     const bool usdm = market == "usdm";
-    const auto config = (public_capture && argc == 8) || (!public_capture && argc == 12) ? std::optional<CaptureConfig>(CaptureConfig::load(public_capture ? argv[7] : argv[11], usdm)) : std::nullopt;
-    if (!public_capture && argc != 7 && argc != 9 && argc != 10 && argc != 11 && argc != 12) {
+    const auto config = (public_capture && argc == 8) || (!public_capture && argc >= 12) ? std::optional<CaptureConfig>(CaptureConfig::load(public_capture ? argv[7] : argv[11], usdm)) : std::nullopt;
+    const auto test_queue_records = !public_capture && argc == 13 ? std::stoull(argv[12]) : 0;
+    if (!public_capture && argc != 7 && argc != 9 && argc != 10 && argc != 11 && argc != 12 && argc != 13) {
         throw std::runtime_error(
             "usage: sbmdr-c0 record WS_PORT HTTP_PORT WS_COUNT OUTPUT_DIR REST_INTERVAL_MS "
-            "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS [spot|usdm]]] | record --public OUTPUT_DIR WS_COUNT CA_FILE [spot|usdm]");
+            "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS [spot|usdm [CONFIG [TEST_QUEUE_RECORDS]]]]] | "
+            "record --public OUTPUT_DIR WS_COUNT CA_FILE [spot|usdm [CONFIG]]");
     }
     const std::string ws_port = public_capture ? "" : argv[2], http_port = public_capture ? "" : argv[3];
     const auto ws_count = std::stoull(argv[4]);
@@ -203,8 +206,8 @@ int record(int argc, char** argv) {
         if (!allowed)
             throw std::runtime_error("public capture requires a dedicated internal S-BMDR data root");
         fs::create_directories(root);
-        if (fs::space(root).available < 18ULL * 1024 * 1024 * 1024)
-            throw std::runtime_error("public capture requires at least 18 GiB available at startup");
+        if (fs::space(root).available < 15ULL * 1024 * 1024 * 1024)
+            throw std::runtime_error("public capture requires at least 15 GiB available at startup");
     }
     for (auto directory : {"state", "data/active", "data/sealed", "data/manifests"})
         fs::create_directories(root / directory);
@@ -231,21 +234,25 @@ int record(int argc, char** argv) {
     const auto cpu_start = std::clock();
     const auto allocation_start = allocations.load();
     const auto allocated_start = allocated_bytes.load();
-    Handoff queue;
+    const auto queue_record_limit =
+        test_queue_records ? test_queue_records : (config ? configured_queue_records : queue_records);
+    Handoff queue(queue_record_limit);
     DepthRequests depth_requests;
     if (config) {
         depth_requests.initialize(*config);
         auto directory = directory_source(usdm);
         directory.parameters = usdm ? Json::object() : Json{{"symbols", config->symbols}};
         auto multi = make_rest_multi();
-        receive_rest(multi.get(), http_port, queue, ca, true, run_id, &directory, usdm, 0, &*config);
+        receive_rest(multi.get(), http_port, queue, ca, true, run_id, &directory, usdm, 0, &*config, true);
     }
     std::stop_source stop;
     std::atomic<unsigned> overloads{0};
     std::size_t records = 0;
     auto writer = std::async(std::launch::async, [&] {
         try {
-            RecorderStorage storage(root, run_id, rotation, rotation_bytes, core ? &depth_requests : nullptr);
+            RecorderStorage storage(root, run_id, rotation, rotation_bytes,
+                                    config ? milliseconds(5000) : milliseconds(900),
+                                    core ? &depth_requests : nullptr);
             std::vector<Message> batch;
             batch.reserve(32);
             auto next_status = start + seconds(1);
@@ -291,6 +298,9 @@ int record(int argc, char** argv) {
                              {"rss_bytes", peak_rss()},
                              {"cpu_percent", percent},
                              {"max_durability_ns", storage.max_durability_ns},
+                             {"writer_sync_ms", storage.take_sync_ms()},
+                             {"writer_seal_ms", storage.take_seal_ms()},
+                             {"dropped_total", queue.dropped_total()},
                              {"elapsed_seconds", duration<double>(now - start).count()},
                              {"cpu_seconds", static_cast<double>(cpu - cpu_start) / CLOCKS_PER_SEC}});
                     if (config && now >= next_sources) {
@@ -319,6 +329,9 @@ int record(int argc, char** argv) {
                         {"max_receive_to_append_ns", storage.max_append_ns},
                         {"receive_to_append_p99_ms", storage.append_p99_ms()},
                         {"max_status_cpu_percent", max_status_cpu},
+                        {"dropped_total", queue.dropped_total()},
+                        {"ws_dropped_total", queue.dropped_ws.load()},
+                        {"rest_dropped_total", queue.dropped_rest.load()},
                         {"stop_reason", disk_stop ? "DISK_EMERGENCY_STOP" : "INPUT_COMPLETE"}};
 #ifdef SBMDR_DIAGNOSTICS
             result["diagnostics_last_chunk_per_source"] = storage.diagnostics;
