@@ -151,3 +151,5 @@ C4-A 按定稿 6.2 完成以下改动：
 - macOS 打包到 Linux 时带入 AppleDouble `._*` 文件，导致 vendored Python baseline 树哈希不匹配；清理后通过。
 - 丢弃测试的回环流名需使用归一化后的 `diff_depth`/`book_ticker`/`agg_trade`；depth 快照夹具需返回比最新流早一拍的 `lastUpdateId`，否则会按 `depth_snapshot_too_old` 反复重试。
 - Spot depth 快照权重为 250、窗口 2,000/60s，12 个 symbol 在短测内最多完成约 7 次快照；丢弃测试改用 3 个 symbol，以便观察到丢弃后的第二次快照请求和桥接恢复。该权重与生产配置未改。
+
+**尚未完成：** C4-B 60 分钟公网验证、C4-C 24h 资格、C5 启用与交接。C4-A 新二进制尚未部署为 `current`，也未在公网配置下运行；10:56 失败轮按定稿未做全量读回。C4-B/C 的资格驱动还需把 `dropped_total` 门槛和新增 status 字段纳入验收记录，记录器输出字段本身已就绪。
