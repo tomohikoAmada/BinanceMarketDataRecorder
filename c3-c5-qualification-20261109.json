@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_WEIGHTED_TENPAIR_PREPARING_C5_NOT_ENABLED",
+  "status": "C3_PASS_C4_WEIGHTED_TENPAIR_24H_RUNNING_C5_NOT_ENABLED",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,16 +597,84 @@
     }
   },
   "c5": {
-    "status": "PREPARING_WEIGHTED_RUN",
-    "source_commit": "7fbae5bdf62f50ca53868a595dc1c565559d43c8",
-    "cpp_commit": "a1507458d25e06a4edbbc9bd4d5cd546ed110e3c",
-    "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
-    "not_yet_signed_off": true,
-    "cpu_weight": {
-      "spot": 100,
-      "usdm": 200
+    "status": "RUNNING",
+    "deployment": {
+      "status": "INSTALLED_NOT_QUALIFIED",
+      "release": "/opt/sbmdr/releases/20261109-9b0b30f1",
+      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-9b0b30f1",
+      "roots": {
+        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T012102Z/spot",
+        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T012102Z/usdm"
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+      "resource_policy": {
+        "slice_cpu_quota_percent": 175,
+        "archive_cpu_quota_percent": 25,
+        "spot_cpu_weight": 100,
+        "usdm_cpu_weight": 200,
+        "archive_timeout_seconds": 240,
+        "public_seal_target_bytes": 33554432
+      },
+      "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+      "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
     },
-    "slice_cpu_quota_percent": 175
+    "start_snapshot": {
+      "status": "RUNNING",
+      "start_utc": "2026-11-09T01:21:06.230325+00:00",
+      "seconds_required": 86410,
+      "config": {
+        "spot": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ],
+        "usdm": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ]
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "markets": {
+        "spot": {
+          "pid": 229060,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T012102Z/spot",
+          "cpu_weight": 100,
+          "rss_kib": 32492,
+          "threads_peak": 5,
+          "wal_peak_bytes": 1124792
+        },
+        "usdm": {
+          "pid": 229071,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T012102Z/usdm",
+          "cpu_weight": 200,
+          "rss_kib": 40044,
+          "threads_peak": 7,
+          "wal_peak_bytes": 1825192
+        }
+      },
+      "slice_cpu_peak_percent": 164.0273400279018,
+      "slice_cpu_60s_peak_percent": 92.54530988460532,
+      "elapsed_seconds": 151.1041576100397,
+      "system_minimum_free_bytes": 20304478208
+    },
+    "capture_expected_end_utc": "2026-11-10T01:21:16+00:00",
+    "not_yet_signed_off": true
   },
   "notes": [
     "Original C1 synthetic capacity and durability failures remain failed.",
@@ -1167,5 +1235,49 @@
     },
     "host_steal_percent_of_reported_ticks": 14.69716277013497,
     "note": "Different 180-second instrumented public run, not the failed capture or C4 qualification; does not establish old failure root cause."
+  },
+  "c4_weight_metadata_preflight": {
+    "status": "HARNESS_FAILED_BEFORE_VALID_CAPTURE",
+    "qualification": {
+      "status": "FAILED",
+      "start_utc": "2026-11-08T23:49:39.225173+00:00",
+      "seconds_required": 86410,
+      "config": {
+        "spot": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ],
+        "usdm": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ]
+      },
+      "binary_sha256": "700f0b09b32a06d3876a4750e32fc81b5cf0a71eccaa6e7938ead5599a25a4d1",
+      "markets": {
+        "spot": {
+          "pid": 225866,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261108T234936Z/spot"
+        }
+      },
+      "error": "ValueError(\"invalid literal for int() with base 10: '[not set]'\")",
+      "finish_utc": "2026-11-08T23:49:40.835636+00:00"
+    },
+    "reason": "CPUWeight default was [not set]; native parser expected integer; fixed by explicit template CPUWeight=100."
   }
 }
