@@ -16,15 +16,67 @@ def run(*args, env=None):
     subprocess.run([str(a) for a in args], env=env, check=True)
 
 
+def finish_production(release, roots):
+    """Archive the verified tail and enable the already qualified services."""
+    for root in roots.values():
+        for _ in range(100):
+            with sqlite3.connect(Path(root) / "state/catalog.sqlite") as db:
+                pending = db.execute(
+                    "SELECT count(*) FROM chunks WHERE state='SEALED'"
+                ).fetchone()[0]
+                pending += db.execute(
+                    "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
+                ).fetchone()[0]
+            if not pending:
+                break
+            run(
+                "runuser",
+                "-u",
+                "bmdr",
+                "--",
+                release / "venv/bin/python",
+                release / "prototype/operations.py",
+                "archive",
+                root,
+                env={**os.environ, "PYTHONPATH": str(release / "python/src")},
+            )
+        else:
+            raise RuntimeError("final archive backlog did not drain")
+    drop = Path("/etc/systemd/system/sbmdr-recorder@.service.d")
+    drop.mkdir(exist_ok=True)
+    (drop / "production.conf").write_text("[Service]\nRestart=on-failure\n")
+    shutil.copyfile(release / "deployment/logrotate.conf", "/etc/logrotate.d/sbmdr")
+    run("systemctl", "daemon-reload")
+    run(
+        "systemctl",
+        "enable",
+        "--now",
+        "sbmdr-recorder@spot.service",
+        "sbmdr-recorder@usdm.service",
+        "sbmdr-archive.timer",
+    )
+    for market in ("spot", "usdm"):
+        run("systemctl", "is-active", f"sbmdr-recorder@{market}.service")
+        run("systemctl", "is-enabled", f"sbmdr-recorder@{market}.service")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--source", type=Path, required=True)
     p.add_argument("--version", required=True)
     p.add_argument("--c3-report", type=Path, required=True)
     p.add_argument("--archive-root", type=Path, action="append", default=[])
+    p.add_argument(
+        "--cpu-limit-percent", type=float, default=120,
+        help="CPU ceiling in percent of one core; use the owner-approved scope",
+    )
     a = p.parse_args()
     state = a.source / "results/promotion-progress.json"
-    report = {"status": "WAIT_C3", "version": a.version}
+    report = {
+        "status": "WAIT_C3",
+        "version": a.version,
+        "cpu_limit_percent": a.cpu_limit_percent,
+    }
 
     def save():
         state.write_text(json.dumps(report, indent=2) + "\n")
@@ -142,53 +194,14 @@ def main():
             "--rss-limit-mib",
             "256",
             "--cpu-limit-percent",
-            "120",
+            str(a.cpu_limit_percent),
             env={**os.environ, "PYTHONPATH": str(release / "python/src")},
         )
         qualification = json.loads((evidence / "progress.json").read_text())
         assert qualification["status"] == "PASS"
         report["status"] = "FINAL_ARCHIVE"
         save()
-        for root in roots.values():
-            for _ in range(100):
-                with sqlite3.connect(Path(root) / "state/catalog.sqlite") as db:
-                    pending = db.execute(
-                        "SELECT count(*) FROM chunks WHERE state='SEALED'"
-                    ).fetchone()[0]
-                    pending += db.execute(
-                        "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
-                    ).fetchone()[0]
-                if not pending:
-                    break
-                run(
-                    "runuser",
-                    "-u",
-                    "bmdr",
-                    "--",
-                    release / "venv/bin/python",
-                    release / "prototype/operations.py",
-                    "archive",
-                    root,
-                    env={**os.environ, "PYTHONPATH": str(release / "python/src")},
-                )
-            else:
-                raise RuntimeError("final archive backlog did not drain")
-        drop = Path("/etc/systemd/system/sbmdr-recorder@.service.d")
-        drop.mkdir(exist_ok=True)
-        (drop / "production.conf").write_text("[Service]\nRestart=on-failure\n")
-        shutil.copyfile(release / "deployment/logrotate.conf", "/etc/logrotate.d/sbmdr")
-        run("systemctl", "daemon-reload")
-        run(
-            "systemctl",
-            "enable",
-            "--now",
-            "sbmdr-recorder@spot.service",
-            "sbmdr-recorder@usdm.service",
-            "sbmdr-archive.timer",
-        )
-        for market in ("spot", "usdm"):
-            run("systemctl", "is-active", f"sbmdr-recorder@{market}.service")
-            run("systemctl", "is-enabled", f"sbmdr-recorder@{market}.service")
+        finish_production(release, roots)
         report.update(
             status="COMPLETE",
             qualification=str(evidence / "progress.json"),
