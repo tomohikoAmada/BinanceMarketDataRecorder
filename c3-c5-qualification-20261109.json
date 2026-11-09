@@ -1,5 +1,5 @@
 {
-  "status": "C3_PASS_C4_16MIB_PREFLIGHT_C5_NOT_ENABLED",
+  "status": "C3_PASS_C4_16MIB_TENPAIR_24H_RUNNING_C5_NOT_ENABLED",
   "source_cpp_commit": "ca0dc849",
   "source_tool_commit": "efd6f7aa3b3e3173013a241aadc8ad2d87dd3eaa",
   "python_reader_commit": "38acb1d0ee1ed7c5343024aead45d3a6a3f70a85",
@@ -597,7 +597,83 @@
     }
   },
   "c5": {
-    "status": "PREPARING_16MIB_RUN",
+    "status": "RUNNING",
+    "deployment": {
+      "status": "INSTALLED_NOT_QUALIFIED",
+      "release": "/opt/sbmdr/releases/20261109-fb2d2501",
+      "runtime": "/srv/recorder-data/S-BMDR/runtime/20261109-fb2d2501",
+      "roots": {
+        "spot": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T025607Z/spot",
+        "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T025607Z/usdm"
+      },
+      "binary_sha256": "40df2dc2f6100aeeed0ab0cc58e88198cd59b854b7215fe0f2295ed8d38d976e",
+      "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+      "resource_policy": {
+        "slice_cpu_quota_percent": 175,
+        "archive_cpu_quota_percent": 25,
+        "spot_cpu_weight": 100,
+        "usdm_cpu_weight": 200,
+        "archive_timeout_seconds": 240,
+        "public_seal_target_bytes": 16777216
+      },
+      "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+      "evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-c5-24h"
+    },
+    "start_snapshot": {
+      "status": "RUNNING",
+      "start_utc": "2026-11-09T02:56:12.805457+00:00",
+      "seconds_required": 86410,
+      "config": {
+        "spot": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ],
+        "usdm": [
+          "BTCUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BNBUSDT",
+          "ZECUSDT",
+          "XRPUSDT",
+          "NEARUSDT",
+          "UNIUSDT",
+          "DOGEUSDT",
+          "LINKUSDT"
+        ]
+      },
+      "binary_sha256": "40df2dc2f6100aeeed0ab0cc58e88198cd59b854b7215fe0f2295ed8d38d976e",
+      "markets": {
+        "spot": {
+          "pid": 235173,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T025607Z/spot",
+          "cpu_weight": 100,
+          "rss_kib": 32240,
+          "threads_peak": 5,
+          "wal_peak_bytes": 1050632
+        },
+        "usdm": {
+          "pid": 235184,
+          "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T025607Z/usdm",
+          "cpu_weight": 200,
+          "rss_kib": 41888,
+          "threads_peak": 7,
+          "wal_peak_bytes": 1462632
+        }
+      },
+      "slice_cpu_peak_percent": 146.43911585608208,
+      "slice_cpu_60s_peak_percent": 65.84038715303947,
+      "elapsed_seconds": 60.75658865401056,
+      "system_minimum_free_bytes": 20478996480
+    },
+    "capture_expected_end_utc": "2026-11-10T02:56:22.8+00:00",
     "cpu_limit_percent": 200,
     "not_yet_signed_off": true
   },
@@ -633,9 +709,40 @@
     "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-first-preflight"
   },
   "c4_candidate": {
-    "status": "BUILD_AND_TEST_PENDING",
-    "cpp_commit": "fb2d2501",
-    "public_seal_target_bytes": 16777216
+    "status": "NATIVE_CHECKS_PASS_24H_RUNNING",
+    "cpp_commit": "fb2d2501a1634eaa8a1b714d85240d69012abeeb",
+    "binary_sha256": "40df2dc2f6100aeeed0ab0cc58e88198cd59b854b7215fe0f2295ed8d38d976e",
+    "public_seal_target_bytes": 16777216,
+    "native_tests": {
+      "status": "PASS",
+      "source_commit": "fb2d2501a1634eaa8a1b714d85240d69012abeeb",
+      "binary_sha256": "40df2dc2f6100aeeed0ab0cc58e88198cd59b854b7215fe0f2295ed8d38d976e",
+      "cpp_files": {
+        "prototype/fault_io.cpp": "b44195d0c020933a5b667202437e11317a0719ceed4519583c38bf956975fa72",
+        "prototype/main.cpp": "bf90eb8c7ebf00bbd2a0f2e20d56a4ab0ba20bd8beaccf84667314bde2829f67",
+        "prototype/recorder_core.hpp": "422109035359fe4f109bf1ba4469772b0af9fd14b88f97f5f2af247dc0181126",
+        "prototype/recorder_run.hpp": "ce35233638f3f564bdd4cfd712e941844ff67337fad93e30bd77bb87d5a3e8d9",
+        "prototype/recorder_storage.hpp": "9a40f43e147bae61a25d4b80aade2bf5c877f6a522aa2d377ad74485963c1866"
+      },
+      "tests": {
+        "release": {
+          "exit_code": 0,
+          "binary_sha256": "40df2dc2f6100aeeed0ab0cc58e88198cd59b854b7215fe0f2295ed8d38d976e",
+          "test_count": 12
+        },
+        "asan": {
+          "exit_code": 0,
+          "binary_sha256": "2a7d972a413de5bc5f6aea4490cf15addf9d46afcf420f5cbf371fca1b986991",
+          "test_count": 6
+        },
+        "tsan": {
+          "exit_code": 0,
+          "binary_sha256": "6fa92c0d51d920bd4026ff4e6af8cc4f7719b0c1d1b525a0f648c73cd83c9007",
+          "test_count": 6
+        }
+      },
+      "utc": "2026-11-09T02:54:30.110317+00:00"
+    }
   },
   "c4_second_preflight": {
     "status": "FAILED",
