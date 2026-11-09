@@ -180,7 +180,7 @@ def main():
             "spot_cpu_weight": 100,
             "usdm_cpu_weight": 200,
             "archive_timeout_seconds": 240,
-            "public_seal_target_bytes": 32 * 1024**2,
+            "public_seal_target_bytes": 16 * 1024**2,
         },
         "config_sha256": hashlib.sha256(
             Path("/etc/sbmdr/config.json").read_bytes()

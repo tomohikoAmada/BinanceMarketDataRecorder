@@ -169,7 +169,7 @@ int record(int argc, char** argv) {
     const auto ca = public_capture ? std::optional<std::string>(argv[5]) : std::nullopt;
     const auto rest_period = public_capture ? milliseconds(300000) : milliseconds(std::stoll(argv[6]));
     const auto rotation = argc >= 9 ? milliseconds(std::stoll(argv[7])) : milliseconds(900000);
-    const auto rotation_bytes = argc >= 9 ? std::stoull(argv[8]) : (public_capture ? 32ULL : 128ULL) * 1024 * 1024;
+    const auto rotation_bytes = argc >= 9 ? std::stoull(argv[8]) : (public_capture ? 16ULL : 128ULL) * 1024 * 1024;
     const auto test_pause = !public_capture && argc >= 10 ? milliseconds(std::stoll(argv[9])) : milliseconds(0);
     if (test_pause.count() < 0 || test_pause > seconds(5))
         throw std::runtime_error("test pause must be between zero and five seconds");

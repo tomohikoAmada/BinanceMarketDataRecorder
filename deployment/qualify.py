@@ -250,6 +250,14 @@ def verify_stopped(a, report):
                     key,
                     "latest depth connection unbridged",
                 )
+    if a.services:
+        report["cpu_budget_results"] = {
+            "applied_limit_percent": a.cpu_limit_percent,
+            "frozen_limit_percent": 120,
+            "frozen_rolling_60s_pass": report["slice_cpu_60s_peak_percent"] <= 120,
+            "frozen_recorder_mean_pass": report["cpu_mean_percent"] <= 120,
+            "frozen_recorder_and_archive_mean_pass": report["cpu_mean_with_archive_percent"] <= 120,
+        }
     report["status"] = "PASS"
 
 
