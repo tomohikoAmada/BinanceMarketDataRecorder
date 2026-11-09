@@ -96,7 +96,7 @@ def main():
     os.chown(log, 0, 0)
     os.chmod(log, 0o755)
     old_logs = a.source / "results" / f"logs-before-{a.version}"
-    old_logs.mkdir()
+    old_logs.mkdir(exist_ok=True)
     for name in (
         "spot.stdout.jsonl",
         "spot.status.jsonl",
@@ -172,6 +172,11 @@ def main():
         check=True,
     )
     evidence = a.source / "results/c4-c5-24h"
+    if evidence.exists():
+        backup = a.source / "results/c4-b-60m-evidence"
+        if backup.exists():
+            backup = a.source / "results" / f"c4-b-60m-evidence-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
+        evidence.rename(backup)
     evidence.mkdir()
     report = {
         "status": "INSTALLED_NOT_QUALIFIED",

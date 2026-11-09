@@ -21,3 +21,8 @@ python3 scripts/vendor_python_baseline.py --source /path/to/main-checkout
 
 `BASELINE.json` records the commit, included scope, and a deterministic tree
 SHA-256. `prototype/verify.py` refuses to run if the vendored tree changes.
+
+Owner-authorized C4-D patches (2026-11-10) remove archive I/O sleeps, repeated
+within-transaction decompression/hash work, and add the fast verification read
+path. The original `main` commit remains the frozen source identity; the
+`patches` field in `BASELINE.json` records these local changes.

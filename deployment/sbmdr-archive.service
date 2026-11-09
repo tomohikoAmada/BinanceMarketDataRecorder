@@ -9,8 +9,8 @@ User=bmdr
 Group=bmdr
 Environment=PYTHONPATH=/opt/sbmdr/current/python/src
 ExecStart=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/deployment/archive_tick.py
-TimeoutStartSec=240
+TimeoutStartSec=600
 UMask=0027
 NoNewPrivileges=true
 Slice=sbmdr.slice
-CPUQuota=25%
+CPUQuota=50%

@@ -2,8 +2,8 @@
 Description=S-BMDR periodic sealed-file archival
 
 [Timer]
-OnActiveSec=120
-OnUnitInactiveSec=60
+OnActiveSec=15
+OnUnitInactiveSec=10
 AccuracySec=5
 Persistent=true
 

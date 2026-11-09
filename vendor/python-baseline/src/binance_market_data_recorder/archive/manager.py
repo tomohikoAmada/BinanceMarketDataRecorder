@@ -97,9 +97,13 @@ class ArchiveManager:
         self.target = target
         self.fault_hook = fault_hook
         self.utc_clock_ns = utc_clock_ns
+        self._source_validated_chunk: str | None = None
+        self._external_validated_transaction: str | None = None
 
     def run_once(self) -> ArchiveResult:
         self._io_budget = None
+        self._source_validated_chunk = None
+        self._external_validated_transaction = None
         transaction = self._next_transaction()
         if transaction is None:
             return ArchiveResult(None, None, "NO_ELIGIBLE_CHUNKS", 0, 0)
@@ -108,6 +112,9 @@ class ArchiveManager:
     def release_verified_once(self) -> ArchiveResult:
         """Release one locally retained source whose external commit is verified."""
 
+        self._io_budget = None
+        self._source_validated_chunk = None
+        self._external_validated_transaction = None
         transaction = next(
             (
                 row
@@ -266,6 +273,7 @@ class ArchiveManager:
                 validate_sealed_artifact(source, manifest)
         except (OSError, SealError) as exc:
             raise ArchiveError(f"source Raw validation failed: {exc}") from exc
+        self._source_validated_chunk = chunk_id
         transaction_id = str(
             uuid.uuid5(
                 uuid.NAMESPACE_URL,
@@ -336,7 +344,13 @@ class ArchiveManager:
             state = ArchiveState.LOCAL_DELETE_PENDING
         deleted_bytes = 0
         if state is ArchiveState.LOCAL_DELETE_PENDING:
-            self._validate_external_commit(transaction)
+            self._validate_external_commit(
+                transaction,
+                verify_artifact=(
+                    self._external_validated_transaction
+                    != str(transaction["transaction_id"])
+                ),
+            )
             self._hit("before_local_delete")
             source = self._source_path(transaction)
             if source.exists():
@@ -373,11 +387,15 @@ class ArchiveManager:
         self._validate_target_identity()
         self._ensure_external_directories()
         source = self._source_path(transaction)
-        self._validate_source_bundle(source, transaction)
+        chunk_id = str(transaction["chunk_id"])
+        if self._source_validated_chunk != chunk_id:
+            self._validate_source_bundle(source, transaction)
+            self._source_validated_chunk = chunk_id
         target = self._external_path(str(transaction["target_relative_path"]))
         temporary = self._external_path(str(transaction["target_temp_relative_path"]))
         if target.exists():
             self._validate_external_artifact(target, transaction)
+            self._external_validated_transaction = str(transaction["transaction_id"])
             if temporary.exists():
                 temporary.unlink()
                 fsync_directory(temporary.parent)
@@ -409,11 +427,20 @@ class ArchiveManager:
         self._validate_target_identity()
         self._ensure_external_directories()
         source = self._source_path(transaction)
-        self._validate_source_bundle(source, transaction)
+        chunk_id = str(transaction["chunk_id"])
+        if self._source_validated_chunk != chunk_id:
+            self._validate_source_bundle(source, transaction)
+            self._source_validated_chunk = chunk_id
         target = self._external_path(str(transaction["target_relative_path"]))
         temporary = self._external_path(str(transaction["target_temp_relative_path"]))
         if target.exists():
-            self._validate_external_artifact(target, transaction)
+            if self._external_validated_transaction != str(
+                transaction["transaction_id"]
+            ):
+                self._validate_external_artifact(target, transaction)
+                self._external_validated_transaction = str(
+                    transaction["transaction_id"]
+                )
             if temporary.exists():
                 temporary.unlink()
                 fsync_directory(temporary.parent)
@@ -430,6 +457,7 @@ class ArchiveManager:
             self._hit("after_verify", temporary)
             os.replace(temporary, target)
             fsync_directory(target.parent)
+            self._external_validated_transaction = str(transaction["transaction_id"])
             self._hit("after_final_rename", target)
         raw_manifest_path = self._source_manifest_path(transaction)
         raw_manifest_bytes, raw_manifest = _load_json_bytes(raw_manifest_path)
@@ -479,10 +507,18 @@ class ArchiveManager:
         self._hit("after_external_manifest", external_manifest)
         return document
 
-    def _validate_external_commit(self, transaction: dict[str, object]) -> None:
+    def _validate_external_commit(
+        self, transaction: dict[str, object], *, verify_artifact: bool = True
+    ) -> None:
         self._validate_target_identity()
         artifact = self._external_path(str(transaction["target_relative_path"]))
-        self._validate_external_artifact(artifact, transaction)
+        if verify_artifact:
+            self._validate_external_artifact(artifact, transaction)
+        else:
+            if not artifact.is_file():
+                raise ArchiveError(f"external artifact is missing: {artifact.name}")
+            if artifact.stat().st_size != _row_int(transaction, "stored_bytes"):
+                raise ArchiveError("external artifact size mismatch")
         manifest_path = self._external_path(
             str(transaction["external_manifest_relative_path"])
         )

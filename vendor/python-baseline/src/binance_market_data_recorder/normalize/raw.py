@@ -16,6 +16,7 @@ import json
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import SimpleNamespace
 from typing import BinaryIO
 
 import google_crc32c
@@ -26,6 +27,7 @@ from ..spool.format import (
     FRAME_PREFIX,
     FRAME_PREFIX_WITHOUT_CRC,
     ChunkFormatError,
+    _decode_one_cbor,
     decode_chunk_header,
     decode_envelope,
 )
@@ -167,7 +169,13 @@ def _read_up_to(source: BinaryIO, size: int) -> bytes:
     return b"".join(parts)
 
 
-def iter_source_records(chunk: SourceChunk) -> Iterator[SourceRecord]:
+def iter_source_records(
+    chunk: SourceChunk,
+    *,
+    canonical: bool = True,
+    validate: bool = True,
+    lightweight: bool = False,
+) -> Iterator[SourceRecord]:
     """Decode a previously verified Zstandard Raw artifact one bounded frame at a time."""
 
     decompressor = zstandard.ZstdDecompressor()
@@ -203,7 +211,15 @@ def iter_source_records(chunk: SourceChunk) -> Iterator[SourceRecord]:
                 covered = prefix[: FRAME_PREFIX_WITHOUT_CRC.size]
                 if google_crc32c.value(covered + body) != expected_crc:
                     raise RawSourceError("sealed Raw frame checksum mismatch")
-                envelope = decode_envelope(body)
+                if lightweight:
+                    value = _decode_one_cbor(body, canonical=False)
+                    if not isinstance(value, dict):
+                        raise ChunkFormatError("envelope CBOR root is not a map")
+                    envelope = SimpleNamespace(**value)
+                else:
+                    envelope = decode_envelope(
+                        body, canonical=canonical, validate=validate
+                    )
                 if (
                     envelope.market != header.market
                     or envelope.symbol != header.symbol

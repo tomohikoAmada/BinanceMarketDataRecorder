@@ -245,12 +245,12 @@ def _canonical_cbor(value: object) -> bytes:
     return cbor2.dumps(value, canonical=True)
 
 
-def _decode_one_cbor(body: bytes) -> object:
+def _decode_one_cbor(body: bytes, *, canonical: bool = True) -> object:
     source = io.BytesIO(body)
     value = cbor2.CBORDecoder(source).decode()
     if source.read(1):
         raise ChunkFormatError("CBOR value has trailing bytes")
-    if _canonical_cbor(value) != body:
+    if canonical and _canonical_cbor(value) != body:
         raise ChunkFormatError("CBOR value is not canonical")
     return value
 
@@ -271,15 +271,19 @@ def encode_envelope(envelope: _EnvelopeSemantics) -> bytes:
     return _canonical_cbor(envelope.canonical_mapping())
 
 
-def decode_envelope(body: bytes) -> EventEnvelope:
+def decode_envelope(
+    body: bytes, *, canonical: bool = True, validate: bool = True
+) -> EventEnvelope:
     try:
-        value = _decode_one_cbor(body)
+        value = _decode_one_cbor(body, canonical=canonical)
         if not isinstance(value, dict):
             raise ChunkFormatError("envelope CBOR root is not a map")
         if isinstance(value.get("capture_flags"), list):
             value = dict(value)
             value["capture_flags"] = tuple(value["capture_flags"])
-        return EventEnvelope.model_validate(value)
+        if validate:
+            return EventEnvelope.model_validate(value)
+        return EventEnvelope.model_construct(**value)
     except (cbor2.CBORDecodeError, ValidationError, ChunkFormatError) as exc:
         raise ChunkFormatError(f"invalid EventEnvelope: {exc}") from exc
 

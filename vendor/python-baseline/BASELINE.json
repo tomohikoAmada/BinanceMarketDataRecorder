@@ -8,5 +8,8 @@
     "pyproject.toml",
     "requirements"
   ],
-  "tree_sha256": "4590dc9461d9b9631bf9ef20d8da3ba0b5f2e045dfed56fe3864cb4688fbc855"
+  "tree_sha256": "cd615fc1906589ad4e9de31fa64722819397eb2469b36956018fd586a8143e2c",
+  "patches": [
+    "C4-D 2026-11-10: archive drain/manager de-overdefense and fast verify read path"
+  ]
 }

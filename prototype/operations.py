@@ -1,23 +1,338 @@
 """Use frozen Python archive transactions and independent Raw reader for C++ roots."""
 
 import argparse
+import hashlib
 import json
 import sqlite3
 from collections import Counter
 from pathlib import Path
 
 from binance_market_data_recorder.archive.drain import archive_drain
+from binance_market_data_recorder.archive.manager import _validate_external_manifest
 from binance_market_data_recorder.normalize.raw import (
+    SourceChunk,
     iter_source_records,
-    load_source_chunks,
 )
-from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.spool.seal import (
+    MANIFEST_SCHEMA_VERSION,
+    validate_sealed_artifact,
+)
+from binance_market_data_recorder.storage.catalog import ArchiveState, Catalog
 from binance_market_data_recorder.storage.layout import (
     StorageLayout,
     ensure_storage_layout,
 )
 from binance_market_data_recorder.storage.macos import StorageRegistry
 from binance_market_data_recorder.storage.platform import volume_adapter
+from binance_market_data_recorder.storage.source_location import (
+    archived_artifact,
+    safe_relative,
+)
+
+
+def _load_json(path: Path) -> tuple[bytes, dict[str, object]]:
+    body = path.read_bytes()
+    document = json.loads(body)
+    if not isinstance(document, dict):
+        raise ValueError(f"manifest is not an object: {path.name}")
+    return body, document
+
+
+def _load_manifest(path: Path) -> tuple[bytes, dict[str, object]]:
+    body, document = _load_json(path)
+    if document.get("manifest_schema_version") != MANIFEST_SCHEMA_VERSION:
+        raise ValueError(f"unsupported Raw manifest {path.name}")
+    if not isinstance(document.get("chunk_id"), str):
+        raise ValueError(f"invalid Raw chunk ID in {path.name}")
+    for key in ("uncompressed_sha256", "stored_sha256"):
+        value = document.get(key)
+        if not isinstance(value, str) or len(value) != 64:
+            raise ValueError(f"invalid {key} in {path.name}")
+    return body, document
+
+
+def _int(document: dict[str, object], key: str) -> int:
+    value = document.get(key)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise ValueError(f"manifest lacks valid {key}")
+    return value
+
+
+def _catalog_chunks(
+    layout: StorageLayout,
+    external_roots: dict[str, Path],
+    transactions: dict[str, dict[str, object]],
+    targets: dict[str, dict[str, object]],
+) -> list[tuple[SourceChunk, bool]]:
+    """Load manifests, trusting already archived artifacts without re-decompressing them."""
+    chunks: list[tuple[SourceChunk, bool]] = []
+    for manifest_path in sorted(layout.manifests.glob("*.manifest.json")):
+        manifest_bytes, manifest = _load_manifest(manifest_path)
+        chunk_id = str(manifest["chunk_id"])
+        local = safe_relative(layout.root, manifest.get("relative_path"))
+        transaction = transactions.get(chunk_id)
+        trusted = False
+        if local.is_file():
+            artifact = local
+        else:
+            if transaction is None:
+                raise ValueError(f"Raw chunk {chunk_id} is unavailable internally")
+            state = ArchiveState(str(transaction["state"]))
+            if state not in {
+                ArchiveState.VERIFIED,
+                ArchiveState.LOCAL_DELETE_PENDING,
+                ArchiveState.LOCAL_DELETED,
+            }:
+                raise ValueError(
+                    f"Raw chunk {chunk_id} has incomplete archive state {state.value}"
+                )
+            root = external_roots.get(str(transaction["storage_id"]))
+            if root is None:
+                raise ValueError(
+                    f"Raw chunk {chunk_id} archive target is not READY"
+                )
+            artifact = safe_relative(root, transaction["target_relative_path"])
+            if not artifact.is_file():
+                raise ValueError(f"archived Raw chunk {chunk_id} is missing")
+            if artifact.stat().st_size != _int(manifest, "stored_bytes"):
+                raise ValueError(f"archived Raw chunk {chunk_id} size mismatch")
+            target = targets.get(str(transaction["storage_id"]))
+            if target is None:
+                raise ValueError(f"archive target row missing for {chunk_id}")
+            manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+            if manifest_digest != transaction["source_manifest_sha256"]:
+                raise ValueError(f"Raw chunk {chunk_id} manifest changed after archiving")
+            if (
+                _int(manifest, "stored_bytes") != transaction["stored_bytes"]
+                or manifest["stored_sha256"] != transaction["stored_sha256"]
+            ):
+                raise ValueError(f"Raw chunk {chunk_id} archive identity mismatch")
+            external_manifest = safe_relative(
+                root, transaction["external_manifest_relative_path"]
+            )
+            _, document = _load_json(external_manifest)
+            _validate_external_manifest(
+                document,
+                {
+                    "archive_manifest_schema_version": "external-archive-manifest.v1",
+                    "transaction_id": transaction["transaction_id"],
+                    "chunk_id": chunk_id,
+                    "storage_id": transaction["storage_id"],
+                    "volume_uuid": target["volume_uuid"],
+                    "registered_relative_path": target["relative_path"],
+                    "artifact_relative_path": transaction["target_relative_path"],
+                    "stored_bytes": transaction["stored_bytes"],
+                    "stored_sha256": transaction["stored_sha256"],
+                    "source_manifest_sha256": transaction["source_manifest_sha256"],
+                },
+            )
+            trusted = True
+        if not trusted:
+            validate_sealed_artifact(artifact, manifest)
+        chunks.append(
+            (
+                SourceChunk(
+                    chunk_id=chunk_id,
+                    artifact_path=artifact,
+                    manifest_path=manifest_path,
+                    manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest(),
+                    manifest=manifest,
+                ),
+                trusted,
+            )
+        )
+    return sorted(
+        chunks,
+        key=lambda item: (
+            item[0].uncompressed_sha256,
+            item[0].chunk_id,
+        ),
+    )
+
+
+def _verify(
+    layout: StorageLayout,
+    catalog: Catalog,
+    external_roots: dict[str, Path],
+    tables: set[str],
+) -> dict[str, object]:
+    transactions = (
+        {
+            str(row["chunk_id"]): row
+            for row in catalog.archive_transactions()
+        }
+        if "archive_transactions" in tables
+        else {}
+    )
+    targets = (
+        {
+            str(row["storage_id"]): row
+            for row in catalog.storage_targets()
+        }
+        if "storage_targets" in tables
+        else {}
+    )
+    loaded = _catalog_chunks(layout, external_roots, transactions, targets)
+    chunks = [chunk for chunk, _ in loaded]
+    trusted = {chunk.chunk_id for chunk, is_trusted in loaded if is_trusted}
+
+    decode: set[str] = set()
+    groups: dict[str, list[SourceChunk]] = {}
+    for chunk in chunks:
+        key = f"{chunk.manifest['market']}/{chunk.manifest['symbol']}/{chunk.manifest['stream']}"
+        groups.setdefault(key, []).append(chunk)
+        connection_ids = chunk.manifest.get("connection_ids", [])
+        if (
+            chunk.chunk_id not in trusted
+            or chunk.manifest["stream"] == "rest_observations"
+            or not isinstance(connection_ids, list)
+            or len(connection_ids) != 1
+        ):
+            decode.add(chunk.chunk_id)
+    for group in groups.values():
+        ordered = sorted(
+            group,
+            key=lambda chunk: (
+                chunk.manifest.get("receive_time_utc_range_ns", {}).get("min", 0),
+                chunk.chunk_id,
+            ),
+        )
+        decode.add(ordered[0].chunk_id)
+        decode.add(ordered[-1].chunk_id)
+
+    with sqlite3.connect(f"file:{layout.catalog}?mode=ro", uri=True) as db:
+        archive_states = (
+            dict(
+                db.execute(
+                    "SELECT state,count(*) FROM archive_transactions GROUP BY state"
+                )
+            )
+            if "archive_transactions" in tables
+            else {}
+        )
+
+    counts = Counter()
+    flags = Counter()
+    statuses = Counter()
+    total = 0
+    ws_payload_bytes = 0
+    rest_body_bytes = 0
+    source_payload_bytes = Counter()
+    connections = {}
+    bridge_connections = {}
+    connection_ranges = {}
+    decoded = 0
+    ws_ranges = [
+        chunk.manifest["receive_monotonic_range_ns"]
+        for chunk in chunks
+        if chunk.manifest["stream"] != "rest_observations"
+    ]
+    ws_span = (
+        (max(r["max"] for r in ws_ranges) - min(r["min"] for r in ws_ranges)) / 1e9
+        if ws_ranges
+        else 0
+    )
+    for chunk, is_trusted in loaded:
+        manifest = chunk.manifest
+        key = f"{manifest['market']}/{manifest['symbol']}/{manifest['stream']}"
+        if chunk.chunk_id not in decode:
+            count = _int(manifest, "record_count")
+            total += count
+            counts[key] += count
+            chunk_connections = manifest.get("connection_ids", [])
+            if not isinstance(chunk_connections, list):
+                raise ValueError(f"chunk {chunk.chunk_id} has invalid connection_ids")
+            connections.setdefault(key, set()).update(str(item) for item in chunk_connections)
+            for connection in chunk_connections:
+                span = connection_ranges.setdefault(
+                    str(connection),
+                    [manifest["receive_monotonic_range_ns"]["min"],
+                     manifest["receive_monotonic_range_ns"]["max"]],
+                )
+                span[0] = min(span[0], manifest["receive_monotonic_range_ns"]["min"])
+                span[1] = max(span[1], manifest["receive_monotonic_range_ns"]["max"])
+            chunk_flags = manifest.get("capture_flags", [])
+            if not isinstance(chunk_flags, list):
+                raise ValueError(f"chunk {chunk.chunk_id} has invalid capture_flags")
+            for flag in chunk_flags:
+                flags[f"{key}/{flag}"] += 1
+            if "depth_bridge" in chunk_flags:
+                bridge_connections.setdefault(key, set()).update(
+                    str(item) for item in chunk_connections
+                )
+            continue
+        if not is_trusted:
+            validate_sealed_artifact(chunk.artifact_path, manifest)
+        decoded += 1
+        seen = 0
+        for record in iter_source_records(
+            chunk, canonical=False, validate=False, lightweight=True
+        ):
+            envelope = record.envelope
+            seen += 1
+            total += 1
+            counts[key] += 1
+            source_payload_bytes[key] += len(envelope.raw_payload)
+            connections.setdefault(key, set()).add(envelope.connection_id)
+            if envelope.module != "binance.public.rest.v1":
+                span = connection_ranges.setdefault(
+                    envelope.connection_id,
+                    [envelope.receive_monotonic_ns, envelope.receive_monotonic_ns],
+                )
+                span[0] = min(span[0], envelope.receive_monotonic_ns)
+                span[1] = max(span[1], envelope.receive_monotonic_ns)
+            if "depth_bridge" in envelope.capture_flags:
+                bridge_connections.setdefault(key, set()).add(envelope.connection_id)
+            for flag in envelope.capture_flags:
+                flags[f"{key}/{flag}"] += 1
+            if envelope.module == "binance.public.rest.v1":
+                provenance = json.loads(envelope.raw_payload)
+                encoded = provenance["response"]["raw_body_base64"]
+                rest_body_bytes += len(encoded) // 4 * 3 - (
+                    2
+                    if encoded.endswith("==")
+                    else 1
+                    if encoded.endswith("=")
+                    else 0
+                )
+                statuses[
+                    f"{envelope.market}/{envelope.symbol}/{envelope.source_sequence.get('sourceStream')}/{provenance['response']['status']}/{provenance['response']['valid']}"
+                ] += 1
+            else:
+                ws_payload_bytes += len(envelope.raw_payload)
+        if seen != _int(manifest, "record_count"):
+            raise ValueError(
+                f"Raw chunk {chunk.chunk_id} record count mismatch: {seen}"
+            )
+    return {
+        "status": "PASS",
+        "chunks": len(chunks),
+        "records": total,
+        "stored_bytes": sum(_int(c.manifest, "stored_bytes") for c in chunks),
+        "uncompressed_bytes": sum(
+            _int(c.manifest, "uncompressed_bytes") for c in chunks
+        ),
+        "ws_payload_bytes": ws_payload_bytes,
+        "rest_body_bytes": rest_body_bytes,
+        "source_payload_bytes": dict(source_payload_bytes),
+        "ws_receive_span_seconds": ws_span,
+        "archive_states": archive_states,
+        "connections": {k: sorted(v) for k, v in connections.items()},
+        "connection_monotonic_ranges_ns": connection_ranges,
+        "bridge_connections": {
+            k: sorted(v) for k, v in bridge_connections.items()
+        },
+        "source_counts": dict(counts),
+        "capture_flags": dict(flags),
+        "rest_statuses": dict(statuses),
+        "archive_roots": {k: str(v) for k, v in external_roots.items()},
+        "fast_path": {
+            "decoded_chunks": decoded,
+            "trusted_chunks": len(chunks) - decoded,
+            "payload_bytes_complete": decoded == len(chunks),
+            "capture_flag_counts_exact": decoded == len(chunks),
+        },
+    }
 
 
 def main():
@@ -46,125 +361,28 @@ def main():
                 layout=layout,
                 catalog=catalog,
                 storage_id=targets[0]["storage_id"],
-                max_runtime_seconds=50,
+                max_runtime_seconds=120,
                 max_files=1000,
             )
             print(json.dumps(report, indent=2))
             if report.get("failed_transactions", 0):
                 raise SystemExit(1)
             return
-        with sqlite3.connect(f"file:{layout.catalog}?mode=ro", uri=True) as db:
+        with sqlite3.connect(
+            f"file:{layout.catalog}?mode=ro", uri=True
+        ) as db:
             tables = {
                 row[0]
                 for row in db.execute(
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 )
             }
-            archive_states = (
-                dict(
-                    db.execute(
-                        "SELECT state,count(*) FROM archive_transactions GROUP BY state"
-                    )
-                )
-                if "archive_transactions" in tables
-                else {}
-            )
         external = {
             s["storage_id"]: Path(s["resolved_path"])
-            for s in (
-                registry.observe_statuses() if "storage_targets" in tables else []
-            )
+            for s in (registry.observe_statuses() if "storage_targets" in tables else [])
             if s.get("state") in {"READY", "LOW_SPACE"} and s.get("resolved_path")
         }
-        chunks = load_source_chunks(
-            layout=layout, catalog=catalog, external_roots=external
-        )
-        counts = Counter()
-        flags = Counter()
-        statuses = Counter()
-        total = 0
-        ws_payload_bytes = 0
-        rest_body_bytes = 0
-        source_payload_bytes = Counter()
-        connections = {}
-        bridge_connections = {}
-        connection_ranges = {}
-        stored_bytes = sum(c.manifest["stored_bytes"] for c in chunks)
-        ws_ranges = [
-            c.manifest["receive_monotonic_range_ns"]
-            for c in chunks
-            if c.manifest["stream"] != "rest_observations"
-        ]
-        ws_span = (
-            (max(r["max"] for r in ws_ranges) - min(r["min"] for r in ws_ranges)) / 1e9
-            if ws_ranges
-            else 0
-        )
-        for chunk in chunks:
-            seen = 0
-            for record in iter_source_records(chunk):
-                e = record.envelope
-                seen += 1
-                total += 1
-                key = f"{e.market}/{e.symbol}/{e.stream}"
-                counts[key] += 1
-                source_payload_bytes[key] += len(e.raw_payload)
-                connections.setdefault(key, set()).add(e.connection_id)
-                if e.module != "binance.public.rest.v1":
-                    span = connection_ranges.setdefault(
-                        e.connection_id,
-                        [e.receive_monotonic_ns, e.receive_monotonic_ns],
-                    )
-                    span[0] = min(span[0], e.receive_monotonic_ns)
-                    span[1] = max(span[1], e.receive_monotonic_ns)
-                if "depth_bridge" in e.capture_flags:
-                    bridge_connections.setdefault(key, set()).add(e.connection_id)
-                for flag in e.capture_flags:
-                    flags[f"{key}/{flag}"] += 1
-                if e.module == "binance.public.rest.v1":
-                    provenance = json.loads(e.raw_payload)
-                    encoded = provenance["response"]["raw_body_base64"]
-                    rest_body_bytes += len(encoded) // 4 * 3 - (
-                        2
-                        if encoded.endswith("==")
-                        else 1
-                        if encoded.endswith("=")
-                        else 0
-                    )
-                    statuses[
-                        f"{e.market}/{e.symbol}/{e.source_sequence.get('sourceStream')}/{provenance['response']['status']}/{provenance['response']['valid']}"
-                    ] += 1
-                else:
-                    ws_payload_bytes += len(e.raw_payload)
-            assert seen == chunk.manifest["record_count"]
-        print(
-            json.dumps(
-                {
-                    "status": "PASS",
-                    "chunks": len(chunks),
-                    "records": total,
-                    "stored_bytes": stored_bytes,
-                    "uncompressed_bytes": sum(
-                        c.manifest["uncompressed_bytes"] for c in chunks
-                    ),
-                    "ws_payload_bytes": ws_payload_bytes,
-                    "rest_body_bytes": rest_body_bytes,
-                    "source_payload_bytes": dict(source_payload_bytes),
-                    "ws_receive_span_seconds": ws_span,
-                    "archive_states": archive_states,
-                    "connections": {k: sorted(v) for k, v in connections.items()},
-                    "connection_monotonic_ranges_ns": connection_ranges,
-                    "bridge_connections": {
-                        k: sorted(v) for k, v in bridge_connections.items()
-                    },
-                    "source_counts": dict(counts),
-                    "capture_flags": dict(flags),
-                    "rest_statuses": dict(statuses),
-                    "archive_roots": {k: str(v) for k, v in external.items()},
-                },
-                indent=2,
-            )
-        )
+        print(json.dumps(_verify(layout, catalog, external, tables), indent=2))
 
 
 if __name__ == "__main__":
