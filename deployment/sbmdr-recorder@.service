@@ -23,6 +23,7 @@ KillSignal=SIGTERM
 UMask=0027
 NoNewPrivileges=true
 CPUAccounting=true
+CPUWeight=100
 MemoryAccounting=true
 Slice=sbmdr.slice
 StandardOutput=append:/var/log/sbmdr/%i.stdout.jsonl
