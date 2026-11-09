@@ -154,4 +154,11 @@ C4-A 按定稿 6.2 完成以下改动：
 
 **尚未完成：** C4-B 60 分钟公网验证、C4-C 24h 资格、C5 启用与交接。C4-A 新二进制尚未部署为 `current`，也未在公网配置下运行；10:56 失败轮按定稿未做全量读回。
 
-**资格驱动更新（2026-11-09，C4-B 准备）：** `deployment/qualify.py` 已加入 `--max-drop-percent` 门槛，按独立读回的 accepted WS 记录数计算 `dropped_total` 百分比（C4-B 使用 `0`，C4-C 使用 `0.01`）；新增 `--queue-limit-mib` 可选门槛（C4-B 使用 32 MiB），并把 `queued_payload_bytes` 峰值、`writer_sync_ms`/`writer_seal_ms` 均值与最大值写入报告；停止后断言无 `.partial`。`deployment/advance.py` 的 C4-C 调用已显式传 `0.01`。这些驱动改动尚未用于任何公网轮次；C4-B 的实际部署与 3,600 秒运行仍未开始。
+**资格驱动更新（2026-11-09，C4-B 准备）：** `deployment/qualify.py` 已加入 `--max-drop-percent` 门槛，按独立读回的 accepted WS 记录数计算 `dropped_total` 百分比（C4-B 使用 `0`，C4-C 使用 `0.01`）；新增 `--queue-limit-mib` 可选门槛（C4-B 使用 32 MiB），并把 `queued_payload_bytes` 峰值、`writer_sync_ms`/`writer_seal_ms` 均值与最大值写入报告；停止后断言无 `.partial`。`deployment/advance.py` 的 C4-C 调用已显式传 `0.01`。驱动提交为 `27b1f0ac`。
+
+
+### C4-B 60 分钟公网验证（2026-11-09，RUNNING）
+
+C4-A 发布物已安装为 `/opt/sbmdr/current -> /opt/sbmdr/releases/20261109-f68a2f47`，二进制 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b`；十币对配置 SHA-256 `75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8`。新根为 `/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T140141Z/{spot,usdm}`，归档目标为 `/srv/recorder-data/S-BMDR/live-20261109T140141Z-{spot,usdm}`。
+
+资格驱动于 **2026-11-09 22:02:29 上海时间（14:02:29 UTC）** 启动，参数为 3,600 秒、systemd 两实例 + archive timer、`--rss-limit-mib 256 --cpu-limit-percent 200 --max-drop-percent 0 --queue-limit-mib 32`。启动后初始检查：Spot PID 257375 / USD-M PID 257386，均 `NRestarts=0`、`ActiveState=active`；约 19 秒时两市场 `dropped_total=0`、`queued_payload_bytes=0`，周期耐久约 5.06 秒。预计 **23:02:29 上海时间**结束采集并进入排空、全量读回与归档检查。本轮尚未签收；C4-C/C5 尚未开始。
