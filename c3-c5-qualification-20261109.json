@@ -1306,7 +1306,20 @@
       "error": "RuntimeError('usdm recorder exited early: 1')",
       "finish_utc": "2026-11-09T01:45:53.229180+00:00"
     },
-    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-weighted-ten-overload"
+    "native_evidence": "/srv/recorder-data/sbmdr-c3.geZknS/results/c4-weighted-ten-overload",
+    "stored_raw_readback": {
+      "spot": {
+        "status": "PASS",
+        "records": 1484465,
+        "chunks": 85
+      },
+      "usdm": {
+        "status": "PASS",
+        "records": 5223377,
+        "chunks": 222
+      }
+    },
+    "catalog_repair_required": false
   },
   "owner_cpu_acceptance": {
     "confirmation": "接受实测CPU，按整机余量签收（推荐）",
