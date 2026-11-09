@@ -144,7 +144,7 @@ C4-A 按定稿 6.2 完成以下改动：
 - 周期耐久同步在配置模式改为 5,000 ms，单源保持 900 ms；启动磁盘门槛改为 15 GiB；每秒 status_line 增加 `writer_sync_ms`、`writer_seal_ms`、`dropped_total`。
 - `c4-overload-catalog`（`--stall-one`）改为断言“进程不退出、无丢弃、30,000 条全部按原字节读回”；新增 `c4-ingress-drop`（测试专用队列 1,024 条 + 3.5 s 封存阻塞），验证丢弃计数、逐流 `ingress_drop`/`sequence_gap`、Catalog 事件、冻结 Catalog 可读，以及丢弃后新的 depth 快照请求和桥接恢复。
 
-**验证结果（原生 GreenCloud Linux x86_64）：** Release **13/13**（原 12 项 + 新增 `c4-ingress-drop`，127.56 s），ASan/UBSan **9/9**，TSan **9/9**（117.26 s）；`c4-ingress-drop` 连续运行 3 次通过。C4-A 代码提交 `f68a2f47`，Release 二进制 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b`。C4-B 60 分钟公网验证、C4-C 24h 资格和 C5 启用尚未开始，C4/C5 仍未签收。
+**验证结果（原生 GreenCloud Linux x86_64）：** Release **13/13**（原 12 项 + 新增 `c4-ingress-drop`，127.56 s），ASan/UBSan **9/9**，TSan **9/9**（117.26 s）；`c4-ingress-drop` 连续运行 3 次通过。C4-A 代码提交 `f68a2f47`，Release 二进制 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b`。C4-B 60 分钟公网验证已 PASS；C4-C 24h 资格和 C5 启用尚未开始，C4/C5 仍未签收。
 
 **测试环境遇到的问题（均为夹具/验证脚本问题，不改记录器结论）：**
 
@@ -152,17 +152,19 @@ C4-A 按定稿 6.2 完成以下改动：
 - 丢弃测试的回环流名需使用归一化后的 `diff_depth`/`book_ticker`/`agg_trade`；depth 快照夹具需返回比最新流早一拍的 `lastUpdateId`，否则会按 `depth_snapshot_too_old` 反复重试。
 - Spot depth 快照权重为 250、窗口 2,000/60s，12 个 symbol 在短测内最多完成约 7 次快照；丢弃测试改用 3 个 symbol，以便观察到丢弃后的第二次快照请求和桥接恢复。该权重与生产配置未改。
 
-**尚未完成：** C4-B 60 分钟公网验证、C4-C 24h 资格、C5 启用与交接。C4-A 新二进制尚未部署为 `current`，也未在公网配置下运行；10:56 失败轮按定稿未做全量读回。
+**尚未完成：** C4-C 24h 资格、C5 启用与交接。C4-B 已部署并 PASS；10:56 失败轮按定稿未做全量读回。
 
 **资格驱动更新（2026-11-09，C4-B 准备）：** `deployment/qualify.py` 已加入 `--max-drop-percent` 门槛，按独立读回的 accepted WS 记录数计算 `dropped_total` 百分比（C4-B 使用 `0`，C4-C 使用 `0.01`）；新增 `--queue-limit-mib` 可选门槛（C4-B 使用 32 MiB），并把 `queued_payload_bytes` 峰值、`writer_sync_ms`/`writer_seal_ms` 均值与最大值写入报告；停止后断言无 `.partial`。`deployment/advance.py` 的 C4-C 调用已显式传 `0.01`。驱动提交为 `27b1f0ac`。
 
 
-### C4-B 60 分钟公网验证（2026-11-09，RUNNING）
+### C4-B 60 分钟公网验证（2026-11-09，PASS）
 
 C4-A 发布物已安装为 `/opt/sbmdr/current -> /opt/sbmdr/releases/20261109-f68a2f47`，二进制 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b`；十币对配置 SHA-256 `75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8`。新根为 `/var/lib/binance-market-data-recorder/S-BMDR/live-20261109T140141Z/{spot,usdm}`，归档目标为 `/srv/recorder-data/S-BMDR/live-20261109T140141Z-{spot,usdm}`。
 
 资格驱动于 **2026-11-09 22:02:29 上海时间（14:02:29 UTC）** 启动，参数为 3,600 秒、systemd 两实例 + archive timer、`--rss-limit-mib 256 --cpu-limit-percent 200 --max-drop-percent 0 --queue-limit-mib 32`。启动后初始检查：Spot PID 257375 / USD-M PID 257386，均 `NRestarts=0`、`ActiveState=active`；约 19 秒时两市场 `dropped_total=0`、`queued_payload_bytes=0`，周期耐久约 5.06 秒。预计 **23:02:29 上海时间**结束采集并进入排空、全量读回与归档检查。本轮尚未签收；C4-C/C5 尚未开始。
 
-**采集结束（2026-11-09 23:02:29 上海时间）：** 两实例以 `SIGNAL` 正常停止，`wall_seconds` 分别为 3,603.82 / 3,604.60，`NRestarts=0`、PID 未变。Spot 3,300,637 条 / 227 分片，USD-M 15,104,852 条 / 920 分片；两市场 `dropped_total=0`、`ws_dropped_total=0`、`rest_dropped_total=0`。队列峰值：Spot 3,266,187 B，USD-M 26,799,387 B（均 ≤32 MiB）。记录器峰值 RSS：Spot 35,217,408 B，USD-M 60,178,432 B；归档进程峰值上界 95,944,704 B，合计约 182.5 MiB（≤256 MiB）。整机忙碌 29.97%、stolen 13.91%、最小可用内存 5.13 GiB / 6.16 GiB；slice 1s 峰值 186.51%、60s 峰值 142.59%（均 ≤200% 口径）。归档 timer 多次成功执行跨盘事务且 `failed_transactions=0`；USD-M 归档积压约从 303 个文件增至 425 个，C4-B 不设积压门槛，但 C4-C 结束要求归零，后续需关注归档吞吐。采集后 Spot/USD-M 全量独立读回仍在进行，C4-B 尚未签收。
+**采集与读回结束（2026-11-09 23:40:57 上海时间，qualification PASS）：** 两实例以 `SIGNAL` 正常停止，`wall_seconds` 分别为 3,603.82 / 3,604.60，`NRestarts=0`、PID 未变。Spot 3,300,637 条 / 227 分片，USD-M 15,104,852 条 / 920 分片；独立读回记录数与记录器一致，冻结 Python Catalog 可读，无 `.partial`。两市场 `dropped_total=0`、`drop_percent=0`。队列峰值：Spot 3,266,187 B，USD-M 26,799,387 B（均 ≤32 MiB）。记录器峰值 RSS 合计 95,395,840 B（约 91.0 MiB）；含归档峰值上界 193,126,400 B（约 184.2 MiB，≤256 MiB）。整机忙碌 29.97%、stolen 13.91%、最小可用内存 5.13 GiB / 6.16 GiB（83.2%）；系统盘最小可用 19,703,959,552 B（约 18.35 GiB，≥13 GiB）。slice 1s 峰值 186.51%、60s 峰值 142.59%，均 ≤允许的 200% 口径；原冻结 120% 的 60s 项仍为 false，按所有者批准的整机余量口径记录。归档 timer 25 次通过、0 失败，成功跨盘搬运 612 个文件 / 410,466,952 B，Spot/USD-M 的 `LOCAL_DELETED` 分别为 188 / 424。`writer_sync_ms` 均值/最大：Spot 16.57/331.55，USD-M 24.24/423.16；`writer_seal_ms` 均值/最大：Spot 8.91/952.73，USD-M 36.11/1,052.04；最大耐久 5.77/6.58 s；append p99 180/712 ms。**C4-B 签收 PASS。**
 
-**与 Python M4.2 历史性能对照（非同口径，仅供量级参考）：** Python M4.2 为 BTC+ETH 全量生产配置，4,038 个活跃源（1,844 WS、2,194 REST）、50 个产品、Spot/USD-M/COIN-M，2 小时窗口 CPU 均值 109.16%、峰值 122.87%（单核=100%），RSS 366.10–617.90 MiB、峰值 717.54 MiB，seal 最大 13.602 s、drain 10.956 s、fsync 0.391 s，2 小时 72 次断线；该轮未通过 2h 可用性门禁，只作历史参照。C++ C4-B 为 10 个 USDT 对、20 个产品、80 条 WS 流，1 小时 CPU 均值合计 78.97% 单核（Spot 20.85%、USD-M 58.12%），RSS 记录器合计约 91.0 MiB、含归档 182.5 MiB，`dropped_total=0`，seal 状态窗口最大约 0.95/1.05 s、sync 最大约 0.33/0.42 s，最大耐久 5.77/6.58 s（5 秒同步周期的有意取舍）。结论：在各自已测范围内，C++ 的 CPU、RSS 和封存停顿都明显更低；但 C++ 当前源范围远小于 Python M4，不能据此给出同口径倍数。严格的同范围比较仍需让冻结 Python 基线在相同 10 对/80 流配置下跑同一时段。
+**C4-C 前置风险（未自行调参）：** 本轮每小时产生压缩数据约 799.7 MB，归档实际搬运约 410.5 MB/h（约 51%），1 小时后本地仍有 39/496 个 `SEALED` 分片（约 382 MB）未归档。按此速率，24 小时将累积约 9 GB 未归档数据，系统盘可用会从当前约 19 GiB 降到 13 GiB 以下，同时 C4-C 的“结束后归档积压归零”也难以满足。归档吞吐是 C4-C 的实质阻塞项；按定稿第 9 节不在未获所有者决定前自行增加归档线程、改 timer 或改配额，因此 **C4-C 尚未启动**。
+
+**与 Python M4.2 历史性能对照（非同口径，仅供量级参考）：** Python M4.2 为 BTC+ETH 全量生产配置，4,038 个活跃源（1,844 WS、2,194 REST）、50 个产品、Spot/USD-M/COIN-M，2 小时窗口 CPU 均值 109.16%、峰值 122.87%（单核=100%），RSS 366.10–617.90 MiB、峰值 717.54 MiB，seal 最大 13.602 s、drain 10.956 s、fsync 0.391 s，2 小时 72 次断线；该轮未通过 2h 可用性门禁，只作历史参照。C++ C4-B 为 10 个 USDT 对、20 个产品、80 条 WS 流，1 小时 CPU 均值合计 78.97% 单核（Spot 20.85%、USD-M 58.12%），RSS 记录器合计约 91.0 MiB、含归档 184.2 MiB，`dropped_total=0`，seal 状态窗口最大约 0.95/1.05 s、sync 最大约 0.33/0.42 s，最大耐久 5.77/6.58 s（5 秒同步周期的有意取舍）。结论：在各自已测范围内，C++ 的 CPU、RSS 和封存停顿都明显更低；但 C++ 当前源范围远小于 Python M4，不能据此给出同口径倍数。严格的同范围比较仍需让冻结 Python 基线在相同 10 对/80 流配置下跑同一时段。
