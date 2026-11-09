@@ -122,6 +122,57 @@ def verify_stopped(a, report):
         assert readback["records"] == report["markets"][market]["recorder"]["records"]
         if not a.services:
             assert readback["ws_receive_span_seconds"] >= a.seconds - 5
+        assert not list((a.root / market).rglob("*.partial")), (
+            market,
+            "partial artifacts remain after stop",
+        )
+        ws_accepted = sum(
+            count
+            for key, count in readback["source_counts"].items()
+            if not key.endswith("/rest_observations")
+        )
+        dropped = report["markets"][market]["recorder"].get("dropped_total")
+        assert isinstance(dropped, int), (market, "recorder did not report dropped_total")
+        drop_percent = 100 * dropped / ws_accepted if ws_accepted else 0
+        assert drop_percent <= a.max_drop_percent, (
+            market,
+            "dropped_total",
+            dropped,
+            "ws_accepted",
+            ws_accepted,
+            "drop_percent",
+            drop_percent,
+            "limit",
+            a.max_drop_percent,
+        )
+        status_rows = [
+            json.loads(line)
+            for line in (a.evidence / f"{market}.jsonl").read_text().splitlines()
+            if line.strip()
+        ]
+        queue_peak = max(
+            (row.get("queued_payload_bytes", 0) for row in status_rows), default=0
+        )
+        sync = [row["writer_sync_ms"] for row in status_rows if "writer_sync_ms" in row]
+        seal = [row["writer_seal_ms"] for row in status_rows if "writer_seal_ms" in row]
+        report["markets"][market]["status"] = {
+            "ws_accepted_records": ws_accepted,
+            "dropped_total": dropped,
+            "drop_percent": drop_percent,
+            "queue_peak_bytes": queue_peak,
+            "writer_sync_ms_mean": sum(sync) / len(sync) if sync else 0,
+            "writer_sync_ms_max": max(sync, default=0),
+            "writer_seal_ms_mean": sum(seal) / len(seal) if seal else 0,
+            "writer_seal_ms_max": max(seal, default=0),
+        }
+        if a.queue_limit_mib is not None:
+            assert queue_peak <= a.queue_limit_mib * 1024**2, (
+                market,
+                "queue peak",
+                queue_peak,
+                "limit",
+                a.queue_limit_mib * 1024**2,
+            )
         for symbol in symbols[market]:
             prefix = f"{'spot' if market == 'spot' else 'um_perpetual'}/{symbol}/"
             for stream in (
@@ -271,6 +322,18 @@ def main():
     p.add_argument("--services", action="store_true")
     p.add_argument("--rss-limit-mib", type=int, default=768)
     p.add_argument("--cpu-limit-percent", type=float, default=120)
+    p.add_argument(
+        "--max-drop-percent",
+        type=float,
+        default=0.0,
+        help="Maximum dropped_total as percent of accepted WS records; 0 requires none",
+    )
+    p.add_argument(
+        "--queue-limit-mib",
+        type=int,
+        default=None,
+        help="Optional billed queue peak limit in MiB; omit for C4-C",
+    )
     a = p.parse_args()
     a.evidence.mkdir(parents=True, exist_ok=True)
     symbols = json.loads(a.config.read_text())

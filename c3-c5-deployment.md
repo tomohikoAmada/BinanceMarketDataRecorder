@@ -152,4 +152,6 @@ C4-A 按定稿 6.2 完成以下改动：
 - 丢弃测试的回环流名需使用归一化后的 `diff_depth`/`book_ticker`/`agg_trade`；depth 快照夹具需返回比最新流早一拍的 `lastUpdateId`，否则会按 `depth_snapshot_too_old` 反复重试。
 - Spot depth 快照权重为 250、窗口 2,000/60s，12 个 symbol 在短测内最多完成约 7 次快照；丢弃测试改用 3 个 symbol，以便观察到丢弃后的第二次快照请求和桥接恢复。该权重与生产配置未改。
 
-**尚未完成：** C4-B 60 分钟公网验证、C4-C 24h 资格、C5 启用与交接。C4-A 新二进制尚未部署为 `current`，也未在公网配置下运行；10:56 失败轮按定稿未做全量读回。C4-B/C 的资格驱动还需把 `dropped_total` 门槛和新增 status 字段纳入验收记录，记录器输出字段本身已就绪。
+**尚未完成：** C4-B 60 分钟公网验证、C4-C 24h 资格、C5 启用与交接。C4-A 新二进制尚未部署为 `current`，也未在公网配置下运行；10:56 失败轮按定稿未做全量读回。
+
+**资格驱动更新（2026-11-09，C4-B 准备）：** `deployment/qualify.py` 已加入 `--max-drop-percent` 门槛，按独立读回的 accepted WS 记录数计算 `dropped_total` 百分比（C4-B 使用 `0`，C4-C 使用 `0.01`）；新增 `--queue-limit-mib` 可选门槛（C4-B 使用 32 MiB），并把 `queued_payload_bytes` 峰值、`writer_sync_ms`/`writer_seal_ms` 均值与最大值写入报告；停止后断言无 `.partial`。`deployment/advance.py` 的 C4-C 调用已显式传 `0.01`。这些驱动改动尚未用于任何公网轮次；C4-B 的实际部署与 3,600 秒运行仍未开始。
