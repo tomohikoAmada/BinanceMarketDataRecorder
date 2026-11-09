@@ -2,7 +2,7 @@
 
 > **定稿：2026-11-09。** 本文件是团队的**唯一执行依据**，替代此前文件中并存的原计划、11.23 指令、V2、V3 各版本。旧全文（含 11.1–11.22 运行日志、各轮失败证据）逐字保存在 [cpp_rewrite_plan_history.md](cpp_rewrite_plan_history.md)，只供查证，不再作为任务来源。
 >
-> **当前状态（2026-11-09 更新）：** C0、C1（单源）、C2（精简）、C3（四币对）已签收；C4 的归档、Parquet 归一化、离线 K 线、历史下载已验证通过。10:56 轮已于 **11:15:11 提前退出**（USD-M 运行 18m56s，exit 1），按第 5 节直接进入 C4-A。C4-A 代码已实施并通过原生 Release 13/13、ASan/UBSan 9/9、TSan 9/9，新二进制已安装为 `current`。**C4-B 60 分钟公网验证已 PASS（2026-11-09 23:40:57 上海时间完成读回；两市场 dropped_total=0、队列峰值 ≤32 MiB、含归档 RSS ≤256 MiB）。C4-C 24h 资格尚未启动：C4-B 实测归档吞吐约为生产写入的 51%，按当前 timer 会在 24h 内使系统盘跌破 13 GiB 且无法在结束后清空积压；该前置阻塞需团队按第 5.1 节决定，C5 尚未开始。**
+> **当前状态（2026-11-10 所有者 Code Review 与决策更新）：** C0、C1（单源）、C2（精简）、C3（四币对）、**C4-A（写路径 5 项修复）**、**C4-B（60 分钟公网验证，dropped_total=0）** 均已完成并通过！针对 C4-B 暴露的归档吞吐瓶颈（410.5 MB/h vs 写入 799.7 MB/h），所有者已完成全量 Code Review 并做出正式授权决定（见 **第 5.1–5.4 节**）：**（1）冻结已通过 C4-B 的 C++ 二进制（`4181d599…`），严禁重编 C++；（2）立即执行 `C4-D` 拆除 Python 归档与读回脚本中的四重过度防御并排空 C4-B 存量积压；（3）在启动 24h `C4-C` 前的空窗期执行 `C4-P`（同 10 个主流 USDT 交易对、16 分钟控制变量 Python vs. C++ 性能对比实测）；（4）随后直接启动 `C4-C`（24h 资格运行）并衔接 `C5`（永久启用生产服务）。**
 
 ---
 
@@ -24,7 +24,7 @@
 | REST | 启动 `exchangeInfo`；启动/断层时 `depth` 快照；USD-M 五路 300 秒错峰轮询（`openInterest`、三种多空比、`takerBuySellVol`） |
 | 存储 | Raw v1 + 封存 Zstd + manifest + SQLite Catalog（WAL/NORMAL）；分片 900 秒 / 16 MiB 轮换 |
 | 进程结构 | 每市场一个进程；每进程 WS 线程（Spot 1、USD-M 2）+ REST 线程 + **单写线程** |
-| 部署 | systemd `sbmdr-recorder@{spot,usdm}` + `sbmdr-archive.timer`；slice 配额 175%、归档 25%、CPUWeight 100/200 |
+| 部署 | systemd `sbmdr-recorder@{spot,usdm}` + `sbmdr-archive.timer`（`OnActiveSec=15s`、`OnUnitInactiveSec=10s`）；slice 配额 175%、归档 `CPUQuota=50%`、CPUWeight 100/200 |
 | 离线 | 继续复用冻结 Python 基线 `38acb1d0` 的 reader、归一化、回放、K 线合成与历史下载 |
 
 ### 1.3 永久不做（本重写阶段）
@@ -95,6 +95,8 @@ flowchart LR
 | C2 精简可靠性 | 退避期 SIGTERM、depth 快照与 U/u/pu 桥接、五路错峰 REST 与 429/418 冷却、十例文件恢复边界。 | [c2-reliability.md](c2-reliability.md)、[c2-core-qualification-20261108.json](c2-core-qualification-20261108.json) |
 | C3 四币对 | 二进制 `234264…` 公网 3,605 s，155 分片 / 2,502,622 条全部读回；CPU 合计 27.41% 单核，RSS 合计 64.31 MiB。 | [c3-c5-deployment.md](c3-c5-deployment.md)、[c3-c5-qualification-20261109.json](c3-c5-qualification-20261109.json) |
 | C4 离线部分 | 跨盘归档（含复制中断/目标损坏保源）、combined WS 归一化 `invalid=0`、Decimal OHLCV、官方历史 CHECKSUM 下载均已通过。 | 同上 |
+| C4-A 写路径修复 | 5 项写路径修复（`f68a2f47`）合入；原生 Release 13/13、ASan/UBSan 9/9、TSan 9/9 及 `c4-ingress-drop` 全部通过。 | [c3-c5-deployment.md](c3-c5-deployment.md) |
+| C4-B 60 分钟公网验证 | 二进制 `4181d599…` 公网实盘 3,604 s，Spot 3,300,637 条 / 227 分片、USD-M 15,104,852 条 / 920 分片全部读回，`dropped_total=0`，队列峰值 3.11 / 25.56 MiB，记录器峰值 RSS 合计 91.0 MiB，进程平均 CPU 78.97% 单核。 | [c3-c5-deployment.md](c3-c5-deployment.md) |
 
 ---
 
@@ -114,29 +116,107 @@ flowchart TD
 - **提前退出：** 只在 `c3-c5-deployment.md` 记一行，立即开始 C4-A。
 - **实际结果（2026-11-09 11:15:11 上海时间）：** 该轮提前退出；USD-M 运行 18m56s 后以 exit 1 结束，Spot 同时停止。按本节未做全量读回、未调参，C4-A 已随后实施并完成回环/原生回归；C4-B 已通过，C4-C/C5 尚未开始。
 
-### 5.1 C4-A/C4-B 结果与 C4-C 待决策（2026-11-09）
+### 5.1 C4-A/C4-B 结果、Code Review 结论与所有者正式决策（2026-11-10）
 
-**结论：C4-A 完成；C4-B 60 分钟公网验证 PASS；C4-C 24h 未启动；C4/C5 未签收。**
+**结论：C4-A 完成；C4-B 60 分钟公网验证 PASS；C++ 二进制（`4181d599…`）正式冻结；所有者已授权执行 `C4-D`（Python 归档与读回脚本去过度防御）与 `C4-P`（10 交易对 Python vs. C++ 控制变量对比测试），随后直接启动 `C4-C`（24h）与 `C5`。**
 
 | 项目 | 当前结果 |
 | --- | --- |
 | 发布物 | `/opt/sbmdr/current -> /opt/sbmdr/releases/20261109-f68a2f47`；二进制 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b`；配置 SHA-256 `75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8`；C++ 提交 `f68a2f47`；资格驱动提交 `27b1f0ac` |
 | C4-A 回归 | 原生 Release 13/13（127.56 s）、ASan/UBSan 9/9、TSan 9/9（117.26 s）；`c4-ingress-drop` 连续 3 次通过 |
-| C4-B 采集 | 2026-11-09 22:02:29–23:02:29 上海时间，3,600 s；Spot PID 257375 / USD-M PID 257386，全程未变、`NRestarts=0`；Spot 3,300,637 条/227 分片，USD-M 15,104,852 条/920 分片 |
-| C4-B 门槛 | 两市场 `dropped_total=0`；队列峰值 Spot 3,266,187 B / USD-M 26,799,387 B（≤32 MiB）；记录器峰值 RSS 合计 95,395,840 B，含归档上界 193,126,400 B（≤256 MiB）；系统盘最小可用 19,703,959,552 B（≥13 GiB） |
+| C4-B 采集 | 2026-11-09 22:02:29–23:02:29 上海时间，3,600 s；Spot PID 257375 / USD-M PID 257386，全程未变、`NRestarts=0`；Spot 3,300,637 条/227 分片，USD-M 15,104,852 条/920 分片（合计 **18,405,489 条**） |
+| C4-B 门槛 | 两市场 `dropped_total=0`；队列峰值 Spot 3,266,187 B（3.11 MiB）/ USD-M 26,799,387 B（25.56 MiB ≤ 32 MiB）；记录器峰值 RSS 合计 95,395,840 B（**91.0 MiB**），含归档上界 193,126,400 B（184.2 MiB ≤ 256 MiB）；系统盘最小可用 19,703,959,552 B（≥ 13 GiB） |
 | C4-B 读回/归档 | Spot/USD-M 独立读回记录数与记录器一致，冻结 Python Catalog 可读，无 `.partial`；归档 25 次通过、0 失败，搬运 612 个文件/410,466,952 B；`LOCAL_DELETED` 188/424 |
-| C4-B 资源 | 进程 CPU 均值合计 78.97% 单核（Spot 20.85%、USD-M 58.12%），含归档 88.11%；整机忙碌 29.97%，最小可用内存 5.13 GiB / 6.16 GiB（83.2%）；slice 60 s 峰值 142.59%，按 200% 口径记录；原冻结 120% 的 60 s 项仍为 false |
+| C4-B 资源 | 进程 CPU 均值合计 **78.97% 单核**（Spot 20.85%、USD-M 58.12%），含归档 88.11%；整机忙碌 29.97%，最小可用内存 5.13 GiB / 6.16 GiB（83.2%）；slice 60 s 峰值 142.59%，按 200% 口径记录 |
 | C4-B 写路径 | `writer_sync_ms` 均值/最大 Spot 16.57/331.55、USD-M 24.24/423.16；`writer_seal_ms` 均值/最大 Spot 8.91/952.73、USD-M 36.11/1,052.04；最大耐久 5.77/6.58 s；append p99 180/712 ms |
-| C4-C 前置阻塞 | 每小时产生压缩数据约 799.7 MB，归档实际搬运约 410.5 MB/h（约 51%）；1 小时后仍有 39/496 个 `SEALED` 分片、约 382 MB 未归档。按此速率 24 小时会累积约 9 GB 未归档数据，系统盘可用将跌破 13 GiB，且“结束后归档积压归零”无法用当前 timer 满足。C4-C 未启动 |
+| C4-C 前置阻塞 | 每小时产生压缩数据约 799.7 MB，归档实际搬运约 410.5 MB/h（约 51%）；1 小时后仍有 39/496 个 `SEALED` 分片、约 382 MB 未归档。此外，C4-B 停机后 1 小时数据的单线程 Python 全量 CBOR 读回耗时 **38m28s**（23:02:29→23:40:57），若 24h（约 4.42 亿条）照此全量解码将导致停机读回耗时 **~15.4 小时** |
 | 证据 | `/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c5-24h/progress.json`；详细记录见 [c3-c5-deployment.md](c3-c5-deployment.md) 的 C4-B 小节 |
 
-**团队需要决定：**
+#### 所有者 Code Review 结论与正式决定
 
-1. **先解决归档吞吐，再跑 C4-C（推荐）。** 在不改 C++、不增加线程的前提下，先验证能否通过提高 archive timer 频率或单次归档连续次数，把归档速率提升到 ≥ 生产写入速率，并在现有 C4-B 数据上清空积压。该调整超出定稿当前配置，需明确授权。
-2. **按现配置直接跑 C4-C。** 预计会在系统盘 13 GiB 水位或结束积压处失败；失败后按第 9 节记录并再决策。
-3. **接受 C4-B 并暂停 C4/C5。** 保留现有证据，等归档方案确定后再继续。
+经过对 C++ 核心（`prototype/*`）、Python 归档与验证链路（`prototype/operations.py`、`vendor/python-baseline/...`）及部署脚本（`deployment/*`）的全面 Code Review，结论与决定如下：
 
-在团队决定前，不自行修改 C++、systemd 配额/权重、timer 或币对范围；C4-C 不启动。C4-B 结束后 archive timer 已由资格驱动停止，两个记录器均为 inactive，`current` 仍指向 C4-B 发布物。
+1. **C++ 采集核心（`prototype/*`）—— 验收通过，保持二进制 `4181d599…` 冻结，严禁重编：**
+   - `C4-A` 的 5 项改动非常干净，64 MiB 内存计费队列与 5s 批量 `fsync` 彻底消除了写停顿自杀退出问题，`C4-B` 实盘 1 小时 1,840.5 万条消息实现 **0 丢包**，两个 C++ 进程合计仅占 **78.97% 单核 CPU** 与 **91.0 MiB 内存**。
+   - **决定：** **不修改 C++ 代码、不调整 `rotation_bytes`（保持 16 MiB）、不重新编译 `sbmdr-c0`**，使 `C4-A` 原生回归与 `C4-B` 60 分钟实盘证据对 `C4-C` 保持 100% 有效。
+   - *（非阻塞 Code Review 备注，留作 C5 后维护，当前不改：[`read_ws`](prototype/main.cpp#L683) 在 [`queue.try_push`](prototype/main.cpp#L756) 之前更新了 `previous_by_symbol`，且 [`DepthBridge::observe`](prototype/recorder_core.hpp#L204) 仅检查 `"malformed"` 未显式检查 `"ingress_drop"`；因丢帧恢复首帧已由 `read_ws` 强制打上 `"sequence_gap"` 且实盘 `dropped_total=0`，不影响当前运行。）*
+
+2. **阻塞点 #1 根因与决定：Python 归档吞吐不足（410.5 MB/h vs 799.7 MB/h）是由 4 层“过度防御”人为限速造成的：**
+   - Code Review 查明，`C4-B` 整整 1 小时内 `sbmdr-archive.service` 运行 25 轮（墙钟时间约 2,050 秒），但**实际消耗 CPU 仅 329.15 秒（折合 9.14% 单核）**！其余 **~1,720 秒墙钟时间全部浪费在人为 `time.sleep` 和重复解压上**：
+     1. **人为 `time.sleep` 限速器（主因）**：[`drain.py:220`](vendor/python-baseline/src/binance_market_data_recorder/archive/drain.py#L220) 硬编码了 `io_bytes_per_second=16 * 1024 * 1024`，每次读取/解压都通过 [`ReadBudget.consume`](vendor/python-baseline/src/binance_market_data_recorder/spool/readback.py#L50-L56) 强制调用 `time.sleep(delay)`。
+     2. **单分片 3 次重复 Zstd 全量解压 + 6 次 SHA-256（过度防御）**：C++ 写线程在密封分片时已流式计算并持久化了 `uncompressed_sha256` 与 `stored_sha256`。但 [`ArchiveManager.run_once()`](vendor/python-baseline/src/binance_market_data_recorder/archive/manager.py#L247-L560) 在把同一个封存文件从系统盘移到归档盘的单次事务中，竟在 `_reserve`（257 行）、`_copy`（376 行）、`_verify_and_commit_external`（412 行）**连续 3 次调用 `validate_sealed_artifact` 将 `.zst` 全量 Zstd 解压并重算双 SHA-256**，又在 `_verify_and_commit_external`（425 行）与 `LOCAL_DELETE_PENDING`（339 行）**2 次全量读取哈希目标盘文件**、在删除前（343 行）**第 4 次全量哈希源文件**！由于解压后体积约为压缩包的 5 倍，单分片在 `ReadBudget(16 MiB/s)` 下被重复计费 `3*(S+U) + 5*S ≈ 23*S` 字节，导致每搬运 1 MB 压缩文件就被迫 `sleep` 约 1.5~2 秒（即使 timer 无间隔连续跑，天花板也被锁死在 ~720 MB/h，仍低于 799.7 MB/h）！
+     3. **Timer 空转与单轮限时**：[`sbmdr-archive.timer`](deployment/sbmdr-archive.timer) 设 `OnUnitInactiveSec=60`（每轮结束后空等 60 秒才启动下一轮），且 [`prototype/operations.py:49`](prototype/operations.py#L49) 设 `max_runtime_seconds=50`。
+     4. **过低的归档 CPU 配额**：[`sbmdr-archive.service`](deployment/sbmdr-archive.service) 设 `CPUQuota=25%`。
+   - **决定：** 授权执行 **第 5.2 节（`C4-D`）**，在不改 C++ 二进制的前提下拆除上述 4 层过度防御，并在启动 `C4-C` 前将 `C4-B` 遗留的 535 个分片排空归零。
+
+3. **潜在阻塞点 #2 根因与决定：消除 `C4-C` 24h 停机后长达 15.4 小时的 Python 全量 CBOR 解码停机：**
+   - Code Review 发现，`C4-B` 1 小时数据（1,840.5 万条）在停机后执行 [`prototype/operations.py verify`](prototype/operations.py#L79-L140) 耗时 **38 分 28 秒**（先在 [`load_source_chunks`](vendor/python-baseline/src/binance_market_data_recorder/normalize/raw.py#L135) 全量解压校验一遍，再在 `iter_source_records` 全量解压第二遍并用单线程 Python 逐条解码 1,840 万个 CBOR 帧）。
+   - 若不优化，`C4-C` 24 小时（约 **4.42 亿条记录**、~27,500 个分片）停机后运行 `operations.py verify` 将耗时 **24 × 38.5 分钟 ≈ 15.4 小时**，导致 `C4-C` 结束到 `C5` 正式启用之间出现 15 小时以上的采集中断！
+   - **决定：** 授权在 **第 5.2 节（`C4-D`）** 中一并优化 `operations.py verify`（利用已归档校验证据与经哈希绑定的 manifest 元数据，仅对 `rest_observations`、多连接重连边界分片及未归档尾部分片做逐帧 CBOR 解码），将 24h 停机读回时间从 ~15.4 小时缩短至 **< 3 分钟**。
+
+4. **新增环节决定（`C4-P`）：在启动 24h `C4-C` 前执行 10 主流 USDT 交易对 Python vs. C++ 控制变量性能对比测试（16 分钟）：**
+   - 趁当前服务处于 `C4-B` 结束后的 `inactive` 空窗期，按 **第 5.3 节（`C4-P`）** 在同台 VPS、完全相同的 10 个主流 USDT 交易对与相同稀缺流集合下，运行 16 分钟（960 秒）Python 基线实盘采集，输出同口径量化对比报告 `results/cpp-vs-python-10usdt-benchmark.json`。
+
+---
+
+### 5.2 C4-D：Python 归档与读回脚本去过度防御修复（立即执行，约 30 分钟）
+
+**硬性前提：严禁修改任何 `.cpp` / `.hpp` 文件，严禁重编 `release/sbmdr-c0`（保持 SHA-256 `4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b` 不变）。**
+
+| # | 修改对象 | 具体改动要求 |
+| --- | --- | --- |
+| D1 | **移除归档人为 `time.sleep` 限速**（[`drain.py:219-225`](vendor/python-baseline/src/binance_market_data_recorder/archive/drain.py#L219-L225)） | 将 `ArchiveManager(io_bytes_per_second=16 * 1024 * 1024, ...)` 改为 `io_bytes_per_second=None`（或允许由调用方传入 `None` 并默认 `None`），彻底取消归档过程中的 `ReadBudget` 睡眠节流。 |
+| D2 | **消除单笔归档事务内的重复解压与重复哈希**（[`manager.py`](vendor/python-baseline/src/binance_market_data_recorder/archive/manager.py)） | 在单次 `run_once()` 正常推进中：（1）`_reserve` 已校验过源 manifest 与源文件后，同一进程内紧接着执行的 `_copy` 与 `_verify_and_commit_external` 不再重复调用 `_validate_source_bundle` 进行第 2、第 3 次全量 Zstd 解压（仅当跨进程恢复、即进入 `_advance` 时状态已处于 `VERIFYING` 且非本轮刚完成 `_copy` 时才补做源校验）；（2）`_verify_and_commit_external` 完成目标盘 `.copying` 的 SHA-256 校验并原子 `os.replace` 为最终文件后，紧接着在同一轮 `_advance` 进入 `LOCAL_DELETE_PENDING` 时，不再调用 `_validate_external_commit` 对刚重命名的目标文件做第 2 次全盘重读哈希（跨进程恢复直接从 `VERIFIED` / `LOCAL_DELETE_PENDING` 起步时仍保留校验）。修改后必须重跑归档故障注入测试确认 `archive-faults-final` 100% 通过。 |
+| D3 | **提高归档调度占空比与配额**（[`sbmdr-archive.timer`](deployment/sbmdr-archive.timer)、[`sbmdr-archive.service`](deployment/sbmdr-archive.service)、[`operations.py:49`](prototype/operations.py#L49)） | 1. `deployment/sbmdr-archive.timer`：`OnActiveSec=15`、`OnUnitInactiveSec=10`（原为 120 / 60）。<br>2. `deployment/sbmdr-archive.service`：`CPUQuota=50%`、`TimeoutStartSec=600`（原为 25% / 240；`sbmdr.slice` 总配额保持 175% 不变）。<br>3. `prototype/operations.py`：`archive_drain(..., max_runtime_seconds=120, max_files=1000)`（原为 50 秒）。 |
+| D4 | **消除 24h 停机读回的二次解压与全量单线程 CBOR 解码瓶颈**（[`prototype/operations.py:79-167`](prototype/operations.py#L79-L167)） | 优化 `operations.py verify`：<br>1. 对 Catalog 中已处于 `LOCAL_DELETED` / `VERIFIED`（已经过 C++ 密封校验 + 归档全量校验）的分片，定位外部归档文件并校验文件存在、字节大小等于 `manifest["stored_bytes"]` 及外部归档 manifest 绑定关系，免除在 `load_source_chunks` 中再做一遍全量 Zstd 解压；对尚未归档的本地 `SEALED` 分片仍执行完整 `validate_sealed_artifact`。<br>2. 对单连接 WS 分片（`manifest["stream"] != "rest_observations"` 且 `len(manifest["connection_ids"]) == 1`），直接用经哈希绑定的 `manifest` 累加 `records`（`record_count`）、`source_counts`、`capture_flags`、`connections`、`bridge_connections`（当 `"depth_bridge"` 在 `capture_flags` 中时记录该连接）及 `connection_monotonic_ranges_ns`（取 `receive_monotonic_range_ns`）。<br>3. 对 **全部 `rest_observations` 分片**、**全部多连接分片（`len(manifest["connection_ids"]) > 1`，含 23h 主动换连分片）**、以及 **每个 `market/symbol/stream` 的首尾分片与所有未归档本地 `SEALED` 分片**，继续调用 `iter_source_records(chunk)` 逐帧解码并断言 `seen == chunk.manifest["record_count"]`。<br>4. 确保输出 JSON 的全部字段与 [`deployment/qualify.py:121-304`](deployment/qualify.py#L121-L304) 的所有断言 100% 兼容。 |
+| D5 | **修复重装目录幂等性**（[`deployment/install.py:99,175`](deployment/install.py#L99)） | 将 `old_logs.mkdir()` 与 `evidence.mkdir()` 改为带 `exist_ok=True`（若 `results/c4-c5-24h` 已存在旧轮证据，先移动备份为 `results/c4-b-60m-evidence` 再创建干净的 `results/c4-c5-24h`），防止 `install.py` 因目录已存在而抛 `FileExistsError`。 |
+
+**`C4-D` 验证门槛（在现有 C4-B 存量数据上当场验证，不重跑 C4-B 采集）：**
+1. 运行归档故障注入测试（`archive-faults-final`）通过。
+2. 对 `C4-B` 遗留的 535 个本地 `SEALED` 分片（~382 MB）执行 `operations.py archive`，确认全部排空（`SEALED` 积压归零），且实测折算归档吞吐 **≥ 1,600 MB/h**（生产写入速率 ~800 MB/h 的 **2 倍以上**）。
+3. 在已闭合的 `C4-B` 数据根上重跑一次优化后的 `operations.py verify` 与 `qualify.py` 停机校验逻辑，确认输出 `status="PASS"`、记录数精确等于 `3,300,637`（Spot）与 `15,104,852`（USD-M），且单次 `verify` 耗时从原来的 **38 分 28 秒** 降至 **< 30 秒**。
+
+> **2026-11-10 C4-D 执行结果（提交 `7ecb87da`）：** 归档故障注入两个故障点通过；C4-B 的 535 个 `SEALED` 分片 / 389,246,717 B 全部排空（Spot 22,544,119 B / 5.56 s ≈ 14.6 GB/h；USD-M 366,702,598 B / 68.73 s ≈ 19.2 GB/h）。优化后 `operations.py verify`：Spot 16.73 s、USD-M 19.80 s，记录数精确匹配，`status=PASS`；`qualify.verify_stopped` 在已闭合 C4-B 数据上重跑 PASS。未修改或重编 C++，冻结二进制仍为 `4181d599…`；vendored Python baseline 树哈希更新为 `cd615fc1…` 并记录 C4-D patch。C4-P 随后执行。
+
+### 5.3 C4-P：10 主流 USDT 交易对 Python vs. C++ 控制变量性能对比测试（约 25 分钟）
+
+**目的：** 此前 Python 版的历史实测数据（如 `M4.2`：CPU 109.16%、RSS 366–718 MiB、最大封存延迟 13.60 s、2 小时断连 72 次并失败）是在“50 个交易对、4,038 个源（含 K 线、24h Ticker 等冗余流）”下测得的。为了科学、严谨地量化**“单纯将采集核心从 Python 重写为 C++20 带来的系统资源与性能改进”**，同时考虑到旧 Python 版在高负载下无法长时间稳定运行，本环节采用**严格控制变量法**，在完全相同的 10 个主流 USDT 交易对和相同稀缺流范围下进行 **16 分钟（960 秒）** 有界实盘测试。
+
+#### 1. 控制变量设计（Apples-to-Apples）
+
+| 维度 | Python 基线组（`C4-P` 实测） | C++20 重写组（`C4-B` 实测 + 同口径 960s 切片） |
+| --- | --- | --- |
+| 代码版本 | `vendor/python-baseline`（固定提交 `38acb1d0`） | `release/sbmdr-c0`（固定提交 `f68a2f47`，二进制 `4181d599…`） |
+| 运行机器 | `greencloud-tokyo-01`（4 vCPU / 6.16 GiB RAM，空载无并发） | 同台 `greencloud-tokyo-01`（空载无并发） |
+| 交易对（10 对 / 20 产品） | `spot_symbols` 与 `usdm_symbols` 均设为：`BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, ZECUSDT, XRPUSDT, NEARUSDT, UNIUSDT, DOGEUSDT, LINKUSDT` | 完全相同的 [config/c4-mainstream.json](config/c4-mainstream.json) 10 个 USDT 交易对 |
+| 采集流范围 | 通过 [`RecorderConfig`](vendor/python-baseline/src/binance_market_data_recorder/config.py#L52-L106) 显式启用同款稀缺流：<br>• Spot WS：`diff_depth`、`book_ticker`、`agg_trade` + REST `depth_snapshot`、`exchange_info`<br>• USD-M WS：`diff_depth`、`book_ticker`、`agg_trade`、`mark_price`、`liquidation` + REST `depth_snapshot`、`exchange_info` 及 300s 轮询 `open_interest`、`taker_buy_sell_volume`、`global_long_short_ratio`、`top_long_short_account_ratio`、`top_long_short_position_ratio`<br>• **显式关闭非对称流**：`side_premium_index_enabled=false`、`side_funding_history_enabled=false`、`side_funding_info_enabled=false`、`side_open_interest_statistics_enabled=false`、`side_basis_enabled=false` | 完全相同的 Spot（3 WS + 2 REST）与 USD-M（5 WS + 7 REST）稀缺流集合 |
+| 分片轮转策略 | `rotation_seconds = 900.0`（15 分钟）、`rotation_bytes = 16777216`（16 MiB） | 900 秒 / 16 MiB（完全一致） |
+| 测试时长 | **960 秒（16 分钟）**：完整覆盖启动快照、3 轮 5m REST 轮询、以及第 15 分钟的全市场定时分片压缩密封峰值；避免 Python 因长时间运行崩溃或打满磁盘 | 对比 `C4-B` 完整 3,600 秒均值/峰值，并提取 `C4-B` 前 960 秒窗口同口径数据 |
+
+#### 2. 执行步骤与采集指标
+
+1. **隔离数据根：** 在 `/var/lib/binance-market-data-recorder/S-BMDR/benchmark-py-10usdt` 创建临时隔离目录（测试完成并提取指标后清理释放系统盘空间，不影响 `C4-C` 系统盘可用空间）。
+2. **启动与采样：** 用上述受控 TOML 配置启动 Python `binance-market-recorder`（运行 960 秒后发送 `SIGTERM` 优雅停止；若 Python 在 960 秒内提前崩溃、断连或触发异常，如实记录存活秒数与失败原因，**不修 Python 代码、不重跑**）。
+3. **采样指标（写入 `results/cpp-vs-python-10usdt-benchmark.json` 并在 `c3-c5-deployment.md` 汇总成对比表）：**
+   - **吞吐量与工作负载归一化：** 总写入记录数、每秒平均消息数（`records_per_sec`）、压缩后存储字节数；因为不同时刻市场活跃度有波动，除绝对值外，必须计算**归一化指标：`每 10,000 条消息消耗的 CPU 秒数（cpu_sec_per_10k_records）`**。
+   - **CPU 占用：** 进程平均 CPU（`% of 1 core`）、1 秒/30 秒采样峰值 CPU（`% of 1 core`）、整机 `cpu_busy` 与 `cpu_steal`。
+   - **内存占用：** 峰值 RSS（`MiB`）、运行期间 RSS 内存增长曲线（启动后 1m vs 15m RSS）、与 C++ 版（91.0 MiB）的倍数关系。
+   - **写路径与密封延迟：** 分片密封（Zstd 压缩 + 落盘）耗时均值与最大值（`ms`）、周期 `fsync` 耐久延迟最大值。
+   - **稳定性与并发开销：** 线程/进程总数、960 秒内 WebSocket 断连/重连次数、丢弃帧数或队列阻塞报警次数。
+4. **收尾清理：** 导出 `results/cpp-vs-python-10usdt-benchmark.json` 后，删除临时目录 `/var/lib/binance-market-data-recorder/S-BMDR/benchmark-py-10usdt`，确认系统盘可用空间 ≥ 18 GiB。
+
+---
+
+### 5.4 唯一推进顺序（团队直接按此流水线执行到底）
+
+```mermaid
+flowchart LR
+    D["1. C4-D（约 30m）\n修复 Python 归档与 verify 过度防御\n+ 排空 C4-B 535 分片积压"] --> P["2. C4-P（约 25m）\n10 主流 USDT 对 Python vs C++\n16 分钟控制变量实测 & 清理临时目录"]
+    P --> C["3. C4-C（24h + 10m 收尾）\n用冻结 C++ 二进制 4181d599…\n跑满 86,410s + 快速 verify + 排空归档"]
+    C --> E["4. C5（约 30m）\n启用 Restart=on-failure 与 systemd 常驻\n+ 受控重启验证 + 写入最终签收记录"]
+```
+
+**团队行动指令：** 以上 `C4-D → C4-P → C4-C → C5` 全链路已获所有者正式授权，**无需在中间步骤再次停下请示**；除非 `C4-C` 触发第 8.4 / 第 9 节的硬性升级条件，否则一路执行至 `C5` 正式常驻上线并完成文档签收。
 
 ---
 
@@ -251,7 +331,7 @@ flowchart TD
 | 磁盘 / 归档 | 系统盘可用全程 ≥ 13 GiB；结束后归档积压归零，源文件按目标校验后回收 |
 | 离线冒烟 | 每个市场取 1 个 symbol 的 1 小时数据：归一化 `invalid=0`；用 `aggTrade` 合成 1m K 线成功。复用现有工具，不写新代码 |
 
-> **2026-11-09 前置实测：** C4-B 的压缩数据生成约 799.7 MB/h，归档实际搬运约 410.5 MB/h（约 51%），1 小时后仍有 39/496 个本地 `SEALED` 分片、约 382 MB 未归档。按此速率，C4-C 的 13 GiB 磁盘门槛和“结束后归档积压归零”预计无法满足；C4-C 暂缓至第 5.1 节的团队决定，不自行调整归档配置。
+> **2026-11-10 归档与读回前置阻塞已授权解决：** 针对 C4-B 实测归档吞吐不足（410.5 MB/h vs 799.7 MB/h）及停机全量 CBOR 读回耗时过长问题，所有者已在 **第 5.1–5.2 节（`C4-D`）** 正式授权修复 Python 归档与读回脚本及 systemd timer 配置（保持 C++ 二进制 `4181d599…` 不变）。完成 `C4-D` 与 `C4-P` 后直接启动 `C4-C`。
 
 ### 8.3 报告（只记录，不作门槛）
 

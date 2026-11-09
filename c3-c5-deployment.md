@@ -167,4 +167,23 @@ C4-A 发布物已安装为 `/opt/sbmdr/current -> /opt/sbmdr/releases/20261109-f
 
 **C4-C 前置风险（未自行调参）：** 本轮每小时产生压缩数据约 799.7 MB，归档实际搬运约 410.5 MB/h（约 51%），1 小时后本地仍有 39/496 个 `SEALED` 分片（约 382 MB）未归档。按此速率，24 小时将累积约 9 GB 未归档数据，系统盘可用会从当前约 19 GiB 降到 13 GiB 以下，同时 C4-C 的“结束后归档积压归零”也难以满足。归档吞吐是 C4-C 的实质阻塞项；按定稿第 9 节不在未获所有者决定前自行增加归档线程、改 timer 或改配额，因此 **C4-C 尚未启动**。
 
+### C4-D Python 归档与读回去过度防御（2026-11-10）
+
+按定稿 5.2 执行（代码提交 `7ecb87da`），未修改或重编任何 `.cpp` / `.hpp`，C4-B 二进制 `4181d599…` 保持冻结。改动：
+
+- `archive/drain.py`：归档不再使用 `16 MiB/s` 的 `ReadBudget` 睡眠限速。
+- `archive/manager.py`：同一 `run_once()` 正常推进中，源文件只在 `_reserve` 校验一次；`_copy` / `_verify_and_commit_external` 不再重复全量 Zstd 解压；刚验证并提交的目标文件在删除源前不再做第 2 次全盘哈希。跨进程恢复仍保留源/目标完整校验。
+- `sbmdr-archive.timer`：`OnActiveSec=15`、`OnUnitInactiveSec=10`；`sbmdr-archive.service`：`CPUQuota=50%`、`TimeoutStartSec=600`；`operations.py archive`：`max_runtime_seconds=120`。
+- `operations.py verify`：已归档分片按外部 manifest 绑定和大小校验后信任，不再全量解压；单连接 WS 分片直接使用 manifest 元数据；仅 REST、多连接、每个 `market/symbol/stream` 首尾分片和本地未归档分片逐帧解码。新增 `fast_path` 说明字段。
+- `spool/format.py` / `normalize/raw.py`：验证读回可跳过已由密封 CRC/哈希保证的 canonical 重编码与 Pydantic 重校验。
+- `deployment/install.py`：修复重复安装目录幂等性，旧 60 分钟证据自动移到 `results/c4-b-60m-evidence`。
+
+**当场验证：**
+
+- 归档故障注入 `copy_progress` / `before_verify` 两个故障点均通过，源文件保留、重试完成。
+- C4-B 遗留 535 个本地 `SEALED` 分片（389,246,717 B）全部排空：Spot 22,544,119 B / 5.56 s（约 14.6 GB/h），USD-M 366,702,598 B / 68.73 s（约 19.2 GB/h），均远高于 1,600 MB/h 目标。
+- 优化后 `operations.py verify`：Spot **16.73 s**、USD-M **19.80 s**（均 <30 s）；记录数精确为 3,300,637 / 15,104,852，`status=PASS`。Quick-path 信任分片 Spot 156/227、USD-M 782/920；因信任分片不再逐帧解码，`payload_bytes_complete=false`、`capture_flag_counts_exact=false` 会明确写入输出，qualify.py 所需字段不受影响。
+- 用 `qualify.verify_stopped` 在已闭合 C4-B 数据上重跑停机校验：`status=PASS`，两市场 `dropped_total=0`，RSS/CPU/归档门槛均通过。
+- vendored Python baseline 树哈希更新为 `cd615fc1…`；`BASELINE.json` 记录 C4-D patch。C4-B `c0-loopback` / `c1-recorder` 使用新基线通过。
+
 **与 Python M4.2 历史性能对照（非同口径，仅供量级参考）：** Python M4.2 为 BTC+ETH 全量生产配置，4,038 个活跃源（1,844 WS、2,194 REST）、50 个产品、Spot/USD-M/COIN-M，2 小时窗口 CPU 均值 109.16%、峰值 122.87%（单核=100%），RSS 366.10–617.90 MiB、峰值 717.54 MiB，seal 最大 13.602 s、drain 10.956 s、fsync 0.391 s，2 小时 72 次断线；该轮未通过 2h 可用性门禁，只作历史参照。C++ C4-B 为 10 个 USDT 对、20 个产品、80 条 WS 流，1 小时 CPU 均值合计 78.97% 单核（Spot 20.85%、USD-M 58.12%），RSS 记录器合计约 91.0 MiB、含归档 184.2 MiB，`dropped_total=0`，seal 状态窗口最大约 0.95/1.05 s、sync 最大约 0.33/0.42 s，最大耐久 5.77/6.58 s（5 秒同步周期的有意取舍）。结论：在各自已测范围内，C++ 的 CPU、RSS 和封存停顿都明显更低；但 C++ 当前源范围远小于 Python M4，不能据此给出同口径倍数。严格的同范围比较仍需让冻结 Python 基线在相同 10 对/80 流配置下跑同一时段。
