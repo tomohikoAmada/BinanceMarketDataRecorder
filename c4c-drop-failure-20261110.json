@@ -1,0 +1,41 @@
+{
+  "status": "FAILED",
+  "reason": "USD-M local ingress drops exceeded 0.01% and queue reached the 64 MiB billing cap",
+  "start_utc": "2026-11-10T01:50:28.323397+00:00",
+  "stop_utc": "2026-11-10T09:17:38.321865+00:00",
+  "elapsed_seconds": 26828.2190552681,
+  "seconds_required": 86410,
+  "binary_sha256": "4181d599e5466bca444463a7ec5edb7bf3d92edbb3055406d40714ac78180e4b",
+  "release": "20261110-7ecb87da",
+  "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+  "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261110T014952Z",
+  "markets": {
+    "spot": {
+      "records": 11848402,
+      "sealed": 1083,
+      "dropped_total": 0,
+      "peak_queue_payload_bytes": 33945000,
+      "peak_queue_records": 27720,
+      "max_durability_ns": 14105871040,
+      "wall_seconds": 26808.935132655,
+      "peak_rss_bytes": 70074368
+    },
+    "usdm": {
+      "records": 40901735,
+      "sealed": 3199,
+      "dropped_total": 23385,
+      "ws_dropped_total": 23385,
+      "rest_dropped_total": 0,
+      "drop_percent_of_records": 0.057173,
+      "allowed_at_0_01_percent": 4090.17,
+      "peak_queue_payload_bytes": 67108864,
+      "peak_queue_records": 53333,
+      "max_durability_ns": 17851224753,
+      "wall_seconds": 26810.718900857,
+      "peak_rss_bytes": 111276032
+    }
+  },
+  "system_minimum_free_bytes": 20010852352,
+  "operator_action": "Stopped both recorders and archive timer per plan sections 8.4/9; no full readback and no tuning.",
+  "evidence": "/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c-drop-failure-20261110T091707Z"
+}
