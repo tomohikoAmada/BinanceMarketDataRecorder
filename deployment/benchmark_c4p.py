@@ -71,21 +71,24 @@ def parse_logs(path):
         if not isinstance(event, dict):
             continue
         summary["json_lines"] += 1
+        fields = event.get("fields")
+        merged = {**event, **fields} if isinstance(fields, dict) else event
         for key in (
             "writer_seal_max_ns",
             "writer_fsync_max_ns",
             "writer_append_max_ns",
             "queue_wait_max_ns",
         ):
-            value = event.get(key)
+            value = merged.get(key)
             if isinstance(value, int):
                 summary[key] = max(summary[key], value)
-        value = event.get("receipt_queue_high_watermark")
+        value = merged.get("receipt_queue_high_watermark")
         if isinstance(value, int):
             summary["receipt_queue_high_watermark"] = max(
                 summary["receipt_queue_high_watermark"], value
             )
-        if "reconnect" in str(event.get("event", "")).lower():
+        name = str(event.get("event", "")).lower()
+        if "disconnect" in name or "reconnect" in name or "recovery" in name:
             summary["reconnect_events"] += 1
     return summary
 

@@ -205,6 +205,8 @@ flowchart TD
    - **稳定性与并发开销：** 线程/进程总数、960 秒内 WebSocket 断连/重连次数、丢弃帧数或队列阻塞报警次数。
 4. **收尾清理：** 导出 `results/cpp-vs-python-10usdt-benchmark.json` 后，删除临时目录 `/var/lib/binance-market-data-recorder/S-BMDR/benchmark-py-10usdt`，确认系统盘可用空间 ≥ 18 GiB。
 
+> **2026-11-10 C4-P 执行结果：** Python 960 秒运行正常结束（exit 0，未提前崩溃）：1,794,771 条、CPU 均值 111.25% 单核、峰值 RSS 261.5 MB、CPU 5.953 s/10k 条、10 次断线/恢复、封存最大 2.731 s。C++ C4-B 前 960 秒：2,387,688 条、CPU 均值 55.86%、峰值 RSS 合计 76.0 MB、CPU 2.246 s/10k 条、0 断线。归一化后 Python CPU/记录为 C++ 的 **2.65 倍**，峰值 RSS 为 **3.44 倍**。临时数据根已删除，系统盘恢复约 20 GiB 可用。原始结果：[c4p-cpp-vs-python-20261110.json](c4p-cpp-vs-python-20261110.json)。
+
 ---
 
 ### 5.4 唯一推进顺序（团队直接按此流水线执行到底）

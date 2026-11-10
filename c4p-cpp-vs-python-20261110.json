@@ -1,0 +1,76 @@
+{
+  "status": "PASS",
+  "recorded_at_utc": "2026-11-09T17:38:45.465131+00:00",
+  "survived_seconds": 960.3962825619383,
+  "early_exit": false,
+  "returncode": 0,
+  "config": "/srv/recorder-data/sbmdr-c4a/results/c4p-python.toml",
+  "root": "/var/lib/binance-market-data-recorder/S-BMDR/benchmark-py-10usdt",
+  "records": 1794771,
+  "records_per_sec": 1868.7817024991982,
+  "stored_bytes": 96652067,
+  "chunks": 160,
+  "chunk_states": {
+    "SEALED": 160
+  },
+  "cpu_seconds": 1068.41,
+  "cpu_mean_percent": 111.24678629012662,
+  "cpu_peak_1s_percent": 141.91006789848132,
+  "cpu_peak_30s_percent": 114.9357101494383,
+  "cpu_sec_per_10k_records": 5.952904298097083,
+  "peak_rss_bytes": 261521408,
+  "rss_at_60s_bytes": 185516032,
+  "rss_at_900s_bytes": 260333568,
+  "rss_growth_60s_to_900s_bytes": 74817536,
+  "threads_peak": 9,
+  "host": {
+    "busy_percent": 35.25633170435217,
+    "stolen_percent": 9.188385053893624
+  },
+  "logs": {
+    "json_lines": 61,
+    "websocket_disconnected": 10,
+    "stream_recovery": 10,
+    "websocket_connected": 40,
+    "writer_seal_max_ns": 2731287324,
+    "writer_fsync_max_ns": 132009857,
+    "writer_append_max_ns": 608353857,
+    "queue_wait_max_ns": 0,
+    "receipt_queue_high_watermark": 1479
+  },
+  "cpp_c4b_window": {
+    "spot": {
+      "records": 465769,
+      "cpu_seconds": 146.60164899999998,
+      "peak_rss_bytes": 35217408,
+      "peak_queue_bytes": 1125174,
+      "writer_seal_ms_max": 873.955359,
+      "writer_sync_ms_max": 279.370106
+    },
+    "usdm": {
+      "records": 1921919,
+      "cpu_seconds": 389.57226499999996,
+      "peak_rss_bytes": 40779776,
+      "peak_queue_bytes": 5028381,
+      "writer_seal_ms_max": 897.121445,
+      "writer_sync_ms_max": 365.796571
+    },
+    "combined": {
+      "elapsed_seconds": 959.894929534,
+      "records": 2387688,
+      "cpu_seconds": 536.173914,
+      "cpu_mean_percent": 55.85756289600323,
+      "records_per_sec": 2487.447247126465,
+      "cpu_sec_per_10k_records": 2.2455777890578665,
+      "peak_rss_sum_bytes": 75997184,
+      "peak_queue_bytes": 5028381,
+      "writer_seal_ms_max": 897.121445,
+      "writer_sync_ms_max": 365.796571
+    }
+  },
+  "normalized": {
+    "python_vs_cpp_records_ratio": 0.7516773548302793,
+    "python_vs_cpp_cpu_per_10k_ratio": 2.650945483654177,
+    "python_vs_cpp_rss_ratio": 3.4411986633610003
+  }
+}
