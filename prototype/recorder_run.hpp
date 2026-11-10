@@ -236,7 +236,8 @@ int record(int argc, char** argv) {
     const auto allocated_start = allocated_bytes.load();
     const auto queue_record_limit =
         test_queue_records ? test_queue_records : (config ? configured_queue_records : queue_records);
-    Handoff queue(queue_record_limit);
+    Handoff queue(queue_record_limit,
+                  config && test_queue_records == 0 ? configured_queue_limit : queue_limit);
     DepthRequests depth_requests;
     if (config) {
         depth_requests.initialize(*config);
@@ -252,7 +253,8 @@ int record(int argc, char** argv) {
         try {
             RecorderStorage storage(root, run_id, rotation, rotation_bytes,
                                     config ? milliseconds(5000) : milliseconds(900),
-                                    core ? &depth_requests : nullptr);
+                                    core ? &depth_requests : nullptr,
+                                    config.has_value() && test_queue_records == 0);
             std::vector<Message> batch;
             batch.reserve(32);
             auto next_status = start + seconds(1);
@@ -294,10 +296,10 @@ int record(int argc, char** argv) {
                         Json{{"records", records},
                              {"queued_records", queued_records},
                              {"queued_payload_bytes", queued_bytes},
-                             {"sealed", storage.sealed_count},
+                             {"sealed", storage.sealed_count.load()},
                              {"rss_bytes", peak_rss()},
                              {"cpu_percent", percent},
-                             {"max_durability_ns", storage.max_durability_ns},
+                             {"max_durability_ns", storage.max_durability_ns.load()},
                              {"writer_sync_ms", storage.take_sync_ms()},
                              {"writer_seal_ms", storage.take_seal_ms()},
                              {"dropped_total", queue.dropped_total()},
@@ -323,9 +325,9 @@ int record(int argc, char** argv) {
                         {"test_pause_finish_monotonic_ns", pause_finish},
                         {"test_pause_backlog_drain_ns",
                          pause_drained ? Json(pause_drained - pause_finish) : Json(nullptr)},
-                        {"sealed", storage.sealed_count},
+                        {"sealed", storage.sealed_count.load()},
                         {"rotations", storage.rotations},
-                        {"max_durability_ns", storage.max_durability_ns},
+                        {"max_durability_ns", storage.max_durability_ns.load()},
                         {"max_receive_to_append_ns", storage.max_append_ns},
                         {"receive_to_append_p99_ms", storage.append_p99_ms()},
                         {"max_status_cpu_percent", max_status_cpu},

@@ -3,6 +3,7 @@ namespace fs = std::filesystem;
 
 class Catalog {
     std::unique_ptr<sqlite3, decltype(&sqlite3_close)> db_{nullptr, sqlite3_close};
+    std::mutex mutex_;
 
     void check(int result, int expected = SQLITE_OK) {
         if (result != expected)
@@ -82,12 +83,14 @@ class Catalog {
     void exec(const char* sql) { check(sqlite3_exec(db_.get(), sql, nullptr, nullptr, nullptr)); }
 
     void startup(const std::string& run) {
+        std::lock_guard lock(mutex_);
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,evidence_json)"
                   " VALUES(?,'PROCESS_START',?,?)",
                   Json::array({run, ns<system_clock>(), Json{{"collector_instance_id", run}}.dump()}));
     }
 
     void overload(const std::string& run, bool rest, bool symbol_scoped, const std::string& market, bool configured) {
+        std::lock_guard lock(mutex_);
         const auto symbol = configured || (rest && !symbol_scoped) ? "__GLOBAL__" : "BTCUSDT";
         const auto stream = configured ? (rest ? "rest_observations" : "__ALL_WS__") : (rest ? "exchange_info" : "diff_depth");
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
@@ -99,6 +102,7 @@ class Catalog {
 
     void ingress_drop(const std::string& event_id, const std::string& run,
                       const Message& message) {
+        std::lock_guard lock(mutex_);
         const auto& first = message.sequence.at("ingressDropFirstUtcNs");
         const auto& last = message.sequence.at("ingressDropLastUtcNs");
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
@@ -118,6 +122,7 @@ class Catalog {
     }
 
     void active(const RawFile& raw, const fs::path& path) {
+        std::lock_guard lock(mutex_);
         const auto now = ns<system_clock>();
         exec("BEGIN IMMEDIATE");
         statement("INSERT INTO chunks(chunk_id,state,partial_path,created_at_utc_ns,updated_at_utc_ns)"
@@ -128,6 +133,7 @@ class Catalog {
     }
 
     void sealing(const RawFile& raw, bool process_boundary, bool overload_gap) {
+        std::lock_guard lock(mutex_);
         const auto now = ns<system_clock>();
         exec("BEGIN IMMEDIATE");
         statement(
@@ -142,6 +148,7 @@ class Catalog {
     }
 
     void sealed(const Json& manifest, const fs::path& path) {
+        std::lock_guard lock(mutex_);
         const auto id = manifest.at("chunk_id").get<std::string>();
         const auto now = ns<system_clock>();
         exec("BEGIN IMMEDIATE");
@@ -243,6 +250,13 @@ class RecorderStorage {
         bool first = true;
         bool overload_gap = false;
     };
+    struct SealJob {
+        std::unique_ptr<RawFile> raw;
+        fs::path active;
+        bool first = false;
+        bool overload_gap = false;
+        bool rest = false;
+    };
     fs::path root_;
     Catalog catalog_;
     std::string run_;
@@ -255,69 +269,140 @@ class RecorderStorage {
     std::map<std::string, std::unique_ptr<DepthBridge>> bridges_;
     Bytes scratch_;
     steady_clock::time_point next_sync_;
-    std::int64_t sync_ns_ = 0, seal_ns_ = 0;
+    std::int64_t sync_ns_ = 0;
     std::uint64_t ingress_drop_sequence_ = 0;
+    bool async_seal_ = false;
+    std::thread sealer_;
+    std::mutex seal_mutex_;
+    std::condition_variable seal_ready_;
+    std::deque<SealJob> seal_jobs_;
+    bool seal_stopping_ = false;
+    std::exception_ptr seal_error_;
+    std::atomic<bool> seal_failed_{false};
+    std::atomic<std::int64_t> seal_ns_{0};
 
     std::array<std::uint64_t, 1252> append_histogram_{};
     std::uint64_t append_count_ = 0;
 
-    void rotate(Slot& slot, bool rest, const char* reason) {
+    void note_durability(std::int64_t value) {
+        auto current = max_durability_ns.load(std::memory_order_relaxed);
+        while (value > current &&
+               !max_durability_ns.compare_exchange_weak(
+                   current, value, std::memory_order_relaxed)) {
+        }
+    }
+
+    void stop_sealer() {
+        {
+            std::lock_guard lock(seal_mutex_);
+            seal_stopping_ = true;
+        }
+        seal_ready_.notify_all();
+        if (sealer_.joinable())
+            sealer_.join();
+    }
+
+    void enqueue_seal(SealJob job) {
+        std::unique_lock lock(seal_mutex_);
+        seal_ready_.wait(lock, [&] {
+            return seal_stopping_ || seal_jobs_.size() < 64;
+        });
+        if (seal_stopping_)
+            throw std::runtime_error("background sealer stopped");
+        seal_jobs_.push_back(std::move(job));
+        seal_ready_.notify_one();
+    }
+
+    void sealer_loop() {
+        while (true) {
+            SealJob job;
+            {
+                std::unique_lock lock(seal_mutex_);
+                seal_ready_.wait(lock, [&] {
+                    return seal_stopping_ || !seal_jobs_.empty();
+                });
+                if (seal_jobs_.empty()) {
+                    if (seal_stopping_)
+                        return;
+                    continue;
+                }
+                job = std::move(seal_jobs_.front());
+                seal_jobs_.pop_front();
+                seal_ready_.notify_all();
+            }
+            try {
+                seal(std::move(job.raw), job.active, job.first, job.overload_gap,
+                     job.rest);
+            } catch (...) {
+                std::lock_guard lock(seal_mutex_);
+                seal_error_ = std::current_exception();
+                seal_failed_.store(true, std::memory_order_relaxed);
+                seal_stopping_ = true;
+                seal_jobs_.clear();
+                seal_ready_.notify_all();
+                return;
+            }
+        }
+    }
+
+    void seal(std::unique_ptr<RawFile> raw, const fs::path& active, bool first,
+              bool overload_gap, bool rest) {
         (void)rest;
         const auto rotate_start = ns<steady_clock>();
-        auto& raw = *slot.raw;
-        max_durability_ns = std::max(max_durability_ns, raw.finish());
+        note_durability(raw->finish());
 #ifdef SBMDR_DIAGNOSTICS
         const auto key = rest ? "rest" : "ws";
         diagnostics[key] = {
-            {"records", raw.records},
-            {"rest_preparation_ns", raw.rest_preparation_ns},
-            {"preparation_ns", raw.preparation_ns},
-            {"framing_ns", raw.framing_ns},
-            {"digest_write_ns", raw.digest_write_ns},
-            {"receive_to_enqueue_ns_total", raw.receive_to_enqueue_ns},
-            {"enqueue_to_append_ns_total", raw.enqueue_to_append_ns},
-            {"fsync_count", raw.sync_count},
-            {"fsync_ns_total", raw.sync_total_ns},
-            {"worst_sync", raw.worst_sync},
+            {"records", raw->records},
+            {"rest_preparation_ns", raw->rest_preparation_ns},
+            {"preparation_ns", raw->preparation_ns},
+            {"framing_ns", raw->framing_ns},
+            {"digest_write_ns", raw->digest_write_ns},
+            {"receive_to_enqueue_ns_total", raw->receive_to_enqueue_ns},
+            {"enqueue_to_append_ns_total", raw->enqueue_to_append_ns},
+            {"fsync_count", raw->sync_count},
+            {"fsync_ns_total", raw->sync_total_ns},
+            {"worst_sync", raw->worst_sync},
         };
 #endif
-        catalog_.sealing(raw, slot.first, slot.overload_gap);
-        const auto basename = hex(raw.identity);
+        catalog_.sealing(*raw, first, overload_gap);
+        const auto basename = hex(raw->identity);
         const auto sealed = fs::path("data/sealed") / (basename + ".bmdr.zst");
-        const auto manifest_path = fs::path("data/manifests") / (basename + ".manifest.json");
+        const auto manifest_path =
+            fs::path("data/manifests") / (basename + ".manifest.json");
         const auto compressed_tmp = root_ / (sealed.string() + ".partial");
         const auto manifest_tmp = root_ / (manifest_path.string() + ".partial");
         auto [stored_bytes, stored_hash] =
-            compress_active(root_ / slot.active, compressed_tmp, raw.bytes);
+            compress_active(root_ / active, compressed_tmp, raw->bytes);
         const auto sealed_at = ns<system_clock>();
         Json manifest = {
             {"manifest_schema_version", "raw-chunk-manifest.v1"},
             {"chunk_schema_version", "raw-chunk.v1"},
             {"envelope_schema_version", "event-envelope.v1"},
-            {"chunk_id", raw.chunk_id},
+            {"chunk_id", raw->chunk_id},
             {"collector_instance_ids", {run_}},
             {"collector_version", "c1"},
-            {"connection_ids", raw.connections},
-            {"created_at_utc_ns", raw.created},
+            {"connection_ids", raw->connections},
+            {"created_at_utc_ns", raw->created},
             {"sealed_at_utc_ns", sealed_at},
-            {"fsync_completed_at_utc_ns", raw.fsync_utc},
-            {"market", raw.market},
-            {"symbol", raw.symbol},
-            {"stream", raw.stream},
-            {"receive_time_utc_range_ns", raw.utc_range},
-            {"receive_monotonic_range_ns", raw.mono_range},
-            {"exchange_time_ranges", raw.exchange_ranges},
-            {"sequence_ranges", raw.sequence_ranges},
-            {"capture_flags", raw.flags},
-            {"gap", raw.flags.contains("sequence_gap")},
+            {"fsync_completed_at_utc_ns", raw->fsync_utc},
+            {"market", raw->market},
+            {"symbol", raw->symbol},
+            {"stream", raw->stream},
+            {"receive_time_utc_range_ns", raw->utc_range},
+            {"receive_monotonic_range_ns", raw->mono_range},
+            {"exchange_time_ranges", raw->exchange_ranges},
+            {"sequence_ranges", raw->sequence_ranges},
+            {"capture_flags", raw->flags},
+            {"gap", raw->flags.contains("sequence_gap")},
             {"overlap", false},
-            {"resync", raw.flags.contains("depth_bridge")},
-            {"complete", !raw.flags.contains("sequence_gap")},
+            {"resync", raw->flags.contains("depth_bridge")},
+            {"complete", !raw->flags.contains("sequence_gap")},
             {"recovered", false},
             {"recovery", nullptr},
-            {"record_count", raw.records},
-            {"uncompressed_bytes", raw.bytes},
-            {"uncompressed_sha256", raw.digest.finish()},
+            {"record_count", raw->records},
+            {"uncompressed_bytes", raw->bytes},
+            {"uncompressed_sha256", raw->digest.finish()},
             {"stored_bytes", stored_bytes},
             {"stored_sha256", stored_hash},
             {"relative_path", sealed.string()},
@@ -329,7 +414,7 @@ class RecorderStorage {
               {"content_size", true},
               {"dictionary_id", false}}},
         };
-        if (slot.first)
+        if (first)
             manifest["process_boundary_before_first_frame"] = true;
         const auto text = nlohmann::json(manifest).dump() + "\n";
         if (fs::exists(root_ / sealed) || fs::exists(root_ / manifest_path))
@@ -342,18 +427,37 @@ class RecorderStorage {
         fs::rename(manifest_tmp, root_ / manifest_path);
         sync_directory((root_ / manifest_path).parent_path());
         catalog_.sealed(manifest, manifest_path);
-        fs::remove(root_ / slot.active);
-        sync_directory((root_ / slot.active).parent_path());
-        slot.raw.reset();
-        slot.first = false;
+        fs::remove(root_ / active);
+        sync_directory((root_ / active).parent_path());
         ++sealed_count;
+        seal_ns_.fetch_add(ns<steady_clock>() - rotate_start,
+                           std::memory_order_relaxed);
+    }
+
+    void rotate(Slot& slot, bool rest, const char* reason) {
+        if (!slot.raw)
+            return;
+        const auto rotate_start = ns<steady_clock>();
+        const auto active = slot.active;
+        const auto first = slot.first;
+        const auto overload_gap = slot.overload_gap;
+        if (async_seal_) {
+            SealJob job{std::move(slot.raw), active, first, overload_gap, rest};
+            enqueue_seal(std::move(job));
+        } else {
+            seal(std::move(slot.raw), active, first, overload_gap, rest);
+        }
+        slot.first = false;
+        slot.overload_gap = false;
         rotations[reason] = rotations.value(reason, 0) + 1;
-        seal_ns_ += ns<steady_clock>() - rotate_start;
+        if (!async_seal_)
+            (void)rotate_start;
     }
 
   public:
-    std::uint64_t sealed_count = 0;
-    std::int64_t max_durability_ns = 0, max_append_ns = 0;
+    std::atomic<std::uint64_t> sealed_count{0};
+    std::atomic<std::int64_t> max_durability_ns{0};
+    std::int64_t max_append_ns = 0;
     Json rotations = Json::object();
 #ifdef SBMDR_DIAGNOSTICS
     Json diagnostics = Json::object();
@@ -370,25 +474,63 @@ class RecorderStorage {
         return append_histogram_.size() - 1;
     }
 
-    RecorderStorage(fs::path root, std::string run, milliseconds period, std::uint64_t bytes,
-                    milliseconds sync_period, DepthRequests* depth_requests = nullptr)
-        : root_(std::move(root)), catalog_(root_ / "state/catalog.sqlite"), run_(std::move(run)),
-          period_(period), byte_limit_(bytes), sync_period_(sync_period), depth_(depth_requests),
+    RecorderStorage(fs::path root, std::string run, milliseconds period,
+                    std::uint64_t bytes, milliseconds sync_period,
+                    DepthRequests* depth_requests = nullptr,
+                    bool async_seal = false)
+        : root_(std::move(root)), catalog_(root_ / "state/catalog.sqlite"),
+          run_(std::move(run)), period_(period), byte_limit_(bytes),
+          sync_period_(sync_period), depth_(depth_requests),
           requests_(depth_requests) {
+        async_seal_ = async_seal;
         next_sync_ = steady_clock::now() + sync_period_;
         catalog_.startup(run_);
+        if (async_seal_)
+            sealer_ = std::thread([this] { sealer_loop(); });
     }
 
-    double take_sync_ms() { return static_cast<double>(std::exchange(sync_ns_, 0)) / 1e6; }
-    double take_seal_ms() { return static_cast<double>(std::exchange(seal_ns_, 0)) / 1e6; }
+    ~RecorderStorage() {
+        if (async_seal_)
+            stop_sealer();
+    }
+
+    double take_sync_ms() {
+        return static_cast<double>(std::exchange(sync_ns_, 0)) / 1e6;
+    }
+    double take_seal_ms() {
+        return static_cast<double>(seal_ns_.exchange(0)) / 1e6;
+    }
 
     void tick(bool allow_time_rotation = true) {
         const auto now = steady_clock::now();
         if (now >= next_sync_) {
             const auto sync_start = ns<steady_clock>();
-            for (auto& [key, slot] : slots_) {
-                if (slot.raw)
-                    max_durability_ns = std::max(max_durability_ns, slot.raw->sync());
+            bool synced = false;
+#ifdef __linux__
+            if (sync_period_ >= milliseconds(5000)) {
+                int descriptor = -1;
+                for (auto& [key, slot] : slots_) {
+                    if (slot.raw && slot.raw->has_pending_sync()) {
+                        descriptor = slot.raw->descriptor();
+                        break;
+                    }
+                }
+                if (descriptor >= 0) {
+                    if (::syncfs(descriptor) != 0)
+                        throw std::runtime_error("Raw syncfs failed");
+                    for (auto& [key, slot] : slots_) {
+                        if (slot.raw)
+                            note_durability(slot.raw->syncfs_complete());
+                    }
+                    synced = true;
+                }
+            }
+#endif
+            if (!synced) {
+                for (auto& [key, slot] : slots_) {
+                    if (slot.raw)
+                        note_durability(slot.raw->sync());
+                }
             }
             sync_ns_ += ns<steady_clock>() - sync_start;
             next_sync_ = now + sync_period_;
@@ -409,26 +551,38 @@ class RecorderStorage {
     }
 
     void append(Message& message) {
+        if (async_seal_ && seal_failed_.load(std::memory_order_relaxed))
+            throw std::runtime_error("background sealer failed");
         if (std::any_of(message.flags.begin(), message.flags.end(),
                         [](const auto& flag) { return flag == "ingress_drop"; })) {
             const auto event_id =
                 run_ + "-ingress-drop-" + std::to_string(++ingress_drop_sequence_);
             catalog_.ingress_drop(event_id, run_, message);
         }
-        if (requests_ && !requests_->children.empty() && (message.stream == "diff_depth" || message.source_stream == "depth_snapshot")) {
+        if (requests_ && !requests_->children.empty() &&
+            (message.stream == "diff_depth" ||
+             message.source_stream == "depth_snapshot")) {
             auto& bridge = bridges_[message.symbol];
-            if (!bridge) bridge = std::make_unique<DepthBridge>(&requests_->for_symbol(message.symbol));
+            if (!bridge)
+                bridge = std::make_unique<DepthBridge>(
+                    &requests_->for_symbol(message.symbol));
             bridge->observe(message);
-        } else if (!requests_ || requests_->children.empty()) depth_.observe(message);
-        const std::string symbol = message.rest && !message.symbol_scoped ? "__GLOBAL__" : message.symbol;
-        auto& slot = slots_[message.market + "/" + symbol + (message.rest ? "/rest" : "/" + message.stream)];
+        } else if (!requests_ || requests_->children.empty()) {
+            depth_.observe(message);
+        }
+        const std::string symbol =
+            message.rest && !message.symbol_scoped ? "__GLOBAL__" : message.symbol;
+        auto& slot = slots_[message.market + "/" + symbol +
+                            (message.rest ? "/rest" : "/" + message.stream)];
         const bool first = !slot.raw;
         if (first) {
             slot.raw = std::make_unique<RawFile>();
-            slot.active = fs::path("data/active") / (hex(slot.raw->identity) + ".bmdr.partial");
+            slot.active =
+                fs::path("data/active") / (hex(slot.raw->identity) + ".bmdr.partial");
             slot.opened = steady_clock::now();
         }
-        slot.raw->append(root_ / slot.active, message, run_, "c1", &scratch_);
+        slot.raw->append(root_ / slot.active, message, run_, "c1", &scratch_,
+                         !async_seal_);
         if (first)
             catalog_.active(*slot.raw, slot.active);
         const auto append_ns = ns<steady_clock>() - message.mono;
@@ -445,13 +599,17 @@ class RecorderStorage {
         Json rows = Json::object();
         for (const auto& [key, slot] : slots_) if (slot.raw) {
             const auto& raw = *slot.raw;
-            rows[key] = {{"active_chunk_records", raw.records}, {"last_receive_utc_ns", raw.utc_range.at("max")},
-                         {"last_append_monotonic_ns", slot.last_append}, {"fsync_completed_utc_ns", raw.fsync_utc}, {"capture_flags", raw.flags}};
+            rows[key] = {{"active_chunk_records", raw.records},
+                         {"last_receive_utc_ns", raw.utc_range.at("max")},
+                         {"last_append_monotonic_ns", slot.last_append},
+                         {"fsync_completed_utc_ns", raw.fsync_utc},
+                         {"capture_flags", raw.flags}};
         }
         return rows;
     }
 
-    void mark_overload(bool rest, bool symbol_scoped, const std::string& market, bool configured = false) {
+    void mark_overload(bool rest, bool symbol_scoped, const std::string& market,
+                       bool configured = false) {
         catalog_.overload(run_, rest, symbol_scoped, market, configured);
         for (auto& [key, slot] : slots_) {
             if (slot.raw && (slot.raw->stream == "rest_observations") == rest) {
@@ -462,9 +620,23 @@ class RecorderStorage {
     }
 
     void finish() {
-        for (auto& [key, slot] : slots_) {
-            if (slot.raw)
-                rotate(slot, slot.raw->stream == "rest_observations", "shutdown");
+        try {
+            for (auto& [key, slot] : slots_) {
+                if (slot.raw)
+                    rotate(slot, slot.raw->stream == "rest_observations", "shutdown");
+            }
+        } catch (...) {
+            if (async_seal_) {
+                stop_sealer();
+                if (seal_error_)
+                    std::rethrow_exception(seal_error_);
+            }
+            throw;
+        }
+        if (async_seal_) {
+            stop_sealer();
+            if (seal_error_)
+                std::rethrow_exception(seal_error_);
         }
     }
 };

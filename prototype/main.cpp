@@ -54,8 +54,9 @@ using Bytes = std::vector<std::uint8_t>;
 using namespace std::chrono;
 constexpr std::size_t frame_limit = 32 * 1024 * 1024;
 constexpr std::size_t queue_limit = 64 * 1024 * 1024;
+constexpr std::size_t configured_queue_limit = 128 * 1024 * 1024;
 constexpr std::size_t queue_records = 8192;
-constexpr std::size_t configured_queue_records = 65536;
+constexpr std::size_t configured_queue_records = 131072;
 constexpr std::size_t queue_message_overhead = 1024;
 constexpr std::size_t max_encoded_metadata = 4096;
 void status_line(const Json& event);
@@ -311,7 +312,8 @@ class RawFile {
     RawFile(const RawFile&) = delete;
 
     void append(const std::filesystem::path& path, Message& message, const std::string& run_id,
-                std::string_view version = "c0", Bytes* scratch = nullptr) {
+                std::string_view version = "c0", Bytes* scratch = nullptr,
+                bool sync_header = true) {
         stream = message.rest ? "rest_observations" : message.stream;
         symbol = message.symbol;
         market = message.market;
@@ -338,9 +340,11 @@ class RawFile {
                     {"max_frame_bytes", frame_limit},
                 },
                 Bytes(chunk_prefix.begin(), chunk_prefix.end()), 65536));
-            if (::fsync(fd_) != 0)
-                throw std::runtime_error("Raw header fsync failed");
-            sync_directory(path.parent_path());
+            if (sync_header) {
+                if (::fsync(fd_) != 0)
+                    throw std::runtime_error("Raw header fsync failed");
+                sync_directory(path.parent_path());
+            }
         }
 
 #ifdef SBMDR_DIAGNOSTICS
@@ -416,6 +420,21 @@ class RawFile {
         for (const auto& flag : message.flags)
             flags.insert(flag.get<std::string>());
         pending_since = std::min(pending_since, message.mono);
+    }
+
+    bool has_pending_sync() const {
+        return fd_ >= 0 && pending_since != std::numeric_limits<std::int64_t>::max();
+    }
+
+    int descriptor() const { return fd_; }
+
+    std::int64_t syncfs_complete() {
+        if (!has_pending_sync())
+            return 0;
+        fsync_utc = ns<system_clock>();
+        const auto latency = ns<steady_clock>() - pending_since;
+        pending_since = std::numeric_limits<std::int64_t>::max();
+        return latency;
     }
 
     std::int64_t sync() {
@@ -508,7 +527,9 @@ enum class PushResult { accepted, full, closed };
 
 class Handoff {
   public:
-    explicit Handoff(std::size_t records = queue_records) : records_(records) {}
+    explicit Handoff(std::size_t records = queue_records,
+                     std::size_t byte_limit = queue_limit)
+        : records_(records), byte_limit_(byte_limit) {}
 
     static std::size_t billing(const Message& message) {
         return message.body.size() + queue_message_overhead;
@@ -518,7 +539,7 @@ class Handoff {
         std::unique_lock lock(mutex_);
         const auto size = billing(message);
         const auto available = [&] {
-            return closed_ || (pending_.size() < records_ && bytes_ + size <= queue_limit);
+            return closed_ || (pending_.size() < records_ && bytes_ + size <= byte_limit_);
         };
         if (bounded) {
             if (!ready_.wait_for(lock, milliseconds(250), available))
@@ -536,7 +557,7 @@ class Handoff {
         if (closed_)
             return PushResult::closed;
         const auto size = billing(message);
-        if (pending_.size() >= records_ || bytes_ + size > queue_limit)
+        if (pending_.size() >= records_ || bytes_ + size > byte_limit_)
             return PushResult::full;
         enqueue(std::move(message), size);
         return PushResult::accepted;
@@ -549,7 +570,7 @@ class Handoff {
 
     bool rest_admissible() {
         std::lock_guard lock(mutex_);
-        return !closed_ && pending_.size() < records_ / 2 && bytes_ < queue_limit / 2;
+        return !closed_ && pending_.size() < records_ / 2 && bytes_ < byte_limit_ / 2;
     }
 
     bool pop(Message& message) {
@@ -613,7 +634,7 @@ class Handoff {
     std::mutex mutex_;
     std::condition_variable ready_;
     std::deque<Message> pending_;
-    std::size_t records_, bytes_ = 0;
+    std::size_t records_, byte_limit_, bytes_ = 0;
     bool closed_ = false;
 };
 
