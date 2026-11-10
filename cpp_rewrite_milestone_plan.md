@@ -2,9 +2,17 @@
 
 > **定稿：2026-11-09。** 本文件是团队的**唯一执行依据**，替代此前文件中并存的原计划、11.23 指令、V2、V3 各版本。旧全文（含 11.1–11.22 运行日志、各轮失败证据）逐字保存在 [cpp_rewrite_plan_history.md](cpp_rewrite_plan_history.md)，只供查证，不再作为任务来源。
 >
-> **当前状态（2026-11-10 所有者 Code Review 与决策更新）：** C0、C1（单源）、C2（精简）、C3（四币对）、**C4-A（写路径 5 项修复）**、**C4-B（60 分钟公网验证，dropped_total=0）** 均已完成并通过！针对 C4-B 暴露的归档吞吐瓶颈（410.5 MB/h vs 写入 799.7 MB/h），所有者已完成全量 Code Review 并做出正式授权决定（见 **第 5.1–5.4 节**）：**（1）冻结已通过 C4-B 的 C++ 二进制（`4181d599…`），严禁重编 C++；（2）立即执行 `C4-D` 拆除 Python 归档与读回脚本中的四重过度防御并排空 C4-B 存量积压；（3）在启动 24h `C4-C` 前的空窗期执行 `C4-P`（同 10 个主流 USDT 交易对、16 分钟控制变量 Python vs. C++ 性能对比实测）；（4）随后直接启动 `C4-C`（24h 资格运行）并衔接 `C5`（永久启用生产服务）。**
+> **当前状态（2026-11-10 19:10 所有者第 9 节正式裁决与 `C4-E` 指令更新）：**
+> 1. **已完成项：** C0、C1（单源）、C2（精简）、C3（四币对）、**C4-A（写路径 5 项修复）**、**C4-B（60 分钟公网验证，`dropped_total=0`）**、**C4-D（Python 归档与读回脚本去过度防御：归档吞吐提速至 `14.6 / 19.2 GB/h`，快速 `verify` 缩短至 `16.73 / 19.80 s`）**、**C4-P（10 主流 USDT 对 Python vs. C++ 16 分钟控制变量对比：Python 每万条记录 CPU 为 C++ 的 `2.65 倍`、峰值 RSS 为 `3.44 倍`）** 均已完成并 PASS！
+> 2. **C4-C 7h27m 中止根因诊断：** `C4-C` 于 `2026-11-10 09:50:28` 启动，运行 `26,828 s`（约 7 小时 27 分）后，Spot 全程 `dropped_total=0`、系统盘最小可用 `18.63 GiB`（`C4-D` 彻底解决了归档积压）；但 USD-M 在约 `13,350 条/秒` 的行情洪峰窗口内因**单写线程上三项同步磁盘 I/O 叠加阻塞**（周期 55 文件逐个 `fsync` 峰值 `5.54 s` + 同步 Zstd 压缩封存 `writer_seal_ms` 峰值 `3.91 s` + 新分片首帧同步 header `fsync` + 目录 `fsync`，使最大 `receive→fsync` 达 `17.85 s`），打满 `64 MiB` 队列并在 `1.4 秒` 内集中丢弃 `23,385` 条（占 `40,901,735` 条的 `0.0572%`）。
+> 3. **所有者按第 9 节做出的正式裁决（见第 5.4–5.6 节 `C4-E`）：** 鉴于实测证明 `writer_sync_ms`（5.54 s）与 `writer_seal_ms`（4.27 s）在共享 KVM 云盘上**同时存在秒级尖峰并叠加阻塞单写线程**，单选第 9 节选项 2 或单选选项 3 仍会留下另一半 4~5 秒的同步阻塞。所有者按 **第 9 节选项 5（合并选项 2 + 选项 3 + 选项 1 门槛豁免）** 授权执行 **`C4-E`（写线程 I/O 解耦一次改到位）**：
+>    - **E1（选项 2：独立后台封存线程）**：配置模式下 `rotate()` 只移交已关闭的 `RawFile` 指针，Zstd 压缩、6 次封存 `fsync` 与 Catalog `SEALING/SEALED` 事务移交单后台 `sealer_` 线程完成，使写线程 `rotate()` 耗时从 ~4 秒降至 `< 1 ms`；
+>    - **E2（选项 3：周期同步改用 Linux `syncfs(2)` + 取消配置模式新分片首帧同步 header `fsync`）**：配置模式下 `tick()` 用一次 `::syncfs(fd)` 替代 55 个文件逐个 `::fsync(fd)`，并移除 `RawFile::append()` 打开新分片时的同步 `fsync` + `sync_directory`；
+>    - **E3（配置模式队列上限扩至 `128 MiB` / `131,072` 条）**：利用充裕内存余量（C4-C 双进程峰值 RSS 合计仅 `172.9 MiB / 6.16 GiB`）将配置模式队列缓冲翻倍至 `128 MiB`（`--rss-limit-mib` 相应调至 `384`）；
+>    - **E4（选项 1：24h `C4-C` 丢弃容忍门槛放宽至 `0.10%`）**：设计目标仍为 `dropped_total = 0`，将 24h 资格硬门槛 `--max-drop-percent` 由 `0.01%` 放宽至 **`0.10%`**（诚实记录缺口即可），避免共享云盘极端瞬态抖动导致 24h 功亏一篑。
+>    - **执行流水线：** 完成 `C4-E` 并通过原生测试矩阵后，排空/清理旧轮残留数据，**不再重跑 60 分钟 `C4-B`，直接启动新一轮 `C4-C`（24h）并自动衔接 `C5` 常驻启用**。
 >
-> **2026-11-10 执行状态：** `C4-D` 已完成（提交 `7ecb87da`；535 分片排空，归档约 14.6/19.2 GB/h；快速 verify 16.73/19.80 s）。`C4-P` 已完成并 PASS（Python CPU/记录为 C++ 的 2.65 倍，峰值 RSS 3.44 倍；结果见 [c4p-cpp-vs-python-20261110.json](c4p-cpp-vs-python-20261110.json)）。`C4-C` 于 **2026-11-10 09:50:28 上海时间** 启动，在 **17:17:38（26,828 s）因 USD-M `dropped_total=23,385`（0.0572% > 0.01%）且队列达到 64 MiB 上限** 触发第 8.4/9 节，已按计划停止并保留证据；未做全量读回，未自行调参。**C4/C5 未签收，等待所有者按第 9 节决定；C5 未开始。**
+> **2026-11-10 20:11 执行状态：** `C4-E` 已完成（提交 `b610a656`；Release 二进制 `618dae98…`；Release 13/13、ASan/UBSan 9/9、TSan 9/9 全部通过）。上一轮 7h27m 残留已排空，系统盘约 20 GiB 可用。新一轮 `C4-C` 已于 **2026-11-10 20:11:03 上海时间** 启动（release `20261110-b610a656`、新根 `live-20261110T121047Z`、`--rss-limit-mib 384 --max-drop-percent 0.10`，Spot PID `298079` / USD-M PID `298091`），预计 **2026-11-11 20:11:13** 结束；当前 RUNNING，C4/C5 尚未签收。
 
 ---
 
@@ -209,20 +217,56 @@ flowchart TD
 
 > **2026-11-10 C4-P 执行结果：** Python 960 秒运行正常结束（exit 0，未提前崩溃）：1,794,771 条、CPU 均值 111.25% 单核、峰值 RSS 261.5 MB、CPU 5.953 s/10k 条、10 次断线/恢复、封存最大 2.731 s。C++ C4-B 前 960 秒：2,387,688 条、CPU 均值 55.86%、峰值 RSS 合计 76.0 MB、CPU 2.246 s/10k 条、0 断线。归一化后 Python CPU/记录为 C++ 的 **2.65 倍**，峰值 RSS 为 **3.44 倍**。临时数据根已删除，系统盘恢复约 20 GiB 可用。原始结果：[c4p-cpp-vs-python-20261110.json](c4p-cpp-vs-python-20261110.json)。
 
-> **2026-11-10 17:17 C4-C 失败：** 运行 26,828 s 后 USD-M `dropped_total=23,385`（40,901,735 条中的 0.0572%，超过 0.01% 门槛 5.7 倍），队列达到 64 MiB 计费上限 53,333 条；Spot 丢弃为 0。最大 receive→fsync 14.11 / 17.85 s。按第 8.4/9 节停止两记录器与 archive timer，未做全量读回、未自行调参。证据：`/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c-drop-failure-20261110T091707Z`。**C4/C5 未签收，等待所有者决定。**
+> **2026-11-10 17:17 C4-C 失败与第 9 节升级：** 运行 26,828 s 后 USD-M `dropped_total=23,385`（40,901,735 条中的 0.0572%，超过 0.01% 门槛 5.7 倍），队列达到 64 MiB 计费上限 53,333 条；Spot 丢弃为 0。最大 receive→fsync 14.11 / 17.85 s。按第 8.4/9 节停止两记录器与 archive timer，未做全量读回、未自行调参。证据：`/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c-drop-failure-20261110T091707Z`（及 [c4c-drop-failure-20261110.json](c4c-drop-failure-20261110.json)）。
 
 ---
 
-### 5.4 唯一推进顺序（团队直接按此流水线执行到底）
+### 5.4 C4-E：针对 C4-C 7h27m 丢帧根因的所有者第 9 节正式裁决与一次性写线程 I/O 解耦（约 1~2 小时）
+
+#### 1. C4-C（7h27m）失败根因诊断：为什么单选选项 2 或单选选项 3 都不够？
+
+根据 [c4c-drop-failure-20261110.json](c4c-drop-failure-20261110.json) 的实测证据，本次 7 小时 27 分运行证明 `C4-D` 已彻底解决归档瓶颈（系统盘可用全程 ≥ `18.63 GiB`），Spot 全程 `dropped_total = 0`（`11,848,402` 条），且两个记录器峰值 RSS 合计仅 **`172.9 MiB`**（Spot `66.8 MiB` + USD-M `106.1 MiB`，占整机 `6.16 GiB` 内存不到 3%）。
+
+USD-M 在第 7 小时 27 分出现 `23,385` 条集中丢弃（`0.0572%`），是因为在共享 KVM 虚拟盘（`/dev/vda1`）发生宿主机 I/O 抖动 + 行情瞬间爆发（`1.4 秒` 内涌入 `~18,700` 条消息，约 **`13,350 条/秒`**）时，**单写线程上以下三项同步阻塞操作发生了串联叠加，导致写线程累计停顿超过 10 秒（最大耐久延迟 `17.85 s`）**：
+
+1. **周期逐文件 `fsync` 阻塞（`writer_sync_ms` 最大 `5.54 s`，首丢窗口前刚出现 `2.38 s`）**：[`RecorderStorage::tick()`](prototype/recorder_storage.hpp#L387-L395) 每 5 秒对 USD-M 约 55 个活跃文件逐个调用 `::fsync(fd)`，55 次串行 ext4 日志刷新在虚拟盘抖动期耗时高达 `2.38 ~ 5.54 s`。
+2. **同步分片压缩与封存阻塞（`writer_seal_ms` 最大 Spot `4.27 s` / USD-M `3.91 s`）**：[`RecorderStorage::rotate()`](prototype/recorder_storage.hpp#L264-L352) 在单写线程内同步执行 `raw.finish()`（`fsync`）、`catalog_.sealing()`（SQLite 事务）、`compress_active()`（读取 16 MiB 原文件 + Zstd 压缩 + 写出 `.zst.partial` + `fsync`）、3 次 `sync_directory()`、manifest 写出 + `fsync` 及 `catalog_.sealed()`（SQLite 事务）。
+3. **未计入 `sync_ms/seal_ms` 的新分片首帧同步 `fsync`**：每当分片轮转后，新分片的第一条消息在 [`RawFile::append()`](prototype/main.cpp#L341-L343) 打开 `.bmdr.partial` 写入 60 字节 header 时，又在写线程热路径上同步执行了一次 `::fsync(fd_)` 和一次 `sync_directory("data/active")`（15 分钟全市场轮转窗口内会触发 ~110 次额外同步 `fsync`）。
+
+**所有者裁决结论：** 既然实测证明 `writer_sync_ms`（5.54 s）与 `writer_seal_ms`（4.27 s）**双双高达 4~5 秒**，若只选第 9 节选项 2（仅加封存线程）或只选选项 3（仅改 `syncfs`），写线程上仍会残留另一半 4~5 秒的同步阻塞。遵循第 2.1 节**“一个问题一次改到位”**原则，所有者按 **第 9 节选项 5（指定组合方案：合并选项 2 后台封存线程 + 选项 3 `syncfs` 周期同步 + `128 MiB` 队列扩容 + 选项 1 放宽 24h 峰值丢弃门槛至 `0.10%`）**，下达以下 **4 项确定性修改（`C4-E`）**。
+
+---
+
+#### 2. `C4-E` 改动清单（只改这 4 项，保持全部 13 项 CTest 100% 兼容）
+
+| # | 改动项 | 位置 | 具体做法与测试兼容约束 |
+| --- | --- | --- | --- |
+| **E1** | **增加单后台封存线程 `sealer_`（第 9 节选项 2）** | [`Catalog`](prototype/recorder_storage.hpp#L4-L158)、[`RecorderStorage`](prototype/recorder_storage.hpp#L237-L470)、[`recorder_run.hpp:253`](prototype/recorder_run.hpp#L253) | 1. **Catalog 线程安全**：在 `class Catalog` 内增加 `std::mutex mutex_;`，在 `startup`、`overload`、`ingress_drop`、`active`、`sealing`、`sealed` 六个公开方法入口加 `std::lock_guard lock(mutex_);`，使写线程（调用 `active`、`ingress_drop`）与后台封存线程（调用 `sealing`、`sealed`）并发访问 SQLite 完全无数据竞争（零 TSan 报警）。<br>2. **后台封存队列与线程**：为 `RecorderStorage` 增加构造参数 `bool async_seal = false`。在 [`recorder_run.hpp:253`](prototype/recorder_run.hpp#L253) 传入 `config && test_queue_records == 0`。<br>3. 当 `async_seal == true` 时，`RecorderStorage` 启动 1 个后台 `std::thread sealer_`（配 `std::mutex`、`std::condition_variable`、`std::deque<SealJob>`，上限 64 个待封存分片，满时反压等待，以及 `std::exception_ptr seal_error_`）。<br>4. 在 `rotate(Slot& slot, bool rest, const char* reason)` 中：写线程只把 `std::move(slot.raw)`、`slot.active`、`slot.first`、`slot.overload_gap`、`rest` 打包推入 `sealer_` 队列，立即将 `slot.first = false; slot.overload_gap = false; rotations[reason] = rotations.value(reason, 0) + 1;` 并返回（写线程耗时 **< 0.1 ms**）。<br>5. 后台 `sealer_` 线程执行原封存全流程（`raw->finish()` → `catalog_.sealing()` → `compress_active()` → 生成 manifest → `fs::rename` → `sync_directory` → `catalog_.sealed()` → `fs::remove(active)` → `sync_directory`），并将 `sealed_count`、`seal_ns_`、`max_durability_ns` 改为原子更新（`std::atomic`）。<br>6. 在 `RecorderStorage::finish()` 中，将所有剩余活跃 `slot` 推入封存队列后关闭队列、`sealer_.join()`，若 `seal_error_` 非空则 `std::rethrow_exception(seal_error_)`（析构函数中确保安全 `join()`）。<br>7. **关键测试兼容约束**：当 `!config`（单源模式，`c2-recovery-boundaries` 依赖 `LD_PRELOAD` 在同步 `rotate` 各阶段注入 `SIGKILL`）或 `test_queue_records != 0`（`c4-ingress-drop` 传入 `test_queue_records=1024` 并依赖 `LD_PRELOAD` 在 `rename` 中 `usleep(3.5s)` 阻塞写线程以触发满队列丢弃）时，`async_seal` 为 `false`，保持原同步 `rotate()` 行为不变，确保 13 项 CTest 语义与断言 100% 兼容。 |
+| **E2** | **周期同步改用 Linux `syncfs(2)` + 取消配置模式新分片首帧同步 header `fsync`（第 9 节选项 3）** | [`RecorderStorage::tick()`](prototype/recorder_storage.hpp#L385-L395)、[`RawFile`](prototype/main.cpp#L316-L445) | 1. **Linux `syncfs(2)` 一次同步**：在 `RecorderStorage::tick()` 中，当处于配置模式（`sync_period_ >= milliseconds(5000)`）且在 Linux 下（`#ifdef __linux__`）时，不再对 55 个 `slot` 逐个调用 `::fsync(fd)`；改为查找第一个有未同步数据的活跃分片（`slot.raw && slot.raw->has_pending_sync()`），对其 `fd` 调用**一次 `::syncfs(fd)`**（失败抛 `std::runtime_error("Raw syncfs failed")`），随后统一更新所有脏 `slot.raw` 的 `fsync_utc`、`pending_since` 与 `max_durability_ns`。单源模式（`sync_period_ < milliseconds(5000)`）保留逐个 `slot.raw->sync()`（`::fsync(fd_)`），确保 `c2-recovery-boundaries` 的 `fsync_eio` 与 `after_raw_fsync` 故障注入 100% 原样通过。<br>2. **取消配置模式新分片首帧 header 同步 `fsync`**：在 [`RawFile::append()`](prototype/main.cpp#L341-L343) 中增加参数 `bool sync_header = true`（或在 `RecorderStorage::append()` 调用时传入 `!async_seal_`）：单源模式保持首次写 header 后立即 `::fsync(fd_)` + `sync_directory(path.parent_path())`（兼容 `c2-recovery-boundaries` 的 `header_only` / `truncated_header` 测试）；配置模式下跳过这两次热路径同步 `fsync`（由 5s 周期 `syncfs`、封存前 `raw->finish()` 以及崩溃后 `recover_raw.py` 兜底）。 |
+| **E3** | **配置模式队列上限扩至 `128 MiB`（`131,072` 条）+ `C4-C` RSS 门槛调至 `384 MiB`** | [`main.cpp:56-58, 509-554`](prototype/main.cpp#L56-L58)、[`recorder_run.hpp:237-239`](prototype/recorder_run.hpp#L237-L239)、[`deployment/advance.py:197-198`](deployment/advance.py#L197-L198) | 1. 在 `main.cpp` 新增 `constexpr std::size_t configured_queue_limit = 128 * 1024 * 1024;`（`128 MiB`），将 `configured_queue_records` 从 `65536` 提高到 `131072`；单源默认 `queue_limit = 64 * 1024 * 1024` 与 `queue_records = 8192` 保持不变（确保 `c2-handoff-limit` 原断言不变）。<br>2. `Handoff` 构造函数改为 `explicit Handoff(std::size_t records = queue_records, std::size_t byte_limit = queue_limit)`，内部用成员变量 `byte_limit_` 替代硬编码 `queue_limit`；在 `recorder_run.hpp:239` 构造 `queue` 时传入 `config && !test_queue_records ? configured_queue_limit : queue_limit`。<br>3. 将 `deployment/advance.py:198`（及第 8.2 节）的 `--rss-limit-mib` 从 `256` 调整为 **`384`**（即使双进程队列打满也远低于 384 MiB，仅占 6.16 GiB 整机内存的 6.2%）。 |
+| **E4** | **放宽 24h `C4-C` 峰值丢弃容忍门槛至 `0.10%`（第 9 节选项 1 + 选项 5）** | [`deployment/advance.py:201-202`](deployment/advance.py#L201-L202)、第 8.2 / 8.4 节 | 1. 我们的工程目标仍是 `dropped_total = 0`（在 E1+E2+E3 消除写线程同步 I/O 阻塞并翻倍队列后，常态与常规尖峰下应为 0 丢弃）。<br>2. 为防止 24 小时内共享宿主机发生极端瞬态卡顿导致功亏一篑，将第 8.2/8.4 节及 `deployment/advance.py:202` 的 `--max-drop-percent` 从 `0.01` 调整为 **`0.10`**（即允许 `dropped_total` ≤ 已接受 WS 记录数的 **`0.10%`**，所有丢弃必须诚实标记 `ingress_drop`、`sequence_gap` 与 Catalog `INGRESS_DROP` 事件）。<br>3. **运行期严禁提前人工中止**：在 `C4-C` 86,410 秒运行期间，除非某个进程异常退出，或单市场累计 `dropped_total` 已经超过 24h 预计总记录数的 `0.10%`（例如 USD-M `dropped_total > 150,000` 条），否则**严禁中途人工停止**，必须跑满 86,410 秒由 `qualify.py` 自动完成停机验证并直接进入 `C5`。 |
+
+---
+
+#### 3. `C4-E` 验证与清理步骤
+
+1. **原生测试矩阵（必跑）：** 按第 2.2 节 C++ 存储变更规则，在 GreenCloud 原生 Linux x86_64 上跑通 **Release 全部 13 项 CTest**（含 `c2-recovery-boundaries`、`c2-handoff-limit`、`c4-rotation-burst`、`c4-overload-catalog`、`c4-ingress-drop`）+ **ASan/UBSan 9/9** + **TSan 9/9** 各一次，记录新提交号与新二进制 SHA-256。
+2. **清理上一轮中止的 `C4-C` 残留数据：** 将上一轮（7h27m 中止轮）系统盘 `/var/lib/binance-market-data-recorder/S-BMDR` 下未归档的本地分片排空或清理，确保启动新一轮 `C4-C` 前系统盘可用空间 **≥ 18.5 GiB**。
+3. **不重跑 60 分钟 `C4-B`：** 通过上述第 1 步全部 13 项 Release + ASan + TSan 测试后，直接通过 `deployment/advance.py` 安装新 release 并启动 24 小时 `C4-C`（86,410 s）→ 自动衔接 `C5` 常驻启用。
+
+> **2026-11-10 C4-E 执行结果：** 提交 `b610a656`；Release 二进制 SHA-256 `618dae987fce00d7e19fb4a32d87f43c613e433b3e104e516d8aca61158d6b99`；Release **13/13**、ASan/UBSan **9/9**、TSan **9/9** 全部通过。上一轮 7h27m 残留已排空（系统盘约 20 GiB 可用）。新 release `20261110-b610a656` 已安装，C4-C 第二轮于 **2026-11-10 20:11:03 上海时间** 启动，预计 **2026-11-11 20:11:13** 结束；当前 RUNNING。
+
+---
+
+### 5.5 唯一推进顺序（团队直接按此流水线执行到底）
 
 ```mermaid
 flowchart LR
-    D["1. C4-D（约 30m）\n修复 Python 归档与 verify 过度防御\n+ 排空 C4-B 535 分片积压"] --> P["2. C4-P（约 25m）\n10 主流 USDT 对 Python vs C++\n16 分钟控制变量实测 & 清理临时目录"]
-    P --> C["3. C4-C（24h + 10m 收尾）\n用冻结 C++ 二进制 4181d599…\n跑满 86,410s + 快速 verify + 排空归档"]
-    C --> E["4. C5（约 30m）\n启用 Restart=on-failure 与 systemd 常驻\n+ 受控重启验证 + 写入最终签收记录"]
+    E["1. C4-E（约 1~2h）\n实施 E1(封存线程)+E2(syncfs)+E3(128MiB)+E4(0.10%)\n+ 通过 Release 13/13 & ASan & TSan\n+ 排空/清理 7h27m 旧轮系统盘残留"] --> C["2. C4-C（24h + 10m 收尾）\n安装 C4-E 新 release\n跑满 86,410s（严禁因瞬态少量丢帧提前中止）\n+ 快速 verify + 排空归档"]
+    C --> F["3. C5（约 30m）\n启用 Restart=on-failure 与 systemd 常驻\n+ 受控重启验证 + 回退演练 + 写入最终签收记录"]
 ```
 
-**团队行动指令：** 以上 `C4-D → C4-P → C4-C → C5` 全链路已获所有者正式授权，**无需在中间步骤再次停下请示**；除非 `C4-C` 触发第 8.4 / 第 9 节的硬性升级条件，否则一路执行至 `C5` 正式常驻上线并完成文档签收。
+**团队行动指令：** 以上 `C4-E → C4-C → C5` 全链路已获所有者按第 9 节正式裁决授权，**无需在中间步骤再次停下请示**，直接推进至 `C5` 正式常驻上线并完成文档签收。
 
 ---
 
@@ -322,22 +366,24 @@ flowchart LR
 
 ### 8.1 运行
 
-固定 C4-B 的二进制、配置、unit，在新的独立根上运行 **86,410 秒**（24h + 10 s），archive timer 同时运行，资格期 `Restart=no`。满时长后 SIGTERM 两个实例并排空。
+固定 `C4-E` 通过回归测试的二进制、配置、unit，在新的独立根上运行 **86,410 秒**（24h + 10 s），archive timer 同时运行，资格期 `Restart=no`。满时长后 SIGTERM 两个实例并排空。
 
-### 8.2 验收门槛（只有这些，冻结不再改）
+### 8.2 验收门槛（已按所有者 2026-11-10 `C4-E` 裁决更新）
 
 | 项目 | 门槛 |
 | --- | --- |
 | 进程 | 两个实例各自同一 PID 跑满 86,410 s，`NRestarts=0`，正常排空退出 |
 | 数据完整性 | 对本轮全部封存分片（已归档 + 本地）做**一次**全量 `operations.py verify`：CRC32C / SHA-256 / 记录数 100% 通过；冻结 Python 可打开 Catalog；无 `.partial` |
-| 本地丢弃 | 每个市场 `dropped_total` ≤ 已接受 WS 记录数的 **0.01%**（目标为 0）；每次丢弃都有 `ingress_drop` 标志和 Catalog 事件 |
+| 本地丢弃 | 每个市场 `dropped_total` ≤ 已接受 WS 记录数的 **0.10%**（目标为 0，`C4-E` 由 0.01% 调整）；每次丢弃都有 `ingress_drop` 标志和 Catalog 事件 |
 | 网络缺口 | 断线自动重连，重连后有 `sequence_gap` 标记；depth 重新桥接。**不设逐流断线秒数门槛**；`forceOrder` 没有消息不算断流 |
 | 连接换新 | 每条 WS 连接至少一次 23h 主动换连，换连后各 symbol depth 已重新桥接 |
-| CPU / 内存 | 沿用所有者 11.20 口径：整机平均忙碌 ≤ 50%，整机最小可用内存 ≥ 50%；两个记录器 + 归档峰值 RSS 合计 ≤ 256 MiB |
+| CPU / 内存 | 沿用所有者 11.20 口径：整机平均忙碌 ≤ 50%，整机最小可用内存 ≥ 50%；两个记录器 + 归档峰值 RSS 合计 ≤ **384 MiB**（`C4-E` 配合 128 MiB 队列上限由 256 MiB 调整） |
 | 磁盘 / 归档 | 系统盘可用全程 ≥ 13 GiB；结束后归档积压归零，源文件按目标校验后回收 |
 | 离线冒烟 | 每个市场取 1 个 symbol 的 1 小时数据：归一化 `invalid=0`；用 `aggTrade` 合成 1m K 线成功。复用现有工具，不写新代码 |
 
-> **2026-11-10 归档与读回前置阻塞已授权解决：** 针对 C4-B 实测归档吞吐不足（410.5 MB/h vs 799.7 MB/h）及停机全量 CBOR 读回耗时过长问题，所有者已在 **第 5.1–5.2 节（`C4-D`）** 正式授权修复 Python 归档与读回脚本及 systemd timer 配置（保持 C++ 二进制 `4181d599…` 不变）。完成 `C4-D` 与 `C4-P` 后直接启动 `C4-C`。
+> **2026-11-10 归档/读回（`C4-D`）与写线程 I/O 解耦（`C4-E`）已全部授权：**
+> 1. `C4-D` 已完成（提交 `7ecb87da`），归档吞吐达 `14.6 / 19.2 GB/h`，停机 `verify` 缩短至 `< 20 s`。
+> 2. 针对首轮 `C4-C` 在 7h27m 因单写线程同步 `fsync` + 同步封存叠加阻塞触发的集中丢弃，所有者已在 **第 5.4 节（`C4-E`）** 正式裁决：实施 **E1（独立后台封存线程）+ E2（Linux `syncfs(2)` 周期同步 + 取消配置模式新分片首帧同步 header `fsync`）+ E3（128 MiB 队列上限 / 384 MiB RSS 门槛）+ E4（0.10% 丢弃容忍门槛）**，通过 Release 13/13 + ASan + TSan 后直接启动新一轮 `C4-C`（24h）并自动衔接 `C5`。
 
 ### 8.3 报告（只记录，不作门槛）
 
@@ -348,7 +394,7 @@ flowchart LR
 | 失败类型 | 处理 |
 | --- | --- |
 | 记录器崩溃、异常退出、数据错误 | 定位 bug，补一个能复现它的测试，修复后重跑 C4-C。失败轮不做全量读回 |
-| 丢弃超过 0.01%，或队列持续打满 | **停止**，按第 9 节交所有者决定 |
+| 丢弃超过 24h 预计记录数的 0.10%（如 USD-M > 150,000 条），或队列持续打满不回落 | **停止**，按第 9 节交所有者决定（瞬态少量丢弃严禁提前人工中止） |
 | 验收脚本出错 | 修脚本，在同一份已闭合数据上重跑验收，不重新采集 |
 | 操作者主动中断（部署修正等） | 记一行，重新计时，不算记录器失败 |
 
@@ -359,17 +405,18 @@ flowchart LR
 出现以下任一情况，团队**停止自行改动**，把 status_line 中的 `queued_*`、`writer_sync_ms`、`writer_seal_ms`、`dropped_total`、CPU 和 steal 数据整理成一页交给所有者：
 
 - C4-B 未通过；
-- C4-C 因丢弃或队列持续打满失败；
+- C4-C 因丢弃或队列持续打满失败（**2026-11-10 17:17 已触发，所有者已在第 5.4 节 `C4-E` 做出正式裁决**）；
 - 同一类 bug 修复后在 C4-C 中再次出现；
-- C4-C 开始前发现归档吞吐不足以满足第 8.2 节的磁盘/积压门槛（2026-11-09 已发生，见 5.1）。
+- C4-C 开始前发现归档吞吐不足以满足第 8.2 节的磁盘/积压门槛（**2026-11-09 已触发，所有者已在第 5.2 节 `C4-D` 解决并验证通过**）。
 
-所有者从以下选项中选一个，团队只实施选中的那一项：
+所有者从以下选项中选一个（或指定组合方案），团队只实施选中的方案：
 
 1. 接受实测结果签收（丢弃视为已诚实记录的缺口）。
 2. 若 `writer_seal_ms` 占主导：增加一个封存线程（写线程只移交已关闭分片，压缩与发布在封存线程完成）。
 3. 若 `writer_sync_ms` 仍占主导：周期同步改用 Linux `syncfs` 一次调用完成。
 4. 缩小币对范围（违背 10–20 对目标，需所有者明确同意）。
 5. 若归档吞吐是瓶颈：在不改 C++ 写入路径的前提下，由所有者选择提高 archive timer 频率、延长单次归档时间或增加独立归档执行容量；团队不自行调参。
+6. **2026-11-10 19:10 所有者针对首轮 C4-C（7h27m）的正式裁决（见第 5.4 节 `C4-E`）：** 合并实施 **选项 2（单后台封存线程 `E1`）+ 选项 3（Linux `syncfs(2)` 周期同步与取消新分片首帧 header 同步 `fsync` `E2`）+ 配置模式 128 MiB 队列缓冲（`E3`）+ 选项 1 放宽 24h 峰值丢弃容忍门槛至 `0.10%`（`E4`）**，一次改到位后直接重跑 `C4-C`（24h）并衔接 `C5`。
 
 ---
 

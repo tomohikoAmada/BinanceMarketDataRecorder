@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "source_commit": "b610a6567cb8b740eeebe81bfe13002f50b1a5cd",
+  "binary_sha256": "618dae987fce00d7e19fb4a32d87f43c613e433b3e104e516d8aca61158d6b99",
+  "cpp_files": {
+    "prototype/fault_io.cpp": "b44195d0c020933a5b667202437e11317a0719ceed4519583c38bf956975fa72",
+    "prototype/main.cpp": "6387fe276457df21e037ffcd4d0d974bf73015173aecd21719d8c13638bc6de4",
+    "prototype/recorder_core.hpp": "062e8d23a0bb43ddfaff06551d626391c97a007d62bc906d0573c7e79443e806",
+    "prototype/recorder_run.hpp": "f6c7b5fc50977814416217540feef4720f80d8c4860461713d9b003c0a25d5c9",
+    "prototype/recorder_storage.hpp": "b32cafee4cedcea18287bc6d3e16c40af10cf1fcf3c0fce09b7e14fb9cbb07c2"
+  },
+  "tests": {
+    "release": {
+      "exit_code": 0,
+      "binary_sha256": "618dae987fce00d7e19fb4a32d87f43c613e433b3e104e516d8aca61158d6b99",
+      "test_count": 13
+    },
+    "asan": {
+      "exit_code": 0,
+      "binary_sha256": "d98ddb48164090a5c19e9155aef7153a2836dd3760dd99e06d1e2c8775b2a3b0",
+      "test_count": 9
+    },
+    "tsan": {
+      "exit_code": 0,
+      "binary_sha256": "e3700c0a01246dd46ca489c5b112bc8010912044394cc6ab2a0cd3f124dbed5a",
+      "test_count": 9
+    }
+  },
+  "utc": "2026-11-10T12:10:04.075593+00:00"
+}

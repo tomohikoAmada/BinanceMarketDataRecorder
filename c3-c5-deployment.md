@@ -216,4 +216,21 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **失败结果（2026-11-10 17:17:38 上海时间，运行 26,828 s / 约 7h27m）：** USD-M 达到 `dropped_total=23,385`（`ws_dropped_total=23,385`、`rest_dropped_total=0`）；按最终 `records=40,901,735` 计算为 **0.0572%**，超过 0.01% 门槛（允许约 4,090 条）约 **5.7 倍**。Spot 为 0。USD-M 队列达到计费上限 **67,108,864 B（64 MiB）**、53,333 条；Spot 峰值 33,945,000 B / 27,720 条。最大 receive→fsync：Spot 14.11 s、USD-M 17.85 s；`writer_seal_ms` 状态窗口最大 4.27 / 3.91 s，`writer_sync_ms` 最大 4.47 / 5.54 s。失败时 `records` Spot 11,848,402、USD-M 40,901,735，`sealed` 1,083 / 3,199；系统盘最小可用 20,010,852,352 B（约 18.63 GiB）。按定稿 8.4/9 节由操作者停止两个记录器与 archive timer，**未做全量读回**，未自行调整 C++、timer、配额、分片或币对。证据：`/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c-drop-failure-20261110T091707Z`（停止前后 progress、两市场 status/stdout、archive、df）。
 
+### C4-E 写线程 I/O 解耦（2026-11-10，PASS）
+
+按定稿 5.4 实现 E1–E4，代码提交 `b610a656`，Release 二进制 SHA-256 `618dae987fce00d7e19fb4a32d87f43c613e433b3e104e516d8aca61158d6b99`：
+
+- **E1 后台封存线程**：配置模式（`config && test_queue_records == 0`）启用单 `sealer_`，写线程 `rotate()` 只移交 `RawFile` 并立即返回；`Catalog` 六个公开方法使用 `std::mutex` 串行化 SQLite；单源模式与 `test_queue_records != 0` 保持同步封存，兼容 LD_PRELOAD 故障注入。
+- **E2 `syncfs` 与首帧同步**：配置模式 5 秒周期改为对首个脏文件调用一次 `::syncfs(fd)`，统一更新所有脏分片；取消配置模式新分片首帧 header `fsync` 与目录 `fsync`。
+- **E3 128 MiB 队列**：配置模式 `configured_queue_limit=128 MiB`、`configured_queue_records=131,072`；单源保持 64 MiB / 8,192。
+- **E4 0.10% 丢弃门槛**：`deployment/advance.py` 的 `--rss-limit-mib=384`、`--max-drop-percent=0.10`；运行期只有进程退出或累计丢弃超过 24h 预计记录数 0.10%（约 USD-M 150,000 条）才允许中止。
+
+**验证：** 原生 Release **13/13**、ASan/UBSan **9/9**、TSan **9/9** 全部通过；Release 二进制 `618dae98…`、ASan `d98ddb48…`、TSan `e3700c0a…`。上一轮 7h27m 残留已在旧根上排空，系统盘可用约 20 GiB；旧 `c4-c5-24h` 证据保留为 `results/c4-c-failure-run1-evidence`。
+
+### C4-C 第二轮（C4-E，2026-11-10，RUNNING）
+
+新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/20261110-b610a656`，二进制 `618dae98…`，十币对配置 SHA `75d1e9ad…`。新根 `/var/lib/binance-market-data-recorder/S-BMDR/live-20261110T121047Z/{spot,usdm}`，归档目标 `/srv/recorder-data/S-BMDR/live-20261110T121047Z-{spot,usdm}`。
+
+资格驱动于 **2026-11-10 20:11:03 上海时间（12:11:03 UTC）** 启动 86,410 秒，`--services --rss-limit-mib 384 --cpu-limit-percent 200 --max-drop-percent 0.10`。Spot PID `298079` / USD-M PID `298091`，`NRestarts=0`；启动后 queue 为空、`dropped_total=0`，`writer_sync_ms` 约 6 ms（`syncfs`），async sealer 已产生首个分片。预计 **2026-11-11 20:11:13 上海时间**结束。运行期严禁因瞬态少量丢弃提前中止；只有进程退出或单市场 `dropped_total` 超过约 150,000 条才按 8.4/9 停止。C4-C 尚未签收。
+
 **与 Python M4.2 历史性能对照（非同口径，仅供量级参考）：** Python M4.2 为 BTC+ETH 全量生产配置，4,038 个活跃源（1,844 WS、2,194 REST）、50 个产品、Spot/USD-M/COIN-M，2 小时窗口 CPU 均值 109.16%、峰值 122.87%（单核=100%），RSS 366.10–617.90 MiB、峰值 717.54 MiB，seal 最大 13.602 s、drain 10.956 s、fsync 0.391 s，2 小时 72 次断线；该轮未通过 2h 可用性门禁，只作历史参照。C++ C4-B 为 10 个 USDT 对、20 个产品、80 条 WS 流，1 小时 CPU 均值合计 78.97% 单核（Spot 20.85%、USD-M 58.12%），RSS 记录器合计约 91.0 MiB、含归档 184.2 MiB，`dropped_total=0`，seal 状态窗口最大约 0.95/1.05 s、sync 最大约 0.33/0.42 s，最大耐久 5.77/6.58 s（5 秒同步周期的有意取舍）。结论：在各自已测范围内，C++ 的 CPU、RSS 和封存停顿都明显更低；但 C++ 当前源范围远小于 Python M4，不能据此给出同口径倍数。严格的同范围比较仍需让冻结 Python 基线在相同 10 对/80 流配置下跑同一时段。
