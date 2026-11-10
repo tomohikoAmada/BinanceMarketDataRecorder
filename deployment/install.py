@@ -187,10 +187,10 @@ def main():
         "c3_baseline_binary_sha256": c3["binary_sha256"],
         "resource_policy": {
             "slice_cpu_quota_percent": 175,
-            "archive_cpu_quota_percent": 25,
+            "archive_cpu_quota_percent": 50,
             "spot_cpu_weight": 100,
             "usdm_cpu_weight": 200,
-            "archive_timeout_seconds": 240,
+            "archive_timeout_seconds": 600,
             "public_seal_target_bytes": 16 * 1024**2,
         },
         "config_sha256": hashlib.sha256(

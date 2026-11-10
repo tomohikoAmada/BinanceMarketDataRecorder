@@ -208,4 +208,10 @@ Python 基线使用相同 10 个 USDT 对、相同稀缺流集合、900 s / 16 M
 
 **结论：** 同 10 对、同流、同轮转的 960 秒窗口内，Python 每条记录消耗约 **2.65 倍** C++ CPU，峰值 RSS 约 **3.44 倍**，且 16 分钟 RSS 仍增长 74.8 MiB；C++ 的两个记录器 RSS 基本平坦。C++ 在 C4-B 的 960 秒窗口处理了更多记录且 0 断线。Python 的 10 次 WS 断线与两侧不同市场时段会影响总量，因此以 `CPU 秒/10,000 条` 和 RSS 倍数为主要结论。原始结果见 [c4p-cpp-vs-python-20261110.json](c4p-cpp-vs-python-20261110.json)。
 
+### C4-C 24 小时资格（2026-11-10，RUNNING）
+
+C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/20261110-7ecb87da` 安装；C++ 二进制仍为 `4181d599…`，十币对配置 SHA 仍为 `75d1e9ad…`。新根为 `/var/lib/binance-market-data-recorder/S-BMDR/live-20261110T014952Z/{spot,usdm}`，归档目标为 `/srv/recorder-data/S-BMDR/live-20261110T014952Z-{spot,usdm}`。
+
+资格驱动于 **2026-11-10 09:50:28 上海时间（01:50:28 UTC）** 启动 86,410 秒，systemd 两实例 + archive timer，`Restart=no`，参数 `--rss-limit-mib 256 --cpu-limit-percent 200 --max-drop-percent 0.01`。启动后 Spot PID 271512 / USD-M PID 271527，`NRestarts=0`、`ActiveState=active`；`dropped_total=0`、队列为空。archive timer 使用新配置 `OnActiveSec=15`、`OnUnitInactiveSec=10`，archive service `CPUQuota=50%`、`TimeoutStartSec=600`。预计 **2026-11-11 09:50:38 上海时间**结束采集，再执行快速全量读回与归档排空。C4-C 尚未签收。
+
 **与 Python M4.2 历史性能对照（非同口径，仅供量级参考）：** Python M4.2 为 BTC+ETH 全量生产配置，4,038 个活跃源（1,844 WS、2,194 REST）、50 个产品、Spot/USD-M/COIN-M，2 小时窗口 CPU 均值 109.16%、峰值 122.87%（单核=100%），RSS 366.10–617.90 MiB、峰值 717.54 MiB，seal 最大 13.602 s、drain 10.956 s、fsync 0.391 s，2 小时 72 次断线；该轮未通过 2h 可用性门禁，只作历史参照。C++ C4-B 为 10 个 USDT 对、20 个产品、80 条 WS 流，1 小时 CPU 均值合计 78.97% 单核（Spot 20.85%、USD-M 58.12%），RSS 记录器合计约 91.0 MiB、含归档 184.2 MiB，`dropped_total=0`，seal 状态窗口最大约 0.95/1.05 s、sync 最大约 0.33/0.42 s，最大耐久 5.77/6.58 s（5 秒同步周期的有意取舍）。结论：在各自已测范围内，C++ 的 CPU、RSS 和封存停顿都明显更低；但 C++ 当前源范围远小于 Python M4，不能据此给出同口径倍数。严格的同范围比较仍需让冻结 Python 基线在相同 10 对/80 流配置下跑同一时段。
