@@ -1,0 +1,47 @@
+{
+  "status": "FAILED",
+  "run": "C4-C second run (C4-E)",
+  "reason": "USD-M dropped_total exceeded the owner's 150,000-record abort threshold; queue stayed at the 128 MiB cap",
+  "start_utc": "2026-11-10T12:11:03.383987+00:00",
+  "stop_utc": "2026-11-10T14:08:27.159084+00:00",
+  "elapsed_seconds": 7041.930627421942,
+  "seconds_required": 86410,
+  "release": "20261110-b610a656",
+  "binary_sha256": "618dae987fce00d7e19fb4a32d87f43c613e433b3e104e516d8aca61158d6b99",
+  "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+  "root": "/var/lib/binance-market-data-recorder/S-BMDR/live-20261110T121047Z",
+  "markets": {
+    "spot": {
+      "records": 6047094,
+      "sealed": 424,
+      "dropped_total": 4889,
+      "drop_percent_of_records": 0.08086,
+      "first_drop_elapsed_seconds": 4753.080080202,
+      "peak_queue_payload_bytes": 134217673,
+      "peak_queue_records": 109862,
+      "max_durability_ns": 22012193943,
+      "writer_sync_ms_max": 1801.15,
+      "writer_seal_ms_max": 3728.33,
+      "peak_rss_bytes": 173314048,
+      "wall_seconds": 7030.55163997
+    },
+    "usdm": {
+      "records": 18740962,
+      "sealed": 1246,
+      "dropped_total": 1102272,
+      "drop_percent_of_records": 5.8815,
+      "first_drop_elapsed_seconds": 4749.458975597,
+      "peak_queue_payload_bytes": 134217728,
+      "peak_queue_records": 107244,
+      "max_durability_ns": 47893066645,
+      "writer_sync_ms_max": 1796.88,
+      "writer_seal_ms_max": 5013.32,
+      "peak_rss_bytes": 241664000,
+      "wall_seconds": 7032.495464299
+    }
+  },
+  "system_minimum_free_bytes": 19824349184,
+  "operator_action": "Stopped both recorders and archive timer after USD-M dropped_total exceeded 150,000, per plan E4/8.4. No full readback and no tuning.",
+  "suspected_mechanism": "The fixed 64-entry sealer queue is smaller than the 80 active streams; a simultaneous 900-second rotation wave can block the writer in enqueue_seal. First drops appeared at ~4749 seconds (about 79 minutes), matching the rotation-wave timing. This is a design-size mismatch in E1, not the old per-file fsync/seal stalls.",
+  "evidence": "/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c-drop-failure-run2-20261110T140805Z"
+}
