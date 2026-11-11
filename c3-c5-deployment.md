@@ -2,6 +2,20 @@
 
 > **2026-11-11 审查更新：** 仓库最新已保存结果为 C4-E 第二轮 C4-C 失败，C4/C5 未签收；本次未查询 VPS 实时状态。后续任务统一按 [最小上线收尾计划及顺序表](cpp_rewrite_milestone_plan.md#execution-order) 推进。下文各轮时间、测试与发布物是历史记录，不代表当前候选已取得生产资格。第二轮“64 格小于 80 条流/111 个活跃分片”的归因已纠正，见文末；失败 JSON 中的 `suspected_mechanism` 保留为当时假设。
 
+## 完成状态（2026-11-11）
+
+| 阶段 | 状态 | 做法与事实 |
+| --- | --- | --- |
+| F1 复现与测试纠偏 | ✅ 完成 | 配置模式固定走真实异步 sealer；十币对慢 sealer 用例在 64 格候选上复现 Spot/USD-M `enqueue_seal` 等待 1.69/2.53 s，并加入封存队深、交接等待、pending raw、Catalog 等待指标。 |
+| F2 局部修复 | ✅ 完成 | 具名 `seal_queue_capacity=256`；同一用例等待降至 30/71 µs、无丢弃、队列排空；峰值 RSS 约 69 MiB/进程，打开文件 122/213 已记录。 |
+| F3 缺口正确性 | ✅ 完成 | 进程级 WS/REST 丢弃账本、停机尾部 `INGRESS_DROP`、`rest` 分项；`DepthBridge` 遇 `ingress_drop` 先失效再重桥；普通/尾部/重连/REST/缩时 23h 回归通过。 |
+| F4 验收脚本 | ✅ 完成 | Catalog/manifest 集合与身份对账、缺口分片解码、WS/REST 丢弃对账、逐连接组 23h、`--verify-only`、`--finish-only`、archive blocked；离线 `c4-acceptance-boundaries` 通过。 |
+| F5 发布准备 | ✅ 完成 | 安全安装顺序/备份恢复、runtime venv 按 hashed lock 重建、`Restart=no`/CPUWeight/配额/超时检查、旧 `production.conf`/logrotate 处理、RUNBOOK；原生安装 `20261111-e0b7f684`。 |
+| F6 原生回归与冻结 | ✅ 完成 | Release 22/22、ASan/UBSan 10/10、TSan 10/10（`setarch -R`）；冻结提交 `e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`、baseline `801802d8…`。 |
+| F7 2h 公网预检 | ✅ 完成 | 2026-11-11 05:26–07:26 UTC 连续 7,200 s；Spot 4,093,454 / USD-M 13,993,992 条，0 丢弃，封存队深/峰值 0/20、0/31，峰值 RSS 36.6/49.0 MB，RSS+archive 182.3 MiB；首次验收脚本缺 `PYTHONPATH`，verify-only 重验同一份数据 PASS，尾部 31/61 分片归档后全部 `LOCAL_DELETED`。 |
+| C4-C 24h 资格 | ⏳ 进行中 | 同一冻结候选，新数据根；目标 86,410 s，两实例 + archive timer，显式 `Restart=no`；按第 7 节资源/丢弃/归档/离线消费口径验收。 |
+| C5 生产交接 | ⬜ 未开始 | C4-C PASS 后执行启用、一次受控重启、回退演练和最终签收。 |
+
 首版 C3 候选已完成 2026-11-08 17:57:39–19:00:55（上海时间）的 60 分钟公网与完整独立读回：Spot 356,069 条/64 分片，USD-M 1,298,443 条/92 分片；CPU 均值合计约单核 17.03%，峰值 RSS 合计约 61.38 MiB。二进制 SHA-256 为 `2051b262fa831c02a35aad5bda580db9d44c4bbb07382b487a941f4326e515a3`。补充配额扣账、成交时间统计、配置流检查和归档并发等待后的最终候选需从新 T0 重跑，不拼接时长。最终 C3 已通过，C4/C5 24h 资格仍待完成，见下方签收补记。
 
 首版原生 Release 八项、ASan/UBSan 和独立 TSan 各五项相关回归已通过。新增第九项离线 K 线测试因缺少 Python 基线路径首轮失败，现修正 CTest 环境后复验。最终固定源码、二进制与各测试结果另行绑定。
