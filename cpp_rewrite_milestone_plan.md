@@ -87,12 +87,12 @@
 
 | 顺序 | 工作项 / 建议负责角色 | 输入与最小交付 | 完成后才能进入 |
 | --- | --- | --- | --- |
-| 1 | **F1 复现与测试纠偏** / C++ | 同配置异步用例、最少等待指标、修复前失败证据；确认阻塞位置 | F2 |
-| 2 | **F2 修复已复现的阻塞与内存问题** / C++ | 一个有界局部修复；同用例通过；队列可排空，RSS/停止耗时符合预算 | F6，不能直接跑 24h |
-| 3 | **F3 补齐丢弃与 depth 语义** / C++ | WS/REST 跨重连及停机缺口记账、depth 重新快照/桥接、对应回归 | F6 |
-| 4 | **F4 修正验收与可继续执行入口** / Python | 真实检查覆盖、丢弃对账、逐连接组换连、verify-only、故障停止和归档判定 | F6 |
-| 5 | **F5 发布准备** / 部署 | 完整 staging、资格配置不继承生产重启、安装顺序与运行环境检查、可执行手册 | F6 |
-| 6 | **F6 原生回归并冻结候选** / 测试 | Linux Release 全集 + 相关 sanitizer 一次；保存源码/二进制/脚本/配置身份 | F7 |
+| 1 | ✅ **F1 复现与测试纠偏** / C++ | 已完成：配置模式固定走异步 sealer，增加封存队深/交接等待/Catalog 等待指标；十币对慢 sealer 复现出 64 格下 1.69/2.53 s 的 `enqueue_seal` 等待。详见 [F1–F6 记录](c3-c5-deployment.md#f1f6-执行记录2026-11-11候选-e0b7f684)。 | F2 |
+| 2 | ✅ **F2 修复已复现的阻塞与内存问题** / C++ | 已完成：具名 `seal_queue_capacity=256`；同用例等待降至 30/71 µs、无丢弃、队列排空，RSS 约 69 MiB/进程、打开文件 122/213 已记录。 | F6 |
+| 3 | ✅ **F3 补齐丢弃与 depth 语义** / C++ | 已完成：进程级 WS/REST 丢弃账本、停机尾部 Catalog 事件、`ingress_drop` 触发 depth reset；普通/尾部/重连/REST/缩时换线用例通过。 | F6 |
+| 4 | ✅ **F4 修正验收与可继续执行入口** / Python | 已完成：Catalog/manifest 集合与身份对账、缺口分片解码、WS/REST 丢弃对账、逐连接组 23h、`--verify-only`、`--finish-only`、归档 blocked；离线边界测试通过。 | F6 |
+| 5 | ✅ **F5 发布准备** / 部署 | 已完成：安全安装顺序/备份恢复、runtime venv 按 hashed lock 重建、`Restart=no` 与 systemd 属性检查、旧 `production.conf`/logrotate 处理、RUNBOOK；原生安装 `20261111-e0b7f684`。 | F6 |
+| 6 | ✅ **F6 原生回归并冻结候选** / 测试 | 已完成：Release 22/22、ASan/UBSan 10/10、TSan 10/10（`setarch -R`）；冻结提交 `e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`。 | F7 |
 | 7 | **F7 一次 2h 公网预检** / 运维 | 同发布物、十币对、systemd + archive；覆盖旧约 79 分钟故障窗口，闭合读回 PASS | C4-C |
 | 8 | **C4-C 一次 24h 资格** / 运维 | 新数据根连续 86,410 s，按第 7 节验收；通过轮的数据闭环证据 | C5 |
 | 9 | **C5 启用与交接** / 运维 | 同发布物常驻、一次受控重启、隔离根回退演练、最终签收表 | 生产签收 |
@@ -101,7 +101,7 @@
 
 ## 5. 最小修复与实现步骤
 
-### F1：让测试真正经过生产异步路径，再定位阻塞
+### F1 ✅：让测试真正经过生产异步路径，再定位阻塞
 
 **改动位置：** `prototype/recorder_run.hpp`、`recorder_storage.hpp`、`fault_io.cpp`、`verify_rotation_burst.py`、`verify_recovery_boundaries.py`、`CMakeLists.txt`。
 
@@ -113,7 +113,9 @@
 
 **完成条件：** 一个可重复的旧路径失败/阻塞用例；能区分封存交接、syncfs、Catalog 三个等待点。人工慢 sealer 只证明该路径会阻塞，不能单独证明历史公网失败就是同一原因；历史关联由 F7 指标验证。
 
-### F2：只修确认的等待点，保持有界
+<a id="f2"></a>
+
+### F2 ✅：只修确认的等待点，保持有界
 
 **改动位置：** 以 `prototype/recorder_storage.hpp` 为主；只有实测指向入口对象占用时才改 `main.cpp`。
 
@@ -127,7 +129,7 @@
 
 <a id="f3"></a>
 
-### F3：保证已知丢弃可对账，depth 在缺口后重新桥接
+### F3 ✅：保证已知丢弃可对账，depth 在缺口后重新桥接
 
 **改动位置：** `prototype/main.cpp`（Handoff/read_ws/receive_rest）、`recorder_run.hpp`、`recorder_storage.hpp`（Catalog）、`recorder_core.hpp`（DepthBridge）。
 
@@ -142,7 +144,7 @@
 
 <a id="f4"></a>
 
-### F4：让验收检查与报告一致，允许复用已完成的采集
+### F4 ✅：让验收检查与报告一致，允许复用已完成的采集
 
 **改动位置：** `prototype/operations.py`、`deployment/qualify.py`、`archive_tick.py`、`advance.py`，必要的连接事件字段在 `recorder_run.hpp`。
 
@@ -159,7 +161,7 @@
 
 <a id="f5"></a>
 
-### F5：补齐发布准备，继续使用现有安装方式
+### F5 ✅：补齐发布准备，继续使用现有安装方式
 
 **改动位置：** `deployment/install.py`、`advance.py`、`deployment/RUNBOOK.md`；保留现有 unit 结构和配额。
 
@@ -175,7 +177,7 @@
 
 ## 6. 回归、冻结与 2h 预检
 
-### F6：合并后只跑一次必要的原生矩阵
+### F6 ✅：合并后只跑一次必要的原生矩阵
 
 在 GreenCloud 原生 Linux x86_64 执行，开发机只编辑与静态检查。Release 全部 CTest，加新增异步/缺口用例；ASan/UBSan、TSan 对能运行的并发/桥接/交接路径各一次。`LD_PRELOAD` 系统调用故障注入留在普通 Release，不把 sanitizer 排除的用例写成已覆盖。测试数量随新增项变化，不再要求机械保持 13/9/9。
 
@@ -195,7 +197,7 @@
 
 <a id="f7"></a>
 
-### F7：一次 2h 公网预检，替代重复 60 分钟试跑
+### F7（未开始）：一次 2h 公网预检，替代重复 60 分钟试跑
 
 1. 已完成 F1–F6；按既有归档流程排空旧根，系统盘可用 ≥18.5 GiB。保留两轮失败证据，不删除未验证的 `.partial`/源分片来腾空间。
 2. 用候选发布物安装到独立预检根，两个 systemd 实例 + archive timer 同跑 **7,200 s**，显式 `Restart=no`。这是针对上轮约 79 分钟才暴露的故障，一次 60 分钟无法覆盖；不再叠加 C4-B 或另一个 soak。
