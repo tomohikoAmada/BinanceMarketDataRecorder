@@ -1,0 +1,48 @@
+{
+  "status": "INSTALLED_NOT_QUALIFIED",
+  "systemd": {
+    "spot": {
+      "restart": "no",
+      "cpu_weight": "100",
+      "timeout_start_usec": 300000000,
+      "timeout_stop_usec": 180000000
+    },
+    "usdm": {
+      "restart": "no",
+      "cpu_weight": "200",
+      "timeout_start_usec": 300000000,
+      "timeout_stop_usec": 180000000
+    },
+    "archive": {
+      "restart": "no",
+      "cpu_quota_usec": 500000,
+      "timeout_start_usec": 600000000
+    },
+    "slice_cpu_quota_usec": 1750000
+  },
+  "release": "/opt/sbmdr/releases/20261111-a924ba52",
+  "runtime": "/srv/recorder-data/S-BMDR/runtime/20261111-a924ba52",
+  "runtime_build": "venv-at-runtime+require-hashes",
+  "requirements_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+  "roots": {
+    "spot": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T050312Z/spot",
+    "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T050312Z/usdm"
+  },
+  "binary_sha256": "ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff",
+  "c3_baseline_binary_sha256": "234264f5adb64ea007137781c9c56652522ccfedd28919ecc107ccb092dffe49",
+  "backup": "/srv/recorder-data/sbmdr-c4a/results/install-backup-20261111T050312Z",
+  "resource_policy": {
+    "slice_cpu_quota_percent": 175,
+    "archive_cpu_quota_percent": 50,
+    "spot_cpu_weight": 100,
+    "usdm_cpu_weight": 200,
+    "recorder_restart": "no",
+    "recorder_timeout_start_seconds": 300,
+    "recorder_timeout_stop_seconds": 180,
+    "archive_timeout_seconds": 600,
+    "public_seal_target_bytes": 16777216
+  },
+  "logrotate": "disabled-until-production",
+  "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+  "evidence": "/srv/recorder-data/sbmdr-c4a/results/c4-c5-24h"
+}

@@ -1,0 +1,31 @@
+{
+  "status": "FROZEN",
+  "source_commit": "a924ba52e69242aca15787a9f9764becea467dd2",
+  "binary_sha256": {
+    "release": "ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff",
+    "asan": "83739d78f17319eb9147dc0af43c73b8103cd57007788a2daadfcb32a7ccd404",
+    "tsan": "0fbca3b1b100c555bd7a0c01697c222111a09c92d2c5faecf9c04ce7854bcba0"
+  },
+  "candidate_tests_sha256": "849efeafa2a3d8859d62d0831ec1a88d8ff06560de582f59dc07a53b6d314c7c",
+  "source_ledger_sha256": "ad58f6ce76fadf7a82fef9e4a7327b46d700f42bbf8723a164dc71583f646ad7",
+  "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+  "python_baseline_tree_sha256": "801802d8a8dc27f5f2b841c5f884310e34abce102ee00915f3b8037a63f631df",
+  "tests": {
+    "release": {
+      "exit_code": 0,
+      "binary_sha256": "ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff",
+      "test_count": 21
+    },
+    "asan": {
+      "exit_code": 0,
+      "binary_sha256": "83739d78f17319eb9147dc0af43c73b8103cd57007788a2daadfcb32a7ccd404",
+      "test_count": 10
+    },
+    "tsan": {
+      "exit_code": 0,
+      "binary_sha256": "0fbca3b1b100c555bd7a0c01697c222111a09c92d2c5faecf9c04ce7854bcba0",
+      "test_count": 10
+    }
+  },
+  "utc": "2026-11-11T05:02:57.359785+00:00"
+}
