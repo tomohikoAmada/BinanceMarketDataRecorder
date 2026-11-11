@@ -1,0 +1,36 @@
+{
+  "spot": {
+    "sealed_before_drain": 31,
+    "processed": 31,
+    "failed": 0,
+    "pending_after": 0
+  },
+  "usdm": {
+    "sealed_before_drain": 61,
+    "processed": 61,
+    "failed": 0,
+    "pending_after": 0
+  },
+  "archive_service_after_drain": "inactive (reset-failed from the SIGTERM stop)",
+  "system_free_bytes_after_drain": 20354682880,
+  "archive_target_bytes": {
+    "spot": 176160768,
+    "usdm": 698351616
+  },
+  "local_root_bytes_after_drain": 14680064,
+  "metadata_after_drain": {
+    "manifests": 1353,
+    "spot_root_bytes": 3984588.8,
+    "usdm_root_bytes": 11534336,
+    "manifest_bytes": 5767168.0,
+    "catalog_bytes": 8388608.0
+  },
+  "projection": {
+    "kb_per_chunk": 10.9,
+    "chunks_per_day": 16236,
+    "metadata_mb_per_day": 177,
+    "metadata_gb_per_month": 5.3,
+    "observed_old_root_range_gb_per_month": "5-13"
+  },
+  "note": "Final tail sealed chunks were archived after verify-only; all chunks now LOCAL_DELETED. stop_archive SIGTERM artifact fixed for the next qualification."
+}

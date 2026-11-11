@@ -4,7 +4,7 @@
 > 本文件是团队后续执行入口。本次只更新计划，没有实施下面的修复、重新运行测试或操作生产服务。
 > 旧计划完整保存在 [历史快照](cpp_rewrite_plan_history.md#plan-snapshot-20261111)；旧文中的“直接再跑 24h”“等待所有者选择已实现的 E1/E2”和旧二进制冻结指令不再作为待办。
 > 状态依据仓库代码、文档及已保存报告，未查询 VPS 实时状态。开始执行时先确认服务器没有其他正在运行的采集任务。
-> **执行进度（2026-11-11）：** F1–F6 已完成，冻结候选 `e0b7f684`；原生矩阵、安装身份与前后证据见 [C3–C5 部署记录的 F1–F6 执行记录](c3-c5-deployment.md#f1f6-执行记录2026-11-11候选-e0b7f684)。F7、C4-C、C5 尚未开始。
+> **执行进度（2026-11-11）：** F1–F7 已完成，冻结候选 `e0b7f684`；F7 2h 预检 PASS（初次验收脚本缺少 PYTHONPATH，按 verify-only 重验同一份数据，不重采），C4-C、C5 尚未开始。原生矩阵、安装身份、F7 结果见 [C3–C5 部署记录](c3-c5-deployment.md#f1f6-执行记录2026-11-11候选-e0b7f684)。
 
 <a id="status"></a>
 
@@ -93,7 +93,7 @@
 | 4 | ✅ **F4 修正验收与可继续执行入口** / Python | 已完成：Catalog/manifest 集合与身份对账、缺口分片解码、WS/REST 丢弃对账、逐连接组 23h、`--verify-only`、`--finish-only`、归档 blocked；离线边界测试通过。 | F6 |
 | 5 | ✅ **F5 发布准备** / 部署 | 已完成：安全安装顺序/备份恢复、runtime venv 按 hashed lock 重建、`Restart=no` 与 systemd 属性检查、旧 `production.conf`/logrotate 处理、RUNBOOK；原生安装 `20261111-e0b7f684`。 | F6 |
 | 6 | ✅ **F6 原生回归并冻结候选** / 测试 | 已完成：Release 22/22、ASan/UBSan 10/10、TSan 10/10（`setarch -R`）；冻结提交 `e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`。 | F7 |
-| 7 | **F7 一次 2h 公网预检** / 运维 | 同发布物、十币对、systemd + archive；覆盖旧约 79 分钟故障窗口，闭合读回 PASS | C4-C |
+| 7 | ✅ **F7 一次 2h 公网预检** / 运维 | 已完成：2026-11-11 05:26–07:26 UTC 连续 7,200 s，Spot 4,093,454 / USD-M 13,993,992 条，0 丢弃；首次验收脚本缺 `PYTHONPATH`，按 verify-only 重验同一份数据 PASS；尾部 31/61 分片归档后全部 `LOCAL_DELETED`。 | C4-C |
 | 8 | **C4-C 一次 24h 资格** / 运维 | 新数据根连续 86,410 s，按第 7 节验收；通过轮的数据闭环证据 | C5 |
 | 9 | **C5 启用与交接** / 运维 | 同发布物常驻、一次受控重启、隔离根回退演练、最终签收表 | 生产签收 |
 
@@ -197,7 +197,7 @@
 
 <a id="f7"></a>
 
-### F7（未开始）：一次 2h 公网预检，替代重复 60 分钟试跑
+### F7 ✅：一次 2h 公网预检，替代重复 60 分钟试跑
 
 1. 已完成 F1–F6；按既有归档流程排空旧根，系统盘可用 ≥18.5 GiB。保留两轮失败证据，不删除未验证的 `.partial`/源分片来腾空间。
 2. 用候选发布物安装到独立预检根，两个 systemd 实例 + archive timer 同跑 **7,200 s**，显式 `Restart=no`。这是针对上轮约 79 分钟才暴露的故障，一次 60 分钟无法覆盖；不再叠加 C4-B 或另一个 soak。
@@ -206,6 +206,8 @@
 5. 停止并排空，读回、缺口对账、归档循环通过后保存预检证据。准备 24h 的新根时可以用不同安装版本标签，但只复制同一冻结 artifact，二进制/代码/脚本/配置哈希必须一致；不用重新编译或重复 sanitizer。
 
 **通过：** 直接进入 C4-C。**失败：** 回到 F1/F2 的具体等待点，或 F3/F4 的具体正确性问题，不扩大队列/放宽门槛后盲跑 24h。
+
+**执行结果（2026-11-11）：PASS。** 候选 `20261111-e0b7f684` / Release `ba71faa3…` / 配置 `75d1e9ad…`，新预检根 `20261111T051425Z`，两个 systemd 实例 + archive timer 同跑 7,200 s。Spot `records=4,093,454`、`ws_dropped_total=0`、`rest_dropped_total=0`、峰值入口队列 1.46 MB、封存队深/峰值 0/20、`enqueue_seal` 最大 6.4 µs、峰值 RSS 36.6 MB；USD-M `records=13,993,992`、丢弃 0、峰值入口队列 8.14 MB、封存队深/峰值 0/31、等待 39.8 µs、峰值 RSS 49.0 MB。两 recorder 峰值 + archive 峰值上界 **182.3 MiB**，CPU 均值合计 + archive **67.4%**，slice 峰值 180.1%/60 s 118.4%，最大耐久 5.85/6.26 s，`receive_to_append_p99` 78/220 ms。900 s 窗口内无持续满入口队列、无封存交接阻塞；RSS 在最后约 45 分钟平台化，没有继续创新高；CPU 随行情量变化，单千条 CPU 未上升。归档 394 轮 0 失败，最终尾部 31/61 个 sealed 分片归档后本地积压归零，压缩速率 10.32 GB/天、`/srv` 预计约 196.7 天；系统盘最小可用 18.53 GiB，排空后约 18.96 GiB。初次 `progress.json` 因验收脚本调用 `operations.py` 时缺少 `PYTHONPATH` 而 FAILED，未重采；`--verify-only` 对同一份数据重验 PASS，最终逐帧/可信覆盖为 Spot 71/263、USD-M 181/838，全部 chunk `LOCAL_DELETED`。归档停止时 SIGTERM 命中一个 in-flight oneshot pass，服务曾进入 failed；已 `reset-failed`，并修正 `stop_archive` 先等当前 pass 结束再停，供 C4-C 使用。残留元数据 14.8 MB/1,353 manifest，按当前 chunk 速率估算 5–13 GB/月，C4-C 24h 必须实测并在 C5 前确定旧根/manifest/日志保留策略。证据见 [F7 证据目录](f7-preflight-20261111/)。
 
 <a id="c4c"></a>
 

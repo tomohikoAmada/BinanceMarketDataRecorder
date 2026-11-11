@@ -1,0 +1,20 @@
+{
+  "started_utc": "2026-11-11T05:26:13.838136+00:00",
+  "release": "/opt/sbmdr/current",
+  "release_target": "/opt/sbmdr/releases/20261111-e0b7f684",
+  "binary_sha256": "ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff",
+  "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+  "root": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T051425Z",
+  "evidence": "/srv/recorder-data/sbmdr-c4a/results/c4-c5-24h",
+  "seconds": 7200,
+  "services": true,
+  "rss_limit_mib": 384,
+  "cpu_limit_percent": 200,
+  "max_drop_percent": 0.1,
+  "queue_limit_mib": 128,
+  "system_free_bytes_before": 20377649152,
+  "old_failed_roots": {
+    "live-20261110T014952Z": "all chunks/transactions LOCAL_DELETED",
+    "live-20261110T121047Z": "all chunks/transactions LOCAL_DELETED"
+  }
+}

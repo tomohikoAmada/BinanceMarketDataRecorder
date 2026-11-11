@@ -218,23 +218,34 @@ def check_connection_groups(report, symbols, evidence):
             )
 
 
+def archive_state():
+    return subprocess.check_output(
+        [
+            "systemctl",
+            "show",
+            "sbmdr-archive.service",
+            "--property",
+            "ActiveState",
+            "--value",
+        ],
+        text=True,
+    ).strip()
+
+
 def stop_archive(timeout_seconds):
-    """Stop the archive timer and wait for the oneshot worker within its budget."""
+    """Stop the timer, let an in-flight oneshot pass finish, then stop if needed."""
     subprocess.run(["systemctl", "stop", "sbmdr-archive.timer"], check=False)
-    subprocess.run(["systemctl", "stop", "sbmdr-archive.service"], check=False)
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
-        state = subprocess.check_output(
-            [
-                "systemctl",
-                "show",
-                "sbmdr-archive.service",
-                "--property",
-                "ActiveState",
-                "--value",
-            ],
-            text=True,
-        ).strip()
+        state = archive_state()
+        if state not in {"active", "activating", "deactivating"}:
+            return
+        time.sleep(1)
+    # The in-flight pass exceeded the budget; request a bounded stop.
+    subprocess.run(["systemctl", "stop", "sbmdr-archive.service"], check=False)
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        state = archive_state()
         if state not in {"active", "activating", "deactivating"}:
             return
         time.sleep(1)

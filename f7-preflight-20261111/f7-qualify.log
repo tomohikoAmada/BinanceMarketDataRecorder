@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/opt/sbmdr/current/prototype/operations.py", line 10, in <module>
+    from binance_market_data_recorder.archive.drain import archive_drain
+ModuleNotFoundError: No module named 'binance_market_data_recorder'
+Traceback (most recent call last):
+  File "/opt/sbmdr/current/deployment/qualify.py", line 701, in <module>
+    main()
+  File "/opt/sbmdr/current/deployment/qualify.py", line 677, in main
+    verify_stopped(a, report)
+  File "/opt/sbmdr/current/deployment/qualify.py", line 271, in verify_stopped
+    subprocess.run(
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/opt/sbmdr/current/venv/bin/python', PosixPath('/opt/sbmdr/current/prototype/operations.py'), 'verify', PosixPath('/var/lib/binance-market-data-recorder/S-BMDR/20261111T051425Z/spot')]' returned non-zero exit status 1.
