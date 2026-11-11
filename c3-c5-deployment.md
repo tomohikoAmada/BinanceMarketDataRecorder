@@ -13,7 +13,7 @@
 | F5 发布准备 | ✅ 完成 | 安全安装顺序/备份恢复、runtime venv 按 hashed lock 重建、`Restart=no`/CPUWeight/配额/超时检查、旧 `production.conf`/logrotate 处理、RUNBOOK；原生安装 `20261111-e0b7f684`。 |
 | F6 原生回归与冻结 | ✅ 完成 | Release 22/22、ASan/UBSan 10/10、TSan 10/10（`setarch -R`）；冻结提交 `e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`、baseline `801802d8…`。 |
 | F7 2h 公网预检 | ✅ 完成 | 2026-11-11 05:26–07:26 UTC 连续 7,200 s；Spot 4,093,454 / USD-M 13,993,992 条，0 丢弃，封存队深/峰值 0/20、0/31，峰值 RSS 36.6/49.0 MB，RSS+archive 182.3 MiB；首次验收脚本缺 `PYTHONPATH`，verify-only 重验同一份数据 PASS，尾部 31/61 分片归档后全部 `LOCAL_DELETED`。 |
-| C4-C 24h 资格 | ⏳ 进行中 | 同一冻结候选，新数据根；目标 86,410 s，两实例 + archive timer，显式 `Restart=no`；按第 7 节资源/丢弃/归档/离线消费口径验收。 |
+| C4-C 24h 资格 | ⏳ 进行中 | 2026-11-11 07:46:56 UTC 启动，目标 86,410 s；发布 `20261111-c4c-e0b7f684`（同一冻结二进制 `ba71faa3…`/配置 `75d1e9ad…`），新根 `20261111T074613Z`；`advance.py --qualify-only`，先 install + archive timer + qualify，C5 暂不启用。 |
 | C5 生产交接 | ⬜ 未开始 | C4-C PASS 后执行启用、一次受控重启、回退演练和最终签收。 |
 
 首版 C3 候选已完成 2026-11-08 17:57:39–19:00:55（上海时间）的 60 分钟公网与完整独立读回：Spot 356,069 条/64 分片，USD-M 1,298,443 条/92 分片；CPU 均值合计约单核 17.03%，峰值 RSS 合计约 61.38 MiB。二进制 SHA-256 为 `2051b262fa831c02a35aad5bda580db9d44c4bbb07382b487a941f4326e515a3`。补充配额扣账、成交时间统计、配置流检查和归档并发等待后的最终候选需从新 T0 重跑，不拼接时长。最终 C3 已通过，C4/C5 24h 资格仍待完成，见下方签收补记。

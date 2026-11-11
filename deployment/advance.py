@@ -119,6 +119,11 @@ def main():
         action="store_true",
         help="Resume only the final tail archive and service enablement from a PASS report",
     )
+    p.add_argument(
+        "--qualify-only",
+        action="store_true",
+        help="Install and run C4-C qualification, but do not enable production (C5)",
+    )
     p.add_argument("--qualification-report", type=Path)
     p.add_argument("--release", type=Path)
     a = p.parse_args()
@@ -278,10 +283,33 @@ def main():
             str(a.cpu_limit_percent),
             "--max-drop-percent",
             "0.10",
+            "--queue-limit-mib",
+            "128",
             env={**os.environ, "PYTHONPATH": str(release / "python/src")},
         )
         qualification = json.loads((evidence / "progress.json").read_text())
         assert qualification["status"] == "PASS"
+        if a.qualify_only:
+            report.update(
+                status="QUALIFIED",
+                qualification=str(evidence / "progress.json"),
+                qualification_finish_utc=datetime.now(UTC).isoformat(),
+                queue_limit_mib=128,
+            )
+            save()
+            print(
+                json.dumps(
+                    {
+                        "status": "QUALIFIED",
+                        "release": str(release),
+                        "roots": roots,
+                        "evidence": str(evidence),
+                        "qualification": str(evidence / "progress.json"),
+                    },
+                    indent=2,
+                )
+            )
+            return
         report["status"] = "FINAL_ARCHIVE"
         save()
         finish_production(release, roots)
