@@ -126,6 +126,18 @@ python3 "$S/deployment/advance.py" \
 
 该入口要求报告 `PASS`、报告二进制与 `--release` 一致、`deployment.json` 的 evidence 根一致，然后才排空归档尾部并恢复生产 logrotate/重启策略。
 
+### 4.1 C4-C 离线消费抽查
+
+停机并排空后，每个市场取一个 symbol 的一小时窗口，校验解析无无效行并生成 1m K 线：
+
+```sh
+/opt/sbmdr/current/venv/bin/python "$S/deployment/verify_offline_consumer.py" \
+  "$ROOT/spot" --market spot --symbol BTCUSDT \
+  --start-ms <epoch_ms> --end-ms <epoch_ms>
+```
+
+`valid>0`、`invalid=0`、`candles>0` 才算通过；`gap_candles` 和 bar 的 `capture_gap` 保留原始缺口，不做补造。
+
 ## 6. 启停与状态
 
 ```sh
