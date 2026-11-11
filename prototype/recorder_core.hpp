@@ -197,15 +197,24 @@ class DepthBridge {
             return;
         }
         if (message.stream != "ws_market_c0_depth" && message.stream != "diff_depth") return;
+        bool reset_needed = false;
         if (!generation_ || *generation_ != message.generation) {
             generation_ = message.generation;
-            reset();
+            reset_needed = true;
         }
+        const bool ingress_drop =
+            std::find(message.flags.begin(), message.flags.end(), "ingress_drop") !=
+            message.flags.end();
+        if (ingress_drop)
+            reset_needed = true;
+        if (reset_needed)
+            reset();
         const bool malformed = std::find(message.flags.begin(), message.flags.end(), "malformed") !=
                                message.flags.end();
         if (malformed) {
             message.flags.push_back("sequence_gap");
-            reset();
+            if (!reset_needed)
+                reset();
         } else {
             const auto event = range(message);
             if (snapshot_) {
@@ -330,4 +339,94 @@ void verify_depth_edges() {
         event(400 + i * 3, 402 + i * 3, 2);
     require(has(event(400 + depth_pending_limit * 3, 402 + depth_pending_limit * 3, 2),
                 "depth_sequence_buffer_overflow"));
+
+    // An explicit ingress_drop invalidates the bridge before the current frame.
+    // A Spot event whose U/u range overlaps the old bridge must stay pending
+    // until a snapshot for the new epoch arrives.
+    {
+        DepthRequests requests;
+        DepthBridge bridge(&requests);
+        auto spot_event = [&](std::uint64_t first, std::uint64_t last) {
+            Message m;
+            m.market = "spot";
+            m.sequence = {{"U", first}, {"u", last}};
+            bridge.observe(m);
+            return m;
+        };
+        auto spot_snapshot = [&](std::uint64_t epoch, std::uint64_t last) {
+            Message m;
+            m.rest = m.rest_valid = true;
+            m.market = "spot";
+            m.source_stream = "depth_snapshot";
+            m.snapshot_epoch = epoch;
+            m.sequence = {{"lastUpdateId", last}};
+            bridge.observe(m);
+            return m;
+        };
+        spot_event(100, 102);
+        require(has(spot_snapshot(requests.epoch.load(), 101), "depth_bridge"));
+        require(has(spot_event(103, 105), "depth_bridge"));
+        const auto before_drop = requests.epoch.load();
+        Message dropped;
+        dropped.market = "spot";
+        dropped.sequence = {{"U", 104}, {"u", 106}};
+        dropped.flags = {"ingress_drop"};
+        bridge.observe(dropped);
+        require(requests.epoch.load() == before_drop + 1);
+        require(has(dropped, "depth_snapshot_pending"));
+        require(!has(dropped, "depth_bridge"));
+        require(has(spot_snapshot(before_drop, 105), "depth_snapshot_superseded"));
+        require(has(spot_snapshot(requests.epoch.load(), 105), "depth_bridge"));
+        require(has(spot_event(106, 108), "depth_bridge"));
+    }
+
+    // A combined generation change and ingress_drop must reset exactly once.
+    {
+        DepthRequests requests;
+        DepthBridge bridge(&requests);
+        Message first;
+        first.generation = 3;
+        first.sequence = {{"U", 10}, {"u", 12}};
+        bridge.observe(first);
+        const auto before = requests.epoch.load();
+        Message combined;
+        combined.generation = 4;
+        combined.sequence = {{"U", 13}, {"u", 15}};
+        combined.flags = {"ingress_drop", "malformed"};
+        bridge.observe(combined);
+        require(requests.epoch.load() == before + 1);
+    }
+
+    // USD-M pu: a broken pu chain resets the bridge and requires a new snapshot.
+    {
+        DepthRequests requests;
+        DepthBridge bridge(&requests);
+        auto usdm_event = [&](std::uint64_t first, std::uint64_t last,
+                              std::uint64_t previous) {
+            Message m;
+            m.market = "um_perpetual";
+            m.sequence = {{"U", first}, {"u", last}, {"pu", previous}};
+            bridge.observe(m);
+            return m;
+        };
+        auto usdm_snapshot = [&](std::uint64_t epoch, std::uint64_t last) {
+            Message m;
+            m.rest = m.rest_valid = true;
+            m.market = "um_perpetual";
+            m.source_stream = "depth_snapshot";
+            m.snapshot_epoch = epoch;
+            m.sequence = {{"lastUpdateId", last}};
+            bridge.observe(m);
+            return m;
+        };
+        usdm_event(100, 102, 0);
+        require(has(usdm_snapshot(requests.epoch.load(), 101), "depth_bridge"));
+        require(has(usdm_event(103, 105, 102), "depth_bridge"));
+        const auto before_gap = requests.epoch.load();
+        require(has(usdm_event(106, 108, 104), "sequence_gap"));
+        require(requests.epoch.load() == before_gap + 1);
+        require(has(usdm_snapshot(before_gap, 107), "depth_snapshot_superseded"));
+        require(has(usdm_snapshot(requests.epoch.load(), 107), "depth_bridge"));
+        require(has(usdm_event(109, 111, 108), "depth_bridge"));
+    }
 }

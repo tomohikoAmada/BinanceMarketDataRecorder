@@ -1,6 +1,6 @@
 # C1 最小端到端记录器与读取器
 
-**C1 已于 2026-11-08 按稳定的单源范围正式签收。** 当前版本结果见文末与[收尾报告](c1-closeout-20261107.json)。本文的早期本机/长测结果属于历史版本。当前优化、GreenCloud 逐次结果与未关闭门槛见[计划第十一节](cpp_rewrite_milestone_plan.md#cpp-performance-review-20261104)和[2026-11-06 结果](c1-performance-20261106.json)。
+**C1 已于 2026-11-08 按稳定的单源范围正式签收。** 当前版本结果见文末与[收尾报告](c1-closeout-20261107.json)。本文的早期本机/长测结果属于历史版本。历次优化与 GreenCloud 结果见[历史计划第十一节](cpp_rewrite_plan_history.md#cpp-performance-review-20261104)和[2026-11-06 结果](c1-performance-20261106.json)；当前未完成事项见[上线收尾计划](cpp_rewrite_milestone_plan.md#execution-order)。
 
 ## 实现
 

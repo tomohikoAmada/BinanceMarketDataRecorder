@@ -8,6 +8,30 @@ from pathlib import Path
 from time import time
 
 
+BLOCKED_EXIT_REASONS = {
+    "TARGET_ABSENT",
+    "TARGET_NOT_READY",
+    "TARGET_LOW_SPACE",
+}
+
+
+def classify(exit_code, parsed):
+    exit_reason = parsed.get("exit_reason")
+    backlog = parsed.get("backlog_files_after")
+    blocked = exit_reason in BLOCKED_EXIT_REASONS
+    # A target outage is only a failure when verified data is waiting.
+    stalled = blocked and bool(backlog)
+    return {
+        "exit_reason": exit_reason,
+        "target_state": parsed.get("target_state"),
+        "backlog_files_after": backlog,
+        "blocked": blocked,
+        "stalled": stalled,
+        "failed_transactions": parsed.get("failed_transactions"),
+        "failed": exit_code != 0 or stalled,
+    }
+
+
 def main():
     release = Path(__file__).resolve().parent.parent
     roots = json.loads(Path("/etc/sbmdr/roots.json").read_text())
@@ -21,11 +45,19 @@ def main():
             text=True,
             check=False,
         )
-        failed |= result.returncode != 0
+        parsed = {}
+        if result.stdout.strip():
+            try:
+                parsed = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                parsed = {}
+        classified = classify(result.returncode, parsed)
+        failed |= classified["failed"]
         reports[market] = {
             "exit": result.returncode,
             "stdout": result.stdout,
             "stderr": result.stderr,
+            **classified,
         }
     child = resource.getrusage(resource.RUSAGE_CHILDREN)
     own = resource.getrusage(resource.RUSAGE_SELF)

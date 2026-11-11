@@ -1,6 +1,7 @@
 """Gate the authorized C3 -> C4/C5 -> permanent service transition on real evidence."""
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -16,35 +17,78 @@ def run(*args, env=None):
     subprocess.run([str(a) for a in args], env=env, check=True)
 
 
+BLOCKED_ARCHIVE_REASONS = {
+    "TARGET_ABSENT",
+    "TARGET_NOT_READY",
+    "TARGET_LOW_SPACE",
+}
+
+
+def archive_pending(root):
+    with sqlite3.connect(Path(root) / "state/catalog.sqlite") as db:
+        pending = db.execute(
+            "SELECT count(*) FROM chunks WHERE state='SEALED'"
+        ).fetchone()[0]
+        pending += db.execute(
+            "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
+        ).fetchone()[0]
+    return pending
+
+
 def finish_production(release, roots):
     """Archive the verified tail and enable the already qualified services."""
+    env = {**os.environ, "PYTHONPATH": str(release / "python/src")}
     for root in roots.values():
         for _ in range(100):
-            with sqlite3.connect(Path(root) / "state/catalog.sqlite") as db:
-                pending = db.execute(
-                    "SELECT count(*) FROM chunks WHERE state='SEALED'"
-                ).fetchone()[0]
-                pending += db.execute(
-                    "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
-                ).fetchone()[0]
+            pending = archive_pending(root)
             if not pending:
                 break
-            run(
-                "runuser",
-                "-u",
-                "bmdr",
-                "--",
-                release / "venv/bin/python",
-                release / "prototype/operations.py",
-                "archive",
-                root,
-                env={**os.environ, "PYTHONPATH": str(release / "python/src")},
+            result = subprocess.run(
+                [
+                    "runuser",
+                    "-u",
+                    "bmdr",
+                    "--",
+                    str(release / "venv/bin/python"),
+                    str(release / "prototype/operations.py"),
+                    "archive",
+                    str(root),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
             )
+            parsed = {}
+            if result.stdout.strip():
+                try:
+                    parsed = json.loads(result.stdout)
+                except json.JSONDecodeError:
+                    parsed = {}
+            reason = parsed.get("exit_reason")
+            if result.returncode != 0 or parsed.get("failed_transactions"):
+                raise RuntimeError(
+                    f"final archive failed for {root}: exit={result.returncode} "
+                    f"reason={reason} stderr={result.stderr.strip()}"
+                )
+            if reason in BLOCKED_ARCHIVE_REASONS and parsed.get("backlog_files_after"):
+                raise RuntimeError(
+                    f"final archive blocked for {root}: {reason} "
+                    f"backlog={parsed.get('backlog_files_after')}"
+                )
+            if archive_pending(root) >= pending:
+                raise RuntimeError(
+                    f"final archive made no progress for {root}: "
+                    f"pending={pending} reason={reason}"
+                )
         else:
             raise RuntimeError("final archive backlog did not drain")
     drop = Path("/etc/systemd/system/sbmdr-recorder@.service.d")
     drop.mkdir(exist_ok=True)
     (drop / "production.conf").write_text("[Service]\nRestart=on-failure\n")
+    disabled = Path("/etc/logrotate.d/sbmdr.qualification-disabled")
+    if disabled.exists():
+        disabled.unlink()
     shutil.copyfile(release / "deployment/logrotate.conf", "/etc/logrotate.d/sbmdr")
     run("systemctl", "daemon-reload")
     run(
@@ -70,7 +114,41 @@ def main():
         "--cpu-limit-percent", type=float, default=120,
         help="CPU ceiling in percent of one core; use the owner-approved scope",
     )
+    p.add_argument(
+        "--finish-only",
+        action="store_true",
+        help="Resume only the final tail archive and service enablement from a PASS report",
+    )
+    p.add_argument("--qualification-report", type=Path)
+    p.add_argument("--release", type=Path)
     a = p.parse_args()
+    if a.finish_only:
+        assert a.qualification_report and a.release, (
+            "--finish-only requires --qualification-report and --release"
+        )
+        qualification = json.loads(a.qualification_report.read_text())
+        assert qualification["status"] == "PASS", "qualification report is not PASS"
+        binary = a.release / "release/sbmdr-c0"
+        assert hashlib.sha256(binary.read_bytes()).hexdigest() == qualification[
+            "binary_sha256"
+        ], "release binary differs from the qualification report"
+        installed = json.loads((a.source / "results/deployment.json").read_text())
+        assert Path(installed["release"]) == a.release, "release root mismatch"
+        assert Path(installed["evidence"]) == a.qualification_report.parent, (
+            "qualification report does not belong to the installed evidence root"
+        )
+        finish_production(a.release, installed["roots"])
+        print(
+            json.dumps(
+                {
+                    "status": "COMPLETE",
+                    "release": str(a.release),
+                    "qualification": str(a.qualification_report),
+                },
+                indent=2,
+            )
+        )
+        return
     state = a.source / "results/promotion-progress.json"
     report = {
         "status": "WAIT_C3",

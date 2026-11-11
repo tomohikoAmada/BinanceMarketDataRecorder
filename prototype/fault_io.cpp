@@ -67,6 +67,14 @@ extern "C" int fsync(int fd) {
     }
     return real(fd);
 }
+extern "C" int syncfs(int fd) {
+    static auto real = reinterpret_cast<decltype(&syncfs)>(dlsym(RTLD_NEXT, "syncfs"));
+    if (raw_fd(fd) && mode("syncfs_eio")) {
+        errno = EIO;
+        return -1;
+    }
+    return real(fd);
+}
 extern "C" int rename(const char *before, const char *after) {
     static auto real = reinterpret_cast<decltype(&rename)>(dlsym(RTLD_NEXT, "rename"));
     const bool fixture = std::strstr(after, "sbmdr-fault-");

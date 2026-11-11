@@ -511,8 +511,6 @@ class RawFile {
     int fd_ = -1;
 };
 
-#include "recorder_storage.hpp"
-
 class IngressOverload : public std::runtime_error {
   public:
     explicit IngressOverload(const Message& message)
@@ -524,6 +522,13 @@ class IngressOverload : public std::runtime_error {
 };
 
 enum class PushResult { accepted, full, closed };
+
+struct DropSnapshot {
+    std::string key, slot_key, market, symbol, stream;
+    std::uint64_t count = 0;
+    std::int64_t first_utc = 0, last_utc = 0, first_mono = 0, last_mono = 0;
+    bool rest = false;
+};
 
 class Handoff {
   public:
@@ -571,6 +576,64 @@ class Handoff {
     bool rest_admissible() {
         std::lock_guard lock(mutex_);
         return !closed_ && pending_.size() < records_ / 2 && bytes_ < byte_limit_ / 2;
+    }
+
+    void note_drop(const std::string& key, const std::string& slot_key,
+                   const std::string& market, const std::string& symbol,
+                   const std::string& stream, std::int64_t utc,
+                   std::int64_t mono, bool rest) {
+        std::lock_guard lock(mutex_);
+        auto& state = drops_[key];
+        if (!state.count) {
+            state.first_utc = utc;
+            state.first_mono = mono;
+        }
+        state.slot_key = slot_key;
+        state.market = market;
+        state.symbol = symbol;
+        state.stream = stream;
+        state.rest = rest;
+        state.last_utc = utc;
+        state.last_mono = mono;
+        ++state.count;
+        if (rest)
+            dropped_rest.fetch_add(1, std::memory_order_relaxed);
+        else
+            dropped_ws.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    std::optional<DropSnapshot> peek_drop(const std::string& key) {
+        std::lock_guard lock(mutex_);
+        const auto found = drops_.find(key);
+        if (found == drops_.end() || !found->second.count)
+            return std::nullopt;
+        return found->second;
+    }
+
+    void consume_drop(const std::string& key, std::uint64_t count) {
+        std::lock_guard lock(mutex_);
+        const auto found = drops_.find(key);
+        if (found == drops_.end())
+            return;
+        if (found->second.count <= count)
+            drops_.erase(found);
+        else
+            found->second.count -= count;
+    }
+
+    std::vector<DropSnapshot> take_all_drops() {
+        std::lock_guard lock(mutex_);
+        std::vector<DropSnapshot> result;
+        result.reserve(drops_.size());
+        for (auto& [key, state] : drops_) {
+            if (state.count) {
+                auto snapshot = state;
+                snapshot.key = key;
+                result.push_back(std::move(snapshot));
+            }
+        }
+        drops_.clear();
+        return result;
     }
 
     bool pop(Message& message) {
@@ -634,8 +697,16 @@ class Handoff {
     std::mutex mutex_;
     std::condition_variable ready_;
     std::deque<Message> pending_;
+    std::map<std::string, DropSnapshot> drops_;
     std::size_t records_, byte_limit_, bytes_ = 0;
     bool closed_ = false;
+};
+
+#include "recorder_storage.hpp"
+
+class WsRenewal : public std::runtime_error {
+  public:
+    WsRenewal() : std::runtime_error("websocket 23h renewal") {}
 };
 
 template <class Stream>
@@ -647,14 +718,13 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
     std::set<std::string> seen_streams;
     std::map<std::string, std::uint64_t> previous_by_symbol;
     std::optional<std::uint64_t> previous;
-    struct DropState {
-        std::uint64_t count = 0;
-        std::int64_t first_utc = 0, last_utc = 0, first_mono = 0, last_mono = 0;
-    };
-    std::map<std::string, DropState> drops;
     std::uint64_t connection_dropped = 0;
     std::optional<steady_clock::time_point> last_drop_status;
-    const auto renew = steady_clock::now() + hours(23);
+    const auto renewal_seconds = [] {
+        const char* value = std::getenv("SBMDR_WS_RENEW_SECONDS");
+        return value ? std::max<std::int64_t>(1, std::stoll(value)) : 23 * 3600;
+    }();
+    const auto renew = steady_clock::now() + seconds(renewal_seconds);
     for (std::size_t i = 0; i < count && !stop.stop_requested(); ++i) {
         if (stop.stop_possible()) {
             boost::system::error_code result;
@@ -672,8 +742,11 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
                 beast::get_lowest_layer(ws).socket().close(ignored);
                 io.restart();
                 io.run();
-                if (!stop.stop_requested())
+                if (!stop.stop_requested()) {
+                    if (steady_clock::now() >= renew)
+                        throw WsRenewal();
                     throw boost::system::system_error(asio::error::timed_out);
+                }
                 return;
             }
             if (result)
@@ -758,16 +831,19 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
             buffer.consume(buffer.size());
             continue;
         }
-        const auto stream_key = message.symbol + "/" + message.stream;
-        auto pending = drops.find(stream_key);
-        if (pending != drops.end() && pending->second.count) {
+        const auto drop_key =
+            message.market + "/" + message.symbol + "/" + message.stream;
+        const auto slot_key =
+            message.market + "/" + message.symbol + "/" + message.stream;
+        const auto pending = queue.peek_drop(drop_key);
+        if (pending) {
             message.flags.push_back("sequence_gap");
             message.flags.push_back("ingress_drop");
-            message.sequence["ingressDropped"] = pending->second.count;
-            message.sequence["ingressDropFirstUtcNs"] = pending->second.first_utc;
-            message.sequence["ingressDropLastUtcNs"] = pending->second.last_utc;
-            message.sequence["ingressDropFirstMonotonicNs"] = pending->second.first_mono;
-            message.sequence["ingressDropLastMonotonicNs"] = pending->second.last_mono;
+            message.sequence["ingressDropped"] = pending->count;
+            message.sequence["ingressDropFirstUtcNs"] = pending->first_utc;
+            message.sequence["ingressDropLastUtcNs"] = pending->last_utc;
+            message.sequence["ingressDropFirstMonotonicNs"] = pending->first_mono;
+            message.sequence["ingressDropLastMonotonicNs"] = pending->last_mono;
         }
         const auto drop_market = message.market;
         const auto drop_symbol = message.symbol;
@@ -778,16 +854,9 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
         if (outcome == PushResult::closed)
             throw std::runtime_error("storage handoff closed");
         if (outcome == PushResult::full) {
-            auto& state = drops[stream_key];
-            if (!state.count) {
-                state.first_utc = drop_utc;
-                state.first_mono = drop_mono;
-            }
-            state.last_utc = drop_utc;
-            state.last_mono = drop_mono;
-            ++state.count;
+            queue.note_drop(drop_key, slot_key, drop_market, drop_symbol,
+                            drop_stream, drop_utc, drop_mono, false);
             ++connection_dropped;
-            queue.dropped_ws.fetch_add(1, std::memory_order_relaxed);
             const auto now = steady_clock::now();
             if (!last_drop_status || now - *last_drop_status >= seconds(1)) {
                 last_drop_status = now;
@@ -800,8 +869,8 @@ void read_ws(Stream& ws, asio::io_context& io, std::size_t count, Handoff& queue
                                  {"dropped_total", queue.dropped_total()}});
             }
         } else {
-            if (pending != drops.end())
-                pending->second.count = 0;
+            if (pending)
+                queue.consume_drop(drop_key, pending->count);
             if (accepted)
                 ++*accepted;
         }
@@ -1107,6 +1176,23 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
     const auto drop_market = message.market;
     const auto drop_symbol = message.symbol;
     const auto drop_source = message.source_stream;
+    const auto drop_key_symbol = message.symbol_scoped ? message.symbol : "__GLOBAL__";
+    const auto drop_key =
+        message.market + "/" + drop_key_symbol + "/" + message.source_stream;
+    const auto drop_slot_key =
+        message.market + "/" + drop_key_symbol + "/rest";
+    const auto pending = queue.peek_drop(drop_key);
+    if (pending) {
+        message.flags.push_back("sequence_gap");
+        message.flags.push_back("ingress_drop");
+        message.sequence["ingressDropped"] = pending->count;
+        message.sequence["ingressDropFirstUtcNs"] = pending->first_utc;
+        message.sequence["ingressDropLastUtcNs"] = pending->last_utc;
+        message.sequence["ingressDropFirstMonotonicNs"] = pending->first_mono;
+        message.sequence["ingressDropLastMonotonicNs"] = pending->last_mono;
+    }
+    const auto drop_utc = message.utc;
+    const auto drop_mono = message.mono;
 #ifdef SBMDR_DIAGNOSTICS
     const auto rest_prepare_start = ns<steady_clock>();
 #endif
@@ -1120,13 +1206,16 @@ RestResult receive_rest(CURLM* multi, const std::string& port, Handoff& queue,
             throw std::runtime_error("storage handoff closed");
         if (result == PushResult::full) {
             outcome.dropped = true;
-            queue.dropped_rest.fetch_add(1, std::memory_order_relaxed);
+            queue.note_drop(drop_key, drop_slot_key, drop_market, drop_symbol,
+                            drop_source, drop_utc, drop_mono, true);
             status_line(Json{{"event", "INGRESS_DROP"},
                              {"transport", "rest"},
                              {"market", drop_market},
                              {"symbol", drop_symbol},
                              {"source", drop_source},
                              {"dropped_total", queue.dropped_total()}});
+        } else if (pending) {
+            queue.consume_drop(drop_key, pending->count);
         }
     } else {
         queue.push(std::move(message), bounded);

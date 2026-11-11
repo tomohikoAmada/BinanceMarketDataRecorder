@@ -56,10 +56,32 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CXX_FLAGS MATCHES "fsanitize
     add_test(NAME c4-ingress-drop COMMAND "${Python3_EXECUTABLE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
         "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --drop-path)
+    add_test(NAME c4-ingress-tail COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --tail-path)
+    add_test(NAME c4-ingress-reconnect COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --reconnect-path)
+    add_test(NAME c4-rest-drop COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --rest-path)
+    add_test(NAME c2-renewal COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --renew-path)
+    add_test(NAME c4-async-backpressure COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_async_backpressure.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --expect-fixed)
+    add_test(NAME c4-async-seal-fault COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_async_backpressure.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --seal-fault)
+    add_test(NAME c4-async-syncfs-fault COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_async_backpressure.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --syncfs-fault)
 endif()
 add_test(NAME c3-configured COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_configured.py"
     "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}")
 add_test(NAME c4-candles COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_candles.py")
 set_tests_properties(c4-candles PROPERTIES ENVIRONMENT "PYTHONPATH=${PYTHON_BASELINE}/src")
 add_test(NAME c4-normalize-adapter COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_normalize_adapter.py")
+add_test(NAME c4-acceptance-boundaries COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../deployment/verify_acceptance.py")
 set_tests_properties(c4-normalize-adapter PROPERTIES ENVIRONMENT "PYTHONPATH=${PYTHON_BASELINE}/src")

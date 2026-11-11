@@ -112,6 +112,7 @@ class Catalog {
                                     {"market", message.market},
                                     {"symbol", message.symbol},
                                     {"stream", message.stream},
+                                    {"rest", message.rest},
                                     {"dropped", message.sequence.at("ingressDropped")},
                                     {"first_drop_utc_ns", first},
                                     {"last_drop_utc_ns", last},
@@ -119,6 +120,25 @@ class Catalog {
                                      message.sequence.at("ingressDropFirstMonotonicNs")},
                                     {"last_drop_monotonic_ns",
                                      message.sequence.at("ingressDropLastMonotonicNs")}}.dump()}));
+    }
+
+    void ingress_drop_summary(const std::string& event_id, const std::string& run,
+                              const DropSnapshot& drop) {
+        std::lock_guard lock(mutex_);
+        statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,"
+                  "evidence_json) VALUES(?,'INGRESS_DROP',?,?)",
+                  Json::array({event_id, ns<system_clock>(),
+                               Json{{"collector_instance_id", run},
+                                    {"market", drop.market},
+                                    {"symbol", drop.symbol},
+                                    {"stream", drop.stream},
+                                    {"rest", drop.rest},
+                                    {"dropped", drop.count},
+                                    {"tail", true},
+                                    {"first_drop_utc_ns", drop.first_utc},
+                                    {"last_drop_utc_ns", drop.last_utc},
+                                    {"first_drop_monotonic_ns", drop.first_mono},
+                                    {"last_drop_monotonic_ns", drop.last_mono}}.dump()}));
     }
 
     void active(const RawFile& raw, const fs::path& path) {
@@ -280,6 +300,13 @@ class RecorderStorage {
     std::exception_ptr seal_error_;
     std::atomic<bool> seal_failed_{false};
     std::atomic<std::int64_t> seal_ns_{0};
+    std::atomic<std::uint64_t> seal_queue_peak_{0};
+    std::atomic<std::int64_t> seal_enqueue_wait_ns_{0};
+    std::atomic<std::int64_t> seal_enqueue_wait_max_ns_{0};
+    std::atomic<std::uint64_t> seal_pending_raw_bytes_{0};
+    std::int64_t catalog_wait_ns_ = 0;
+    std::int64_t catalog_wait_max_ns_ = 0;
+    static constexpr std::size_t seal_queue_capacity = 256;
 
     std::array<std::uint64_t, 1252> append_histogram_{};
     std::uint64_t append_count_ = 0;
@@ -303,13 +330,29 @@ class RecorderStorage {
     }
 
     void enqueue_seal(SealJob job) {
+        const auto wait_start = ns<steady_clock>();
         std::unique_lock lock(seal_mutex_);
         seal_ready_.wait(lock, [&] {
-            return seal_stopping_ || seal_jobs_.size() < 64;
+            return seal_stopping_ ||
+                   seal_jobs_.size() < seal_queue_capacity;
         });
+        const auto waited = ns<steady_clock>() - wait_start;
+        seal_enqueue_wait_ns_.fetch_add(waited, std::memory_order_relaxed);
+        auto previous = seal_enqueue_wait_max_ns_.load(std::memory_order_relaxed);
+        while (waited > previous &&
+               !seal_enqueue_wait_max_ns_.compare_exchange_weak(
+                   previous, waited, std::memory_order_relaxed)) {
+        }
         if (seal_stopping_)
             throw std::runtime_error("background sealer stopped");
+        seal_pending_raw_bytes_.fetch_add(job.raw->bytes,
+                                          std::memory_order_relaxed);
         seal_jobs_.push_back(std::move(job));
+        auto peak = seal_queue_peak_.load(std::memory_order_relaxed);
+        while (seal_jobs_.size() > peak &&
+               !seal_queue_peak_.compare_exchange_weak(
+                   peak, seal_jobs_.size(), std::memory_order_relaxed)) {
+        }
         seal_ready_.notify_one();
     }
 
@@ -328,6 +371,8 @@ class RecorderStorage {
                 }
                 job = std::move(seal_jobs_.front());
                 seal_jobs_.pop_front();
+                seal_pending_raw_bytes_.fetch_sub(job.raw->bytes,
+                                                  std::memory_order_relaxed);
                 seal_ready_.notify_all();
             }
             try {
@@ -339,6 +384,7 @@ class RecorderStorage {
                 seal_failed_.store(true, std::memory_order_relaxed);
                 seal_stopping_ = true;
                 seal_jobs_.clear();
+                seal_pending_raw_bytes_.store(0, std::memory_order_relaxed);
                 seal_ready_.notify_all();
                 return;
             }
@@ -454,7 +500,30 @@ class RecorderStorage {
             (void)rotate_start;
     }
 
+    template <class Function>
+    void writer_catalog(Function&& function) {
+        const auto start = ns<steady_clock>();
+        function();
+        const auto elapsed = ns<steady_clock>() - start;
+        catalog_wait_ns_ += elapsed;
+        catalog_wait_max_ns_ = std::max(catalog_wait_max_ns_, elapsed);
+    }
+
   public:
+    Json seal_status() {
+        std::lock_guard lock(seal_mutex_);
+        return {{"queue_depth", seal_jobs_.size()},
+                {"queue_peak", seal_queue_peak_.load(std::memory_order_relaxed)},
+                {"enqueue_wait_ns_total",
+                 seal_enqueue_wait_ns_.load(std::memory_order_relaxed)},
+                {"enqueue_wait_max_ns",
+                 seal_enqueue_wait_max_ns_.load(std::memory_order_relaxed)},
+                {"pending_raw_bytes",
+                 seal_pending_raw_bytes_.load(std::memory_order_relaxed)},
+                {"catalog_wait_ns_total", catalog_wait_ns_},
+                {"catalog_wait_max_ns", catalog_wait_max_ns_}};
+    }
+
     std::atomic<std::uint64_t> sealed_count{0};
     std::atomic<std::int64_t> max_durability_ns{0};
     std::int64_t max_append_ns = 0;
@@ -557,7 +626,8 @@ class RecorderStorage {
                         [](const auto& flag) { return flag == "ingress_drop"; })) {
             const auto event_id =
                 run_ + "-ingress-drop-" + std::to_string(++ingress_drop_sequence_);
-            catalog_.ingress_drop(event_id, run_, message);
+            writer_catalog(
+                [&] { catalog_.ingress_drop(event_id, run_, message); });
         }
         if (requests_ && !requests_->children.empty() &&
             (message.stream == "diff_depth" ||
@@ -584,7 +654,7 @@ class RecorderStorage {
         slot.raw->append(root_ / slot.active, message, run_, "c1", &scratch_,
                          !async_seal_);
         if (first)
-            catalog_.active(*slot.raw, slot.active);
+            writer_catalog([&] { catalog_.active(*slot.raw, slot.active); });
         const auto append_ns = ns<steady_clock>() - message.mono;
         slot.last_append = append_ns + message.mono;
         max_append_ns = std::max(max_append_ns, append_ns);
@@ -610,12 +680,26 @@ class RecorderStorage {
 
     void mark_overload(bool rest, bool symbol_scoped, const std::string& market,
                        bool configured = false) {
-        catalog_.overload(run_, rest, symbol_scoped, market, configured);
+        writer_catalog([&] {
+            catalog_.overload(run_, rest, symbol_scoped, market, configured);
+        });
         for (auto& [key, slot] : slots_) {
             if (slot.raw && (slot.raw->stream == "rest_observations") == rest) {
                 slot.overload_gap = true;
                 slot.raw->flags.insert("sequence_gap");
             }
+        }
+    }
+
+    void record_tail_drop(const DropSnapshot& drop) {
+        const auto event_id =
+            run_ + "-ingress-tail-" + std::to_string(++ingress_drop_sequence_);
+        catalog_.ingress_drop_summary(event_id, run_, drop);
+        const auto found = slots_.find(drop.slot_key);
+        if (found != slots_.end() && found->second.raw) {
+            found->second.raw->flags.insert("sequence_gap");
+            found->second.raw->flags.insert("ingress_drop");
+            found->second.overload_gap = true;
         }
     }
 

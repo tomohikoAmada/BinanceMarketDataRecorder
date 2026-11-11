@@ -150,6 +150,59 @@ def _catalog_chunks(
     )
 
 
+def reconcile_chunk_sets(
+    chunks: list[SourceChunk], catalog_chunks: dict[str, dict[str, object]]
+) -> dict[str, object]:
+    """Every Catalog chunk and manifest must exist exactly once and be terminal."""
+    manifest_ids = {chunk.chunk_id for chunk in chunks}
+    catalog_ids = set(catalog_chunks)
+    if catalog_ids - manifest_ids:
+        raise ValueError(
+            f"Catalog chunks without manifests: {sorted(catalog_ids - manifest_ids)}"
+        )
+    if manifest_ids - catalog_ids:
+        raise ValueError(
+            f"manifests without Catalog chunks: {sorted(manifest_ids - catalog_ids)}"
+        )
+    non_terminal = sorted(
+        chunk_id
+        for chunk_id, row in catalog_chunks.items()
+        if row["state"] not in TERMINAL_CHUNK_STATES
+    )
+    if non_terminal:
+        raise ValueError(f"non-terminal Catalog chunks: {non_terminal}")
+    for chunk in chunks:
+        row = catalog_chunks[chunk.chunk_id]
+        if row["record_count"] != _int(chunk.manifest, "record_count"):
+            raise ValueError(
+                f"Catalog record_count mismatch for {chunk.chunk_id}: "
+                f"{row['record_count']} != {chunk.manifest['record_count']}"
+            )
+        for key in ("uncompressed_bytes", "stored_bytes"):
+            if row[key] is not None and row[key] != _int(chunk.manifest, key):
+                raise ValueError(
+                    f"Catalog {key} mismatch for {chunk.chunk_id}"
+                )
+        for key in ("uncompressed_sha256", "stored_sha256"):
+            if row[key] is not None and row[key] != chunk.manifest[key]:
+                raise ValueError(f"Catalog {key} mismatch for {chunk.chunk_id}")
+    return {
+        "catalog_chunk_count": len(catalog_chunks),
+        "manifest_chunk_count": len(manifest_ids),
+        "chunk_states": dict(
+            Counter(row["state"] for row in catalog_chunks.values())
+        ),
+    }
+
+
+TERMINAL_CHUNK_STATES = {
+    "SEALED",
+    "ARCHIVED_VERIFIED",
+    "LOCAL_DELETE_PENDING",
+    "LOCAL_DELETED",
+}
+
+
 def _verify(
     layout: StorageLayout,
     catalog: Catalog,
@@ -176,17 +229,72 @@ def _verify(
     chunks = [chunk for chunk, _ in loaded]
     trusted = {chunk.chunk_id for chunk, is_trusted in loaded if is_trusted}
 
+    with sqlite3.connect(f"file:{layout.catalog}?mode=ro", uri=True) as db:
+        catalog_chunks = {
+            str(row[0]): {
+                "state": str(row[1]),
+                "record_count": row[2],
+                "uncompressed_bytes": row[3],
+                "stored_bytes": row[4],
+                "uncompressed_sha256": row[5],
+                "stored_sha256": row[6],
+            }
+            for row in db.execute(
+                "SELECT chunk_id,state,record_count,uncompressed_bytes,stored_bytes,"
+                "uncompressed_sha256,stored_sha256 FROM chunks"
+            )
+        }
+        archive_states = (
+            dict(
+                db.execute(
+                    "SELECT state,count(*) FROM archive_transactions GROUP BY state"
+                )
+            )
+            if "archive_transactions" in tables
+            else {}
+        )
+        drop_rows = [
+            json.loads(row[0])
+            for row in db.execute(
+                "SELECT evidence_json FROM operational_events "
+                "WHERE event_type='INGRESS_DROP'"
+            )
+        ]
+    ingress_drops = {
+        "events": len(drop_rows),
+        "tail_events": sum(1 for row in drop_rows if row.get("tail")),
+        "dropped_ws": sum(
+            int(row["dropped"]) for row in drop_rows if not row.get("rest")
+        ),
+        "dropped_rest": sum(
+            int(row["dropped"]) for row in drop_rows if row.get("rest")
+        ),
+        "first_utc_ns": min(
+            (int(row["first_drop_utc_ns"]) for row in drop_rows), default=None
+        ),
+        "last_utc_ns": max(
+            (int(row["last_drop_utc_ns"]) for row in drop_rows), default=None
+        ),
+    }
+    ingress_drops["dropped_total"] = (
+        ingress_drops["dropped_ws"] + ingress_drops["dropped_rest"]
+    )
+    chunk_reconciliation = reconcile_chunk_sets(chunks, catalog_chunks)
+
     decode: set[str] = set()
     groups: dict[str, list[SourceChunk]] = {}
     for chunk in chunks:
         key = f"{chunk.manifest['market']}/{chunk.manifest['symbol']}/{chunk.manifest['stream']}"
         groups.setdefault(key, []).append(chunk)
         connection_ids = chunk.manifest.get("connection_ids", [])
+        chunk_flags = chunk.manifest.get("capture_flags", [])
         if (
             chunk.chunk_id not in trusted
             or chunk.manifest["stream"] == "rest_observations"
             or not isinstance(connection_ids, list)
             or len(connection_ids) != 1
+            or "ingress_drop" in chunk_flags
+            or "sequence_gap" in chunk_flags
         ):
             decode.add(chunk.chunk_id)
     for group in groups.values():
@@ -200,21 +308,12 @@ def _verify(
         decode.add(ordered[0].chunk_id)
         decode.add(ordered[-1].chunk_id)
 
-    with sqlite3.connect(f"file:{layout.catalog}?mode=ro", uri=True) as db:
-        archive_states = (
-            dict(
-                db.execute(
-                    "SELECT state,count(*) FROM archive_transactions GROUP BY state"
-                )
-            )
-            if "archive_transactions" in tables
-            else {}
-        )
-
     counts = Counter()
     flags = Counter()
     statuses = Counter()
     total = 0
+    ws_records = 0
+    rest_records = 0
     ws_payload_bytes = 0
     rest_body_bytes = 0
     source_payload_bytes = Counter()
@@ -239,6 +338,10 @@ def _verify(
             count = _int(manifest, "record_count")
             total += count
             counts[key] += count
+            if manifest["stream"] == "rest_observations":
+                rest_records += count
+            else:
+                ws_records += count
             chunk_connections = manifest.get("connection_ids", [])
             if not isinstance(chunk_connections, list):
                 raise ValueError(f"chunk {chunk.chunk_id} has invalid connection_ids")
@@ -261,8 +364,6 @@ def _verify(
                     str(item) for item in chunk_connections
                 )
             continue
-        if not is_trusted:
-            validate_sealed_artifact(chunk.artifact_path, manifest)
         decoded += 1
         seen = 0
         for record in iter_source_records(
@@ -286,6 +387,7 @@ def _verify(
             for flag in envelope.capture_flags:
                 flags[f"{key}/{flag}"] += 1
             if envelope.module == "binance.public.rest.v1":
+                rest_records += 1
                 provenance = json.loads(envelope.raw_payload)
                 encoded = provenance["response"]["raw_body_base64"]
                 rest_body_bytes += len(encoded) // 4 * 3 - (
@@ -299,6 +401,7 @@ def _verify(
                     f"{envelope.market}/{envelope.symbol}/{envelope.source_sequence.get('sourceStream')}/{provenance['response']['status']}/{provenance['response']['valid']}"
                 ] += 1
             else:
+                ws_records += 1
                 ws_payload_bytes += len(envelope.raw_payload)
         if seen != _int(manifest, "record_count"):
             raise ValueError(
@@ -308,6 +411,10 @@ def _verify(
         "status": "PASS",
         "chunks": len(chunks),
         "records": total,
+        "ws_records": ws_records,
+        "rest_records": rest_records,
+        **chunk_reconciliation,
+        "ingress_drops": ingress_drops,
         "stored_bytes": sum(_int(c.manifest, "stored_bytes") for c in chunks),
         "uncompressed_bytes": sum(
             _int(c.manifest, "uncompressed_bytes") for c in chunks

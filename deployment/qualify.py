@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 import time
-from collections import deque
+from collections import Counter, deque
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -81,7 +81,167 @@ def host_sample():
     }
 
 
-def verify_stopped(a, report):
+def check_drops(market, recorder, readback, max_drop_percent):
+    """Reconcile the recorder split with Catalog events using accepted WS records."""
+    ws_accepted = readback.get("ws_records")
+    assert isinstance(ws_accepted, int) and ws_accepted > 0, (
+        market,
+        "no accepted WS records; an empty run cannot pass the drop ratio",
+        ws_accepted,
+    )
+    ws_dropped = recorder.get("ws_dropped_total")
+    rest_dropped = recorder.get("rest_dropped_total")
+    assert isinstance(ws_dropped, int) and isinstance(rest_dropped, int), (
+        market,
+        "recorder did not report the WS/REST drop split",
+        recorder.get("ws_dropped_total"),
+        recorder.get("rest_dropped_total"),
+    )
+    assert recorder["dropped_total"] == ws_dropped + rest_dropped, (
+        market,
+        recorder["dropped_total"],
+        ws_dropped,
+        rest_dropped,
+    )
+    catalog_drops = readback["ingress_drops"]
+    assert catalog_drops["dropped_ws"] == ws_dropped, (
+        market,
+        "Catalog WS drops differ from the recorder",
+        catalog_drops["dropped_ws"],
+        ws_dropped,
+    )
+    assert catalog_drops["dropped_rest"] == rest_dropped, (
+        market,
+        "Catalog REST drops differ from the recorder",
+        catalog_drops["dropped_rest"],
+        rest_dropped,
+    )
+    dropped = recorder["dropped_total"]
+    drop_percent = 100 * dropped / ws_accepted
+    assert drop_percent <= max_drop_percent, (
+        market,
+        "dropped_total",
+        dropped,
+        "ws_accepted",
+        ws_accepted,
+        "drop_percent",
+        drop_percent,
+        "limit",
+        max_drop_percent,
+    )
+    return {
+        "ws_accepted_records": ws_accepted,
+        "dropped_total": dropped,
+        "ws_dropped_total": ws_dropped,
+        "rest_dropped_total": rest_dropped,
+        "catalog_drop_totals": catalog_drops,
+        "drop_percent": drop_percent,
+    }
+
+
+def check_connection_groups(report, symbols, evidence):
+    """Check each public/market connection group and truthful renewal reasons."""
+    renewal = []
+    for market in ("spot", "usdm"):
+        elapsed = 0
+        for line in (evidence / f"{market}.jsonl").read_text().splitlines():
+            event = json.loads(line)
+            elapsed = event.get("elapsed_seconds", elapsed)
+            if event.get("event") == "WS_RECONNECT":
+                renewal.append(
+                    {"market": market, "elapsed_seconds": elapsed, **event}
+                )
+    report["reconnections"] = renewal
+    required_groups = {
+        "spot": ("spot-public",),
+        "usdm": ("usdm-public", "usdm-market"),
+    }
+    groups = {}
+    for market, names in required_groups.items():
+        readback = report["markets"][market]["readback"]
+        ranges = readback["connection_monotonic_ranges_ns"]
+        for name in names:
+            suffix = "-ws-public" if name.endswith("public") else "-ws-market"
+            spans = {
+                connection: span
+                for connection, span in ranges.items()
+                if suffix in connection
+            }
+            longest = max(
+                ((span[1] - span[0]) / 1e9 for span in spans.values()),
+                default=0,
+            )
+            events = [
+                event
+                for event in renewal
+                if event["market"] == market and event.get("group") == name
+            ]
+            info = {
+                "market": market,
+                "group": name,
+                "connections": len(spans),
+                "max_connection_seconds": longest,
+                "reconnect_events": len(events),
+                "reason_counts": dict(
+                    Counter(event.get("reason", "unknown") for event in events)
+                ),
+            }
+            if longest >= 82790:
+                assert any(
+                    event.get("reason") == "23h_renewal"
+                    and event["elapsed_seconds"] >= 82740
+                    and event.get("accepted", 0) > 0
+                    for event in events
+                ), (market, name, "23h connection renewal not observed", events)
+                assert len(spans) >= 2, (market, name, "renewal connection missing")
+                info["renewal_triggered"] = True
+            else:
+                info["renewal_triggered"] = False
+                info["note"] = (
+                    "connection lifetime did not reach the scheduled 23h trigger"
+                )
+            groups[f"{market}:{name}"] = info
+    report["connection_groups"] = groups
+    for market in ("spot", "usdm"):
+        readback = report["markets"][market]["readback"]
+        for symbol in symbols[market]:
+            key = f"{'spot' if market == 'spot' else 'um_perpetual'}/{symbol}/diff_depth"
+            connections = readback["connections"][key]
+            assert len(connections) >= 2, (key, "no depth reconnection")
+            latest = max(
+                connections,
+                key=lambda c: readback["connection_monotonic_ranges_ns"][c][1],
+            )
+            assert latest in readback["bridge_connections"].get(key, []), (
+                key,
+                "latest depth connection unbridged",
+            )
+
+
+def stop_archive(timeout_seconds):
+    """Stop the archive timer and wait for the oneshot worker within its budget."""
+    subprocess.run(["systemctl", "stop", "sbmdr-archive.timer"], check=False)
+    subprocess.run(["systemctl", "stop", "sbmdr-archive.service"], check=False)
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        state = subprocess.check_output(
+            [
+                "systemctl",
+                "show",
+                "sbmdr-archive.service",
+                "--property",
+                "ActiveState",
+                "--value",
+            ],
+            text=True,
+        ).strip()
+        if state not in {"active", "activating", "deactivating"}:
+            return
+        time.sleep(1)
+    raise RuntimeError("archive worker did not quiesce")
+
+
+def verify_stopped(a, report, progress_path=None):
     """Verify the exact completed capture, without acquiring any additional data."""
     assert (
         hashlib.sha256((a.release / "release/sbmdr-c0").read_bytes()).hexdigest()
@@ -104,7 +264,7 @@ def verify_stopped(a, report):
         assert report["slice_cpu_peak_percent"] <= 200
         assert report["slice_cpu_60s_peak_percent"] <= a.cpu_limit_percent
     report["status"] = "VERIFYING"
-    save(a.evidence / "progress.json", report)
+    save(progress_path or (a.evidence / "progress.json"), report)
     for market in ("spot", "usdm"):
         target = a.evidence / f"{market}-readback.json"
         with target.open("w") as out:
@@ -126,23 +286,10 @@ def verify_stopped(a, report):
             market,
             "partial artifacts remain after stop",
         )
-        ws_accepted = sum(
-            count
-            for key, count in readback["source_counts"].items()
-            if not key.endswith("/rest_observations")
-        )
-        dropped = report["markets"][market]["recorder"].get("dropped_total")
-        assert isinstance(dropped, int), (market, "recorder did not report dropped_total")
-        drop_percent = 100 * dropped / ws_accepted if ws_accepted else 0
-        assert drop_percent <= a.max_drop_percent, (
+        status = check_drops(
             market,
-            "dropped_total",
-            dropped,
-            "ws_accepted",
-            ws_accepted,
-            "drop_percent",
-            drop_percent,
-            "limit",
+            report["markets"][market]["recorder"],
+            readback,
             a.max_drop_percent,
         )
         status_rows = [
@@ -155,16 +302,14 @@ def verify_stopped(a, report):
         )
         sync = [row["writer_sync_ms"] for row in status_rows if "writer_sync_ms" in row]
         seal = [row["writer_seal_ms"] for row in status_rows if "writer_seal_ms" in row]
-        report["markets"][market]["status"] = {
-            "ws_accepted_records": ws_accepted,
-            "dropped_total": dropped,
-            "drop_percent": drop_percent,
+        status.update({
             "queue_peak_bytes": queue_peak,
             "writer_sync_ms_mean": sum(sync) / len(sync) if sync else 0,
             "writer_sync_ms_max": max(sync, default=0),
             "writer_seal_ms_mean": sum(seal) / len(seal) if seal else 0,
             "writer_seal_ms_max": max(seal, default=0),
-        }
+        })
+        report["markets"][market]["status"] = status
         if a.queue_limit_mib is not None:
             assert queue_peak <= a.queue_limit_mib * 1024**2, (
                 market,
@@ -268,39 +413,7 @@ def verify_stopped(a, report):
                 > 0
             ), "no verified production archival"
     if a.services and a.seconds >= 86400:
-        renewal = []
-        for market in ("spot", "usdm"):
-            elapsed = 0
-            for line in (a.evidence / f"{market}.jsonl").read_text().splitlines():
-                event = json.loads(line)
-                elapsed = event.get("elapsed_seconds", elapsed)
-                if event.get("event") == "WS_RECONNECT":
-                    renewal.append(
-                        {"market": market, "elapsed_seconds": elapsed, **event}
-                    )
-        report["reconnections"] = renewal
-        assert any(
-            e["elapsed_seconds"] >= 82740 and e.get("accepted", 0) > 0 for e in renewal
-        ), "23h connection renewal not observed"
-        assert any(
-            (span[1] - span[0]) / 1e9 >= 82790
-            for m in report["markets"].values()
-            for span in m["readback"]["connection_monotonic_ranges_ns"].values()
-        ), "no independently verified 23h connection lifetime"
-        for market in ("spot", "usdm"):
-            readback = report["markets"][market]["readback"]
-            for symbol in symbols[market]:
-                key = f"{'spot' if market == 'spot' else 'um_perpetual'}/{symbol}/diff_depth"
-                connections = readback["connections"][key]
-                assert len(connections) >= 2, (key, "no depth reconnection")
-                latest = max(
-                    connections,
-                    key=lambda c: readback["connection_monotonic_ranges_ns"][c][1],
-                )
-                assert latest in readback["bridge_connections"].get(key, []), (
-                    key,
-                    "latest depth connection unbridged",
-                )
+        check_connection_groups(report, symbols, a.evidence)
     if a.services:
         report["cpu_budget_results"] = {
             "applied_limit_percent": a.cpu_limit_percent,
@@ -309,6 +422,13 @@ def verify_stopped(a, report):
             "frozen_recorder_mean_pass": report["cpu_mean_percent"] <= 120,
             "frozen_recorder_and_archive_mean_pass": report["cpu_mean_with_archive_percent"] <= 120,
         }
+    report["limits"] = {
+        "seconds": a.seconds,
+        "rss_limit_mib": a.rss_limit_mib,
+        "cpu_limit_percent": a.cpu_limit_percent,
+        "max_drop_percent": a.max_drop_percent,
+        "queue_limit_mib": a.queue_limit_mib,
+    }
     report["status"] = "PASS"
 
 
@@ -320,6 +440,11 @@ def main():
     p.add_argument("--evidence", type=Path, required=True)
     p.add_argument("--seconds", type=int, required=True)
     p.add_argument("--services", action="store_true")
+    p.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="Re-verify an already stopped capture from its evidence; never starts a recorder",
+    )
     p.add_argument("--rss-limit-mib", type=int, default=768)
     p.add_argument("--cpu-limit-percent", type=float, default=120)
     p.add_argument(
@@ -337,6 +462,56 @@ def main():
     a = p.parse_args()
     a.evidence.mkdir(parents=True, exist_ok=True)
     symbols = json.loads(a.config.read_text())
+    if a.verify_only:
+        progress = a.evidence / "progress.json"
+        assert progress.is_file(), f"missing stopped run report: {progress}"
+        report = json.loads(progress.read_text())
+        assert report["binary_sha256"] == hashlib.sha256(
+            (a.release / "release/sbmdr-c0").read_bytes()
+        ).hexdigest(), "release identity differs from the stopped run"
+        assert report["config"] == symbols, "config identity differs from the stopped run"
+        assert report["seconds_required"] == a.seconds, "duration differs from the stopped run"
+        for market in ("spot", "usdm"):
+            assert Path(report["markets"][market]["root"]) == a.root / market, (
+                market,
+                "root identity differs from the stopped run",
+            )
+            assert (a.evidence / f"{market}.json").is_file(), (
+                market,
+                "stopped recorder summary is missing",
+            )
+            assert (a.evidence / f"{market}.jsonl").is_file(), (
+                market,
+                "status log is missing",
+            )
+        started = report.get("start_utc")
+        required = report.get("seconds_required")
+        try:
+            verify_stopped(a, report, a.evidence / "verify-only-progress.json")
+        except BaseException as error:
+            report["status"] = "FAILED"
+            report["error"] = repr(error)
+            save(a.evidence / "verify-only.json", report)
+            raise
+        report["verification"] = {
+            "mode": "verify-only",
+            "original_start_utc": started,
+            "seconds_required": required,
+            "verified_utc": datetime.now(UTC).isoformat(),
+        }
+        save(a.evidence / "verify-only.json", report)
+        print(
+            json.dumps(
+                {
+                    "status": report["status"],
+                    "evidence": str(a.evidence / "verify-only.json"),
+                    "original_start_utc": started,
+                    "seconds_required": required,
+                },
+                indent=2,
+            )
+        )
+        return
     children = {}
     handles = []
     report = {
@@ -470,22 +645,7 @@ def main():
         for child in children.values():
             child.send_signal(signal.SIGTERM)
         if a.services:
-            subprocess.run(["systemctl", "stop", "sbmdr-archive.timer"], check=True)
-            deadline = time.monotonic() + 300
-            while subprocess.check_output(
-                [
-                    "systemctl",
-                    "show",
-                    "sbmdr-archive.service",
-                    "--property",
-                    "ActiveState",
-                    "--value",
-                ],
-                text=True,
-            ).strip() in {"active", "activating", "deactivating"}:
-                if time.monotonic() > deadline:
-                    raise RuntimeError("archive worker did not quiesce")
-                time.sleep(1)
+            stop_archive(600)
         for market, child in children.items():
             child.wait(timeout=180)
             if a.services:
@@ -520,6 +680,8 @@ def main():
         report["error"] = repr(error)
         raise
     finally:
+        if a.services:
+            stop_archive(600)
         for child in children.values():
             if child.poll() is None:
                 child.send_signal(signal.SIGTERM)

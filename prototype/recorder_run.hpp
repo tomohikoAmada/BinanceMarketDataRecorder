@@ -254,7 +254,7 @@ int record(int argc, char** argv) {
             RecorderStorage storage(root, run_id, rotation, rotation_bytes,
                                     config ? milliseconds(5000) : milliseconds(900),
                                     core ? &depth_requests : nullptr,
-                                    config.has_value() && test_queue_records == 0);
+                                    config.has_value());
             std::vector<Message> batch;
             batch.reserve(32);
             auto next_status = start + seconds(1);
@@ -264,18 +264,22 @@ int record(int argc, char** argv) {
             double max_status_cpu = 0;
             bool disk_stop = false;
             std::int64_t pause_start = 0, pause_finish = 0, pause_drained = 0;
+            // Test-only stall starts after a short warmup so fixtures can establish
+            // their initial REST bridge before the writer is paused.
+            constexpr std::size_t test_pause_warmup_records = 32;
             while (queue.take(batch)) {
-                if (!public_capture && !batch.empty() && test_pause.count() && !pause_start) {
-                    pause_start = ns<steady_clock>();
-                    std::this_thread::sleep_for(test_pause);
-                    pause_finish = ns<steady_clock>();
-                }
                 // Drain ingress between seals; a market-wide rotation must not monopolize the writer.
                 storage.tick(queue.snapshot().first == 0);
                 for (auto& message : batch) {
                     storage.append(message);
                     ++records;
                     storage.tick(false);
+                }
+                if (!public_capture && test_pause.count() && !pause_start &&
+                    records >= test_pause_warmup_records) {
+                    pause_start = ns<steady_clock>();
+                    std::this_thread::sleep_for(test_pause);
+                    pause_finish = ns<steady_clock>();
                 }
                 if (pause_finish && !pause_drained && queue.snapshot().first == 0)
                     pause_drained = ns<steady_clock>();
@@ -288,6 +292,7 @@ int record(int argc, char** argv) {
                         stop.request_stop();
                     }
                     const auto [queued_records, queued_bytes] = queue.snapshot();
+                    const auto seal = storage.seal_status();
                     const auto cpu = std::clock();
                     const double percent = 100.0 * (cpu - previous_cpu) / CLOCKS_PER_SEC /
                                            duration<double>(now - previous_status).count();
@@ -302,6 +307,13 @@ int record(int argc, char** argv) {
                              {"max_durability_ns", storage.max_durability_ns.load()},
                              {"writer_sync_ms", storage.take_sync_ms()},
                              {"writer_seal_ms", storage.take_seal_ms()},
+                             {"seal_queue_depth", seal["queue_depth"]},
+                             {"seal_queue_peak", seal["queue_peak"]},
+                             {"seal_enqueue_wait_ns_total", seal["enqueue_wait_ns_total"]},
+                             {"seal_enqueue_wait_max_ns", seal["enqueue_wait_max_ns"]},
+                             {"seal_pending_raw_bytes", seal["pending_raw_bytes"]},
+                             {"catalog_wait_ns_total", seal["catalog_wait_ns_total"]},
+                             {"catalog_wait_max_ns", seal["catalog_wait_max_ns"]},
                              {"dropped_total", queue.dropped_total()},
                              {"elapsed_seconds", duration<double>(now - start).count()},
                              {"cpu_seconds", static_cast<double>(cpu - cpu_start) / CLOCKS_PER_SEC}});
@@ -319,6 +331,9 @@ int record(int argc, char** argv) {
                 storage.mark_overload(false, public_capture, usdm ? "um_perpetual" : "spot", config.has_value());
             if (affected & 2U)
                 storage.mark_overload(true, public_capture, usdm ? "um_perpetual" : "spot", config.has_value());
+            for (const auto& drop : queue.take_all_drops())
+                storage.record_tail_drop(drop);
+            const auto seal = storage.seal_status();
             storage.finish();
             Json result{{"records", records},
                         {"test_pause_start_monotonic_ns", pause_start},
@@ -331,6 +346,13 @@ int record(int argc, char** argv) {
                         {"max_receive_to_append_ns", storage.max_append_ns},
                         {"receive_to_append_p99_ms", storage.append_p99_ms()},
                         {"max_status_cpu_percent", max_status_cpu},
+                        {"seal_queue_depth", seal["queue_depth"]},
+                        {"seal_queue_peak", seal["queue_peak"]},
+                        {"seal_enqueue_wait_ns_total", seal["enqueue_wait_ns_total"]},
+                        {"seal_enqueue_wait_max_ns", seal["enqueue_wait_max_ns"]},
+                        {"seal_pending_raw_bytes", seal["pending_raw_bytes"]},
+                        {"catalog_wait_ns_total", seal["catalog_wait_ns_total"]},
+                        {"catalog_wait_max_ns", seal["catalog_wait_max_ns"]},
                         {"dropped_total", queue.dropped_total()},
                         {"ws_dropped_total", queue.dropped_ws.load()},
                         {"rest_dropped_total", queue.dropped_rest.load()},
@@ -350,6 +372,10 @@ int record(int argc, char** argv) {
         try {
             std::size_t accepted = 0;
             unsigned generation = 0, consecutive = 0;
+            const std::string group =
+                !config ? std::string{} : !usdm ? "spot-public"
+                : target.starts_with("/market") ? "usdm-market"
+                                                 : "usdm-public";
             RecorderWake wake;
             AttemptWindow budget(config && usdm ? 90 : 180, seconds(300));
             while (accepted < ws_count && !token.stop_requested()) {
@@ -361,6 +387,20 @@ int record(int argc, char** argv) {
                 try {
                     receive_ws(ws_port, ws_count - accepted, queue, token, ca, &accepted, generation, usdm, config ? &*config : nullptr, target);
                     break;
+                } catch (const WsRenewal&) {
+                    if (token.stop_requested())
+                        break;
+                    consecutive = 0;
+                    ++generation;
+                    status_line(Json{{"event", "WS_RECONNECT"},
+                                     {"reason", "23h_renewal"},
+                                     {"group", group},
+                                     {"generation", generation},
+                                     {"accepted", accepted},
+                                     {"elapsed_seconds",
+                                      duration<double>(steady_clock::now() - start)
+                                          .count()}});
+                    continue;
                 } catch (const boost::system::system_error& error) {
                     if (token.stop_requested())
                         break;
@@ -373,8 +413,13 @@ int record(int argc, char** argv) {
                         milliseconds(250 * (1U << (consecutive - 1)) +
                                      (std::hash<std::string>{}(run_id) + generation * 37) % 150);
                     status_line(Json{{"event", "WS_RECONNECT"},
+                                     {"reason", "transport_failure"},
+                                     {"group", group},
                                      {"generation", generation},
                                      {"accepted", accepted},
+                                     {"elapsed_seconds",
+                                      duration<double>(steady_clock::now() - start)
+                                          .count()},
                                      {"error", error.code().message()}});
                     wake.until(token, steady_clock::now() + delay);
                 }

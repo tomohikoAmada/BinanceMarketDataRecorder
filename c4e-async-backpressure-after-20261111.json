@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-11",
+  "candidate": "working tree after F2 (named seal_queue_capacity=256)",
+  "test": "prototype/verify_async_backpressure.py --expect-fixed",
+  "scenario": "same ten-symbol real-async fixture as the before run; stalled_seal fault shim removed after the queue filled",
+  "command": "python prototype/verify_async_backpressure.py release/sbmdr-c0 vendor/python-baseline release/libsbmdr-fault-io.so --expect-fixed",
+  "results": [
+    {
+      "market": "spot",
+      "records": 16008,
+      "sealed": 158,
+      "queue_peak": 83,
+      "queue_depth_final": 0,
+      "enqueue_wait_ns": 30174,
+      "enqueue_wait_max_ns": 997,
+      "pending_raw_bytes": 0,
+      "catalog_wait_ns": 75036471,
+      "catalog_wait_max_ns": 12513601,
+      "max_durability_ns": 5849813469,
+      "peak_rss_bytes": 72085504,
+      "wall_seconds": 9.446374386,
+      "open_files_peak": 122,
+      "dropped_total": 0
+    },
+    {
+      "market": "usdm",
+      "records": 32060,
+      "sealed": 316,
+      "queue_peak": 147,
+      "queue_depth_final": 0,
+      "enqueue_wait_ns": 70652,
+      "enqueue_wait_max_ns": 7897,
+      "pending_raw_bytes": 0,
+      "catalog_wait_ns": 112267870,
+      "catalog_wait_max_ns": 11362133,
+      "max_durability_ns": 5467655964,
+      "peak_rss_bytes": 72347648,
+      "wall_seconds": 9.644993079,
+      "open_files_peak": 213,
+      "dropped_total": 0
+    }
+  ],
+  "conclusion": "The same workload stayed below the 256-task cap. enqueue_seal wait fell from 1.69/2.53 s to 30/71 us, no drops occurred, both queues drained to zero, and the process stopped in about 9.5 s after an 8 s publish plus 1 s settle. Peak RSS was about 69 MiB per process and peak open files 122/213. A separate run with a 64-task cap queued 64 jobs and waited 1.69/2.53 s; writer_seal_ms is background sealer work and must not be read as writer blocking."
+}
