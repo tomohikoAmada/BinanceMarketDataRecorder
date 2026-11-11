@@ -47,6 +47,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CXX_FLAGS MATCHES "fsanitize
     add_test(NAME c2-recovery-boundaries COMMAND "${Python3_EXECUTABLE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/verify_recovery_boundaries.py"
         "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>")
+    add_test(NAME c4-configured-recovery COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/verify_recovery_boundaries.py"
+        "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>" --configured)
     add_test(NAME c4-rotation-burst COMMAND "${Python3_EXECUTABLE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/verify_rotation_burst.py"
         "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}" "$<TARGET_FILE:sbmdr-fault-io>")
