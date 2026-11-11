@@ -257,6 +257,8 @@ USD-M 在第 7 小时 27 分出现 `23,385` 条集中丢弃（`0.0572%`），是
 > **2026-11-10 C4-E 执行结果：** 提交 `b610a656`；Release 二进制 SHA-256 `618dae987fce00d7e19fb4a32d87f43c613e433b3e104e516d8aca61158d6b99`；Release **13/13**、ASan/UBSan **9/9**、TSan **9/9** 全部通过。上一轮 7h27m 残留已排空（系统盘约 20 GiB 可用）。新 release `20261110-b610a656` 已安装。
 
 > **2026-11-10 22:08 第二轮 C4-C 失败：** 运行 **7,041.9 s（约 1h57m）** 后 USD-M `dropped_total=1,102,272`（18,740,962 条的 **5.88%**），Spot `dropped_total=4,889`（0.081%）；两市场队列均持续贴住 **128 MiB** 上限（Spot 109,862 条、USD-M 107,244 条），USD-M 最大 receive→fsync 47.89 s。USD-M 首次丢弃在 elapsed **4,749.5 s**（约 79 分钟，接近 900 s 轮换波）；`writer_sync_ms` 最大 1.80 s、`writer_seal_ms` 最大 5.01 s，说明旧的 fsync/封存阻塞已不再是主因。初步判断 E1 的 **64 个封存队列上限小于 80 条活跃流**，轮换波同时到期时写线程在 `enqueue_seal` 反压等待，队列填满后持续丢弃。已按 E4/8.4 在 USD-M 超过 150,000 条时停止，未做全量读回、未自行调参。证据：`/srv/recorder-data/sbmdr-c4a-deploy/results/c4-c-drop-failure-run2-20261110T140805Z`、[c4c-drop-failure-run2-20261110.json](c4c-drop-failure-run2-20261110.json)。**C4/C5 未签收，等待所有者决定。**
+>
+> **根因对比与修复评估（详见 c3-c5-deployment.md）：** 第一次 7h27m 失败是旧同步写路径（逐文件 fsync + 同步封存 + header fsync）在行情/磁盘尖峰下叠加，不是 C4-E 新引入；第二次是 **C4-E 新引入**的 64 格封存交接队列小于约 111 个 USD-M 活跃分片，写线程在 `enqueue_seal` 阻塞，旧的 sync/seal 已不是主因。现有 13 项测试最大仅 36 条活跃流，未覆盖该场景。局部修复（队列上限 256、队列深度诊断、80+ 流慢 sealer 测试、Release/ASan/TSan、2 小时跨轮换波预检）可在本仓库完成；再次投入 24h 前建议增加一名独立 C++ 并发/存储 reviewer。若该修复与预检仍失败，再引入专门的 C++ 并发/数据库工程师。
 
 ---
 
