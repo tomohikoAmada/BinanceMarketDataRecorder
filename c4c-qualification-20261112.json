@@ -1,0 +1,216 @@
+{
+  "status": "PASS",
+  "stage": "C4-C 24h qualification",
+  "candidate": {
+    "version": "20261111-c4c-e0b7f684",
+    "source_commit": "e0b7f684e41fa4e29080b9fa0bb3c96ecf1c1e26",
+    "release_binary_sha256": "ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff",
+    "config_sha256": "75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8",
+    "release": "/opt/sbmdr/releases/20261111-c4c-e0b7f684",
+    "roots": {
+      "spot": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z/spot",
+      "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z/usdm"
+    }
+  },
+  "run": {
+    "start_utc": "2026-11-11T07:46:56.990502+00:00",
+    "finish_utc": "2026-11-12T07:47:27.915602+00:00",
+    "elapsed_seconds": 86409.23883115209,
+    "wall_seconds": {
+      "spot": 86413.171913647,
+      "usdm": 86413.950727607
+    },
+    "stop": "SIGNAL, normal drain, same PID, NRestarts=0",
+    "records": {
+      "spot": 51679919,
+      "usdm": 183369877
+    },
+    "ws_records": {
+      "spot": 51679897,
+      "usdm": 183355454
+    },
+    "rest_records": {
+      "spot": 22,
+      "usdm": 14423
+    }
+  },
+  "drops": {
+    "spot": {
+      "total": 0,
+      "ws": 0,
+      "rest": 0,
+      "catalog_events": 0,
+      "percent": 0.0
+    },
+    "usdm": {
+      "total": 0,
+      "ws": 0,
+      "rest": 0,
+      "catalog_events": 0,
+      "percent": 0.0
+    }
+  },
+  "queues_and_seals": {
+    "queue_peak_bytes": {
+      "spot": 6308638,
+      "usdm": 100628590
+    },
+    "queue_peak_limit_bytes": 134217728,
+    "sustained_entry_queue_full": false,
+    "longest_run_above_90_percent_seconds": {
+      "spot": 0.0,
+      "usdm": 0.0
+    },
+    "seal_queue_peak": {
+      "spot": 18,
+      "usdm": 32
+    },
+    "seal_wait_ns_max": {
+      "spot": 37045,
+      "usdm": 23003208
+    },
+    "seal_pending_raw_bytes_final": {
+      "spot": 0,
+      "usdm": 0
+    }
+  },
+  "resources": {
+    "rss_peak_bytes": {
+      "spot": 42520576,
+      "usdm": 141914112
+    },
+    "rss_peak_sum_bytes": 184434688,
+    "archive_peak_rss_upper_bound_bytes": 99414016,
+    "rss_with_archive_upper_bound_bytes": 283848704,
+    "rss_with_archive_mib": 270.72,
+    "rss_limit_bytes": 402653184,
+    "rss_limit_mib": 384,
+    "cpu_mean_percent": 63.55003725645162,
+    "archive_cpu_mean_percent": 16.14604774794584,
+    "cpu_with_archive_percent": 79.69608500439746,
+    "slice_cpu_60s_peak_percent": 168.6785345302483,
+    "slice_cpu_1s_peak_observed_percent": 246.55662271054024,
+    "slice_cpu_1s_is_gate": false,
+    "host_busy_percent": 29.709286160801778,
+    "host_minimum_available_bytes": 3924328448,
+    "host_total_memory_bytes": 6163578880,
+    "system_minimum_free_bytes": 19622883328,
+    "system_free_after_bytes": 20034789376,
+    "system_runtime_threshold_bytes": 13958643712
+  },
+  "network": {
+    "connection_groups": {
+      "spot:spot-public": {
+        "connections": 2,
+        "max_connection_seconds": 82799.980746319,
+        "reconnect_events": 1,
+        "reason_counts": {
+          "23h_renewal": 1
+        },
+        "renewal_triggered": true
+      },
+      "usdm:usdm-public": {
+        "connections": 2,
+        "max_connection_seconds": 82799.929926126,
+        "reconnect_events": 1,
+        "reason_counts": {
+          "23h_renewal": 1
+        },
+        "renewal_triggered": true
+      },
+      "usdm:usdm-market": {
+        "connections": 2,
+        "max_connection_seconds": 82799.793933756,
+        "reconnect_events": 1,
+        "reason_counts": {
+          "23h_renewal": 1
+        },
+        "renewal_triggered": true
+      }
+    },
+    "depth_rebridged_per_symbol": true
+  },
+  "archive": {
+    "passes": 4399,
+    "failed_passes": 0,
+    "blocked": 0,
+    "chunks": {
+      "spot": 3958,
+      "usdm": 12758
+    },
+    "all_chunks_local_deleted": true,
+    "stored_bytes": 10888245084,
+    "compressed_gb_per_day": 10.886985016289781,
+    "archive_free_bytes": 2017789317120,
+    "retention_days_at_observed_rate": 185.3403818101013,
+    "target_bytes": {
+      "spot": 2252341248,
+      "usdm": 8911368192
+    }
+  },
+  "readback": {
+    "spot": {
+      "records": 51679919,
+      "decoded_chunks": 112,
+      "trusted_chunks": 3846,
+      "archive_states": {
+        "LOCAL_DELETED": 3958
+      }
+    },
+    "usdm": {
+      "records": 183369877,
+      "decoded_chunks": 1076,
+      "trusted_chunks": 11682,
+      "archive_states": {
+        "LOCAL_DELETED": 12758
+      }
+    }
+  },
+  "offline_consumer": {
+    "window": "2026-11-11 07:50-08:50 UTC, BTCUSDT, one hour each market",
+    "spot": {
+      "records": 606822,
+      "valid": 606822,
+      "invalid": 0,
+      "agg_trades": 37658,
+      "candles": 60,
+      "gap_candles": 0,
+      "status": "PASS"
+    },
+    "usdm": {
+      "records": 2093576,
+      "valid": 2093576,
+      "invalid": 0,
+      "agg_trades": 55056,
+      "candles": 60,
+      "gap_candles": 0,
+      "status": "PASS"
+    }
+  },
+  "qualification": {
+    "original_progress": "FAILED: slice_cpu_peak_percent=246.56 > 200; the extra 1 s sample was not the documented CPU gate",
+    "verify_only": "PASS",
+    "verified_utc": "2026-11-12T07:58:04.451945+00:00",
+    "cpu_gate": "recorder mean, mean+archive and 60 s rolling peak <=200%; the 1 s peak is reported but not a gate",
+    "no_recollection": true
+  },
+  "memory_trend": {
+    "spot_first_bytes": 28696576,
+    "spot_last_bytes": 42520576,
+    "usdm_first_bytes": 27426816,
+    "usdm_last_bytes": 141914112,
+    "usdm_plateau": "about 135.3 MiB (141.9 MB) from 9 h to 24 h",
+    "note": "Stepwise high-water, not a continuous linear leak; the 7-9 h steps coincide with 85-93 MB entry-queue peaks. The 24 h RSS budget passes; week/month is not formally qualified."
+  },
+  "metadata_trend": {
+    "local_root_bytes": 167772160,
+    "chunks": 16716,
+    "manifest_bytes": 70254592,
+    "catalog_bytes": 97517568,
+    "metadata_per_chunk_kb": 10.0,
+    "metadata_per_month_gb": 4.8,
+    "system_free_gib": 18.66,
+    "runtime_threshold_gib": 13,
+    "note": "Catalog/manifest are not auto-deleted. C5 needs an old-root/metadata retention or cleanup plan; a month at the observed rate is about 4.8 GB."
+  }
+}

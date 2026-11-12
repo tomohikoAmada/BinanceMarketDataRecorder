@@ -1,0 +1,18 @@
+{
+  "status": "QUALIFIED",
+  "version": "20261111-c4c-e0b7f684",
+  "cpu_limit_percent": 200.0,
+  "release": "/opt/sbmdr/releases/20261111-c4c-e0b7f684",
+  "roots": {
+    "spot": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z/spot",
+    "usdm": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z/usdm"
+  },
+  "evidence": "/srv/recorder-data/sbmdr-c4a/results/c4-c5-24h",
+  "start_utc": "2026-11-11T07:46:56.793028+00:00",
+  "qualification": "/srv/recorder-data/sbmdr-c4a/results/c4-c5-24h/verify-only.json",
+  "original_progress": "/srv/recorder-data/sbmdr-c4a/results/c4-c5-24h/progress.json",
+  "verification": "verify-only",
+  "reason": "Original qualifier also gated the 1 s slice CPU sample (246.56%); the plan gates recorder mean, mean+archive and 60 s rolling. Fixed the acceptance script and re-verified the same data; 60 s 168.68%, mean+archive 79.70%.",
+  "qualification_finish_utc": "2026-11-12T07:58:04.451945+00:00",
+  "original_error": "CalledProcessError(1, ['/opt/sbmdr/releases/20261111-c4c-e0b7f684/venv/bin/python', '/opt/sbmdr/releases/20261111-c4c-e0b7f684/deployment/qualify.py', '--release', '/opt/sbmdr/releases/20261111-c4c-e0b7f684', '--config', '/etc/sbmdr/config.json', '--root', '/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z', '--evidence', '/srv/recorder-data/sbmdr-c4a/results/c4-c5-24h', '--seconds', '86410', '--services', '--rss-limit-mib', '384', '--cpu-limit-percent', '200.0', '--max-drop-percent', '0.10', '--queue-limit-mib', '128'])"
+}

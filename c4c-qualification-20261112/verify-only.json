@@ -1,0 +1,1394 @@
+{
+  "status": "PASS",
+  "start_utc": "2026-11-11T07:46:56.990502+00:00",
+  "seconds_required": 86410,
+  "config": {
+    "spot": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT",
+      "BNBUSDT",
+      "ZECUSDT",
+      "XRPUSDT",
+      "NEARUSDT",
+      "UNIUSDT",
+      "DOGEUSDT",
+      "LINKUSDT"
+    ],
+    "usdm": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT",
+      "BNBUSDT",
+      "ZECUSDT",
+      "XRPUSDT",
+      "NEARUSDT",
+      "UNIUSDT",
+      "DOGEUSDT",
+      "LINKUSDT"
+    ]
+  },
+  "binary_sha256": "ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff",
+  "markets": {
+    "spot": {
+      "pid": 339317,
+      "root": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z/spot",
+      "cpu_weight": 100,
+      "rss_kib": 41664,
+      "threads_peak": 6,
+      "wal_peak_bytes": 2031192,
+      "recorder": {
+        "records": 51679919,
+        "test_pause_start_monotonic_ns": 0,
+        "test_pause_finish_monotonic_ns": 0,
+        "test_pause_backlog_drain_ns": null,
+        "sealed": 3958,
+        "rotations": {
+          "size": 1612,
+          "time": 2315,
+          "shutdown": 31
+        },
+        "max_durability_ns": 9462739985,
+        "max_receive_to_append_ns": 4616875605,
+        "receive_to_append_p99_ms": 177,
+        "max_status_cpu_percent": 114.52500200629983,
+        "seal_queue_depth": 0,
+        "seal_queue_peak": 18,
+        "seal_enqueue_wait_ns_total": 1531838,
+        "seal_enqueue_wait_max_ns": 37045,
+        "seal_pending_raw_bytes": 0,
+        "catalog_wait_ns_total": 10873740321,
+        "catalog_wait_max_ns": 177372631,
+        "dropped_total": 0,
+        "ws_dropped_total": 0,
+        "rest_dropped_total": 0,
+        "stop_reason": "SIGNAL",
+        "peak_queue_payload_bytes": 6308638,
+        "peak_queue_records": 5121,
+        "wall_seconds": 86413.171913647,
+        "cpu_seconds": 15478.550314,
+        "peak_rss_bytes": 42520576,
+        "allocation_counter_enabled": false,
+        "new_calls": null,
+        "new_requested_bytes": null,
+        "interrupted": true
+      },
+      "status": {
+        "ws_accepted_records": 51679897,
+        "dropped_total": 0,
+        "ws_dropped_total": 0,
+        "rest_dropped_total": 0,
+        "catalog_drop_totals": {
+          "events": 0,
+          "tail_events": 0,
+          "dropped_ws": 0,
+          "dropped_rest": 0,
+          "first_utc_ns": null,
+          "last_utc_ns": null,
+          "dropped_total": 0
+        },
+        "drop_percent": 0.0,
+        "queue_peak_bytes": 5291070,
+        "writer_sync_ms_mean": 8.045609232901667,
+        "writer_sync_ms_max": 4006.187922,
+        "writer_seal_ms_mean": 8.671256496292491,
+        "writer_seal_ms_max": 2483.283845
+      },
+      "readback": {
+        "status": "PASS",
+        "chunks": 3958,
+        "records": 51679919,
+        "ws_records": 51679897,
+        "rest_records": 22,
+        "catalog_chunk_count": 3958,
+        "manifest_chunk_count": 3958,
+        "chunk_states": {
+          "LOCAL_DELETED": 3958
+        },
+        "ingress_drops": {
+          "events": 0,
+          "tail_events": 0,
+          "dropped_ws": 0,
+          "dropped_rest": 0,
+          "first_utc_ns": null,
+          "last_utc_ns": null,
+          "dropped_total": 0
+        },
+        "stored_bytes": 2131749389,
+        "uncompressed_bytes": 41437226798,
+        "ws_payload_bytes": 153011548,
+        "rest_body_bytes": 5250332,
+        "source_payload_bytes": {
+          "spot/BNBUSDT/diff_depth": 6119602,
+          "spot/BNBUSDT/rest_observations": 803142,
+          "spot/NEARUSDT/agg_trade": 284354,
+          "spot/ZECUSDT/rest_observations": 777746,
+          "spot/UNIUSDT/diff_depth": 4028193,
+          "spot/__GLOBAL__/rest_observations": 134038,
+          "spot/NEARUSDT/book_ticker": 4496598,
+          "spot/LINKUSDT/book_ticker": 2879105,
+          "spot/SOLUSDT/book_ticker": 6183149,
+          "spot/UNIUSDT/rest_observations": 557014,
+          "spot/BTCUSDT/rest_observations": 855038,
+          "spot/SOLUSDT/agg_trade": 475881,
+          "spot/ETHUSDT/rest_observations": 829266,
+          "spot/DOGEUSDT/diff_depth": 3623455,
+          "spot/XRPUSDT/book_ticker": 7368176,
+          "spot/BNBUSDT/agg_trade": 2068566,
+          "spot/BTCUSDT/book_ticker": 8921117,
+          "spot/DOGEUSDT/book_ticker": 5216306,
+          "spot/ZECUSDT/book_ticker": 7555366,
+          "spot/ETHUSDT/diff_depth": 14977108,
+          "spot/UNIUSDT/book_ticker": 5846723,
+          "spot/LINKUSDT/agg_trade": 249080,
+          "spot/ZECUSDT/agg_trade": 2606071,
+          "spot/NEARUSDT/diff_depth": 4061336,
+          "spot/LINKUSDT/rest_observations": 563366,
+          "spot/NEARUSDT/rest_observations": 557170,
+          "spot/SOLUSDT/diff_depth": 3533614,
+          "spot/BTCUSDT/diff_depth": 17089178,
+          "spot/LINKUSDT/diff_depth": 3713894,
+          "spot/XRPUSDT/agg_trade": 470922,
+          "spot/BTCUSDT/agg_trade": 3042217,
+          "spot/ETHUSDT/book_ticker": 8220112,
+          "spot/BNBUSDT/book_ticker": 5792399,
+          "spot/UNIUSDT/agg_trade": 714291,
+          "spot/DOGEUSDT/rest_observations": 576834,
+          "spot/XRPUSDT/rest_observations": 673786,
+          "spot/SOLUSDT/rest_observations": 690394,
+          "spot/ZECUSDT/diff_depth": 17701940,
+          "spot/DOGEUSDT/agg_trade": 263172,
+          "spot/ETHUSDT/agg_trade": 1624576,
+          "spot/XRPUSDT/diff_depth": 3885047
+        },
+        "ws_receive_span_seconds": 86411.006778864,
+        "archive_states": {
+          "LOCAL_DELETED": 3958
+        },
+        "connections": {
+          "spot/ETHUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/SOLUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ZECUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BNBUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/LINKUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/XRPUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ZECUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BNBUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BTCUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BNBUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/LINKUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BTCUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/UNIUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/NEARUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BNBUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/XRPUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/SOLUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/DOGEUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/UNIUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/NEARUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ETHUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/NEARUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ZECUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/UNIUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/SOLUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/DOGEUSDT/agg_trade": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ETHUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BTCUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/LINKUSDT/book_ticker": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/XRPUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/DOGEUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ZECUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/__GLOBAL__/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/UNIUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/BTCUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/ETHUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/LINKUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/NEARUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/DOGEUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/XRPUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/SOLUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ]
+        },
+        "connection_monotonic_ranges_ns": {
+          "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public": [
+            709540823456954,
+            792340804203273
+          ],
+          "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1": [
+            792340914346480,
+            795951830235818
+          ]
+        },
+        "bridge_connections": {
+          "spot/SOLUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BNBUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/LINKUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/NEARUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ZECUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/UNIUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ETHUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/BTCUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/XRPUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/DOGEUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/ZECUSDT/diff_depth": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public",
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-ws-public-1"
+          ],
+          "spot/UNIUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/BTCUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/ETHUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ],
+          "spot/XRPUSDT/rest_observations": [
+            "c1-a77a638f-636c-4c06-8fb1-f0fc89b6e771-rest"
+          ]
+        },
+        "source_counts": {
+          "spot/ETHUSDT/book_ticker": 7618500,
+          "spot/SOLUSDT/diff_depth": 653123,
+          "spot/ZECUSDT/agg_trade": 613176,
+          "spot/BNBUSDT/book_ticker": 2142201,
+          "spot/LINKUSDT/agg_trade": 86327,
+          "spot/XRPUSDT/agg_trade": 118469,
+          "spot/ZECUSDT/book_ticker": 7139675,
+          "spot/BNBUSDT/diff_depth": 620356,
+          "spot/BTCUSDT/book_ticker": 12209051,
+          "spot/BNBUSDT/rest_observations": 2,
+          "spot/LINKUSDT/diff_depth": 501738,
+          "spot/BTCUSDT/agg_trade": 739271,
+          "spot/UNIUSDT/book_ticker": 2055269,
+          "spot/NEARUSDT/agg_trade": 103084,
+          "spot/BNBUSDT/agg_trade": 254201,
+          "spot/XRPUSDT/book_ticker": 2682310,
+          "spot/SOLUSDT/book_ticker": 2778004,
+          "spot/DOGEUSDT/book_ticker": 2563471,
+          "spot/UNIUSDT/agg_trade": 127168,
+          "spot/NEARUSDT/book_ticker": 1887827,
+          "spot/ETHUSDT/agg_trade": 486093,
+          "spot/NEARUSDT/diff_depth": 606365,
+          "spot/ZECUSDT/rest_observations": 2,
+          "spot/UNIUSDT/diff_depth": 661966,
+          "spot/SOLUSDT/agg_trade": 128082,
+          "spot/DOGEUSDT/agg_trade": 70525,
+          "spot/ETHUSDT/diff_depth": 851557,
+          "spot/BTCUSDT/diff_depth": 861535,
+          "spot/LINKUSDT/book_ticker": 1105020,
+          "spot/XRPUSDT/diff_depth": 658763,
+          "spot/DOGEUSDT/diff_depth": 528693,
+          "spot/ZECUSDT/diff_depth": 828077,
+          "spot/__GLOBAL__/rest_observations": 2,
+          "spot/UNIUSDT/rest_observations": 2,
+          "spot/BTCUSDT/rest_observations": 2,
+          "spot/ETHUSDT/rest_observations": 2,
+          "spot/LINKUSDT/rest_observations": 2,
+          "spot/NEARUSDT/rest_observations": 2,
+          "spot/DOGEUSDT/rest_observations": 2,
+          "spot/XRPUSDT/rest_observations": 2,
+          "spot/SOLUSDT/rest_observations": 2
+        },
+        "capture_flags": {
+          "spot/SOLUSDT/diff_depth/depth_bridge": 13328,
+          "spot/BNBUSDT/diff_depth/depth_bridge": 19086,
+          "spot/BNBUSDT/rest_observations/rest_poll": 2,
+          "spot/BNBUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/BNBUSDT/rest_observations/depth_snapshot_pending": 2,
+          "spot/LINKUSDT/diff_depth/depth_bridge": 13706,
+          "spot/NEARUSDT/diff_depth/depth_bridge": 15974,
+          "spot/ZECUSDT/rest_observations/rest_poll": 2,
+          "spot/ZECUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/ZECUSDT/rest_observations/depth_bridge": 1,
+          "spot/UNIUSDT/diff_depth/depth_bridge": 13128,
+          "spot/ETHUSDT/diff_depth/depth_bridge": 23386,
+          "spot/BTCUSDT/diff_depth/depth_bridge": 20923,
+          "spot/XRPUSDT/diff_depth/depth_bridge": 12862,
+          "spot/DOGEUSDT/diff_depth/depth_bridge": 13945,
+          "spot/ZECUSDT/diff_depth/depth_bridge": 18779,
+          "spot/ZECUSDT/rest_observations/depth_snapshot_pending": 1,
+          "spot/__GLOBAL__/rest_observations/rest_poll": 2,
+          "spot/__GLOBAL__/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/SOLUSDT/book_ticker/sequence_gap": 1,
+          "spot/NEARUSDT/agg_trade/sequence_gap": 1,
+          "spot/UNIUSDT/rest_observations/rest_poll": 2,
+          "spot/UNIUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/UNIUSDT/rest_observations/depth_bridge": 1,
+          "spot/BNBUSDT/diff_depth/sequence_gap": 1,
+          "spot/BNBUSDT/diff_depth/depth_snapshot_pending": 3,
+          "spot/BTCUSDT/rest_observations/rest_poll": 2,
+          "spot/BTCUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/BTCUSDT/rest_observations/depth_bridge": 1,
+          "spot/SOLUSDT/agg_trade/sequence_gap": 1,
+          "spot/ETHUSDT/rest_observations/rest_poll": 2,
+          "spot/ETHUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/ETHUSDT/rest_observations/depth_snapshot_pending": 1,
+          "spot/DOGEUSDT/diff_depth/sequence_gap": 1,
+          "spot/DOGEUSDT/diff_depth/depth_snapshot_pending": 431,
+          "spot/XRPUSDT/book_ticker/sequence_gap": 1,
+          "spot/BNBUSDT/agg_trade/sequence_gap": 1,
+          "spot/UNIUSDT/diff_depth/sequence_gap": 1,
+          "spot/UNIUSDT/diff_depth/depth_snapshot_pending": 462,
+          "spot/ETHUSDT/diff_depth/sequence_gap": 1,
+          "spot/ETHUSDT/diff_depth/depth_snapshot_pending": 5,
+          "spot/UNIUSDT/book_ticker/sequence_gap": 1,
+          "spot/ZECUSDT/agg_trade/sequence_gap": 1,
+          "spot/LINKUSDT/rest_observations/rest_poll": 2,
+          "spot/LINKUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/LINKUSDT/rest_observations/depth_snapshot_pending": 2,
+          "spot/NEARUSDT/rest_observations/rest_poll": 2,
+          "spot/NEARUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/NEARUSDT/rest_observations/depth_snapshot_pending": 2,
+          "spot/BTCUSDT/diff_depth/sequence_gap": 1,
+          "spot/BTCUSDT/diff_depth/depth_snapshot_pending": 4,
+          "spot/LINKUSDT/diff_depth/sequence_gap": 1,
+          "spot/LINKUSDT/diff_depth/depth_snapshot_pending": 2,
+          "spot/ETHUSDT/book_ticker/sequence_gap": 1,
+          "spot/BNBUSDT/book_ticker/sequence_gap": 1,
+          "spot/SOLUSDT/diff_depth/depth_snapshot_pending": 61,
+          "spot/UNIUSDT/agg_trade/sequence_gap": 1,
+          "spot/DOGEUSDT/rest_observations/rest_poll": 2,
+          "spot/DOGEUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/DOGEUSDT/rest_observations/depth_snapshot_pending": 2,
+          "spot/XRPUSDT/rest_observations/rest_poll": 2,
+          "spot/XRPUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/XRPUSDT/rest_observations/depth_snapshot_pending": 1,
+          "spot/ZECUSDT/book_ticker/sequence_gap": 1,
+          "spot/NEARUSDT/diff_depth/sequence_gap": 1,
+          "spot/NEARUSDT/diff_depth/depth_snapshot_pending": 362,
+          "spot/SOLUSDT/rest_observations/rest_poll": 2,
+          "spot/SOLUSDT/rest_observations/exact_rest_http_body_preserved": 2,
+          "spot/SOLUSDT/rest_observations/depth_snapshot_pending": 2,
+          "spot/BTCUSDT/book_ticker/sequence_gap": 1,
+          "spot/LINKUSDT/book_ticker/sequence_gap": 1,
+          "spot/XRPUSDT/agg_trade/sequence_gap": 1,
+          "spot/ZECUSDT/diff_depth/sequence_gap": 1,
+          "spot/ZECUSDT/diff_depth/depth_snapshot_pending": 6,
+          "spot/DOGEUSDT/agg_trade/sequence_gap": 1,
+          "spot/ETHUSDT/rest_observations/depth_bridge": 1,
+          "spot/XRPUSDT/diff_depth/depth_snapshot_pending": 5,
+          "spot/NEARUSDT/book_ticker/sequence_gap": 1,
+          "spot/XRPUSDT/rest_observations/depth_bridge": 1,
+          "spot/BTCUSDT/agg_trade/sequence_gap": 1,
+          "spot/BTCUSDT/rest_observations/depth_snapshot_pending": 1,
+          "spot/UNIUSDT/rest_observations/depth_snapshot_pending": 1,
+          "spot/SOLUSDT/diff_depth/sequence_gap": 1,
+          "spot/XRPUSDT/diff_depth/sequence_gap": 1,
+          "spot/DOGEUSDT/book_ticker/sequence_gap": 1,
+          "spot/LINKUSDT/agg_trade/sequence_gap": 1,
+          "spot/ETHUSDT/agg_trade/sequence_gap": 1
+        },
+        "rest_statuses": {
+          "spot/BNBUSDT/depth_snapshot/200/True": 2,
+          "spot/ZECUSDT/depth_snapshot/200/True": 2,
+          "spot/__GLOBAL__/exchange_info/200/True": 2,
+          "spot/UNIUSDT/depth_snapshot/200/True": 2,
+          "spot/BTCUSDT/depth_snapshot/200/True": 2,
+          "spot/ETHUSDT/depth_snapshot/200/True": 2,
+          "spot/LINKUSDT/depth_snapshot/200/True": 2,
+          "spot/NEARUSDT/depth_snapshot/200/True": 2,
+          "spot/DOGEUSDT/depth_snapshot/200/True": 2,
+          "spot/XRPUSDT/depth_snapshot/200/True": 2,
+          "spot/SOLUSDT/depth_snapshot/200/True": 2
+        },
+        "archive_roots": {
+          "e5711c33-b6fc-4bbb-90dc-5ae519a44e58": "/srv/recorder-data/S-BMDR/20261111T074613Z-spot"
+        },
+        "fast_path": {
+          "decoded_chunks": 112,
+          "trusted_chunks": 3846,
+          "payload_bytes_complete": false,
+          "capture_flag_counts_exact": false
+        }
+      }
+    },
+    "usdm": {
+      "pid": 339329,
+      "root": "/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z/usdm",
+      "cpu_weight": 200,
+      "rss_kib": 116892,
+      "threads_peak": 8,
+      "wal_peak_bytes": 3324872,
+      "recorder": {
+        "records": 183369877,
+        "test_pause_start_monotonic_ns": 0,
+        "test_pause_finish_monotonic_ns": 0,
+        "test_pause_backlog_drain_ns": null,
+        "sealed": 12758,
+        "rotations": {
+          "size": 8777,
+          "time": 3926,
+          "shutdown": 55
+        },
+        "max_durability_ns": 12542284247,
+        "max_receive_to_append_ns": 7590502432,
+        "receive_to_append_p99_ms": 931,
+        "max_status_cpu_percent": 151.8981598866143,
+        "seal_queue_depth": 0,
+        "seal_queue_peak": 32,
+        "seal_enqueue_wait_ns_total": 29975679,
+        "seal_enqueue_wait_max_ns": 23003208,
+        "seal_pending_raw_bytes": 0,
+        "catalog_wait_ns_total": 23978523530,
+        "catalog_wait_max_ns": 143085975,
+        "dropped_total": 0,
+        "ws_dropped_total": 0,
+        "rest_dropped_total": 0,
+        "stop_reason": "SIGNAL",
+        "peak_queue_payload_bytes": 100628590,
+        "peak_queue_records": 79453,
+        "wall_seconds": 86413.950727607,
+        "cpu_seconds": 39437.408065,
+        "peak_rss_bytes": 141914112,
+        "allocation_counter_enabled": false,
+        "new_calls": null,
+        "new_requested_bytes": null,
+        "interrupted": true
+      },
+      "status": {
+        "ws_accepted_records": 183355454,
+        "dropped_total": 0,
+        "ws_dropped_total": 0,
+        "rest_dropped_total": 0,
+        "catalog_drop_totals": {
+          "events": 0,
+          "tail_events": 0,
+          "dropped_ws": 0,
+          "dropped_rest": 0,
+          "first_utc_ns": null,
+          "last_utc_ns": null,
+          "dropped_total": 0
+        },
+        "drop_percent": 0.0,
+        "queue_peak_bytes": 97135720,
+        "writer_sync_ms_mean": 7.833143545185772,
+        "writer_sync_ms_max": 3515.117114,
+        "writer_seal_ms_mean": 28.113798009858925,
+        "writer_seal_ms_max": 5936.37695
+      },
+      "readback": {
+        "status": "PASS",
+        "chunks": 12758,
+        "records": 183369877,
+        "ws_records": 183355454,
+        "rest_records": 14423,
+        "catalog_chunk_count": 12758,
+        "manifest_chunk_count": 12758,
+        "chunk_states": {
+          "LOCAL_DELETED": 12758
+        },
+        "ingress_drops": {
+          "events": 0,
+          "tail_events": 0,
+          "dropped_ws": 0,
+          "dropped_rest": 0,
+          "first_utc_ns": null,
+          "last_utc_ns": null,
+          "dropped_total": 0
+        },
+        "stored_bytes": 8756495695,
+        "uncompressed_bytes": 158179083597,
+        "ws_payload_bytes": 309170295,
+        "rest_body_bytes": 4658334,
+        "source_payload_bytes": {
+          "um_perpetual/ETHUSDT/rest_observations": 1490764,
+          "um_perpetual/BTCUSDT/rest_observations": 1492827,
+          "um_perpetual/UNIUSDT/rest_observations": 1470612,
+          "um_perpetual/XRPUSDT/rest_observations": 1490264,
+          "um_perpetual/UNIUSDT/book_ticker": 9143249,
+          "um_perpetual/BNBUSDT/rest_observations": 1483532,
+          "um_perpetual/NEARUSDT/rest_observations": 1475780,
+          "um_perpetual/NEARUSDT/liquidation": 5038,
+          "um_perpetual/XRPUSDT/liquidation": 4126,
+          "um_perpetual/SOLUSDT/rest_observations": 1493000,
+          "um_perpetual/DOGEUSDT/rest_observations": 1498432,
+          "um_perpetual/LINKUSDT/rest_observations": 1486680,
+          "um_perpetual/DOGEUSDT/agg_trade": 1079112,
+          "um_perpetual/NEARUSDT/agg_trade": 631656,
+          "um_perpetual/SOLUSDT/diff_depth": 11830419,
+          "um_perpetual/ZECUSDT/diff_depth": 31665916,
+          "um_perpetual/ZECUSDT/rest_observations": 1482780,
+          "um_perpetual/NEARUSDT/book_ticker": 9835676,
+          "um_perpetual/ZECUSDT/agg_trade": 7591898,
+          "um_perpetual/BNBUSDT/mark_price": 567600,
+          "um_perpetual/LINKUSDT/diff_depth": 8033752,
+          "um_perpetual/BTCUSDT/mark_price": 590504,
+          "um_perpetual/NEARUSDT/mark_price": 550715,
+          "um_perpetual/XRPUSDT/book_ticker": 10840181,
+          "um_perpetual/SOLUSDT/agg_trade": 1132635,
+          "um_perpetual/BTCUSDT/agg_trade": 4121775,
+          "um_perpetual/BTCUSDT/liquidation": 12141,
+          "um_perpetual/NEARUSDT/diff_depth": 10821128,
+          "um_perpetual/SOLUSDT/book_ticker": 12245602,
+          "um_perpetual/ETHUSDT/book_ticker": 9487762,
+          "um_perpetual/DOGEUSDT/mark_price": 552659,
+          "um_perpetual/XRPUSDT/mark_price": 545652,
+          "um_perpetual/BNBUSDT/diff_depth": 12925456,
+          "um_perpetual/ETHUSDT/mark_price": 578598,
+          "um_perpetual/ETHUSDT/diff_depth": 34599811,
+          "um_perpetual/UNIUSDT/agg_trade": 805825,
+          "um_perpetual/DOGEUSDT/diff_depth": 12693550,
+          "um_perpetual/XRPUSDT/agg_trade": 897068,
+          "um_perpetual/ETHUSDT/liquidation": 10324,
+          "um_perpetual/SOLUSDT/liquidation": 5850,
+          "um_perpetual/SOLUSDT/mark_price": 555985,
+          "um_perpetual/UNIUSDT/liquidation": 2124,
+          "um_perpetual/LINKUSDT/book_ticker": 10967829,
+          "um_perpetual/BTCUSDT/book_ticker": 11416780,
+          "um_perpetual/ZECUSDT/liquidation": 10992,
+          "um_perpetual/UNIUSDT/mark_price": 545652,
+          "um_perpetual/LINKUSDT/mark_price": 562959,
+          "um_perpetual/BNBUSDT/book_ticker": 8768245,
+          "um_perpetual/BNBUSDT/liquidation": 6318,
+          "um_perpetual/BTCUSDT/diff_depth": 34992010,
+          "um_perpetual/ETHUSDT/agg_trade": 3710310,
+          "um_perpetual/DOGEUSDT/book_ticker": 8588006,
+          "um_shared/__GLOBAL__/rest_observations": 3136928,
+          "um_perpetual/LINKUSDT/agg_trade": 477894,
+          "um_perpetual/ZECUSDT/book_ticker": 9714012,
+          "um_perpetual/ZECUSDT/mark_price": 568397,
+          "um_perpetual/XRPUSDT/diff_depth": 13024810,
+          "um_perpetual/LINKUSDT/liquidation": 1969,
+          "um_perpetual/BNBUSDT/agg_trade": 1434402,
+          "um_perpetual/UNIUSDT/diff_depth": 10012456,
+          "um_perpetual/DOGEUSDT/liquidation": 3467
+        },
+        "ws_receive_span_seconds": 86409.925408429,
+        "archive_states": {
+          "LOCAL_DELETED": 12758
+        },
+        "connections": {
+          "um_perpetual/BTCUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ETHUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/UNIUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ZECUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/ETHUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/DOGEUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/UNIUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/XRPUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/XRPUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/SOLUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ZECUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/LINKUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/BNBUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/NEARUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/UNIUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/LINKUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/NEARUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/NEARUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ZECUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/SOLUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/ETHUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/BNBUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/BTCUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/UNIUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/BTCUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/UNIUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/SOLUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/XRPUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/ZECUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/NEARUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/XRPUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/BNBUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/BTCUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ETHUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/NEARUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/XRPUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/DOGEUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/SOLUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/NEARUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/SOLUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/DOGEUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/DOGEUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/ETHUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/BTCUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/LINKUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/UNIUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/XRPUSDT/mark_price": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/SOLUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/DOGEUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/BTCUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/BNBUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/LINKUSDT/book_ticker": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/BNBUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/DOGEUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ZECUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/LINKUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ETHUSDT/agg_trade": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/ZECUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/LINKUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_perpetual/BNBUSDT/liquidation": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1"
+          ],
+          "um_shared/__GLOBAL__/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ]
+        },
+        "connection_monotonic_ranges_ns": {
+          "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public": [
+            709541940465148,
+            792341870391274
+          ],
+          "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market": [
+            709542010188546,
+            792341804122302
+          ],
+          "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1": [
+            792342050630641,
+            795951865873577
+          ],
+          "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-market-1": [
+            792342106061421,
+            795951774703261
+          ]
+        },
+        "bridge_connections": {
+          "um_perpetual/UNIUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/XRPUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ZECUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/SOLUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/BTCUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/ETHUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/NEARUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/BNBUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/DOGEUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/LINKUSDT/diff_depth": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public",
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-ws-public-1"
+          ],
+          "um_perpetual/XRPUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/BTCUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/BNBUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/LINKUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/SOLUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/NEARUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/ZECUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/UNIUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/ETHUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ],
+          "um_perpetual/DOGEUSDT/rest_observations": [
+            "c1-dbf0657f-ae48-42c4-9cce-34e5dcca89d0-rest"
+          ]
+        },
+        "source_counts": {
+          "um_perpetual/BTCUSDT/book_ticker": 51180573,
+          "um_perpetual/ETHUSDT/book_ticker": 43153722,
+          "um_perpetual/UNIUSDT/diff_depth": 744204,
+          "um_perpetual/ZECUSDT/mark_price": 86410,
+          "um_perpetual/ETHUSDT/liquidation": 939,
+          "um_perpetual/DOGEUSDT/agg_trade": 126949,
+          "um_perpetual/UNIUSDT/agg_trade": 158865,
+          "um_perpetual/XRPUSDT/book_ticker": 12450149,
+          "um_perpetual/XRPUSDT/diff_depth": 823082,
+          "um_perpetual/SOLUSDT/book_ticker": 10276007,
+          "um_perpetual/ZECUSDT/book_ticker": 28846634,
+          "um_perpetual/LINKUSDT/mark_price": 86410,
+          "um_perpetual/BNBUSDT/mark_price": 86410,
+          "um_perpetual/NEARUSDT/liquidation": 280,
+          "um_perpetual/UNIUSDT/mark_price": 86410,
+          "um_perpetual/LINKUSDT/agg_trade": 106175,
+          "um_perpetual/NEARUSDT/agg_trade": 159362,
+          "um_perpetual/NEARUSDT/book_ticker": 5882149,
+          "um_perpetual/ZECUSDT/diff_depth": 828841,
+          "um_perpetual/SOLUSDT/agg_trade": 221460,
+          "um_perpetual/ETHUSDT/rest_observations": 1442,
+          "um_perpetual/BNBUSDT/book_ticker": 4835706,
+          "um_perpetual/BTCUSDT/rest_observations": 1443,
+          "um_perpetual/UNIUSDT/book_ticker": 3697152,
+          "um_perpetual/BTCUSDT/liquidation": 871,
+          "um_perpetual/UNIUSDT/rest_observations": 1442,
+          "um_perpetual/SOLUSDT/diff_depth": 809846,
+          "um_perpetual/XRPUSDT/rest_observations": 1442,
+          "um_perpetual/ZECUSDT/agg_trade": 2335009,
+          "um_perpetual/NEARUSDT/mark_price": 86410,
+          "um_perpetual/XRPUSDT/liquidation": 419,
+          "um_perpetual/BNBUSDT/rest_observations": 1442,
+          "um_perpetual/BTCUSDT/diff_depth": 846970,
+          "um_perpetual/ETHUSDT/diff_depth": 845118,
+          "um_perpetual/NEARUSDT/diff_depth": 766448,
+          "um_perpetual/XRPUSDT/agg_trade": 195592,
+          "um_perpetual/DOGEUSDT/book_ticker": 5613783,
+          "um_perpetual/SOLUSDT/mark_price": 86410,
+          "um_perpetual/NEARUSDT/rest_observations": 1442,
+          "um_perpetual/SOLUSDT/rest_observations": 1442,
+          "um_perpetual/DOGEUSDT/mark_price": 86410,
+          "um_perpetual/DOGEUSDT/rest_observations": 1442,
+          "um_perpetual/ETHUSDT/mark_price": 86410,
+          "um_perpetual/BTCUSDT/mark_price": 86410,
+          "um_perpetual/LINKUSDT/rest_observations": 1442,
+          "um_perpetual/UNIUSDT/liquidation": 207,
+          "um_perpetual/XRPUSDT/mark_price": 86410,
+          "um_perpetual/SOLUSDT/liquidation": 473,
+          "um_perpetual/DOGEUSDT/liquidation": 176,
+          "um_perpetual/BTCUSDT/agg_trade": 1192747,
+          "um_perpetual/BNBUSDT/diff_depth": 791613,
+          "um_perpetual/LINKUSDT/book_ticker": 2932826,
+          "um_perpetual/BNBUSDT/agg_trade": 223235,
+          "um_perpetual/DOGEUSDT/diff_depth": 741847,
+          "um_perpetual/ZECUSDT/liquidation": 1243,
+          "um_perpetual/LINKUSDT/diff_depth": 681137,
+          "um_perpetual/ETHUSDT/agg_trade": 1019319,
+          "um_perpetual/ZECUSDT/rest_observations": 1442,
+          "um_perpetual/LINKUSDT/liquidation": 85,
+          "um_perpetual/BNBUSDT/liquidation": 141,
+          "um_shared/__GLOBAL__/rest_observations": 2
+        },
+        "capture_flags": {
+          "um_perpetual/UNIUSDT/diff_depth/depth_bridge": 23176,
+          "um_perpetual/XRPUSDT/diff_depth/depth_bridge": 17329,
+          "um_perpetual/ZECUSDT/diff_depth/depth_bridge": 19138,
+          "um_perpetual/ETHUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/ETHUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/BTCUSDT/rest_observations/rest_poll": 1443,
+          "um_perpetual/BTCUSDT/rest_observations/exact_rest_http_body_preserved": 1443,
+          "um_perpetual/UNIUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/UNIUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/SOLUSDT/diff_depth/depth_bridge": 17055,
+          "um_perpetual/XRPUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/XRPUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/UNIUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/BNBUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/BNBUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/BTCUSDT/diff_depth/depth_bridge": 16730,
+          "um_perpetual/ETHUSDT/diff_depth/depth_bridge": 19928,
+          "um_perpetual/NEARUSDT/diff_depth/depth_bridge": 23546,
+          "um_perpetual/NEARUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/NEARUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/SOLUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/SOLUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/DOGEUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/DOGEUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/LINKUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/LINKUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/BNBUSDT/diff_depth/depth_bridge": 24710,
+          "um_perpetual/DOGEUSDT/diff_depth/depth_bridge": 22840,
+          "um_perpetual/NEARUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/LINKUSDT/diff_depth/depth_bridge": 20254,
+          "um_perpetual/ZECUSDT/diff_depth/depth_snapshot_pending": 3,
+          "um_perpetual/ZECUSDT/rest_observations/rest_poll": 1442,
+          "um_perpetual/ZECUSDT/rest_observations/exact_rest_http_body_preserved": 1442,
+          "um_perpetual/XRPUSDT/rest_observations/depth_bridge": 2,
+          "um_perpetual/BTCUSDT/rest_observations/depth_bridge": 2,
+          "um_perpetual/ZECUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/LINKUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/LINKUSDT/diff_depth/depth_snapshot_pending": 2,
+          "um_perpetual/NEARUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/XRPUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/ZECUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/SOLUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/BTCUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/NEARUSDT/diff_depth/depth_snapshot_pending": 3,
+          "um_perpetual/DOGEUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/ETHUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/XRPUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/SOLUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/SOLUSDT/diff_depth/depth_snapshot_pending": 3,
+          "um_perpetual/BNBUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/BNBUSDT/diff_depth/depth_snapshot_pending": 2,
+          "um_perpetual/ETHUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/ETHUSDT/diff_depth/depth_snapshot_pending": 2,
+          "um_perpetual/LINKUSDT/rest_observations/depth_snapshot_pending": 1,
+          "um_perpetual/BNBUSDT/rest_observations/depth_bridge": 1,
+          "um_perpetual/DOGEUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/DOGEUSDT/diff_depth/depth_snapshot_pending": 3,
+          "um_perpetual/ETHUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/DOGEUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/BTCUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/UNIUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/BNBUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/ZECUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/LINKUSDT/rest_observations/depth_bridge": 1,
+          "um_perpetual/UNIUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/LINKUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/BTCUSDT/diff_depth/depth_snapshot_pending": 3,
+          "um_perpetual/LINKUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/SOLUSDT/rest_observations/depth_bridge": 2,
+          "um_perpetual/SOLUSDT/book_ticker/sequence_gap": 1,
+          "um_shared/__GLOBAL__/rest_observations/rest_poll": 2,
+          "um_shared/__GLOBAL__/rest_observations/exact_rest_http_body_preserved": 2,
+          "um_perpetual/SOLUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/NEARUSDT/rest_observations/depth_bridge": 2,
+          "um_perpetual/LINKUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/BTCUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/ZECUSDT/rest_observations/depth_bridge": 1,
+          "um_perpetual/XRPUSDT/diff_depth/depth_snapshot_pending": 3,
+          "um_perpetual/UNIUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/NEARUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/BNBUSDT/rest_observations/depth_snapshot_pending": 1,
+          "um_perpetual/ZECUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/LINKUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/UNIUSDT/rest_observations/depth_bridge": 1,
+          "um_perpetual/BNBUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/NEARUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/XRPUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/ETHUSDT/rest_observations/depth_bridge": 1,
+          "um_perpetual/XRPUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/SOLUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/DOGEUSDT/rest_observations/depth_bridge": 2,
+          "um_perpetual/UNIUSDT/rest_observations/depth_snapshot_pending": 1,
+          "um_perpetual/ETHUSDT/rest_observations/depth_snapshot_pending": 1,
+          "um_perpetual/DOGEUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/BTCUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/UNIUSDT/diff_depth/depth_snapshot_pending": 2,
+          "um_perpetual/UNIUSDT/diff_depth/sequence_gap": 1,
+          "um_perpetual/ZECUSDT/rest_observations/depth_snapshot_pending": 1,
+          "um_perpetual/ZECUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/ETHUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/BNBUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/BTCUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/BNBUSDT/book_ticker/sequence_gap": 1,
+          "um_perpetual/ETHUSDT/mark_price/sequence_gap": 1,
+          "um_perpetual/XRPUSDT/agg_trade/sequence_gap": 1,
+          "um_perpetual/DOGEUSDT/liquidation/sequence_gap": 1,
+          "um_perpetual/NEARUSDT/liquidation/sequence_gap": 1
+        },
+        "rest_statuses": {
+          "um_perpetual/ETHUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/ETHUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/ETHUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/ETHUSDT/open_interest/200/True": 288,
+          "um_perpetual/ETHUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/BTCUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/BTCUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/BTCUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/BTCUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/BTCUSDT/open_interest/200/True": 289,
+          "um_perpetual/UNIUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/UNIUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/UNIUSDT/open_interest/200/True": 288,
+          "um_perpetual/UNIUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/UNIUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/XRPUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/XRPUSDT/open_interest/200/True": 288,
+          "um_perpetual/XRPUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/XRPUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/XRPUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/BNBUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/BNBUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/BNBUSDT/open_interest/200/True": 288,
+          "um_perpetual/BNBUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/BNBUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/NEARUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/NEARUSDT/open_interest/200/True": 288,
+          "um_perpetual/NEARUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/NEARUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/NEARUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/SOLUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/SOLUSDT/open_interest/200/True": 288,
+          "um_perpetual/SOLUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/SOLUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/SOLUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/DOGEUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/DOGEUSDT/open_interest/200/True": 288,
+          "um_perpetual/DOGEUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/DOGEUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/DOGEUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/LINKUSDT/open_interest/200/True": 288,
+          "um_perpetual/LINKUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/LINKUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/LINKUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/LINKUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/ZECUSDT/taker_buy_sell_volume_5m/200/True": 288,
+          "um_perpetual/ZECUSDT/open_interest/200/True": 288,
+          "um_perpetual/ZECUSDT/top_long_short_account_ratio_5m/200/True": 288,
+          "um_perpetual/ZECUSDT/top_long_short_position_ratio_5m/200/True": 288,
+          "um_perpetual/ZECUSDT/global_long_short_ratio_5m/200/True": 288,
+          "um_perpetual/XRPUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/BTCUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/LINKUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/BNBUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/SOLUSDT/depth_snapshot/200/True": 2,
+          "um_shared/__GLOBAL__/exchange_info/200/True": 2,
+          "um_perpetual/NEARUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/ZECUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/UNIUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/ETHUSDT/depth_snapshot/200/True": 2,
+          "um_perpetual/DOGEUSDT/depth_snapshot/200/True": 2
+        },
+        "archive_roots": {
+          "7c3d2d1b-d861-4995-beb3-22394a4db04e": "/srv/recorder-data/S-BMDR/20261111T074613Z-usdm"
+        },
+        "fast_path": {
+          "decoded_chunks": 1076,
+          "trusted_chunks": 11682,
+          "payload_bytes_complete": false,
+          "capture_flag_counts_exact": false
+        }
+      }
+    }
+  },
+  "slice_cpu_peak_percent": 246.55662271054024,
+  "slice_cpu_60s_peak_percent": 168.6785345302483,
+  "elapsed_seconds": 86409.23883115209,
+  "system_minimum_free_bytes": 19622883328,
+  "host": {
+    "busy_percent_of_machine": 29.709286160801778,
+    "stolen_percent_of_machine": 14.968494114137615,
+    "minimum_available_bytes": 3924328448,
+    "total_memory_bytes": 6163578880
+  },
+  "error": "AssertionError()",
+  "finish_utc": "2026-11-12T07:47:27.915602+00:00",
+  "cpu_gate": {
+    "gate": "cpu_mean + archive mean and 60 s rolling peak <= limit",
+    "limit_percent": 200.0,
+    "slice_peak_1s_observed_percent": 246.55662271054024,
+    "slice_peak_1s_is_gate": false,
+    "slice_peak_60s_percent": 168.6785345302483
+  },
+  "cpu_mean_percent": 63.55003725645162,
+  "peak_rss_sum_bytes": 184434688,
+  "status_cpu_peak_sum_upper_bound_percent": 266.42316189291415,
+  "storage": {
+    "stored_bytes": 10888245084,
+    "archive_available_bytes": 2017797959680,
+    "system_available_bytes": 20034891776,
+    "compressed_gb_per_day": 10.886985016289781,
+    "additional_retention_days_at_observed_rate": 185.3403818101013
+  },
+  "archival": {
+    "passes": 4399,
+    "failed_passes": 0,
+    "cpu_seconds": 13951.799859,
+    "peak_rss_upper_bound_bytes": 99414016
+  },
+  "cpu_mean_with_archive_percent": 79.69608500439746,
+  "rss_with_archive_upper_bound_bytes": 283848704,
+  "reconnections": [
+    {
+      "market": "spot",
+      "elapsed_seconds": 82800.284310237,
+      "event": "WS_RECONNECT",
+      "reason": "23h_renewal",
+      "group": "spot-public",
+      "generation": 1,
+      "accepted": 50224027
+    },
+    {
+      "market": "usdm",
+      "elapsed_seconds": 82800.341693712,
+      "event": "WS_RECONNECT",
+      "reason": "23h_renewal",
+      "group": "usdm-market",
+      "generation": 1,
+      "accepted": 6420457
+    },
+    {
+      "market": "usdm",
+      "elapsed_seconds": 82800.359705327,
+      "event": "WS_RECONNECT",
+      "reason": "23h_renewal",
+      "group": "usdm-public",
+      "generation": 1,
+      "accepted": 171358101
+    }
+  ],
+  "connection_groups": {
+    "spot:spot-public": {
+      "market": "spot",
+      "group": "spot-public",
+      "connections": 2,
+      "max_connection_seconds": 82799.980746319,
+      "reconnect_events": 1,
+      "reason_counts": {
+        "23h_renewal": 1
+      },
+      "renewal_triggered": true
+    },
+    "usdm:usdm-public": {
+      "market": "usdm",
+      "group": "usdm-public",
+      "connections": 2,
+      "max_connection_seconds": 82799.929926126,
+      "reconnect_events": 1,
+      "reason_counts": {
+        "23h_renewal": 1
+      },
+      "renewal_triggered": true
+    },
+    "usdm:usdm-market": {
+      "market": "usdm",
+      "group": "usdm-market",
+      "connections": 2,
+      "max_connection_seconds": 82799.793933756,
+      "reconnect_events": 1,
+      "reason_counts": {
+        "23h_renewal": 1
+      },
+      "renewal_triggered": true
+    }
+  },
+  "cpu_budget_results": {
+    "applied_limit_percent": 200.0,
+    "frozen_limit_percent": 120,
+    "frozen_rolling_60s_pass": false,
+    "frozen_recorder_mean_pass": true,
+    "frozen_recorder_and_archive_mean_pass": true
+  },
+  "limits": {
+    "seconds": 86410,
+    "rss_limit_mib": 384,
+    "cpu_limit_percent": 200.0,
+    "max_drop_percent": 0.1,
+    "queue_limit_mib": 128
+  },
+  "verification": {
+    "mode": "verify-only",
+    "original_start_utc": "2026-11-11T07:46:56.990502+00:00",
+    "seconds_required": 86410,
+    "verified_utc": "2026-11-12T07:58:04.451945+00:00"
+  }
+}

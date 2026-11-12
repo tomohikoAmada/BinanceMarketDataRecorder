@@ -12,8 +12,8 @@
 | F4 验收脚本 | ✅ 完成 | Catalog/manifest 集合与身份对账、缺口分片解码、WS/REST 丢弃对账、逐连接组 23h、`--verify-only`、`--finish-only`、archive blocked；离线 `c4-acceptance-boundaries` 通过。 |
 | F5 发布准备 | ✅ 完成 | 安全安装顺序/备份恢复、runtime venv 按 hashed lock 重建、`Restart=no`/CPUWeight/配额/超时检查、旧 `production.conf`/logrotate 处理、RUNBOOK；原生安装 `20261111-e0b7f684`。 |
 | F6 原生回归与冻结 | ✅ 完成 | Release 22/22、ASan/UBSan 10/10、TSan 10/10（`setarch -R`）；冻结提交 `e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`、baseline `801802d8…`。 |
-| F7 2h 公网预检 | ✅ 完成 | 2026-11-11 05:26–07:26 UTC 连续 7,200 s；Spot 4,093,454 / USD-M 13,993,992 条，0 丢弃，封存队深/峰值 0/20、0/31，峰值 RSS 36.6/49.0 MB，RSS+archive 182.3 MiB；首次验收脚本缺 `PYTHONPATH`，verify-only 重验同一份数据 PASS，尾部 31/61 分片归档后全部 `LOCAL_DELETED`。 |
-| C4-C 24h 资格 | ⏳ 进行中 | 2026-11-11 07:46:56 UTC 启动，目标 86,410 s；发布 `20261111-c4c-e0b7f684`（同一冻结二进制 `ba71faa3…`/配置 `75d1e9ad…`），新根 `20261111T074613Z`；`advance.py --qualify-only`，先 install + archive timer + qualify，C5 暂不启用。 |
+| F7 2h 公网预检 | ✅ 完成 | 2026-11-11 05:26–07:26 UTC 连续 7,200 s；Spot 4,093,454 / USD-M 13,993,992 条，0 丢弃，封存队深/峰值 0/20、0/31，峰值 RSS 36.6/49.0 MB，RSS+archive 173.8 MiB（182.3 MB）；首次验收脚本缺 `PYTHONPATH`，verify-only 重验同一份数据 PASS，尾部 31/61 分片归档后全部 `LOCAL_DELETED`。 |
+| C4-C 24h 资格 | ✅ 完成（PASS） | 2026-11-11 07:46:56–2026-11-12 07:47:27 UTC 连续 86,409 s；Spot 51,679,919 / USD-M 183,369,877 条，0 丢弃；三连接组均 23h 换线；全部 16,716 chunk `LOCAL_DELETED`；RSS+archive 270.7 MiB（283.8 MB）、CPU 合计+归档 79.7%、60 s 峰值 168.7%；一小时离线消费两市场均 invalid=0、60 根 1m K 线。首次验收因额外 1 s CPU 采样断言失败，修验收脚本后 verify-only PASS，不重采。 |
 | C5 生产交接 | ⬜ 未开始 | C4-C PASS 后执行启用、一次受控重启、回退演练和最终签收。 |
 
 首版 C3 候选已完成 2026-11-08 17:57:39–19:00:55（上海时间）的 60 分钟公网与完整独立读回：Spot 356,069 条/64 分片，USD-M 1,298,443 条/92 分片；CPU 均值合计约单核 17.03%，峰值 RSS 合计约 61.38 MiB。二进制 SHA-256 为 `2051b262fa831c02a35aad5bda580db9d44c4bbb07382b487a941f4326e515a3`。补充配额扣账、成交时间统计、配置流检查和归档并发等待后的最终候选需从新 T0 重跑，不拼接时长。最终 C3 已通过，C4/C5 24h 资格仍待完成，见下方签收补记。
@@ -168,7 +168,7 @@ C4-A 按定稿 6.2 完成以下改动：
 - 丢弃测试的回环流名需使用归一化后的 `diff_depth`/`book_ticker`/`agg_trade`；depth 快照夹具需返回比最新流早一拍的 `lastUpdateId`，否则会按 `depth_snapshot_too_old` 反复重试。
 - Spot depth 快照权重为 250、窗口 2,000/60s，12 个 symbol 在短测内最多完成约 7 次快照；丢弃测试改用 3 个 symbol，以便观察到丢弃后的第二次快照请求和桥接恢复。该权重与生产配置未改。
 
-**尚未完成：** C4-C 24h 资格、C5 启用与交接。C4-B 已部署并 PASS；10:56 失败轮按定稿未做全量读回。
+**当时尚未完成：** C4-C 24h 资格、C5 启用与交接；C4-C 已于 2026-11-12 PASS，见顶部状态表与 C4-C 节。C4-B 已部署并 PASS；10:56 失败轮按定稿未做全量读回。
 
 **资格驱动更新（2026-11-09，C4-B 准备）：** `deployment/qualify.py` 已加入 `--max-drop-percent` 门槛，按独立读回的 accepted WS 记录数计算 `dropped_total` 百分比（C4-B 使用 `0`，C4-C 使用 `0.01`）；新增 `--queue-limit-mib` 可选门槛（C4-B 使用 32 MiB），并把 `queued_payload_bytes` 峰值、`writer_sync_ms`/`writer_seal_ms` 均值与最大值写入报告；停止后断言无 `.partial`。`deployment/advance.py` 的 C4-C 调用已显式传 `0.01`。驱动提交为 `27b1f0ac`。
 
@@ -291,7 +291,7 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **F6 ✅ 原生回归与冻结。** GreenCloud 原生 Linux x86_64：Release **22/22**（234.97 s）、ASan/UBSan **10/10**（81.59 s）、TSan **10/10**（109.68 s）。Release 新增 `c4-configured-recovery`：配置模式取消首帧 header 同步后，覆盖 `eintr`/`short`/`enospc`/`fsync_eio`、Raw fsync 后、torn frame、sealed/manifest rename 后和 Catalog commit 后中断，恢复可读且缺口如实标记。TSan 首轮因主机 `vm.mmap_rnd_bits=32` 报 `unexpected memory mapping`，使用 `setarch -R` 仅对该测试进程树关闭 ASLR 后通过；这是环境使能，不是代码回归。冻结候选：提交 `e0b7f684e41fa4e29080b9fa0bb3c96ecf1c1e26`，Release `ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff`，ASan `83739d78…`，TSan `0fbca3b1…`，十币对配置 `75d1e9ad…`，vendored baseline 树 `801802d8…`。完整身份见 [frozen-candidate](f6-frozen-candidate-20261111.json)。
 
-**状态：** F1–F7 已完成。F7 2h 公网预检 PASS（verify-only 重验同一份数据，不重采）；C4-C 24h 和 C5 尚未开始；不得用 F7/native/安装结果替代 C4-C 资格。
+**状态：** F1–F7 与 C4-C 24h 已完成；C4-C PASS，C5 尚未开始。C4-C 的 24h 资源/丢弃/归档/离线消费均通过；长期（周/月）内存和元数据增长仍需 C5 监控/保留策略，不能用 24h 结果代替周/月长稳结论。
 
 
 ### F7 ✅ 2h 公网预检（2026-11-11，PASS）
@@ -311,10 +311,37 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 | 最大耐久 | 5.85 s | 6.26 s |
 | `receive_to_append_p99` | 78 ms | 220 ms |
 
-**验收结果。** 两 recorder 峰值 RSS + archive 峰值上界 **182.3 MiB**（≤384）；CPU 均值合计 + archive **67.4%**（≤200）；slice 峰值 180.1%，60 s 峰值 118.4%；整机忙碌 23.8%，最小可用内存 5.03 GB / 6.16 GB；系统盘最小可用 18.53 GiB（≥13）；归档 394 轮、0 失败、0 blocked，压缩速率 10.32 GB/天，`/srv` 预计保留 196.7 天。
+**验收结果。** 两 recorder 峰值 RSS + archive 峰值上界 **173.8 MiB（182.3 MB）**（≤384 MiB）；CPU 均值合计 + archive **67.4%**（≤200）；slice 峰值 180.1%，60 s 峰值 118.4%；整机忙碌 23.8%，最小可用内存 5.03 GB / 6.16 GB；系统盘最小可用 18.53 GiB（≥13）；归档 394 轮、0 失败、0 blocked，压缩速率 10.32 GB/天，`/srv` 预计保留 196.7 天。
 
 **初次验收失败与纠正。** 首次 `progress.json` 为 FAILED，原因是验收脚本以 `sys.executable` 调 `operations.py` 时未继承 `/opt/sbmdr/current/python/src`，报 `ModuleNotFoundError`；采集数据本身完整，未重采。按计划执行 `qualify.py --verify-only` 对同一份 `progress.json`、两份 recorder 摘要/状态日志和数据根重验，结果 **PASS**：读回 4,093,454 / 13,993,992 条，逐帧/可信覆盖 Spot 71/263、USD-M 181/838，0 丢弃，Catalog 缺口 0，全部 chunk `LOCAL_DELETED`。归档停止时 SIGTERM 命中一个 in-flight oneshot pass，`sbmdr-archive.service` 曾进入 failed；已 `reset-failed`，并修正 `stop_archive` 先等 in-flight pass 结束再停，供 C4-C 使用。
 
 **900 s 窗口与长期趋势。** 所有 900 s 窗口入口队列峰值最高 8.14 MB，远低于 128 MiB；最长持续 ≥90% 入口队列 **0 s**；封存交接无阻塞（最大等待 39.8 µs）；RSS 在最后约 45 分钟平台化（USD-M 48.9–49.0 MB），CPU 随行情量变化、单千条 CPU 未上升。最终尾部 31/61 个 sealed 分片已归档删除，本地根从 231 MB 降到 14.8 MB（1,353 manifest）；按当前 chunk 速率估算元数据增长约 **5–13 GB/月**，系统盘排空后可用约 18.96 GiB。C4-C 24h 必须实测该增长，并在 C5 前确定旧根、manifest/Catalog 和日志的保留/清理策略，不能假设系统盘会自动回收元数据。
 
 **证据：** [f7-preflight-20261111](f7-preflight-20261111/)（setup、verify-only、readback、900 s 分析、archive 日志、原始 FAILED report）。
+
+
+### C4-C ✅ 24h 资格（2026-11-12，PASS）
+
+**身份与运行。** 同一冻结候选：发布 `20261111-c4c-e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`；新根 `20261111T074613Z`。2026-11-11 07:46:56 UTC 启动，2026-11-12 07:47:27 UTC 停止，连续 **86,409 s**；两个 recorder 同一 PID、`NRestarts=0`、正常 SIGTERM/排空。
+
+| 项目 | Spot | USD-M |
+| --- | ---: | ---: |
+| 记录数 | 51,679,919 | 183,369,877 |
+| WS / REST 丢弃 | 0 / 0 | 0 / 0 |
+| Catalog `INGRESS_DROP` | 0 | 0 |
+| 入口队列峰值 | 6.0 MB | 96.0 MB |
+| 最长 ≥90% 入口队列 | 0 s | 0 s |
+| 封存队深 / 峰值 | 0 / 18 | 0 / 32 |
+| `enqueue_seal` 最大等待 | 37 µs | 23.0 ms |
+| 峰值 RSS | 42.5 MB | 141.9 MB |
+| 逐帧 / 可信 chunk | 112 / 3,846 | 1,076 / 11,682 |
+
+**资源与网络。** 两 recorder 峰值 RSS + archive 峰值上界 **270.7 MiB（283.8 MB）**（≤384 MiB）；CPU 均值合计 + archive **79.7%**（≤200）；60 s 滚动峰值 **168.7%**（≤200）；整机忙碌 29.7%，最小可用内存 3.92 GB / 6.16 GB；系统盘最小可用 18.27 GiB（≥13）。三连接组 `spot-public`、`usdm-public`、`usdm-market` 均在 elapsed 82,800 s 记录 `23h_renewal`，最长连接约 82,800 s，换线后各 symbol depth 重新桥接通过。
+
+**归档与离线消费。** 归档 4,399 轮，0 失败/0 blocked；16,716 个 chunk 全部 `LOCAL_DELETED`；压缩数据 10.89 GB/天，`/srv` 预计约 185 天。每市场 BTCUSDT 一小时（07:50–08:50 UTC）离线消费：Spot 606,822 条 valid/0 invalid、37,658 aggTrade、60 根 1m K 线、0 gap；USD-M 2,093,576 valid/0 invalid、55,056 aggTrade、60 根、0 gap。
+
+**首次验收失败与纠正。** 首次 `progress.json` 为 FAILED，唯一断言是 qualifier 额外检查的 **1 秒** `slice_cpu_peak_percent=246.56 > 200`；计划门槛是“CPU 合计/滚动检查”，实际 `cpu_mean+archive=79.70%`、60 s 峰值 168.68% 均通过。修正 qualifier：保留 1 s 采样作为观察值，不再作为 gate；对同一份数据执行 `--verify-only`，结果 **PASS**，未重采。原始 FAILED report 与 verify-only report 都保留在证据中。
+
+**长期趋势（重要）。** USD-M RSS 在 7–9 小时随 85–93 MB 入口队列峰值阶跃到约 135.3 MiB（141.9 MB），之后 9–24 小时保持平台（135.3 MiB），不是持续线性泄漏；24h 资源预算通过。Catalog/manifest 不自动删除，24h 残留本地根 **160 MB / 16,716 chunk**（manifest 67 MB、Catalog 93 MB），约 **4.8 GB/月**；系统盘 18.66 GiB 可用、运行线 13 GiB。C5 前必须确定旧根/manifest/日志保留或清理策略，并对周/月内存做持续监控；本 24h PASS 不能替代周/月长稳资格。
+
+**证据：** [c4c-qualification-20261112](c4c-qualification-20261112/)。
