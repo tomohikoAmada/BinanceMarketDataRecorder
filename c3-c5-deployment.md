@@ -344,4 +344,6 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **长期趋势（重要）。** USD-M RSS 在 7–9 小时随 85–93 MB 入口队列峰值阶跃到约 135.3 MiB（141.9 MB），之后 9–24 小时保持平台（135.3 MiB），不是持续线性泄漏；24h 资源预算通过。Catalog/manifest 不自动删除，24h 残留本地根 **160 MB / 16,716 chunk**（manifest 67 MB、Catalog 93 MB），约 **4.8 GB/月**；系统盘 18.66 GiB 可用、运行线 13 GiB。C5 前必须确定旧根/manifest/日志保留或清理策略，并对周/月内存做持续监控；本 24h PASS 不能替代周/月长稳资格。
 
+**存储容量估算（按 24h 实测）：** `/srv` 归档盘可用 **2.018 TB**，压缩数据 **10.89 GB/天** → 约 **185 天（约 6 个月）**。系统盘 `/` 当前可用 **18.66 GiB**，运行线 13 GiB，余量 5.66 GiB；Catalog/manifest 约 **160 MiB/天** → 约 **34–36 天**。旧已验证根约 7.4 GB 的清理和 logrotate 可延长系统盘时间；当前近期限值是**系统盘元数据**，不是 2 TB 归档盘。C5 前必须落实旧根/manifest/日志的保留或清理策略，并监控系统盘和 `/srv`。
+
 **证据：** [c4c-qualification-20261112](c4c-qualification-20261112/)。
