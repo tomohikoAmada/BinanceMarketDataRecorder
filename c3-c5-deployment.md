@@ -14,7 +14,7 @@
 | F6 原生回归与冻结 | ✅ 完成 | Release 22/22、ASan/UBSan 10/10、TSan 10/10（`setarch -R`）；冻结提交 `e0b7f684`、Release `ba71faa3…`、配置 `75d1e9ad…`、baseline `801802d8…`。 |
 | F7 2h 公网预检 | ✅ 完成 | 2026-11-11 05:26–07:26 UTC 连续 7,200 s；Spot 4,093,454 / USD-M 13,993,992 条，0 丢弃，封存队深/峰值 0/20、0/31，峰值 RSS 36.6/49.0 MB，RSS+archive 173.8 MiB（182.3 MB）；首次验收脚本缺 `PYTHONPATH`，verify-only 重验同一份数据 PASS，尾部 31/61 分片归档后全部 `LOCAL_DELETED`。 |
 | C4-C 24h 资格 | ✅ 完成（PASS） | 2026-11-11 07:46:56–2026-11-12 07:47:27 UTC 连续 86,409 s；Spot 51,679,919 / USD-M 183,369,877 条，0 丢弃；三连接组均 23h 换线；全部 16,716 chunk `LOCAL_DELETED`；RSS+archive 270.7 MiB（283.8 MB）、CPU 合计+归档 79.7%、60 s 峰值 168.7%；一小时离线消费两市场均 invalid=0、60 根 1m K 线。首次验收因额外 1 s CPU 采样断言失败，修验收脚本后 verify-only PASS，不重采。 |
-| C5 生产交接 | ⬜ 未开始 | C4-C PASS 后执行启用、一次受控重启、回退演练和最终签收。 |
+| C5 生产交接 | ✅ 完成（2026-11-12） | 08:40 UTC 启用；`Restart=on-failure/10s/3 per 300s`；受控重启 19.8 s；旧 release `20261110-b610a656` 隔离临时根 1,008 条/35 分片验证 PASS，恢复 `20261111-c4c-e0b7f684`；两 recorder + archive timer active/enabled，归档积压 0。 |
 
 首版 C3 候选已完成 2026-11-08 17:57:39–19:00:55（上海时间）的 60 分钟公网与完整独立读回：Spot 356,069 条/64 分片，USD-M 1,298,443 条/92 分片；CPU 均值合计约单核 17.03%，峰值 RSS 合计约 61.38 MiB。二进制 SHA-256 为 `2051b262fa831c02a35aad5bda580db9d44c4bbb07382b487a941f4326e515a3`。补充配额扣账、成交时间统计、配置流检查和归档并发等待后的最终候选需从新 T0 重跑，不拼接时长。最终 C3 已通过，C4/C5 24h 资格仍待完成，见下方签收补记。
 
@@ -291,7 +291,7 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **F6 ✅ 原生回归与冻结。** GreenCloud 原生 Linux x86_64：Release **22/22**（234.97 s）、ASan/UBSan **10/10**（81.59 s）、TSan **10/10**（109.68 s）。Release 新增 `c4-configured-recovery`：配置模式取消首帧 header 同步后，覆盖 `eintr`/`short`/`enospc`/`fsync_eio`、Raw fsync 后、torn frame、sealed/manifest rename 后和 Catalog commit 后中断，恢复可读且缺口如实标记。TSan 首轮因主机 `vm.mmap_rnd_bits=32` 报 `unexpected memory mapping`，使用 `setarch -R` 仅对该测试进程树关闭 ASLR 后通过；这是环境使能，不是代码回归。冻结候选：提交 `e0b7f684e41fa4e29080b9fa0bb3c96ecf1c1e26`，Release `ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff`，ASan `83739d78…`，TSan `0fbca3b1…`，十币对配置 `75d1e9ad…`，vendored baseline 树 `801802d8…`。完整身份见 [frozen-candidate](f6-frozen-candidate-20261111.json)。
 
-**状态：** F1–F7 与 C4-C 24h 已完成；C4-C PASS，C5 尚未开始。C4-C 的 24h 资源/丢弃/归档/离线消费均通过；长期（周/月）内存和元数据增长仍需 C5 监控/保留策略，不能用 24h 结果代替周/月长稳结论。
+**状态：** F1–F7、C4-C、C5 已完成。C5 已启用常驻生产、完成受控重启和隔离回退演练；长期（周/月）内存和元数据增长仍需持续监控/保留策略，不能用 24h 结果代替周/月长稳结论。
 
 
 ### F7 ✅ 2h 公网预检（2026-11-11，PASS）
@@ -344,6 +344,19 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **长期趋势（重要）。** USD-M RSS 在 7–9 小时随 85–93 MB 入口队列峰值阶跃到约 135.3 MiB（141.9 MB），之后 9–24 小时保持平台（135.3 MiB），不是持续线性泄漏；24h 资源预算通过。Catalog/manifest 不自动删除，24h 残留本地根 **160 MB / 16,716 chunk**（manifest 67 MB、Catalog 93 MB），约 **4.8 GB/月**；系统盘 18.66 GiB 可用、运行线 13 GiB。C5 前必须确定旧根/manifest/日志保留或清理策略，并对周/月内存做持续监控；本 24h PASS 不能替代周/月长稳资格。
 
-**存储容量估算（按 24h 实测）：** `/srv` 归档盘可用 **2.018 TB**，压缩数据 **10.89 GB/天** → 约 **185 天（约 6 个月）**。系统盘 `/` 当前可用 **18.66 GiB**，运行线 13 GiB，余量 5.66 GiB；Catalog/manifest 约 **160 MiB/天** → 约 **34–36 天**。旧已验证根约 7.4 GB 的清理和 logrotate 可延长系统盘时间；当前近期限值是**系统盘元数据**，不是 2 TB 归档盘。C5 前必须落实旧根/manifest/日志的保留或清理策略，并监控系统盘和 `/srv`。
+**存储容量估算（按 24h 实测）：** `/srv` 归档盘可用 **2.018 TB**，压缩数据 **10.89 GB/天** → 约 **185 天（约 6 个月）**。系统盘 `/` 当前可用 **18.66 GiB**，运行线 13 GiB，余量 5.66 GiB；Catalog/manifest 约 **160 MiB/天** → 约 **34–36 天**。旧 C++ S-BMDR 完全归档根实际约 0.4 GB，本次清理 9 个根释放 23.3 MiB；`/var/lib` 的 7.4 GB 主要是 Python M4 历史数据（`data`/`legacy`/`m42`/`p4` 等），本轮未清理。系统盘 34–36 天的近期限值不变；logrotate 已启用，C5 继续监控旧根/manifest/日志和 `/srv`。
 
 **证据：** [c4c-qualification-20261112](c4c-qualification-20261112/)。
+
+
+### C5 ✅ 启用、重启、回退与交接（2026-11-12）
+
+**生产身份。** `current -> /opt/sbmdr/releases/20261111-c4c-e0b7f684`，Release `ba71faa3…`，配置 `75d1e9ad…`，baseline `801802d8…`；生产根 `20261111T074613Z`，归档目标 `20261111T074613Z-{spot,usdm}`。2026-11-12 08:40 UTC 由 `finish_production` 启用：尾部积压 0，`Restart=on-failure`、`RestartSec=10`、`StartLimitBurst=3/300s`，logrotate 恢复，两个 recorder 与 archive timer enable + active。
+
+**受控重启。** 08:42:09–08:42:41 UTC，历时 19.8 s；PID 442156/442189 → 442494/442506；`NRestarts=0`；`PROCESS_START` 3；重启后 22 s 内 Spot 5,819 / USD-M 17,405 条，入口队列 0、丢弃 0、归档积压 0。
+
+**回退演练。** 同一维护窗口停止服务和 timer，保留生产根/config/roots；`current` 临时切到旧 release `20261110-b610a656`，在隔离临时根 `rollback-20261112T084335Z` 启动并写入 **1,008 条 / 35 分片**，旧 reader `verify` **PASS**；随后恢复 `20261111-c4c-e0b7f684`，当前 PID 442874/442895、`NRestarts=0`、服务/timer active，归档积压 0。旧 release 仅用于演练，未留作最终常驻。
+
+**最终状态。** 两个 recorder `Restart=on-failure`、`RestartUSec=10s`、`StartLimitIntervalUSec=5min`（300 s）、`StartLimitBurst=3`，active/enabled；archive timer active/enabled；logrotate `/etc/logrotate.d/sbmdr` 已恢复。旧 C++ 完全归档本地根清理 9 个、释放 23.3 MiB；`/var/lib` 的 7.4 GB 主要是 Python M4 历史数据，未在本轮清理。系统盘约 18.63 GiB 可用、元数据约 4.8 GB/月、约 34–36 天到 13 GiB 线；`/srv` 归档约 185 天。后续持续监控周/月 RSS、系统盘元数据和 `/srv` 保留天数；本 24h 结果不替代周/月长稳结论。
+
+**证据：** [c5-production-20261112](c5-production-20261112/)。

@@ -1,0 +1,29 @@
+{
+  "started_utc": "2026-11-12T08:43:35.453138+00:00",
+  "old_release": "/opt/sbmdr/releases/20261110-b610a656",
+  "new_release": "/opt/sbmdr/releases/20261111-c4c-e0b7f684",
+  "temp_root": "/var/lib/binance-market-data-recorder/S-BMDR/rollback-20261112T084335Z",
+  "stopped_active": [
+    "inactive",
+    "inactive",
+    "inactive"
+  ],
+  "current_after_switch": "/opt/sbmdr/releases/20261110-b610a656",
+  "old_exit": 0,
+  "old_verify_exit": 0,
+  "old_records": 1008,
+  "old_chunks": 35,
+  "old_status": "PASS",
+  "drill_pass": true,
+  "restored_current": "/opt/sbmdr/releases/20261111-c4c-e0b7f684",
+  "restored_active": [
+    "active",
+    "active",
+    "active"
+  ],
+  "spot_pid": "442874",
+  "spot_nrestarts": "0",
+  "usdm_pid": "442895",
+  "usdm_nrestarts": "0",
+  "finished_utc": "2026-11-12T08:44:19.353286+00:00"
+}

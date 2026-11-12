@@ -2,6 +2,17 @@
 
 本手册只使用现有发布物：`/opt/sbmdr/releases/<version>`、`/etc/sbmdr/{config.json,roots.json}`、systemd 单元 `sbmdr-recorder@{spot,usdm}` 与 `sbmdr-archive.timer`。不引入 submodule、wheel 或 CI。
 
+## 0. 当前生产身份（2026-11-12）
+
+- `current -> /opt/sbmdr/releases/20261111-c4c-e0b7f684`
+- Release `ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff`，配置 `75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8`，vendored baseline `801802d8…`
+- 生产根：`/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z`；归档目标：`/srv/recorder-data/S-BMDR/20261111T074613Z-{spot,usdm}`
+- 回退目标：`/opt/sbmdr/releases/20261110-b610a656`。该旧 release 只用于回退演练（临时根写入/读回 PASS）；它是已知容量失败版本，不得留作最终常驻。
+- 常驻策略：两个 recorder `Restart=on-failure`、`RestartSec=10`、`StartLimitBurst=3/300s`，active/enabled；archive timer active/enabled；logrotate 已恢复。
+- 公共模式 REST 周期 300 s；429/418 冷却保留服务端 `Retry-After`，R2 修复已在冻结二进制中。
+- C4-C/C5 证据：`c4c-qualification-20261112/`、`c5-production-20261112/`；C4-C 24h 为 86,409 s、0 丢弃、三组 23h 换线；C5 受控重启 19.8 s、旧 release 回退演练 1,008 条/35 分片 PASS。
+- 存储监控：系统盘约 18.63 GiB 可用、元数据约 4.8 GB/月（约 34–36 天到 13 GiB 线）；`/srv` 压缩约 10.89 GB/天（约 185 天）。旧 C++ 完全归档本地根已清理 9 个/23.3 MiB；`/var/lib` 的 7.4 GB 主要是 Python M4 历史数据，未清理。
+
 ## 1. 原生构建与测试
 
 在仓库根目录执行，`py` 为带 WebSocket/pyarrow 等依赖的 Python 3.12：
@@ -176,13 +187,14 @@ export PYTHONPATH=/opt/sbmdr/current/python/src
 
 ```sh
 ls -1 /opt/sbmdr/releases
-ln -sfn /opt/sbmdr/releases/<previous-version> /opt/sbmdr/current.new
+# 当前回退演练目标；旧版本只证明操作可执行，不长期保留为 current
+ln -sfn /opt/sbmdr/releases/20261110-b610a656 /opt/sbmdr/current.new
 mv -Tf /opt/sbmdr/current.new /opt/sbmdr/current
 systemctl restart sbmdr-recorder@spot sbmdr-recorder@usdm
 systemctl restart sbmdr-archive.timer
 ```
 
-回退只切换 `current` 链接；数据根和归档目标不删除。回退后确认两个实例 `ActiveState=active`、`NRestarts=0`，归档日志继续增长。生产重启策略由 `production.conf` 提供；资格候选必须保持 `Restart=no`。
+本次演练已用隔离临时根验证旧 release 启动/写入/读回；回退只切换 `current` 链接，数据根和归档目标不删除。回退后确认两个实例 `ActiveState=active`、`NRestarts=0`，归档日志继续增长。生产重启策略由 `production.conf` 提供；资格候选必须保持 `Restart=no`。
 
 ## 9. 磁盘紧急停止
 

@@ -1,0 +1,280 @@
+{
+  "status": "PASS",
+  "chunks": 35,
+  "records": 1008,
+  "stored_bytes": 501430,
+  "uncompressed_bytes": 3413351,
+  "ws_payload_bytes": 191181,
+  "rest_body_bytes": 1938321,
+  "source_payload_bytes": {
+    "spot/XRPUSDT/book_ticker": 2755,
+    "spot/NEARUSDT/diff_depth": 4016,
+    "spot/SOLUSDT/agg_trade": 203,
+    "spot/__GLOBAL__/rest_observations": 67019,
+    "spot/BNBUSDT/book_ticker": 5616,
+    "spot/XRPUSDT/agg_trade": 603,
+    "spot/ZECUSDT/book_ticker": 8520,
+    "spot/BTCUSDT/agg_trade": 1636,
+    "spot/NEARUSDT/agg_trade": 200,
+    "spot/DOGEUSDT/agg_trade": 203,
+    "spot/ZECUSDT/rest_observations": 394735,
+    "spot/XRPUSDT/rest_observations": 336399,
+    "spot/ETHUSDT/book_ticker": 8147,
+    "spot/ETHUSDT/diff_depth": 16277,
+    "spot/BNBUSDT/agg_trade": 7255,
+    "spot/BTCUSDT/book_ticker": 48363,
+    "spot/DOGEUSDT/book_ticker": 10200,
+    "spot/BNBUSDT/rest_observations": 401559,
+    "spot/XRPUSDT/diff_depth": 5226,
+    "spot/NEARUSDT/rest_observations": 275441,
+    "spot/BTCUSDT/rest_observations": 427519,
+    "spot/LINKUSDT/book_ticker": 1886,
+    "spot/BTCUSDT/diff_depth": 17638,
+    "spot/SOLUSDT/book_ticker": 2900,
+    "spot/ZECUSDT/diff_depth": 18143,
+    "spot/BNBUSDT/diff_depth": 7631,
+    "spot/ZECUSDT/agg_trade": 2390,
+    "spot/UNIUSDT/book_ticker": 143,
+    "spot/UNIUSDT/diff_depth": 5133,
+    "spot/UNIUSDT/rest_observations": 273435,
+    "spot/DOGEUSDT/diff_depth": 6868,
+    "spot/NEARUSDT/book_ticker": 721,
+    "spot/ETHUSDT/rest_observations": 414655,
+    "spot/LINKUSDT/diff_depth": 4295,
+    "spot/SOLUSDT/diff_depth": 4213
+  },
+  "ws_receive_span_seconds": 5.40352579,
+  "archive_states": {},
+  "connections": {
+    "spot/XRPUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/NEARUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/SOLUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/__GLOBAL__/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/BNBUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/XRPUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ZECUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BTCUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/NEARUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/DOGEUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ZECUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/XRPUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/ETHUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ETHUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BNBUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BTCUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/DOGEUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BNBUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/XRPUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/NEARUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/BTCUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/LINKUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BTCUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/SOLUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ZECUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BNBUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ZECUSDT/agg_trade": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/UNIUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/UNIUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/UNIUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/DOGEUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/NEARUSDT/book_ticker": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ETHUSDT/rest_observations": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-rest"
+    ],
+    "spot/LINKUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/SOLUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ]
+  },
+  "connection_monotonic_ranges_ns": {
+    "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public": [
+      799342061257528,
+      799347464783318
+    ]
+  },
+  "bridge_connections": {
+    "spot/NEARUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ETHUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/XRPUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BTCUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/ZECUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/BNBUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ],
+    "spot/UNIUSDT/diff_depth": [
+      "c1-5ef05f0e-b9e5-4d9f-87e9-b06a440408af-ws-public"
+    ]
+  },
+  "source_counts": {
+    "spot/XRPUSDT/book_ticker": 19,
+    "spot/NEARUSDT/diff_depth": 20,
+    "spot/SOLUSDT/agg_trade": 1,
+    "spot/__GLOBAL__/rest_observations": 1,
+    "spot/BNBUSDT/book_ticker": 39,
+    "spot/XRPUSDT/agg_trade": 3,
+    "spot/ZECUSDT/book_ticker": 60,
+    "spot/BTCUSDT/agg_trade": 8,
+    "spot/NEARUSDT/agg_trade": 1,
+    "spot/DOGEUSDT/agg_trade": 1,
+    "spot/ZECUSDT/rest_observations": 1,
+    "spot/XRPUSDT/rest_observations": 1,
+    "spot/ETHUSDT/book_ticker": 56,
+    "spot/ETHUSDT/diff_depth": 52,
+    "spot/BNBUSDT/agg_trade": 36,
+    "spot/BTCUSDT/book_ticker": 329,
+    "spot/DOGEUSDT/book_ticker": 68,
+    "spot/BNBUSDT/rest_observations": 1,
+    "spot/XRPUSDT/diff_depth": 29,
+    "spot/NEARUSDT/rest_observations": 1,
+    "spot/BTCUSDT/rest_observations": 1,
+    "spot/LINKUSDT/book_ticker": 13,
+    "spot/BTCUSDT/diff_depth": 53,
+    "spot/SOLUSDT/book_ticker": 20,
+    "spot/ZECUSDT/diff_depth": 33,
+    "spot/BNBUSDT/diff_depth": 38,
+    "spot/ZECUSDT/agg_trade": 12,
+    "spot/UNIUSDT/book_ticker": 1,
+    "spot/UNIUSDT/diff_depth": 29,
+    "spot/UNIUSDT/rest_observations": 1,
+    "spot/DOGEUSDT/diff_depth": 32,
+    "spot/NEARUSDT/book_ticker": 5,
+    "spot/ETHUSDT/rest_observations": 1,
+    "spot/LINKUSDT/diff_depth": 20,
+    "spot/SOLUSDT/diff_depth": 22
+  },
+  "capture_flags": {
+    "spot/NEARUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/NEARUSDT/diff_depth/depth_bridge": 19,
+    "spot/__GLOBAL__/rest_observations/rest_poll": 1,
+    "spot/__GLOBAL__/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/ZECUSDT/rest_observations/rest_poll": 1,
+    "spot/ZECUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/ZECUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/XRPUSDT/rest_observations/rest_poll": 1,
+    "spot/XRPUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/XRPUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/ETHUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/ETHUSDT/diff_depth/depth_bridge": 51,
+    "spot/BNBUSDT/rest_observations/rest_poll": 1,
+    "spot/BNBUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/BNBUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/XRPUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/XRPUSDT/diff_depth/depth_bridge": 28,
+    "spot/NEARUSDT/rest_observations/rest_poll": 1,
+    "spot/NEARUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/NEARUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/BTCUSDT/rest_observations/rest_poll": 1,
+    "spot/BTCUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/BTCUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/BTCUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/BTCUSDT/diff_depth/depth_bridge": 52,
+    "spot/ZECUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/ZECUSDT/diff_depth/depth_bridge": 32,
+    "spot/BNBUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/BNBUSDT/diff_depth/depth_bridge": 37,
+    "spot/UNIUSDT/diff_depth/depth_snapshot_pending": 1,
+    "spot/UNIUSDT/diff_depth/depth_bridge": 28,
+    "spot/UNIUSDT/rest_observations/rest_poll": 1,
+    "spot/UNIUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/UNIUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/DOGEUSDT/diff_depth/depth_snapshot_pending": 32,
+    "spot/ETHUSDT/rest_observations/rest_poll": 1,
+    "spot/ETHUSDT/rest_observations/exact_rest_http_body_preserved": 1,
+    "spot/ETHUSDT/rest_observations/depth_snapshot_pending": 1,
+    "spot/LINKUSDT/diff_depth/depth_snapshot_pending": 20,
+    "spot/SOLUSDT/diff_depth/depth_snapshot_pending": 22
+  },
+  "rest_statuses": {
+    "spot/__GLOBAL__/exchange_info/200/True": 1,
+    "spot/ZECUSDT/depth_snapshot/200/True": 1,
+    "spot/XRPUSDT/depth_snapshot/200/True": 1,
+    "spot/BNBUSDT/depth_snapshot/200/True": 1,
+    "spot/NEARUSDT/depth_snapshot/200/True": 1,
+    "spot/BTCUSDT/depth_snapshot/200/True": 1,
+    "spot/UNIUSDT/depth_snapshot/200/True": 1,
+    "spot/ETHUSDT/depth_snapshot/200/True": 1
+  },
+  "archive_roots": {},
+  "fast_path": {
+    "decoded_chunks": 35,
+    "trusted_chunks": 0,
+    "payload_bytes_complete": true,
+    "capture_flag_counts_exact": true
+  }
+}

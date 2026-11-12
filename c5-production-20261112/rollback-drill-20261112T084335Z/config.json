@@ -1,0 +1,26 @@
+{
+  "spot": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "ZECUSDT",
+    "XRPUSDT",
+    "NEARUSDT",
+    "UNIUSDT",
+    "DOGEUSDT",
+    "LINKUSDT"
+  ],
+  "usdm": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "ZECUSDT",
+    "XRPUSDT",
+    "NEARUSDT",
+    "UNIUSDT",
+    "DOGEUSDT",
+    "LINKUSDT"
+  ]
+}
