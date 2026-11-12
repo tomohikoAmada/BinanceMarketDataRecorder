@@ -84,11 +84,20 @@
     "note": "Old C++ S-BMDR fully archived roots only; /var/lib 7.4 GB Python M4 history was not removed."
   },
   "storage": {
-    "system_free_bytes": 20002643968,
-    "system_free_gib": 18.63,
+    "system_free_bytes": 27166531584,
+    "system_free_gib": 25.3,
     "metadata_per_month_gb": 4.8,
     "archive_free_bytes": 2017777856512,
-    "archive_retention_days": 185.3
+    "archive_retention_days": 185.3,
+    "metadata_days_to_13_gib": 77
   },
-  "production_start_utc": "2026-11-12T08:40:00+00:00"
+  "production_start_utc": "2026-11-12T08:40:00+00:00",
+  "python_legacy_cleanup": {
+    "status": "COMPLETE",
+    "freed_bytes": 7248113664,
+    "freed_gib": 6.75,
+    "python_units": "archive timer/recorder inactive+disabled",
+    "evidence": "/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112",
+    "note": "raw data deleted; small JSON/config/report evidence preserved; C++ production untouched"
+  }
 }

@@ -342,9 +342,9 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **首次验收失败与纠正。** 首次 `progress.json` 为 FAILED，唯一断言是 qualifier 额外检查的 **1 秒** `slice_cpu_peak_percent=246.56 > 200`；计划门槛是“CPU 合计/滚动检查”，实际 `cpu_mean+archive=79.70%`、60 s 峰值 168.68% 均通过。修正 qualifier：保留 1 s 采样作为观察值，不再作为 gate；对同一份数据执行 `--verify-only`，结果 **PASS**，未重采。原始 FAILED report 与 verify-only report 都保留在证据中。
 
-**长期趋势（重要）。** USD-M RSS 在 7–9 小时随 85–93 MB 入口队列峰值阶跃到约 135.3 MiB（141.9 MB），之后 9–24 小时保持平台（135.3 MiB），不是持续线性泄漏；24h 资源预算通过。Catalog/manifest 不自动删除，24h 残留本地根 **160 MB / 16,716 chunk**（manifest 67 MB、Catalog 93 MB），约 **4.8 GB/月**；系统盘 18.66 GiB 可用、运行线 13 GiB。C5 前必须确定旧根/manifest/日志保留或清理策略，并对周/月内存做持续监控；本 24h PASS 不能替代周/月长稳资格。
+**长期趋势（重要）。** USD-M RSS 在 7–9 小时随 85–93 MB 入口队列峰值阶跃到约 135.3 MiB（141.9 MB），之后 9–24 小时保持平台（135.3 MiB），不是持续线性泄漏；24h 资源预算通过。Catalog/manifest 不自动删除，24h 残留本地根 **160 MB / 16,716 chunk**（manifest 67 MB、Catalog 93 MB），约 **4.8 GB/月**；系统盘在 24h 结束时 18.66 GiB 可用、运行线 13 GiB；2026-11-12 清理旧 Python 数据后为 **25.30 GiB**，约 **77 天**到 13 GiB。C5 已启用 logrotate 并清理旧 Python；仍需持续监控周/月内存和元数据；本 24h PASS 不能替代周/月长稳资格。
 
-**存储容量估算（按 24h 实测）：** `/srv` 归档盘可用 **2.018 TB**，压缩数据 **10.89 GB/天** → 约 **185 天（约 6 个月）**。系统盘 `/` 当前可用 **18.66 GiB**，运行线 13 GiB，余量 5.66 GiB；Catalog/manifest 约 **160 MiB/天** → 约 **34–36 天**。旧 C++ S-BMDR 完全归档根实际约 0.4 GB，本次清理 9 个根释放 23.3 MiB；`/var/lib` 的 7.4 GB 主要是 Python M4 历史数据（`data`/`legacy`/`m42`/`p4` 等），本轮未清理。系统盘 34–36 天的近期限值不变；logrotate 已启用，C5 继续监控旧根/manifest/日志和 `/srv`。
+**存储容量估算（按 24h 实测 + C5 清理）：** `/srv` 归档盘可用 **2.018 TB**，压缩数据 **10.89 GB/天** → 约 **185 天（约 6 个月）**。C4-C 结束时系统盘 `/` 可用 **18.66 GiB**，按 Catalog/manifest **约 160 MiB/天** 估算约 **34–36 天**到 13 GiB。2026-11-12 已停用旧 Python archive timer，并清理 `data`/`state`/`legacy`/`m41`/`m42`/`p4`/`run1` 共 **7.25 GB**；系统盘当前 **25.30 GiB** 可用，按同速率约 **77 天**到 13 GiB。旧 C++ 完全归档本地根清理 9 个/23.3 MiB。小证据（配置/unit/JSON 报告，约 914 MB）保存在 `/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112`；C++ 生产根未动。
 
 **证据：** [c4c-qualification-20261112](c4c-qualification-20261112/)。
 
@@ -357,6 +357,14 @@ C4-D Python 修复已随新发布物 `/opt/sbmdr/current -> /opt/sbmdr/releases/
 
 **回退演练。** 同一维护窗口停止服务和 timer，保留生产根/config/roots；`current` 临时切到旧 release `20261110-b610a656`，在隔离临时根 `rollback-20261112T084335Z` 启动并写入 **1,008 条 / 35 分片**，旧 reader `verify` **PASS**；随后恢复 `20261111-c4c-e0b7f684`，当前 PID 442874/442895、`NRestarts=0`、服务/timer active，归档积压 0。旧 release 仅用于演练，未留作最终常驻。
 
-**最终状态。** 两个 recorder `Restart=on-failure`、`RestartUSec=10s`、`StartLimitIntervalUSec=5min`（300 s）、`StartLimitBurst=3`，active/enabled；archive timer active/enabled；logrotate `/etc/logrotate.d/sbmdr` 已恢复。旧 C++ 完全归档本地根清理 9 个、释放 23.3 MiB；`/var/lib` 的 7.4 GB 主要是 Python M4 历史数据，未在本轮清理。系统盘约 18.63 GiB 可用、元数据约 4.8 GB/月、约 34–36 天到 13 GiB 线；`/srv` 归档约 185 天。后续持续监控周/月 RSS、系统盘元数据和 `/srv` 保留天数；本 24h 结果不替代周/月长稳结论。
+**最终状态。** 两个 recorder `Restart=on-failure`、`RestartUSec=10s`、`StartLimitIntervalUSec=5min`（300 s）、`StartLimitBurst=3`，active/enabled；archive timer active/enabled；logrotate `/etc/logrotate.d/sbmdr` 已恢复。旧 C++ 完全归档本地根清理 9 个/23.3 MiB；旧 Python archive timer 已停用/disabled，`data`/`state`/`legacy`/`m41`/`m42`/`p4`/`run1` 共 **7.25 GB** 已清理，系统盘当前 **25.30 GiB** 可用，按 **4.8 GB/月** 约 **77 天**到 13 GiB；`/srv` 归档约 185 天。小证据保存在 `/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112`；C++ 生产根、C3/C4-C 证据未动。后续持续监控周/月 RSS、系统盘元数据和 `/srv` 保留天数；本 24h 结果不替代周/月长稳结论。
 
 **证据：** [c5-production-20261112](c5-production-20261112/)。
+
+
+### 旧 Python 数据清理（2026-11-12，COMPLETE）
+
+- 停止并 disabled `binance-market-data-archive.timer`、`binance-market-data-recorder.service`；Python archive 此前每 60 s 以 `TARGET_ABSENT` 失败，积压 2.75 GB / 8,228 文件。
+- 删除旧 Python 根：`data`、`state`、`legacy-20261025-preserved`、`m41-rejected-*`、`m42-failed-*`、`p4-20261101-btc*`、`run1-overflow-preserved-20261103`，合计 **7.25 GB / 6.75 GiB**；`/var/lib/binance-market-data-recorder` 只剩 C++ `S-BMDR`。
+- 小证据（配置、unit、`data/reports`、各根 JSON 报告、Python Catalog 摘要、删除清单）保存到 `/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112`（约 914 MB）。
+- 清理前系统盘可用 18.54 GiB，清理后 **25.30 GiB**；C++ 两个 recorder 与 archive timer 全程 active，0 丢弃。清理记录见 [python-legacy-cleanup-20261112.json](python-legacy-cleanup-20261112.json)。

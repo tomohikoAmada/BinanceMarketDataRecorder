@@ -1,0 +1,118 @@
+{
+  "deleted_utc": "2026-11-12T09:10:00.144225+00:00",
+  "python_units": {
+    "binance-market-data-archive.timer": {
+      "active": "inactive",
+      "enabled": "disabled"
+    },
+    "binance-market-data-archive.service": {
+      "active": "inactive",
+      "enabled": "static"
+    },
+    "binance-market-data-recorder.service": {
+      "active": "inactive",
+      "enabled": "disabled"
+    }
+  },
+  "python_catalog": {
+    "chunks": {
+      "SEALED": 8228
+    },
+    "archive_transactions": {}
+  },
+  "roots": [
+    {
+      "name": "data",
+      "bytes": 2765544165,
+      "files": 16461
+    },
+    {
+      "name": "legacy-20261025-preserved",
+      "bytes": 1443428316,
+      "files": 191823
+    },
+    {
+      "name": "m41-rejected-20261103T033044Z",
+      "bytes": 334883380,
+      "files": 937
+    },
+    {
+      "name": "m41-rejected-d33c4e3-20261103T044705Z",
+      "bytes": 70270387,
+      "files": 593
+    },
+    {
+      "name": "m41-rejected-6830f70-20261103T043743Z",
+      "bytes": 50052757,
+      "files": 285
+    },
+    {
+      "name": "m42-failed-3ff043f-20261103",
+      "bytes": 660952218,
+      "files": 3401
+    },
+    {
+      "name": "m42-failed-41d1839-20261103",
+      "bytes": 714818708,
+      "files": 3565
+    },
+    {
+      "name": "p4-20261101-btc-d",
+      "bytes": 220738419,
+      "files": 8601
+    },
+    {
+      "name": "p4-20261101-btc-b",
+      "bytes": 91024858,
+      "files": 359
+    },
+    {
+      "name": "p4-20261101-btc-c",
+      "bytes": 49397059,
+      "files": 899
+    },
+    {
+      "name": "p4-20261101-btc",
+      "bytes": 29610396,
+      "files": 67
+    },
+    {
+      "name": "run1-overflow-preserved-20261103",
+      "bytes": 212479985,
+      "files": 1130
+    }
+  ],
+  "remaining": [
+    "S-BMDR"
+  ],
+  "evidence": "/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112",
+  "status": "COMPLETE",
+  "freed_bytes": 7248113664,
+  "freed_gib": 6.75,
+  "disk_before_free_bytes": 19918417920,
+  "disk_after_free_bytes": 27166531584,
+  "after_free_gib": 25.3,
+  "python_state_bytes": 432013312,
+  "python_state_note": "parent state/catalog.sqlite (412 MB) and service state deleted after the listed roots",
+  "cxx_production_at_cleanup": {
+    "spot_records": 513442,
+    "usdm_records": 1677939,
+    "drops": 0,
+    "queue_bytes": 0,
+    "services": "active"
+  },
+  "python_units_after": {
+    "archive_timer": "inactive/disabled",
+    "archive_service": "inactive/static",
+    "recorder": "inactive/disabled"
+  },
+  "evidence_bytes": 958398464,
+  "evidence_path": "/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112",
+  "storage_estimate": {
+    "system_free_gib": 25.3,
+    "metadata_gb_per_month": 4.8,
+    "days_to_13_gib": 77,
+    "archive_days": 185.3
+  },
+  "note": "Old Python M4 raw roots and their local Catalog/state removed; Python archive timer stopped and disabled; C++ S-BMDR production root and C3/C4-C/C5 evidence preserved. Small JSON/config/report evidence copied to /srv before deletion."
+}
