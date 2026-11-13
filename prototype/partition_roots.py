@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import fcntl
 import json
+from contextlib import contextmanager
 from pathlib import Path
 
 PARTITION_SCHEMA = "partition.v1"
+READER_LOCK_NAME = "state/reader.lock"
 
 
 def read_json(path: Path) -> dict:
@@ -93,3 +96,35 @@ def resolve_roots(
             raise ValueError(f"CURRENT partition {current} is unavailable")
         selected[current] = hot
     return [selected[key] for key in sorted(selected)]
+
+
+@contextmanager
+def reader_lock(market_root: Path, *, exclusive: bool = False, blocking: bool = True):
+    """Coordinate metadata migration with readers/normalizers.
+
+    Readers take a shared lock before resolving physical roots. Migration takes
+    an exclusive non-blocking lock while copying and deleting a closed source;
+    if a reader is active the migration reports BUSY and retries next tick.
+    Recorder writers do not take this lock.
+    """
+
+    if not market_root.is_dir():
+        # Legacy read-only callers may probe a nonexistent path; Catalog access
+        # will fail explicitly later.
+        yield True
+        return
+    path = market_root / READER_LOCK_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+") as handle:
+        operation = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+        if not blocking:
+            operation |= fcntl.LOCK_NB
+        try:
+            fcntl.flock(handle.fileno(), operation)
+        except BlockingIOError:
+            yield False
+            return
+        try:
+            yield True
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)

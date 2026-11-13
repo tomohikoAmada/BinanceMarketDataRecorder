@@ -566,6 +566,7 @@ def main():
                         "/etc/ssl/certs/ca-certificates.crt",
                         market,
                         a.config,
+                        "--partitioned-root",
                     ],
                     stdout=out,
                     stderr=err,

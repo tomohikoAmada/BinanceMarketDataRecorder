@@ -250,33 +250,27 @@ def main():
         label = stamp
         base = Path("/var/lib/binance-market-data-recorder/S-BMDR") / label
         roots = {}
+        archive_targets = {}
         for market in ("spot", "usdm"):
             root = base / market
-            root.mkdir(parents=True)
+            (root / "partitions").mkdir(parents=True)
+            (root / "state").mkdir()
             os.chown(root, user.pw_uid, user.pw_gid)
+            os.chown(root / "partitions", user.pw_uid, user.pw_gid)
+            os.chown(root / "state", user.pw_uid, user.pw_gid)
             target = Path("/srv/recorder-data/S-BMDR") / f"{label}-{market}"
             target.mkdir()
             os.chown(target, user.pw_uid, user.pw_gid)
-            run(
-                "runuser",
-                "-u",
-                "bmdr",
-                "--",
-                runtime / "venv/bin/python",
-                release / "prototype/operations.py",
-                "register",
-                root,
-                "--target",
-                target,
-                env=env,
-                step=f"register {market}",
-            )
             lock_path = root / "state/c1.lock"
             lock_path.touch()
             os.chown(lock_path, user.pw_uid, user.pw_gid)
             roots[market] = str(root)
+            archive_targets[market] = str(target)
             Path(f"/etc/sbmdr/{market}.env").write_text(f"ROOT={root}\n")
         Path("/etc/sbmdr/roots.json").write_text(json.dumps(roots, indent=2) + "\n")
+        Path("/etc/sbmdr/archive-targets.json").write_text(
+            json.dumps(archive_targets, indent=2) + "\n"
+        )
         metadata_roots = {
             market: str(Path("/srv/recorder-data/S-BMDR/metadata") / market)
             for market in roots

@@ -14,6 +14,8 @@ from binance_market_data_recorder.storage.layout import StorageLayout
 from binance_market_data_recorder.storage.macos import StorageRegistry
 from binance_market_data_recorder.storage.platform import volume_adapter
 
+from partition_roots import reader_lock, resolve_roots
+
 
 def aggregate(events, width_ms, start_ms, end_ms):
     bars = {}
@@ -101,6 +103,7 @@ def main():
     p.add_argument("--interval-seconds", type=int, required=True)
     p.add_argument("--start-ms", type=int, required=True)
     p.add_argument("--end-ms", type=int, required=True)
+    p.add_argument("--cold-root", type=Path)
     a = p.parse_args()
     if (
         not 0 < a.end_ms - a.start_ms <= 31 * 86400000
@@ -108,38 +111,64 @@ def main():
         or a.interval_seconds % 60
     ):
         p.error("require a <=31 day range and a positive whole-minute interval")
-    layout = StorageLayout.from_root(a.root)
-    with Catalog(layout.catalog, read_only=True) as catalog:
-        # Production roots are registered before recording; use operations.py for unregistered fixtures.
-        registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
-        external = {
-            s["storage_id"]: Path(s["resolved_path"])
-            for s in registry.observe_statuses()
-            if s.get("state") in {"READY", "LOW_SPACE"} and s.get("resolved_path")
-        }
-        chunks = load_source_chunks(
-            layout=layout,
-            catalog=catalog,
-            external_roots=external,
-            start_utc_ns=a.start_ms * 1000000,
-            end_utc_ns=a.end_ms * 1000000,
+    seen: set[str] = set()
+    chunks = []
+    with reader_lock(a.root):
+        roots = resolve_roots(
+            a.root,
+            cold_root=a.cold_root,
+            start_ns=a.start_ms * 1000000,
+            end_ns=a.end_ms * 1000000,
         )
-
-        def events():
-            for chunk in sorted(chunks, key=lambda c: c.manifest["created_at_utc_ns"]):
-                if chunk.manifest["stream"] != "agg_trade":
+        for root in roots:
+            layout = StorageLayout.from_root(root)
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                # Production roots are registered before recording; use operations.py for unregistered fixtures.
+                registry = StorageRegistry(
+                    catalog=catalog, volumes=volume_adapter()
+                )
+                external = {
+                    s["storage_id"]: Path(s["resolved_path"])
+                    for s in registry.observe_statuses()
+                    if s.get("state") in {"READY", "LOW_SPACE"}
+                    and s.get("resolved_path")
+                }
+                loaded = load_source_chunks(
+                    layout=layout,
+                    catalog=catalog,
+                    external_roots=external,
+                    start_utc_ns=a.start_ms * 1000000,
+                    end_utc_ns=a.end_ms * 1000000,
+                )
+            for chunk in loaded:
+                if chunk.chunk_id in seen:
                     continue
-                for record in iter_source_records(chunk):
-                    e = record.envelope
-                    yield (
-                        e.market,
-                        e.symbol,
-                        json.loads(e.raw_payload)["data"],
-                        e.capture_flags,
-                    )
+                seen.add(chunk.chunk_id)
+                chunks.append(chunk)
 
-        for bar in aggregate(events(), a.interval_seconds * 1000, a.start_ms, a.end_ms):
-            print(json.dumps(bar))
+    def events():
+        for chunk in sorted(
+            chunks,
+            key=lambda c: (
+                c.manifest["receive_time_utc_range_ns"]["min"],
+                c.chunk_id,
+            ),
+        ):
+            if chunk.manifest["stream"] != "agg_trade":
+                continue
+            for record in iter_source_records(chunk):
+                e = record.envelope
+                yield (
+                    e.market,
+                    e.symbol,
+                    json.loads(e.raw_payload)["data"],
+                    e.capture_flags,
+                )
+
+    for bar in aggregate(
+        events(), a.interval_seconds * 1000, a.start_ms, a.end_ms
+    ):
+        print(json.dumps(bar))
 
 
 if __name__ == "__main__":

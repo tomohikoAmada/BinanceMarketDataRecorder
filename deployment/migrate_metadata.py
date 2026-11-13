@@ -19,6 +19,7 @@ from partition_roots import (  # noqa: E402
     partition_metadata,
     partition_roots,
     read_current,
+    reader_lock,
 )
 
 TERMINAL_ARCHIVE_STATES = {"LOCAL_DELETED", "LOCAL_DELETE_PENDING"}
@@ -118,48 +119,60 @@ def migrate(container: Path, cold_root: Path) -> dict:
             fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return {"status": "BUSY", "migrated": [], "skipped": []}
-        migrated: list[str] = []
-        skipped: list[dict] = []
-        for source in partition_roots(container):
-            metadata = partition_metadata(source)
-            partition_id = metadata["partition_id"]
-            if metadata.get("state") != "closed":
-                skipped.append({"partition_id": partition_id, "reason": "open"})
-                continue
-            if any((source / "data/active").glob("*")):
-                skipped.append(
-                    {"partition_id": partition_id, "reason": "active-files"}
-                )
-                continue
-            if any(
-                path.suffix == ".partial"
-                for directory in ("data/sealed", "data/manifests")
-                for path in (source / directory).glob("*")
-            ):
-                skipped.append(
-                    {"partition_id": partition_id, "reason": "partial-files"}
-                )
-                continue
-            complete, reason = _archive_complete(source)
-            if not complete:
-                skipped.append({"partition_id": partition_id, "reason": reason})
-                continue
-            destination = cold_root / partition_id
-            if destination.exists():
-                skipped.append(
-                    {"partition_id": partition_id, "reason": "already-cold"}
-                )
-                continue
-            _copy_and_verify(source, destination)
-            shutil.rmtree(source)
-            migrated.append(partition_id)
-        return {
-            "status": "OK",
-            "current": read_current(container),
-            "migrated": migrated,
-            "skipped": skipped,
-            "cold_root": str(cold_root),
-        }
+        with reader_lock(container, exclusive=True, blocking=False) as acquired:
+            if not acquired:
+                return {
+                    "status": "BUSY",
+                    "reason": "reader-active",
+                    "migrated": [],
+                    "skipped": [],
+                }
+            migrated: list[str] = []
+            skipped: list[dict] = []
+            for source in partition_roots(container):
+                metadata = partition_metadata(source)
+                partition_id = metadata["partition_id"]
+                if metadata.get("state") != "closed":
+                    skipped.append(
+                        {"partition_id": partition_id, "reason": "open"}
+                    )
+                    continue
+                if any((source / "data/active").glob("*")):
+                    skipped.append(
+                        {"partition_id": partition_id, "reason": "active-files"}
+                    )
+                    continue
+                if any(
+                    path.suffix == ".partial"
+                    for directory in ("data/sealed", "data/manifests")
+                    for path in (source / directory).glob("*")
+                ):
+                    skipped.append(
+                        {"partition_id": partition_id, "reason": "partial-files"}
+                    )
+                    continue
+                complete, reason = _archive_complete(source)
+                if not complete:
+                    skipped.append(
+                        {"partition_id": partition_id, "reason": reason}
+                    )
+                    continue
+                destination = cold_root / partition_id
+                if destination.exists():
+                    skipped.append(
+                        {"partition_id": partition_id, "reason": "already-cold"}
+                    )
+                    continue
+                _copy_and_verify(source, destination)
+                shutil.rmtree(source)
+                migrated.append(partition_id)
+            return {
+                "status": "OK",
+                "current": read_current(container),
+                "migrated": migrated,
+                "skipped": skipped,
+                "cold_root": str(cold_root),
+            }
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -12,7 +12,7 @@ for path in (REPO / "vendor/python-baseline/src", REPO / "prototype"):
 
 from candles import aggregate  # noqa: E402
 from normalize import parse_capture_envelope  # noqa: E402
-from partition_roots import resolve_roots  # noqa: E402
+from partition_roots import reader_lock, resolve_roots  # noqa: E402
 
 from binance_market_data_recorder.normalize.raw import (  # noqa: E402
     iter_source_records,
@@ -59,76 +59,78 @@ def run_check(
     market_identity = expected_market(market)
     start_ns = start_ms * 1_000_000
     end_ns = end_ms * 1_000_000
-    roots = resolve_roots(
-        root,
-        cold_root=cold_root,
-        start_ns=start_ns,
-        end_ns=end_ns,
-    )
-    records = valid = invalid = wrong_market = 0
-    trades = []
-    seen_chunks: set[str] = set()
-    loaded_chunks = 0
-    for physical_root in roots:
-        layout = StorageLayout.from_root(physical_root)
-        with Catalog(layout.catalog, read_only=True) as catalog:
-            registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
-            external = {
-                status["storage_id"]: Path(status["resolved_path"])
-                for status in registry.observe_statuses()
-                if status.get("state") in {"READY", "LOW_SPACE"}
-                and status.get("resolved_path")
-            }
-            chunks = load_source_chunks(
-                layout=layout,
-                catalog=catalog,
-                external_roots=external,
-                products=frozenset({(market_identity, symbol)}),
-                start_utc_ns=start_ns,
-                end_utc_ns=end_ns,
-            )
-        for chunk in sorted(
-            chunks, key=lambda item: item.manifest["created_at_utc_ns"]
-        ):
-            if chunk.chunk_id in seen_chunks:
-                continue
-            seen_chunks.add(chunk.chunk_id)
-            loaded_chunks += 1
-            for record in iter_source_records(chunk):
-                envelope = record.envelope
-                if envelope.symbol != symbol:
-                    continue
-                if envelope.market != market_identity:
-                    if envelope.market in {"um_shared", "cm_shared"}:
-                        continue
-                    wrong_market += 1
-                    continue
-                if not record_is_in_window(envelope, start_ns, end_ns):
-                    continue
-                records += 1
-                parsed = parse_capture_envelope(envelope)
-                if parsed and all(row.valid for row in parsed):
-                    valid += 1
-                else:
-                    invalid += 1
-                if envelope.stream == "agg_trade":
-                    payload = json.loads(envelope.raw_payload)
-                    trades.append(
-                        (
-                            envelope.market,
-                            envelope.symbol,
-                            payload["data"],
-                            envelope.capture_flags,
-                        )
-                    )
-    bars = list(
-        aggregate(
-            iter(trades),
-            interval_seconds * 1000,
-            start_ms,
-            end_ms,
+    with reader_lock(root):
+        records = valid = invalid = wrong_market = 0
+        trades = []
+        seen_chunks: set[str] = set()
+        loaded_chunks = 0
+        roots = resolve_roots(
+            root,
+            cold_root=cold_root,
+            start_ns=start_ns,
+            end_ns=end_ns,
         )
-    )
+        physical_roots = list(roots)
+        for physical_root in physical_roots:
+            layout = StorageLayout.from_root(physical_root)
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
+                external = {
+                    status["storage_id"]: Path(status["resolved_path"])
+                    for status in registry.observe_statuses()
+                    if status.get("state") in {"READY", "LOW_SPACE"}
+                    and status.get("resolved_path")
+                }
+                chunks = load_source_chunks(
+                    layout=layout,
+                    catalog=catalog,
+                    external_roots=external,
+                    products=frozenset({(market_identity, symbol)}),
+                    start_utc_ns=start_ns,
+                    end_utc_ns=end_ns,
+                )
+            for chunk in sorted(
+                chunks, key=lambda item: item.manifest["created_at_utc_ns"]
+            ):
+                if chunk.chunk_id in seen_chunks:
+                    continue
+                seen_chunks.add(chunk.chunk_id)
+                loaded_chunks += 1
+                for record in iter_source_records(chunk):
+                    envelope = record.envelope
+                    if envelope.symbol != symbol:
+                        continue
+                    if envelope.market != market_identity:
+                        if envelope.market in {"um_shared", "cm_shared"}:
+                            continue
+                        wrong_market += 1
+                        continue
+                    if not record_is_in_window(envelope, start_ns, end_ns):
+                        continue
+                    records += 1
+                    parsed = parse_capture_envelope(envelope)
+                    if parsed and all(row.valid for row in parsed):
+                        valid += 1
+                    else:
+                        invalid += 1
+                    if envelope.stream == "agg_trade":
+                        payload = json.loads(envelope.raw_payload)
+                        trades.append(
+                            (
+                                envelope.market,
+                                envelope.symbol,
+                                payload["data"],
+                                envelope.capture_flags,
+                            )
+                        )
+        bars = list(
+            aggregate(
+                iter(trades),
+                interval_seconds * 1000,
+                start_ms,
+                end_ms,
+            )
+        )
     result = {
         "market": market,
         "expected_market": market_identity,

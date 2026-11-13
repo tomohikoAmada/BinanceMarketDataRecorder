@@ -25,13 +25,23 @@ BLOCKED_ARCHIVE_REASONS = {
 
 
 def archive_pending(root):
-    with sqlite3.connect(Path(root) / "state/catalog.sqlite") as db:
-        pending = db.execute(
-            "SELECT count(*) FROM chunks WHERE state='SEALED'"
-        ).fetchone()[0]
-        pending += db.execute(
-            "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
-        ).fetchone()[0]
+    root = Path(root)
+    catalogs = (
+        sorted((root / "partitions").glob("*/state/catalog.sqlite"))
+        if (root / "partitions").is_dir()
+        else [root / "state/catalog.sqlite"]
+    )
+    pending = 0
+    for catalog in catalogs:
+        if not catalog.is_file():
+            continue
+        with sqlite3.connect(catalog) as db:
+            pending += db.execute(
+                "SELECT count(*) FROM chunks WHERE state='SEALED'"
+            ).fetchone()[0]
+            pending += db.execute(
+                "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
+            ).fetchone()[0]
     return pending
 
 
@@ -64,8 +74,18 @@ def finish_production(release, roots):
             pending = archive_pending(root)
             if not pending:
                 break
-            result = subprocess.run(
+            partitioned = (root / "partitions").is_dir()
+            command = (
                 [
+                    "runuser",
+                    "-u",
+                    "bmdr",
+                    "--",
+                    str(release / "venv/bin/python"),
+                    str(release / "deployment/archive_tick.py"),
+                ]
+                if partitioned
+                else [
                     "runuser",
                     "-u",
                     "bmdr",
@@ -74,7 +94,10 @@ def finish_production(release, roots):
                     str(release / "prototype/operations.py"),
                     "archive",
                     str(root),
-                ],
+                ]
+            )
+            result = subprocess.run(
+                command,
                 capture_output=True,
                 text=True,
                 check=False,

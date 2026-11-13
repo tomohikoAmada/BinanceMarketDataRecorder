@@ -38,7 +38,10 @@ def _partition(container: Path, name: str, state: str, first: int, last: int) ->
         encoding="utf-8",
     )
     with sqlite3.connect(root / "state/catalog.sqlite") as db:
-        db.execute("CREATE TABLE chunks(chunk_id TEXT PRIMARY KEY)")
+        db.execute(
+            "CREATE TABLE chunks(chunk_id TEXT PRIMARY KEY, state TEXT, "
+            "created_at_utc_ns INTEGER)"
+        )
         db.commit()
     return root
 

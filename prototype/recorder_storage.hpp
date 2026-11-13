@@ -206,6 +206,48 @@ class Catalog {
 
     void exec(const char* sql) { check(sqlite3_exec(db_.get(), sql, nullptr, nullptr, nullptr)); }
 
+    void checkpoint() {
+        check(sqlite3_exec(db_.get(), "PRAGMA wal_checkpoint(FULL)",
+                           nullptr, nullptr, nullptr));
+    }
+
+    void copy_archive_targets_from(const fs::path& prior) {
+        std::string escaped = prior.string();
+        std::string quoted;
+        quoted.reserve(escaped.size() + 2);
+        quoted.push_back('\'');
+        for (const char ch : escaped) {
+            quoted.push_back(ch);
+            if (ch == '\'')
+                quoted.push_back('\'');
+        }
+        quoted.push_back('\'');
+        const auto attach = "ATTACH DATABASE " + quoted + " AS prior";
+        check(sqlite3_exec(db_.get(), attach.c_str(), nullptr, nullptr, nullptr));
+        std::string prior_has_table;
+        {
+            sqlite3_stmt* check_raw = nullptr;
+            const auto check_sql =
+                "SELECT count(*) FROM prior.sqlite_master WHERE type='table' AND name='storage_targets'";
+            check(sqlite3_prepare_v2(db_.get(), check_sql, -1, &check_raw, nullptr));
+            std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)> check_stmt(
+                check_raw, sqlite3_finalize);
+            check(sqlite3_step(check_stmt.get()), SQLITE_ROW);
+            prior_has_table = sqlite3_column_int(check_stmt.get(), 0) != 0 ? "1" : "";
+        }
+        if (!prior_has_table.empty()) {
+            const std::string create =
+                "CREATE TABLE IF NOT EXISTS storage_targets AS "
+                "SELECT * FROM prior.storage_targets WHERE 0";
+            check(sqlite3_exec(db_.get(), create.c_str(), nullptr, nullptr, nullptr));
+            const std::string insert =
+                "INSERT INTO storage_targets SELECT * FROM prior.storage_targets "
+                "WHERE NOT EXISTS (SELECT 1 FROM storage_targets)";
+            check(sqlite3_exec(db_.get(), insert.c_str(), nullptr, nullptr, nullptr));
+        }
+        check(sqlite3_exec(db_.get(), "DETACH DATABASE prior", nullptr, nullptr, nullptr));
+    }
+
     void startup(const std::string& run) {
         std::lock_guard lock(mutex_);
         statement("INSERT INTO operational_events(event_id,event_type,occurred_at_utc_ns,evidence_json)"
@@ -718,8 +760,10 @@ class RecorderStorage {
         if (!partitioned_ || partition_closed_)
             return;
         const auto last = last_receive_utc_ns();
+        const auto prior_catalog = root_ / "state/catalog.sqlite";
         seal_all("partition");
         partition_layout::close_partition(root_, last, now_ns);
+        catalog_->checkpoint();
         root_ = partition_layout::create_partition(container_, now_ns);
         partition_id_ = root_.filename().string();
         partition_day_ = partition_layout::utc_day(now_ns);
@@ -727,6 +771,7 @@ class RecorderStorage {
         partition_closed_ = false;
         catalog_.reset();
         catalog_.emplace(root_ / "state/catalog.sqlite");
+        catalog_->copy_archive_targets_from(prior_catalog);
         rotations["partition"] = rotations.value("partition", 0) + 1;
         start_sealer();
     }

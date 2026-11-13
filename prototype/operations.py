@@ -29,6 +29,8 @@ from binance_market_data_recorder.storage.source_location import (
     safe_relative,
 )
 
+from partition_roots import reader_lock, resolve_roots
+
 
 def _load_json(path: Path) -> tuple[bytes, dict[str, object]]:
     body = path.read_bytes()
@@ -442,12 +444,143 @@ def _verify(
     }
 
 
+def _verify_root(root: Path) -> dict:
+    layout = StorageLayout.from_root(root)
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
+        with sqlite3.connect(
+            f"file:{layout.catalog}?mode=ro", uri=True
+        ) as db:
+            tables = {
+                row[0]
+                for row in db.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+        external = {
+            s["storage_id"]: Path(s["resolved_path"])
+            for s in (
+                registry.observe_statuses()
+                if "storage_targets" in tables
+                else []
+            )
+            if s.get("state") in {"READY", "LOW_SPACE"}
+            and s.get("resolved_path")
+        }
+        return _verify(layout, catalog, external, tables)
+
+
+def _verify_container(root: Path, cold_root: Path | None) -> dict:
+    with reader_lock(root):
+        roots = resolve_roots(root, cold_root=cold_root)
+        reports = [{"root": str(item), **_verify_root(item)} for item in roots]
+    def total(key: str) -> int:
+        return sum(int(item.get(key, 0)) for item in reports)
+
+    def counted(key: str) -> dict[str, int]:
+        result: dict[str, int] = {}
+        for item in reports:
+            for name, value in item.get(key, {}).items():
+                result[name] = result.get(name, 0) + int(value)
+        return result
+
+    def listed(key: str) -> dict[str, list[str]]:
+        result: dict[str, set[str]] = {}
+        for item in reports:
+            for name, values in item.get(key, {}).items():
+                result.setdefault(name, set()).update(values)
+        return {name: sorted(values) for name, values in result.items()}
+
+    ranges: dict[str, list[int]] = {}
+    for item in reports:
+        for name, value in item.get("connection_monotonic_ranges_ns", {}).items():
+            target = ranges.setdefault(name, [value[0], value[1]])
+            target[0] = min(target[0], value[0])
+            target[1] = max(target[1], value[1])
+    drops = [item.get("ingress_drops", {}) for item in reports]
+    first = [row.get("first_utc_ns") for row in drops if row.get("first_utc_ns")]
+    last = [row.get("last_utc_ns") for row in drops if row.get("last_utc_ns")]
+    ingress = {
+        "events": sum(int(row.get("events", 0)) for row in drops),
+        "tail_events": sum(int(row.get("tail_events", 0)) for row in drops),
+        "dropped_ws": sum(int(row.get("dropped_ws", 0)) for row in drops),
+        "dropped_rest": sum(int(row.get("dropped_rest", 0)) for row in drops),
+        "dropped_total": sum(int(row.get("dropped_total", 0)) for row in drops),
+        "first_utc_ns": min(first) if first else None,
+        "last_utc_ns": max(last) if last else None,
+    }
+    span = (
+        (max(value[1] for value in ranges.values())
+         - min(value[0] for value in ranges.values())) / 1e9
+        if ranges
+        else 0
+    )
+    archive_roots = {}
+    for item in reports:
+        archive_roots.update(item.get("archive_roots", {}))
+    fast = {
+        "decoded_chunks": sum(
+            int(item.get("fast_path", {}).get("decoded_chunks", 0))
+            for item in reports
+        ),
+        "trusted_chunks": sum(
+            int(item.get("fast_path", {}).get("trusted_chunks", 0))
+            for item in reports
+        ),
+        "payload_bytes_complete": all(
+            item.get("fast_path", {}).get("payload_bytes_complete", False)
+            for item in reports
+        ),
+        "capture_flag_counts_exact": all(
+            item.get("fast_path", {}).get("capture_flag_counts_exact", False)
+            for item in reports
+        ),
+    }
+    result = {
+        "status": "PASS" if all(item.get("status") == "PASS" for item in reports)
+        else "FAIL",
+        "partitions": len(reports),
+        "records": total("records"),
+        "chunks": total("chunks"),
+        "stored_bytes": total("stored_bytes"),
+        "uncompressed_bytes": total("uncompressed_bytes"),
+        "ws_records": total("ws_records"),
+        "rest_records": total("rest_records"),
+        "ws_payload_bytes": total("ws_payload_bytes"),
+        "rest_body_bytes": total("rest_body_bytes"),
+        "source_payload_bytes": counted("source_payload_bytes"),
+        "ws_receive_span_seconds": span,
+        "archive_states": counted("archive_states"),
+        "connections": listed("connections"),
+        "connection_monotonic_ranges_ns": ranges,
+        "bridge_connections": listed("bridge_connections"),
+        "source_counts": counted("source_counts"),
+        "capture_flags": counted("capture_flags"),
+        "rest_statuses": counted("rest_statuses"),
+        "archive_roots": archive_roots,
+        "fast_path": fast,
+        "ingress_drops": ingress,
+        "roots": reports,
+    }
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["register", "archive", "verify"])
     parser.add_argument("root", type=Path)
     parser.add_argument("--target", type=Path)
+    parser.add_argument("--cold-root", type=Path)
     args = parser.parse_args()
+    partitioned = (args.root / "partitions").is_dir()
+    if partitioned and args.action in {"register", "archive"}:
+        parser.error(
+            "partitioned containers are archived/registered per partition; "
+            "use deployment/archive_tick.py"
+        )
+    if partitioned and args.action == "verify":
+        print(json.dumps(_verify_container(args.root, args.cold_root), indent=2))
+        return
     if args.action == "register":
         layout = ensure_storage_layout(args.root)
         if args.target is None:
@@ -464,13 +597,14 @@ def main():
             targets = catalog.storage_targets()
             if len(targets) != 1:
                 raise ValueError("exactly one archive target required")
-            report = archive_drain(
-                layout=layout,
-                catalog=catalog,
-                storage_id=targets[0]["storage_id"],
-                max_runtime_seconds=120,
-                max_files=1000,
-            )
+            with reader_lock(args.root, exclusive=True):
+                report = archive_drain(
+                    layout=layout,
+                    catalog=catalog,
+                    storage_id=targets[0]["storage_id"],
+                    max_runtime_seconds=120,
+                    max_files=1000,
+                )
             print(json.dumps(report, indent=2))
             if report.get("failed_transactions", 0):
                 raise SystemExit(1)
@@ -486,10 +620,16 @@ def main():
             }
         external = {
             s["storage_id"]: Path(s["resolved_path"])
-            for s in (registry.observe_statuses() if "storage_targets" in tables else [])
-            if s.get("state") in {"READY", "LOW_SPACE"} and s.get("resolved_path")
+            for s in (
+                registry.observe_statuses()
+                if "storage_targets" in tables
+                else []
+            )
+            if s.get("state") in {"READY", "LOW_SPACE"}
+            and s.get("resolved_path")
         }
-        print(json.dumps(_verify(layout, catalog, external, tables), indent=2))
+        with reader_lock(args.root):
+            print(json.dumps(_verify(layout, catalog, external, tables), indent=2))
 
 
 if __name__ == "__main__":

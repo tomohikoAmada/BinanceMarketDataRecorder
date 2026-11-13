@@ -720,6 +720,24 @@ void verify_partition_layout() {
         if (partition_layout::read_json(first_root / "partition.json")
                 .value("state", std::string{}) != "open")
             throw std::runtime_error("partition check: initial partition not open");
+        {
+            sqlite3* db = nullptr;
+            if (sqlite3_open((first_root / "state/catalog.sqlite").c_str(), &db) != SQLITE_OK)
+                throw std::runtime_error("partition check: catalog open failed");
+            const auto create =
+                "CREATE TABLE IF NOT EXISTS storage_targets("
+                "storage_id TEXT PRIMARY KEY, volume_uuid TEXT, volume_name TEXT,"
+                "filesystem_type TEXT, relative_path TEXT, marker_nonce TEXT,"
+                "registered_at_utc_ns INTEGER)";
+            if (sqlite3_exec(db, create, nullptr, nullptr, nullptr) != SQLITE_OK)
+                throw std::runtime_error("partition check: target table create failed");
+            const auto insert =
+                "INSERT INTO storage_targets VALUES("
+                "'target-1','volume-1','data','apfs','slot','nonce',1)";
+            if (sqlite3_exec(db, insert, nullptr, nullptr, nullptr) != SQLITE_OK)
+                throw std::runtime_error("partition check: target insert failed");
+            sqlite3_close(db);
+        }
         storage.switch_partition(ns<system_clock>() + 86400LL * 1000000000LL);
         const auto second = partition_layout::read_current(container);
         if (second.empty() || second == first)
@@ -731,6 +749,31 @@ void verify_partition_layout() {
         if (partition_layout::read_json(second_root / "partition.json")
                 .value("state", std::string{}) != "open")
             throw std::runtime_error("partition check: new partition not open");
+        {
+            sqlite3* db = nullptr;
+            if (sqlite3_open((second_root / "state/catalog.sqlite").c_str(), &db) != SQLITE_OK)
+                throw std::runtime_error("partition check: new catalog open failed");
+            sqlite3_stmt* stmt = nullptr;
+            const auto prepared =
+                sqlite3_prepare_v2(db, "SELECT count(*) FROM storage_targets",
+                                   -1, &stmt, nullptr);
+            const auto stepped = prepared == SQLITE_OK ? sqlite3_step(stmt)
+                                                       : prepared;
+            const auto count = stepped == SQLITE_ROW
+                                   ? sqlite3_column_int(stmt, 0)
+                                   : -1;
+            if (prepared != SQLITE_OK || stepped != SQLITE_ROW || count != 1) {
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                throw std::runtime_error(
+                    "partition check: archive target did not carry forward: "
+                    "prepare=" + std::to_string(prepared) +
+                    " step=" + std::to_string(stepped) +
+                    " count=" + std::to_string(count));
+            }
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+        }
         storage.finish();
         if (partition_layout::read_json(second_root / "partition.json")
                 .value("state", std::string{}) != "closed")
