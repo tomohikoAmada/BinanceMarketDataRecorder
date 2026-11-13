@@ -68,7 +68,7 @@ python3 "$S/deployment/install.py" \
 2. 备份 `/opt/sbmdr/current`、`/etc/sbmdr`、systemd 单元与 drop-in、`/etc/logrotate.d/sbmdr` 到 `$S/results/install-backup-<UTC>/`。
 3. 在新 release 目录准备二进制、脚本、配置、vendored Python 和 requirements lock。
 4. 在最终 runtime 位置用 `python3.12 -m venv` 创建环境，按 `python/requirements/linux-x86_64-python312.lock` 使用 `pip install --require-hashes` 安装；不复制 staging 的 venv。
-5. 注册新数据根和归档目标，检查 `bmdr` 身份下 imports。
+5. 创建 market partition 容器与 `archive-targets.json` 映射；首个 partition 由 C++ 启动时创建并继承归档目标，检查 `bmdr` 身份下 imports。R3 候选尚未在当前生产身份部署。
 6. 安装 unit 与 CPUWeight drop-in，删除遗留的 `sbmdr-recorder@.service.d/production.conf`，`daemon-reload` 后执行 `systemd-analyze verify`。
 7. 用 `systemctl show` 检查最终 `Restart=no`、Spot/USD-M `CPUWeight=100/200`、archive `CPUQuota=50%`、slice `CPUQuota=175%`、recorder start/stop 300/180 s、archive start 600 s。
 8. 原子切换 `/opt/sbmdr/current`，从新路径再做一次 import 检查。
@@ -76,6 +76,8 @@ python3 "$S/deployment/install.py" \
 任一步失败时脚本写入 `$S/results/deployment-failed.json`，恢复 `current`、`/etc/sbmdr`、遗留 drop-in 与 logrotate，并再次 `daemon-reload`；新 release/runtime 会删除以便重试。不要把“已切换 current”当作安装成功，以 `deployment.json` 和最终 systemd 属性为准。
 
 安装会清空运行日志并把旧日志备份到 `$S/results/logs-before-<version>/`，同时把 logrotate 配置改名为 `sbmdr.qualification-disabled`，避免 `copytruncate` 截掉资格证据。资格结束、进入生产时由 `advance.py` 恢复。
+
+R3 分区模式下 `ROOT` 是稳定 market 容器，recorder unit 固定带 `--partitioned-root`；每日 UTC 边界在写入 batch 之间切换分区。`sbmdr-archive.timer` 每次 tick 只处理 closed 分区，新分区自动继承原 archive target；reader/normalizer 使用共享 flock，metadata 迁移使用独占 flock，reader 活跃时迁移留待下次。
 
 ## 4. 资格运行
 
