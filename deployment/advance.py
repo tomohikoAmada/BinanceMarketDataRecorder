@@ -35,10 +35,31 @@ def archive_pending(root):
     return pending
 
 
+def root_path(value) -> Path:
+    """Accept a legacy string root or a future R3 market-container mapping."""
+    if isinstance(value, str):
+        return Path(value)
+    if isinstance(value, dict):
+        for key in ("root", "market_root", "container"):
+            candidate = value.get(key)
+            if isinstance(candidate, str) and candidate:
+                return Path(candidate)
+    raise ValueError(f"unsupported root entry: {value!r}")
+
+
+def write_production_dropin(directory: Path) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "production.conf").write_text(
+        "[Service]\nRestart=on-failure\nRestartSec=300\n",
+        encoding="utf-8",
+    )
+
+
 def finish_production(release, roots):
     """Archive the verified tail and enable the already qualified services."""
     env = {**os.environ, "PYTHONPATH": str(release / "python/src")}
-    for root in roots.values():
+    for root_value in roots.values():
+        root = root_path(root_value)
         for _ in range(100):
             pending = archive_pending(root)
             if not pending:
@@ -83,9 +104,9 @@ def finish_production(release, roots):
                 )
         else:
             raise RuntimeError("final archive backlog did not drain")
-    drop = Path("/etc/systemd/system/sbmdr-recorder@.service.d")
-    drop.mkdir(exist_ok=True)
-    (drop / "production.conf").write_text("[Service]\nRestart=on-failure\n")
+    write_production_dropin(
+        Path("/etc/systemd/system/sbmdr-recorder@.service.d")
+    )
     disabled = Path("/etc/logrotate.d/sbmdr.qualification-disabled")
     if disabled.exists():
         disabled.unlink()
@@ -104,11 +125,11 @@ def finish_production(release, roots):
         run("systemctl", "is-enabled", f"sbmdr-recorder@{market}.service")
 
 
-def main():
+def build_parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--source", type=Path, required=True)
-    p.add_argument("--version", required=True)
-    p.add_argument("--c3-report", type=Path, required=True)
+    p.add_argument("--version")
+    p.add_argument("--c3-report", type=Path)
     p.add_argument("--archive-root", type=Path, action="append", default=[])
     p.add_argument(
         "--cpu-limit-percent", type=float, default=120,
@@ -117,7 +138,10 @@ def main():
     p.add_argument(
         "--finish-only",
         action="store_true",
-        help="Resume only the final tail archive and service enablement from a PASS report",
+        help=(
+            "Resume only the final tail archive and service enablement "
+            "from a PASS report"
+        ),
     )
     p.add_argument(
         "--qualify-only",
@@ -126,7 +150,20 @@ def main():
     )
     p.add_argument("--qualification-report", type=Path)
     p.add_argument("--release", type=Path)
+    return p
+
+
+def main():
+    p = build_parser()
     a = p.parse_args()
+    if a.finish_only:
+        if not (a.qualification_report and a.release):
+            p.error("--finish-only requires --qualification-report and --release")
+    else:
+        if not a.version:
+            p.error("--version is required unless --finish-only")
+        if not a.c3_report:
+            p.error("--c3-report is required unless --finish-only")
     if a.finish_only:
         assert a.qualification_report and a.release, (
             "--finish-only requires --qualification-report and --release"
@@ -223,7 +260,8 @@ def main():
                         "SELECT count(*) FROM chunks WHERE state='SEALED'"
                     ).fetchone()[0]
                     pending += db.execute(
-                        "SELECT count(*) FROM archive_transactions WHERE state!='LOCAL_DELETED'"
+                        "SELECT count(*) FROM archive_transactions "
+                        "WHERE state!='LOCAL_DELETED'"
                     ).fetchone()[0]
                 if not pending:
                     break

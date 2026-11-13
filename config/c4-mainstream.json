@@ -4,23 +4,13 @@
     "ETHUSDT",
     "SOLUSDT",
     "BNBUSDT",
-    "ZECUSDT",
-    "XRPUSDT",
-    "NEARUSDT",
-    "UNIUSDT",
-    "DOGEUSDT",
-    "LINKUSDT"
+    "XRPUSDT"
   ],
   "usdm": [
     "BTCUSDT",
     "ETHUSDT",
     "SOLUSDT",
     "BNBUSDT",
-    "ZECUSDT",
-    "XRPUSDT",
-    "NEARUSDT",
-    "UNIUSDT",
-    "DOGEUSDT",
-    "LINKUSDT"
+    "XRPUSDT"
   ]
 }

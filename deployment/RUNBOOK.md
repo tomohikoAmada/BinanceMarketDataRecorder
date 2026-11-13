@@ -8,7 +8,7 @@
 - Release `ba71faa3cdb772d8efe0586ce946c6d4094d02364e69da8c7a9a9ac33e3201ff`，配置 `75d1e9ad6fc54d4ab5118362f4c503384f018dcc90a17074108a321964e9bae8`，vendored baseline `801802d8…`
 - 生产根：`/var/lib/binance-market-data-recorder/S-BMDR/20261111T074613Z`；归档目标：`/srv/recorder-data/S-BMDR/20261111T074613Z-{spot,usdm}`
 - 回退目标：`/opt/sbmdr/releases/20261110-b610a656`。该旧 release 只用于回退演练（临时根写入/读回 PASS）；它是已知容量失败版本，不得留作最终常驻。
-- 常驻策略：两个 recorder `Restart=on-failure`、`RestartSec=10`、`StartLimitBurst=3/300s`，active/enabled；archive timer active/enabled；logrotate 已恢复。
+- 常驻策略：两个 recorder `Restart=on-failure`、`RestartSec=300`、`StartLimitBurst=3/300s`，active/enabled；archive timer active/enabled；logrotate 已恢复。
 - 公共模式 REST 周期 300 s；429/418 冷却保留服务端 `Retry-After`，R2 修复已在冻结二进制中。
 - C4-C/C5 证据：`c4c-qualification-20261112/`、`c5-production-20261112/`；C4-C 24h 为 86,409 s、0 丢弃、三组 23h 换线；C5 受控重启 19.8 s、旧 release 回退演练 1,008 条/35 分片 PASS。
 - 存储监控：系统盘约 **25.30 GiB** 可用、元数据约 4.8 GB/月（约 **77 天**到 13 GiB 线）；`/srv` 压缩约 10.89 GB/天（约 185 天）。旧 C++ 完全归档本地根已清理 9 个/23.3 MiB；旧 Python archive timer/recorder 已停用/disabled，`data`/`state`/`legacy`/`m41`/`m42`/`p4`/`run1` 共 7.25 GB 已清理；小证据在 `/srv/recorder-data/S-BMDR/legacy-python-evidence-20261112`。
@@ -129,13 +129,12 @@ python3 "$S/deployment/advance.py" \
 ```sh
 python3 "$S/deployment/advance.py" \
   --source "$S" \
-  --version 20261111-<commit> \
   --finish-only \
   --release /opt/sbmdr/current \
   --qualification-report "$S/results/c4-c5-24h/progress.json"
 ```
 
-该入口要求报告 `PASS`、报告二进制与 `--release` 一致、`deployment.json` 的 evidence 根一致，然后才排空归档尾部并恢复生产 logrotate/重启策略。
+该入口要求报告 `PASS`、报告二进制与 `--release` 一致、`deployment.json` 的 evidence 根一致，然后才排空归档尾部并恢复生产 logrotate/重启策略。`--finish-only` 不需要 `--c3-report`，也不依赖 `--version`。
 
 ### 4.1 C4-C 离线消费抽查
 
