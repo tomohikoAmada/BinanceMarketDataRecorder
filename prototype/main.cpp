@@ -783,6 +783,115 @@ void verify_partition_layout() {
         throw;
     }
     fs::remove_all(container);
+
+    // Verify clock-seam midnight rollover with async Handoff, zero drops,
+    // backward-jump immunity, accurate receive range across size rotation,
+    // DepthBridge continuity, and no duplicate PROCESS_START on new partition.
+    const auto seam_container = fs::temp_directory_path() /
+                                ("sbmdr-seam-check-" + uuid_text(uuid_bytes()));
+    fs::create_directories(seam_container / "state");
+    fs::create_directories(seam_container / "partitions");
+    try {
+        const std::int64_t day1_ns = 1762991990LL * 1000000000LL; // 2025-11-12T23:59:50Z
+        const std::int64_t day0_ns = day1_ns - 86400LL * 1000000000LL;
+        const std::int64_t day2_ns = day1_ns + 20LL * 1000000000LL; // 2025-11-13T00:00:10Z
+        std::atomic<std::int64_t> fake_utc{day1_ns};
+        Handoff queue(64 * 1024 * 1024);
+        DepthRequests requests;
+        RecorderStorage storage(
+            seam_container, "seam-check", milliseconds(900000),
+            200ULL, milliseconds(900), &requests, true, true,
+            [&] { return fake_utc.load(std::memory_order_relaxed); });
+        const auto p1 = partition_layout::read_current(seam_container);
+
+        auto make_msg = [&](std::uint64_t seq, std::int64_t utc_ns) {
+            Message msg;
+            msg.market = "um_perpetual";
+            msg.symbol = "BTCUSDT";
+            msg.stream = "agg_trade";
+            msg.source_stream = "btcusdt@aggTrade";
+            msg.connection_group = "market";
+            msg.utc = utc_ns;
+            msg.mono = ns<steady_clock>();
+            const std::string payload =
+                R"({"stream":"btcusdt@aggTrade","data":{"e":"aggTrade","E":1762991990000,"s":"BTCUSDT","a":)" +
+                std::to_string(seq) +
+                R"(,"p":"100.0","q":"1.0","nq":"1.0","f":1,"l":1,"T":1762991990000,"m":false}})";
+            msg.body.assign(payload.begin(), payload.end());
+            msg.sequence = {{"sourceFamily", "D05"}, {"a", seq}};
+            msg.exchange_time = 1762991990000ULL;
+            msg.trade_time = 1762991990000ULL;
+            msg.transaction_time = nullptr;
+            return msg;
+        };
+
+        // Pre-midnight messages trigger intra-day size rotation (200B limit)
+        queue.push(make_msg(1, day1_ns));
+        queue.push(make_msg(2, day1_ns + 1'000'000'000LL));
+        std::vector<Message> batch;
+        while (queue.snapshot().first > 0) {
+            if (!queue.take(batch))
+                break;
+            for (auto& item : batch) {
+                storage.append(item);
+                storage.tick(false);
+            }
+        }
+        // Backward clock jump must NOT rotate partition
+        fake_utc.store(day0_ns, std::memory_order_relaxed);
+        storage.tick(true);
+        if (partition_layout::read_current(seam_container) != p1)
+            throw std::runtime_error("seam check: backward clock jump rotated partition");
+
+        // Advance past UTC midnight; idle batch boundary triggers rotation
+        fake_utc.store(day2_ns, std::memory_order_relaxed);
+        storage.tick(true);
+        const auto p2 = partition_layout::read_current(seam_container);
+        if (p2.empty() || p2 == p1)
+            throw std::runtime_error("seam check: midnight clock jump did not rotate partition");
+
+        // Post-midnight message goes to p2
+        queue.push(make_msg(3, day2_ns));
+        while (queue.snapshot().first > 0) {
+            if (!queue.take(batch))
+                break;
+            for (auto& item : batch) {
+                storage.append(item);
+                storage.tick(false);
+            }
+        }
+        if (queue.dropped_total() != 0)
+            throw std::runtime_error("seam check: unexpected drops");
+        const auto part_status = storage.partition_status();
+        if (part_status.value("rotations", 0) != 1)
+            throw std::runtime_error("seam check: partition_status rotations mismatch");
+        storage.finish();
+
+        const auto p1_meta = partition_layout::read_json(
+            seam_container / "partitions" / p1 / "partition.json");
+        const auto p1_range = p1_meta.at("receive_time_utc_range_ns");
+        if (p1_range.at("min").get<std::int64_t>() != day1_ns ||
+            p1_range.at("max").get<std::int64_t>() != day1_ns + 1'000'000'000LL)
+            throw std::runtime_error("seam check: p1 receive range inaccurate across chunk rotation");
+
+        sqlite3* db = nullptr;
+        if (sqlite3_open((seam_container / "partitions" / p2 / "state/catalog.sqlite").c_str(), &db) != SQLITE_OK)
+            throw std::runtime_error("seam check: open p2 catalog failed");
+        sqlite3_stmt* stmt = nullptr;
+        const auto prep = sqlite3_prepare_v2(
+            db, "SELECT count(*) FROM operational_events WHERE event_type='PROCESS_START'",
+            -1, &stmt, nullptr);
+        const auto step = prep == SQLITE_OK ? sqlite3_step(stmt) : prep;
+        const auto count = step == SQLITE_ROW ? sqlite3_column_int(stmt, 0) : -1;
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        if (prep != SQLITE_OK || step != SQLITE_ROW || count != 0)
+            throw std::runtime_error("seam check: duplicate PROCESS_START in rotated partition");
+    } catch (...) {
+        fs::remove_all(seam_container);
+        throw;
+    }
+    fs::remove_all(seam_container);
 }
 
 class WsRenewal : public std::runtime_error {

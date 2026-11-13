@@ -453,6 +453,20 @@ def verify_stopped(a, report, progress_path=None):
     report["status"] = "PASS"
 
 
+def max_wal_bytes(market_root: Path) -> int:
+    """Return the largest SQLite WAL file size across a market root."""
+    if (market_root / "partitions").is_dir():
+        wal_paths = list(
+            market_root.glob("partitions/*/state/catalog.sqlite-wal")
+        )
+    else:
+        wal_paths = [market_root / "state/catalog.sqlite-wal"]
+    return max(
+        (path.stat().st_size for path in wal_paths if path.exists()),
+        default=0,
+    )
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--release", type=Path, required=True)
@@ -642,10 +656,10 @@ def main():
                         report["markets"][market].get("threads_peak", 0),
                         int(status.split("Threads:")[1].split()[0]),
                     )
-                    wal = a.root / market / "state/catalog.sqlite-wal"
+                    wal_peak = max_wal_bytes(a.root / market)
                     report["markets"][market]["wal_peak_bytes"] = max(
                         report["markets"][market].get("wal_peak_bytes", 0),
-                        wal.stat().st_size if wal.exists() else 0,
+                        wal_peak,
                     )
                 import shutil
 

@@ -68,7 +68,7 @@ void parse_configured_ws(Message& message, std::string_view wire, simdjson::dom:
     std::uint64_t time;
     if (!data["E"].get(time)) message.exchange_time = time;
     else if (message.stream != "book_ticker") { malformed(); return; }
-    if (!data["T"].get(time)) message.transaction_time = time;
+    if (!data["T"].get(time) && message.stream != "mark_price") message.transaction_time = time;
     if (message.stream == "agg_trade") { message.trade_time = message.transaction_time; message.transaction_time = nullptr; }
     if (message.stream == "liquidation" && !event_data["T"].get(time)) message.trade_time = time;
     if (message.stream == "diff_depth") {

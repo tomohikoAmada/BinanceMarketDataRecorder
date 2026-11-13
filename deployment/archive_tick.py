@@ -119,7 +119,8 @@ def archive_partitions(root: Path, market: str, target: Path | None,
             return [{"status": "busy-reader"}], False
         for partition in partition_roots(root):
             metadata = partition_metadata(partition)
-            if metadata.get("state") != "closed":
+            state = metadata.get("state")
+            if state not in {"open", "closed"}:
                 continue
             registration = ensure_archive_target(partition, target, env)
             archived = run_archive(partition, env)
@@ -127,6 +128,7 @@ def archive_partitions(root: Path, market: str, target: Path | None,
             partitions.append(
                 {
                     "partition_id": metadata["partition_id"],
+                    "state": state,
                     "target_registration": registration,
                     **archived,
                 }

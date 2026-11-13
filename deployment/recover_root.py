@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import subprocess
 import sys
@@ -48,6 +49,28 @@ def main() -> int:
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
     recover = Path(__file__).resolve().parent.parent / "prototype/recover_raw.py"
+    partitioned = (args.root / "partitions").is_dir()
+    if partitioned:
+        lock_path = args.root / "state/c1.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with lock_path.open("a") as lock:
+            try:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                raise RuntimeError(
+                    f"recorder container is active: {args.root}"
+                ) from error
+            for root in partition_roots(args.root):
+                command = [
+                    sys.executable,
+                    str(recover),
+                    str(root),
+                    "--no-lock",
+                ]
+                if args.quiet:
+                    command.append("--quiet")
+                subprocess.run(command, check=True)
+        return 0
     for root in partition_roots(args.root):
         command = [sys.executable, str(recover), str(root)]
         if args.quiet:

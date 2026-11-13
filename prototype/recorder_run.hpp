@@ -314,6 +314,7 @@ int record(int argc, char** argv) {
                     }
                     const auto [queued_records, queued_bytes] = queue.snapshot();
                     const auto seal = storage.seal_status();
+                    const auto part = storage.partition_status();
                     const auto cpu = std::clock();
                     const double percent = 100.0 * (cpu - previous_cpu) / CLOCKS_PER_SEC /
                                            duration<double>(now - previous_status).count();
@@ -335,6 +336,9 @@ int record(int argc, char** argv) {
                              {"seal_pending_raw_bytes", seal["pending_raw_bytes"]},
                              {"catalog_wait_ns_total", seal["catalog_wait_ns_total"]},
                              {"catalog_wait_max_ns", seal["catalog_wait_max_ns"]},
+                             {"partition_rotations", part["rotations"]},
+                             {"partition_rotation_pause_ns_total", part["rotation_pause_ns_total"]},
+                             {"partition_rotation_pause_max_ns", part["rotation_pause_max_ns"]},
                              {"dropped_total", queue.dropped_total()},
                              {"elapsed_seconds", duration<double>(now - start).count()},
                              {"cpu_seconds", static_cast<double>(cpu - cpu_start) / CLOCKS_PER_SEC}});
@@ -355,7 +359,9 @@ int record(int argc, char** argv) {
             for (const auto& drop : queue.take_all_drops())
                 storage.record_tail_drop(drop);
             const auto seal = storage.seal_status();
+            const auto part = storage.partition_status();
             storage.finish();
+            const auto final_part = storage.partition_status();
             Json result{{"records", records},
                         {"test_pause_start_monotonic_ns", pause_start},
                         {"test_pause_finish_monotonic_ns", pause_finish},
@@ -363,6 +369,9 @@ int record(int argc, char** argv) {
                          pause_drained ? Json(pause_drained - pause_finish) : Json(nullptr)},
                         {"sealed", storage.sealed_count.load()},
                         {"rotations", storage.rotations},
+                        {"partition_rotations", final_part["rotations"]},
+                        {"partition_rotation_pause_ns_total", final_part["rotation_pause_ns_total"]},
+                        {"partition_rotation_pause_max_ns", final_part["rotation_pause_max_ns"]},
                         {"max_durability_ns", storage.max_durability_ns.load()},
                         {"max_receive_to_append_ns", storage.max_append_ns},
                         {"receive_to_append_p99_ms", storage.append_p99_ms()},

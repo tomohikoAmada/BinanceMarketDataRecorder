@@ -12,6 +12,8 @@ from binance_market_data_recorder.normalize.raw import (
 from binance_market_data_recorder.storage.layout import StorageLayout
 
 from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.macos import StorageRegistry
+from binance_market_data_recorder.storage.platform import volume_adapter
 
 from partition_roots import reader_lock, resolve_roots
 
@@ -26,7 +28,18 @@ def main() -> None:
         for root in resolve_roots(args.data_root, cold_root=args.cold_root):
             layout = StorageLayout.from_root(root)
             with Catalog(layout.catalog, read_only=True) as catalog:
-                chunks = load_source_chunks(layout=layout, catalog=catalog)
+                external = {}
+                if catalog.storage_targets():
+                    registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
+                    external = {
+                        s["storage_id"]: Path(s["resolved_path"])
+                        for s in registry.observe_statuses()
+                        if s.get("state") in {"READY", "LOW_SPACE"}
+                        and s.get("resolved_path")
+                    }
+                chunks = load_source_chunks(
+                    layout=layout, catalog=catalog, external_roots=external
+                )
             for chunk in sorted(
                 chunks, key=lambda item: item.manifest["created_at_utc_ns"]
             ):

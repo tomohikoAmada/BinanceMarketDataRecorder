@@ -37,11 +37,65 @@ def partition_metadata(root: Path) -> dict:
     return value
 
 
-def partition_roots(container: Path) -> list[Path]:
+def _cold_partitions_by_id(cold_root: Path | None) -> dict[str, Path]:
+    if cold_root is None:
+        return {}
+    if not cold_root.is_dir():
+        raise ValueError(f"cold root is unavailable: {cold_root}")
+    try:
+        entries = list(cold_root.iterdir())
+    except OSError as exc:
+        raise ValueError(f"cold root is unreadable: {cold_root}") from exc
+    cold_by_id: dict[str, Path] = {}
+    for path in entries:
+        if (
+            not path.is_dir()
+            or path.name.startswith(".")
+            or path.name.endswith(".partial")
+        ):
+            continue
+        if not (path / "partition.json").is_file():
+            continue
+        metadata = partition_metadata(path)
+        partition_id = metadata.get("partition_id")
+        if metadata.get("state") != "closed":
+            continue
+        if not isinstance(partition_id, str) or partition_id != path.name:
+            continue
+        cold_by_id[partition_id] = path
+    return cold_by_id
+
+
+def partition_roots(container: Path, *, cold_root: Path | None = None) -> list[Path]:
+    """Return hot partitions plus copied partitions under ``cold_root``.
+
+    ``cold_root`` is the stable metadata root (``.../metadata/<market>``), not
+    an individually crafted partition path.  Callers that archive only hot
+    partitions omit it; readers pass it so closed partitions whose hot copy was
+    removed remain discoverable.
+    """
+
+    cold_by_id = _cold_partitions_by_id(cold_root)
     partitions = container / "partitions"
     if not partitions.is_dir():
         return [container]
-    return sorted(path for path in partitions.iterdir() if path.is_dir())
+    by_id: dict[str, Path] = {}
+    for path in partitions.iterdir():
+        if (
+            not path.is_dir()
+            or path.name.startswith(".")
+            or path.name.endswith(".partial")
+        ):
+            continue
+        partition_id = path.name
+        if (path / "partition.json").is_file():
+            metadata = partition_metadata(path)
+            if isinstance(metadata.get("partition_id"), str):
+                partition_id = metadata["partition_id"]
+        by_id[partition_id] = path
+    for partition_id, path in cold_by_id.items():
+        by_id[partition_id] = path
+    return [by_id[name] for name in sorted(by_id)]
 
 
 def _intersects(metadata: dict, start_ns: int | None, end_ns: int | None) -> bool:
@@ -75,19 +129,24 @@ def resolve_roots(
     error rather than a silent partial read.
     """
 
+    cold_by_id = _cold_partitions_by_id(cold_root)
     if not (market_root / "partitions").is_dir():
         return [market_root]
     current = read_current(market_root)
+    hot_by_id: dict[str, Path] = {}
+    for path in partition_roots(market_root):
+        metadata = partition_metadata(path)
+        hot_by_id[metadata["partition_id"]] = path
     selected: dict[str, Path] = {}
-    for hot in partition_roots(market_root):
-        metadata = partition_metadata(hot)
-        partition_id = metadata["partition_id"]
+    for partition_id in sorted(set(hot_by_id) | set(cold_by_id)):
+        cold = cold_by_id.get(partition_id)
+        hot = hot_by_id.get(partition_id)
+        metadata = partition_metadata(cold or hot)
         state = metadata.get("state")
         if state != "open" and not _intersects(metadata, start_ns, end_ns):
             continue
-        cold = cold_root / partition_id if cold_root is not None else None
-        physical = cold if cold is not None and cold.is_dir() else hot
-        if not physical.is_dir():
+        physical = cold or hot
+        if physical is None or not physical.is_dir():
             raise ValueError(f"partition {partition_id} is unavailable")
         selected[partition_id] = physical
     if current and current not in selected:

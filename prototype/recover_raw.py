@@ -3,6 +3,7 @@
 import argparse
 import fcntl
 import json
+from contextlib import nullcontext
 from dataclasses import asdict
 from pathlib import Path
 
@@ -14,11 +15,24 @@ from binance_market_data_recorder.storage.catalog.types import ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
 
-def recover(root: Path) -> list[dict[str, object]]:
-    if not (root / "state/c1.lock").is_file():
+def recover(root: Path, *, locked: bool = True) -> list[dict[str, object]]:
+    """Recover one physical root.
+
+    Partitioned containers lock ``<container>/state/c1.lock`` once in
+    ``recover_root.py`` and call this function with ``locked=False`` for each
+    partition; a partition has no recorder lock of its own.
+    """
+
+    if locked and not (root / "state/c1.lock").is_file():
         raise ValueError("expected an existing S-BMDR recorder root")
-    with (root / "state/c1.lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    lock_context = (
+        (root / "state/c1.lock").open("a")
+        if locked
+        else nullcontext()
+    )
+    with lock_context as lock:
+        if locked:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         layout = ensure_storage_layout(root)
         with Catalog(layout.catalog) as catalog:
             actions = [
@@ -68,8 +82,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--no-lock", action="store_true")
     args = parser.parse_args()
-    actions = recover(args.root)
+    actions = recover(args.root, locked=not args.no_lock)
     if not args.quiet:
         print(json.dumps(actions, indent=2))
     return int(any(action["action"] == "reconcile_failed" for action in actions))

@@ -103,3 +103,18 @@ def test_active_files_block_migration(tmp_path: Path) -> None:
     assert report["migrated"] == []
     assert report["skipped"][0]["reason"] == "active-files"
     assert source.exists()
+
+
+def test_cold_only_partition_is_discovered_without_hot_copy(tmp_path: Path) -> None:
+    container = tmp_path / "hot" / "spot"
+    container.mkdir(parents=True)
+    (container / "partitions").mkdir()
+    cold = tmp_path / "cold"
+    cold_partition = _partition(cold, "p1", "closed", 0, 100)
+    resolved = partition_roots.resolve_roots(
+        container, cold_root=cold / "partitions", start_ns=10, end_ns=50
+    )
+    assert resolved == [cold_partition]
+    assert partition_roots.partition_roots(
+        container, cold_root=cold / "partitions"
+    ) == [cold_partition]

@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from binance_market_data_recorder.normalize import pipeline
@@ -20,8 +21,7 @@ from partition_roots import reader_lock, resolve_roots
 ADAPTER = "sbmdr-combined-ws.v1"
 
 
-def parse_capture_envelope(envelope, *, payload_sha256=None):
-    """Give the frozen parser a data view; provenance/hash stay on the original wire."""
+def _unwrap_combined_document(envelope):
     if (
         envelope.payload_encoding == "utf-8-json-combined.v1"
         and not public_observation_stream(envelope.stream)
@@ -32,7 +32,7 @@ def parse_capture_envelope(envelope, *, payload_sha256=None):
         except (ValueError, UnicodeDecodeError):
             document = None
         if isinstance(document, dict) and isinstance(document.get("data"), dict):
-            envelope = envelope.model_copy(
+            return document["data"], envelope.model_copy(
                 update={
                     "raw_payload": json.dumps(
                         document["data"], separators=(",", ":")
@@ -40,7 +40,66 @@ def parse_capture_envelope(envelope, *, payload_sha256=None):
                     "payload_encoding": "utf-8-json",
                 }
             )
-    return parse_envelope(envelope, payload_sha256=payload_sha256)
+    try:
+        decoded = json.loads(envelope.raw_payload)
+    except (ValueError, UnicodeDecodeError):
+        decoded = None
+    return decoded if isinstance(decoded, dict) else None, envelope
+
+
+def parse_capture_envelope(envelope, *, payload_sha256=None):
+    """Give the frozen parser a data view; provenance/hash stay on the original wire."""
+    payload_dict, unwrapped = _unwrap_combined_document(envelope)
+    parsed = parse_envelope(unwrapped, payload_sha256=payload_sha256)
+    if envelope.market != "um_perpetual" or "malformed" in envelope.capture_flags:
+        return parsed
+    if payload_dict is None:
+        return parsed
+    if envelope.stream == "agg_trade":
+        updated = []
+        for item in parsed:
+            if not item.valid:
+                updated.append(item)
+                continue
+            nq = payload_dict.get("nq") if "nq" in payload_dict else None
+            if nq is not None and not isinstance(nq, str):
+                raise ValueError("agg_trade nq must be string when present")
+            fields = {**item.fields, "normal_quantity": nq}
+            content = {**item.logical_content, "normal_quantity": nq}
+            updated.append(replace(item, fields=fields, logical_content=content))
+        return updated
+    if envelope.stream == "mark_price":
+        updated = []
+        event_time = payload_dict.get("E")
+        for item in parsed:
+            if not item.valid:
+                updated.append(item)
+                continue
+            ap = payload_dict.get("ap") if "ap" in payload_dict else None
+            if ap is not None and not isinstance(ap, str):
+                raise ValueError("mark_price ap must be string when present")
+            fields = {**item.fields, "mark_price_moving_average": ap}
+            content = {**item.logical_content, "mark_price_moving_average": ap}
+            times = {
+                "exchange_event_time_ms": (
+                    event_time
+                    if isinstance(event_time, int)
+                    and not isinstance(event_time, bool)
+                    else envelope.exchange_event_time
+                ),
+                "exchange_transaction_time_ms": None,
+                "exchange_trade_time_ms": None,
+            }
+            updated.append(
+                replace(
+                    item,
+                    fields=fields,
+                    logical_content=content,
+                    exchange_times=times,
+                )
+            )
+        return updated
+    return parsed
 
 
 def install_adapter():

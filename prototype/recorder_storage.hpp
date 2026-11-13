@@ -1,4 +1,6 @@
 // One homogeneous Raw v1 chunk per market/symbol/stream, owned by the writer.
+#include <functional>
+
 namespace fs = std::filesystem;
 
 namespace partition_layout {
@@ -113,13 +115,19 @@ inline fs::path create_partition(const fs::path& container, std::int64_t now) {
 }
 
 inline void close_partition(const fs::path& root, std::int64_t last_receive_ns,
-                            std::int64_t now) {
+                            std::int64_t now,
+                            std::optional<std::int64_t> first_receive_ns = std::nullopt) {
     auto metadata = read_json(root / "partition.json");
     metadata["state"] = "closed";
     metadata["closed_at_utc_ns"] = now;
     auto& range = metadata["receive_time_utc_range_ns"];
-    range["max"] = std::max<std::int64_t>(
-        range.value("max", last_receive_ns), last_receive_ns);
+    if (first_receive_ns.has_value()) {
+        range["min"] = *first_receive_ns;
+        range["max"] = std::max<std::int64_t>(*first_receive_ns, last_receive_ns);
+    } else {
+        range["max"] = std::max<std::int64_t>(
+            range.value("max", last_receive_ns), last_receive_ns);
+    }
     write_json_atomic(root / "partition.json", metadata);
 }
 
@@ -468,7 +476,16 @@ class RecorderStorage {
     std::string partition_id_;
     std::string partition_day_;
     std::int64_t partition_created_ns_ = 0;
+    std::int64_t partition_min_receive_ns_ = 0;
+    std::int64_t partition_max_receive_ns_ = 0;
+    bool partition_has_receive_ = false;
     bool partition_closed_ = false;
+    using UtcClock = std::function<std::int64_t()>;
+    UtcClock utc_clock_ = [] { return ns<system_clock>(); };
+    std::uint64_t partition_rotation_count_ = 0;
+    std::int64_t partition_rotation_ns_total_ = 0;
+    std::int64_t partition_rotation_max_ns_ = 0;
+    std::int64_t last_partition_rotation_ns_ = 0;
     std::optional<Catalog> catalog_;
     std::string run_;
     milliseconds period_;
@@ -735,7 +752,7 @@ class RecorderStorage {
     }
 
     std::int64_t last_receive_utc_ns() const {
-        std::int64_t last = 0;
+        std::int64_t last = partition_has_receive_ ? partition_max_receive_ns_ : 0;
         for (const auto& [key, slot] : slots_) {
             if (!slot.raw)
                 continue;
@@ -743,6 +760,12 @@ class RecorderStorage {
             last = std::max(last, value);
         }
         return last;
+    }
+
+    std::optional<std::int64_t> first_receive_utc_ns() const {
+        if (partition_has_receive_)
+            return partition_min_receive_ns_;
+        return std::nullopt;
     }
 
     void start_sealer() {
@@ -775,49 +798,67 @@ class RecorderStorage {
         }
     }
 
+    void set_utc_clock_for_test(UtcClock clock) {
+        if (clock)
+            utc_clock_ = std::move(clock);
+    }
+
     void switch_partition(std::int64_t now_ns) {
         if (!partitioned_ || partition_closed_)
             return;
+        const auto started = ns<steady_clock>();
+        const auto first = first_receive_utc_ns();
         const auto last = last_receive_utc_ns();
         const auto prior_catalog = root_ / "state/catalog.sqlite";
         seal_all("partition");
-        partition_layout::close_partition(root_, last, now_ns);
+        partition_layout::close_partition(root_, last, now_ns, first);
         catalog_->checkpoint();
         root_ = partition_layout::create_partition(container_, now_ns);
         partition_id_ = root_.filename().string();
         partition_day_ = partition_layout::utc_day(now_ns);
         partition_created_ns_ = now_ns;
+        partition_min_receive_ns_ = 0;
+        partition_max_receive_ns_ = 0;
+        partition_has_receive_ = false;
         partition_closed_ = false;
         catalog_.reset();
         catalog_.emplace(root_ / "state/catalog.sqlite");
         catalog_->copy_archive_targets_from(prior_catalog);
         rotations["partition"] = rotations.value("partition", 0) + 1;
         start_sealer();
+        const auto elapsed = std::max<std::int64_t>(0, ns<steady_clock>() - started);
+        ++partition_rotation_count_;
+        partition_rotation_ns_total_ += elapsed;
+        partition_rotation_max_ns_ = std::max(partition_rotation_max_ns_, elapsed);
+        last_partition_rotation_ns_ = elapsed;
     }
 
     void maybe_rotate_partition(bool allow_time_rotation) {
         if (!partitioned_ || !allow_time_rotation || partition_closed_)
             return;
-        const auto now = ns<system_clock>();
+        const auto now = utc_clock_();
         const auto day = partition_layout::utc_day(now);
-        if (day != partition_day_)
+        if (day > partition_day_)
             switch_partition(now);
     }
 
     RecorderStorage(fs::path root, std::string run, milliseconds period,
                     std::uint64_t bytes, milliseconds sync_period,
                     DepthRequests* depth_requests = nullptr,
-                    bool async_seal = false, bool partitioned = false)
+                    bool async_seal = false, bool partitioned = false,
+                    UtcClock utc_clock = {})
         : root_(std::move(root)), partitioned_(partitioned), run_(std::move(run)),
           period_(period), byte_limit_(bytes), sync_period_(sync_period),
           depth_(depth_requests), requests_(depth_requests) {
+        if (utc_clock)
+            utc_clock_ = std::move(utc_clock);
         async_seal_ = async_seal;
         next_sync_ = steady_clock::now() + sync_period_;
         if (partitioned_) {
             container_ = root_;
             fs::create_directories(container_ / "partitions");
             fs::create_directories(container_ / "state");
-            const auto now = ns<system_clock>();
+            const auto now = utc_clock_();
             auto id = partition_layout::read_current(container_);
             bool reuse = false;
             if (!id.empty()) {
@@ -950,6 +991,16 @@ class RecorderStorage {
         }
         slot.raw->append(root_ / slot.active, message, run_, "c1", &scratch_,
                          !async_seal_);
+        if (!partition_has_receive_) {
+            partition_min_receive_ns_ = message.utc;
+            partition_max_receive_ns_ = message.utc;
+            partition_has_receive_ = true;
+        } else {
+            partition_min_receive_ns_ =
+                std::min(partition_min_receive_ns_, message.utc);
+            partition_max_receive_ns_ =
+                std::max(partition_max_receive_ns_, message.utc);
+        }
         if (first)
             writer_catalog([&] { catalog_->active(*slot.raw, slot.active); });
         const auto append_ns = ns<steady_clock>() - message.mono;
@@ -1000,12 +1051,24 @@ class RecorderStorage {
         }
     }
 
+    Json partition_status() const {
+        return Json{
+            {"partition_id", partition_id_},
+            {"partition_day", partition_day_},
+            {"rotations", partition_rotation_count_},
+            {"rotation_pause_ns_total", partition_rotation_ns_total_},
+            {"rotation_pause_max_ns", partition_rotation_max_ns_},
+            {"last_rotation_pause_ns", last_partition_rotation_ns_},
+        };
+    }
+
     void finish() {
-        const auto now = ns<system_clock>();
+        const auto now = utc_clock_();
+        const auto first = first_receive_utc_ns();
         const auto last = last_receive_utc_ns();
         seal_all("shutdown");
         if (partitioned_ && !partition_closed_) {
-            partition_layout::close_partition(root_, last, now);
+            partition_layout::close_partition(root_, last, now, first);
             partition_closed_ = true;
         }
     }
