@@ -85,7 +85,8 @@ def ensure_archive_target(root: Path, target: Path | None, env: dict) -> dict:
         return {"status": "registered"}
     if target is None:
         return {"status": "missing-target-mapping"}
-    target.mkdir(parents=True, exist_ok=True)
+    if not target.is_dir():
+        return {"status": "target-unavailable"}
     result = subprocess.run(
         [
             sys.executable,

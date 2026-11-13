@@ -245,6 +245,25 @@ class Catalog {
                 "WHERE NOT EXISTS (SELECT 1 FROM storage_targets)";
             check(sqlite3_exec(db_.get(), insert.c_str(), nullptr, nullptr, nullptr));
         }
+        {
+            sqlite3_stmt* check_raw = nullptr;
+            const auto check_sql =
+                "SELECT count(*) FROM prior.sqlite_master WHERE type='table' AND name='storage_control'";
+            check(sqlite3_prepare_v2(db_.get(), check_sql, -1, &check_raw, nullptr));
+            std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)> check_stmt(
+                check_raw, sqlite3_finalize);
+            check(sqlite3_step(check_stmt.get()), SQLITE_ROW);
+            if (sqlite3_column_int(check_stmt.get(), 0) != 0) {
+                const std::string create =
+                    "CREATE TABLE IF NOT EXISTS storage_control AS "
+                    "SELECT * FROM prior.storage_control WHERE 0";
+                check(sqlite3_exec(db_.get(), create.c_str(), nullptr, nullptr, nullptr));
+                const std::string insert =
+                    "INSERT INTO storage_control SELECT * FROM prior.storage_control "
+                    "WHERE NOT EXISTS (SELECT 1 FROM storage_control)";
+                check(sqlite3_exec(db_.get(), insert.c_str(), nullptr, nullptr, nullptr));
+            }
+        }
         check(sqlite3_exec(db_.get(), "DETACH DATABASE prior", nullptr, nullptr, nullptr));
     }
 
