@@ -12,6 +12,7 @@ for path in (REPO / "vendor/python-baseline/src", REPO / "prototype"):
 
 from candles import aggregate  # noqa: E402
 from normalize import parse_capture_envelope  # noqa: E402
+from partition_roots import resolve_roots  # noqa: E402
 
 from binance_market_data_recorder.normalize.raw import (  # noqa: E402
     iter_source_records,
@@ -51,34 +52,48 @@ def run_check(
     start_ms: int,
     end_ms: int,
     interval_seconds: int,
+    cold_root: Path | None = None,
 ) -> dict:
     """Return a deterministic result; callers use exit_code() for process status."""
 
     market_identity = expected_market(market)
     start_ns = start_ms * 1_000_000
     end_ns = end_ms * 1_000_000
-    layout = StorageLayout.from_root(root)
-    with Catalog(layout.catalog, read_only=True) as catalog:
-        registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
-        external = {
-            status["storage_id"]: Path(status["resolved_path"])
-            for status in registry.observe_statuses()
-            if status.get("state") in {"READY", "LOW_SPACE"}
-            and status.get("resolved_path")
-        }
-        chunks = load_source_chunks(
-            layout=layout,
-            catalog=catalog,
-            external_roots=external,
-            products=frozenset({(market_identity, symbol)}),
-            start_utc_ns=start_ns,
-            end_utc_ns=end_ns,
-        )
-        records = valid = invalid = wrong_market = 0
-        trades = []
+    roots = resolve_roots(
+        root,
+        cold_root=cold_root,
+        start_ns=start_ns,
+        end_ns=end_ns,
+    )
+    records = valid = invalid = wrong_market = 0
+    trades = []
+    seen_chunks: set[str] = set()
+    loaded_chunks = 0
+    for physical_root in roots:
+        layout = StorageLayout.from_root(physical_root)
+        with Catalog(layout.catalog, read_only=True) as catalog:
+            registry = StorageRegistry(catalog=catalog, volumes=volume_adapter())
+            external = {
+                status["storage_id"]: Path(status["resolved_path"])
+                for status in registry.observe_statuses()
+                if status.get("state") in {"READY", "LOW_SPACE"}
+                and status.get("resolved_path")
+            }
+            chunks = load_source_chunks(
+                layout=layout,
+                catalog=catalog,
+                external_roots=external,
+                products=frozenset({(market_identity, symbol)}),
+                start_utc_ns=start_ns,
+                end_utc_ns=end_ns,
+            )
         for chunk in sorted(
             chunks, key=lambda item: item.manifest["created_at_utc_ns"]
         ):
+            if chunk.chunk_id in seen_chunks:
+                continue
+            seen_chunks.add(chunk.chunk_id)
+            loaded_chunks += 1
             for record in iter_source_records(chunk):
                 envelope = record.envelope
                 if envelope.symbol != symbol:
@@ -120,7 +135,8 @@ def run_check(
         "symbol": symbol,
         "start_ms": start_ms,
         "end_ms": end_ms,
-        "chunks": len(chunks),
+        "partitions": len(roots),
+        "chunks": loaded_chunks,
         "records": records,
         "valid": valid,
         "invalid": invalid,
@@ -156,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--start-ms", type=int, required=True)
     parser.add_argument("--end-ms", type=int, required=True)
     parser.add_argument("--interval-seconds", type=int, default=60)
+    parser.add_argument("--cold-root", type=Path)
     args = parser.parse_args(argv)
     if not 0 < args.end_ms - args.start_ms <= 3600 * 1000:
         parser.error("require a positive range of at most one hour")
@@ -166,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         start_ms=args.start_ms,
         end_ms=args.end_ms,
         interval_seconds=args.interval_seconds,
+        cold_root=args.cold_root,
     )
     print(json.dumps(result, indent=2))
     return exit_code(result)

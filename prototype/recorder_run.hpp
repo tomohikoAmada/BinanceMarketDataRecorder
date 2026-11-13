@@ -152,27 +152,41 @@ void run_core_rest(const std::string& port, Handoff& queue, const std::optional<
 }
 
 int record(int argc, char** argv) {
-    const bool public_capture = (argc == 6 || argc == 7 || argc == 8) && std::string_view(argv[2]) == "--public";
+    const bool partitioned =
+        argc == 9 && std::string_view(argv[2]) == "--public" &&
+        std::string_view(argv[8]) == "--partitioned-root";
+    const bool public_capture =
+        (argc >= 6 && argc <= 9) && std::string_view(argv[2]) == "--public";
     const bool core = public_capture || argc == 11 || argc == 12 || argc == 13;
     const std::string market = core ? (public_capture ? (argc >= 7 ? argv[6] : "spot") : argv[10]) : "spot";
     if (market != "spot" && market != "usdm")
         throw std::runtime_error("market must be spot or usdm");
     const bool usdm = market == "usdm";
-    const auto config = (public_capture && argc == 8) || (!public_capture && argc >= 12) ? std::optional<CaptureConfig>(CaptureConfig::load(public_capture ? argv[7] : argv[11], usdm)) : std::nullopt;
+    const auto config = (public_capture && (argc == 8 || argc == 9)) ||
+                                (!public_capture && argc >= 12)
+                            ? std::optional<CaptureConfig>(CaptureConfig::load(
+                                  public_capture ? argv[7] : argv[11], usdm))
+                            : std::nullopt;
     const auto test_queue_records = !public_capture && argc == 13 ? std::stoull(argv[12]) : 0;
     if (!public_capture && argc != 7 && argc != 9 && argc != 10 && argc != 11 && argc != 12 && argc != 13) {
         throw std::runtime_error(
             "usage: sbmdr-c0 record WS_PORT HTTP_PORT WS_COUNT OUTPUT_DIR REST_INTERVAL_MS "
             "[ROTATE_MS ROTATE_BYTES [TEST_PAUSE_MS [spot|usdm [CONFIG [TEST_QUEUE_RECORDS]]]]] | "
-            "record --public OUTPUT_DIR WS_COUNT CA_FILE [spot|usdm [CONFIG]]");
+            "record --public OUTPUT_DIR WS_COUNT CA_FILE [spot|usdm [CONFIG [--partitioned-root]]]");
     }
     const std::string ws_port = public_capture ? "" : argv[2], http_port = public_capture ? "" : argv[3];
     const auto ws_count = std::stoull(argv[4]);
     const fs::path root(public_capture ? argv[3] : argv[5]);
     const auto ca = public_capture ? std::optional<std::string>(argv[5]) : std::nullopt;
     const auto rest_period = public_capture ? milliseconds(300000) : milliseconds(std::stoll(argv[6]));
-    const auto rotation = argc >= 9 ? milliseconds(std::stoll(argv[7])) : milliseconds(900000);
-    const auto rotation_bytes = argc >= 9 ? std::stoull(argv[8]) : (public_capture ? 16ULL : 128ULL) * 1024 * 1024;
+    const auto rotation = public_capture
+                              ? milliseconds(900000)
+                              : (argc >= 9 ? milliseconds(std::stoll(argv[7]))
+                                           : milliseconds(900000));
+    const auto rotation_bytes =
+        public_capture ? 16ULL * 1024 * 1024
+                       : (argc >= 9 ? std::stoull(argv[8])
+                                    : 128ULL * 1024 * 1024);
     const auto test_pause = !public_capture && argc >= 10 ? milliseconds(std::stoll(argv[9])) : milliseconds(0);
     if (test_pause.count() < 0 || test_pause > seconds(5))
         throw std::runtime_error("test pause must be between zero and five seconds");
@@ -209,17 +223,24 @@ int record(int argc, char** argv) {
         if (fs::space(root).available < 15ULL * 1024 * 1024 * 1024)
             throw std::runtime_error("public capture requires at least 15 GiB available at startup");
     }
-    for (auto directory : {"state", "data/active", "data/sealed", "data/manifests"})
-        fs::create_directories(root / directory);
+    if (partitioned) {
+        fs::create_directories(root / "state");
+        fs::create_directories(root / "partitions");
+    } else {
+        for (auto directory : {"state", "data/active", "data/sealed", "data/manifests"})
+            fs::create_directories(root / directory);
+    }
     std::unique_ptr<FILE, decltype(&fclose)> lock(fopen((root / "state/c1.lock").c_str(), "a"), fclose);
     if (!lock || flock(fileno(lock.get()), LOCK_EX | LOCK_NB) != 0)
         throw std::runtime_error("recorder root is already locked");
-    if (!fs::is_empty(root / "data/active"))
-        throw std::runtime_error("active recovery is required before reuse of this recorder root");
-    for (const auto* directory : {"data/sealed", "data/manifests"}) {
-        for (const auto& entry : fs::directory_iterator(root / directory)) {
-            if (entry.path().extension() == ".partial")
-                throw std::runtime_error("seal recovery is required before reuse of this recorder root");
+    if (!partitioned) {
+        if (!fs::is_empty(root / "data/active"))
+            throw std::runtime_error("active recovery is required before reuse of this recorder root");
+        for (const auto* directory : {"data/sealed", "data/manifests"}) {
+            for (const auto& entry : fs::directory_iterator(root / directory)) {
+                if (entry.path().extension() == ".partial")
+                    throw std::runtime_error("seal recovery is required before reuse of this recorder root");
+            }
         }
     }
     if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
@@ -254,7 +275,7 @@ int record(int argc, char** argv) {
             RecorderStorage storage(root, run_id, rotation, rotation_bytes,
                                     config ? milliseconds(5000) : milliseconds(900),
                                     core ? &depth_requests : nullptr,
-                                    config.has_value());
+                                    config.has_value(), partitioned);
             std::vector<Message> batch;
             batch.reserve(32);
             auto next_status = start + seconds(1);

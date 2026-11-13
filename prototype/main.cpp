@@ -704,6 +704,44 @@ class Handoff {
 
 #include "recorder_storage.hpp"
 
+void verify_partition_layout() {
+    const auto container = fs::temp_directory_path() /
+                           ("sbmdr-partition-check-" + uuid_text(uuid_bytes()));
+    fs::create_directories(container / "state");
+    fs::create_directories(container / "partitions");
+    try {
+        RecorderStorage storage(container, "partition-check", milliseconds(900000),
+                                16ULL * 1024 * 1024, milliseconds(900), nullptr,
+                                false, true);
+        const auto first = partition_layout::read_current(container);
+        if (first.empty())
+            throw std::runtime_error("partition check: CURRENT missing");
+        const auto first_root = container / "partitions" / first;
+        if (partition_layout::read_json(first_root / "partition.json")
+                .value("state", std::string{}) != "open")
+            throw std::runtime_error("partition check: initial partition not open");
+        storage.switch_partition(ns<system_clock>() + 86400LL * 1000000000LL);
+        const auto second = partition_layout::read_current(container);
+        if (second.empty() || second == first)
+            throw std::runtime_error("partition check: CURRENT did not rotate");
+        if (partition_layout::read_json(first_root / "partition.json")
+                .value("state", std::string{}) != "closed")
+            throw std::runtime_error("partition check: old partition not closed");
+        const auto second_root = container / "partitions" / second;
+        if (partition_layout::read_json(second_root / "partition.json")
+                .value("state", std::string{}) != "open")
+            throw std::runtime_error("partition check: new partition not open");
+        storage.finish();
+        if (partition_layout::read_json(second_root / "partition.json")
+                .value("state", std::string{}) != "closed")
+            throw std::runtime_error("partition check: finish did not close partition");
+    } catch (...) {
+        fs::remove_all(container);
+        throw;
+    }
+    fs::remove_all(container);
+}
+
 class WsRenewal : public std::runtime_error {
   public:
     WsRenewal() : std::runtime_error("websocket 23h renewal") {}
@@ -1313,6 +1351,10 @@ void verify_handoff_limit() {
 int main(int argc, char** argv) try {
     if (argc == 2 && std::string_view(argv[1]) == "--check-depth-bridge") {
         verify_depth_edges();
+        return 0;
+    }
+    if (argc == 2 && std::string_view(argv[1]) == "--check-partition") {
+        verify_partition_layout();
         return 0;
     }
     if (argc == 2 && std::string_view(argv[1]) == "--check-handoff") {

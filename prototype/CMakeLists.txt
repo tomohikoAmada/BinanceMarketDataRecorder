@@ -39,6 +39,7 @@ add_test(NAME c2-handoff-limit COMMAND "$<TARGET_FILE:sbmdr-c0>" --check-handoff
 add_test(NAME c2-core COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/verify_core.py"
     "$<TARGET_FILE:sbmdr-c0>" "${PYTHON_BASELINE}")
 add_test(NAME c2-depth-edges COMMAND "$<TARGET_FILE:sbmdr-c0>" --check-depth-bridge)
+add_test(NAME c3-partition COMMAND "$<TARGET_FILE:sbmdr-c0>" --check-partition)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CXX_FLAGS MATCHES "fsanitize")
     # LD_PRELOAD syscall interposition runs in the unsanitized Release process.
     # The real recorder/queue/bridge suites run separately with ASan/UBSan/TSan.

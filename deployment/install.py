@@ -277,6 +277,13 @@ def main():
             roots[market] = str(root)
             Path(f"/etc/sbmdr/{market}.env").write_text(f"ROOT={root}\n")
         Path("/etc/sbmdr/roots.json").write_text(json.dumps(roots, indent=2) + "\n")
+        metadata_roots = {
+            market: str(Path("/srv/recorder-data/S-BMDR/metadata") / market)
+            for market in roots
+        }
+        Path("/etc/sbmdr/metadata-roots.json").write_text(
+            json.dumps(metadata_roots, indent=2) + "\n"
+        )
 
         step = "install-units"
         for name in (

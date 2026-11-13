@@ -69,7 +69,11 @@ def _run(monkeypatch, records):
     monkeypatch.setattr(
         consumer,
         "load_source_chunks",
-        lambda **kwargs: [SimpleNamespace(manifest={"created_at_utc_ns": 0})],
+        lambda **kwargs: [
+            SimpleNamespace(
+                manifest={"created_at_utc_ns": 0}, chunk_id="fixture"
+            )
+        ],
     )
     monkeypatch.setattr(
         consumer,

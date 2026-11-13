@@ -13,16 +13,25 @@ from binance_market_data_recorder.storage.layout import StorageLayout
 
 from binance_market_data_recorder.storage.catalog import Catalog
 
+from partition_roots import resolve_roots
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("data_root", type=Path)
-    layout = StorageLayout.from_root(parser.parse_args().data_root)
-    with Catalog(layout.catalog, read_only=True) as catalog:
-        chunks = load_source_chunks(layout=layout, catalog=catalog)
+    parser.add_argument("--cold-root", type=Path)
+    args = parser.parse_args()
+    seen: set[str] = set()
+    for root in resolve_roots(args.data_root, cold_root=args.cold_root):
+        layout = StorageLayout.from_root(root)
+        with Catalog(layout.catalog, read_only=True) as catalog:
+            chunks = load_source_chunks(layout=layout, catalog=catalog)
         for chunk in sorted(
             chunks, key=lambda item: item.manifest["created_at_utc_ns"]
         ):
+            if chunk.chunk_id in seen:
+                continue
+            seen.add(chunk.chunk_id)
             count = 0
             for record in iter_source_records(chunk):
                 fields = record.envelope.canonical_mapping()

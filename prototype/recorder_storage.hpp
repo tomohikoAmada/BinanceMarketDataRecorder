@@ -1,6 +1,130 @@
 // One homogeneous Raw v1 chunk per market/symbol/stream, owned by the writer.
 namespace fs = std::filesystem;
 
+namespace partition_layout {
+
+inline std::string utc_day(std::int64_t utc_ns) {
+    const auto seconds = static_cast<std::time_t>(utc_ns / 1'000'000'000LL);
+    std::tm value{};
+    if (::gmtime_r(&seconds, &value) == nullptr)
+        throw std::runtime_error("UTC day conversion failed");
+    char text[16]{};
+    if (::strftime(text, sizeof(text), "%Y-%m-%d", &value) == 0)
+        throw std::runtime_error("UTC day formatting failed");
+    return text;
+}
+
+inline std::string read_text(const fs::path& path) {
+    std::ifstream input(path);
+    if (!input)
+        throw std::runtime_error("partition file read failed: " + path.string());
+    std::string text((std::istreambuf_iterator<char>(input)),
+                     std::istreambuf_iterator<char>());
+    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back())))
+        text.pop_back();
+    return text;
+}
+
+inline Json read_json(const fs::path& path) {
+    const auto text = read_text(path);
+    try {
+        return Json::parse(text);
+    } catch (...) {
+        throw std::runtime_error("partition JSON is invalid: " + path.string());
+    }
+}
+
+inline void write_json_atomic(const fs::path& path, const Json& value) {
+    const auto temporary = path.string() + ".tmp";
+    {
+        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+        if (!output)
+            throw std::runtime_error("partition file create failed: " + temporary);
+        output << value.dump() << '\n';
+        output.flush();
+        if (!output)
+            throw std::runtime_error("partition file write failed: " + temporary);
+    }
+    const int descriptor = ::open(temporary.c_str(), O_RDONLY);
+    if (descriptor < 0 || ::fsync(descriptor) != 0) {
+        if (descriptor >= 0)
+            ::close(descriptor);
+        throw std::runtime_error("partition file fsync failed: " + temporary);
+    }
+    ::close(descriptor);
+    fs::rename(temporary, path);
+    sync_directory(path.parent_path());
+}
+
+inline void ensure_partition_dirs(const fs::path& root) {
+    for (const auto* directory :
+         {"state", "data/active", "data/sealed", "data/manifests"})
+        fs::create_directories(root / directory);
+}
+
+inline std::string read_current(const fs::path& container) {
+    const auto current = container / "CURRENT";
+    if (!fs::is_regular_file(current))
+        return {};
+    return read_text(current);
+}
+
+inline void write_current(const fs::path& container, const std::string& id) {
+    const auto path = container / "CURRENT";
+    const auto temporary = path.string() + ".tmp";
+    {
+        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+        if (!output)
+            throw std::runtime_error("CURRENT create failed");
+        output << id << '\n';
+        output.flush();
+        if (!output)
+            throw std::runtime_error("CURRENT write failed");
+    }
+    const int descriptor = ::open(temporary.c_str(), O_RDONLY);
+    if (descriptor < 0 || ::fsync(descriptor) != 0) {
+        if (descriptor >= 0)
+            ::close(descriptor);
+        throw std::runtime_error("CURRENT fsync failed");
+    }
+    ::close(descriptor);
+    fs::rename(temporary, path);
+    sync_directory(path.parent_path());
+}
+
+inline Json open_partition_metadata(const std::string& id, std::int64_t now) {
+    return Json{{"schema_version", "partition.v1"},
+                {"partition_id", id},
+                {"created_at_utc_ns", now},
+                {"receive_time_utc_range_ns", {{"min", now}, {"max", now}}},
+                {"state", "open"}};
+}
+
+inline fs::path create_partition(const fs::path& container, std::int64_t now) {
+    const auto day = utc_day(now);
+    const auto id = day + "T" + std::to_string(now) + "-" +
+                    uuid_text(uuid_bytes());
+    const auto root = container / "partitions" / id;
+    ensure_partition_dirs(root);
+    write_json_atomic(root / "partition.json",
+                      open_partition_metadata(id, now));
+    write_current(container, id);
+    return root;
+}
+
+inline void close_partition(const fs::path& root, std::int64_t last_receive_ns,
+                            std::int64_t now) {
+    auto metadata = read_json(root / "partition.json");
+    metadata["state"] = "closed";
+    metadata["closed_at_utc_ns"] = now;
+    auto& range = metadata["receive_time_utc_range_ns"];
+    range["max"] = std::max<std::int64_t>(
+        range.value("max", last_receive_ns), last_receive_ns);
+    write_json_atomic(root / "partition.json", metadata);
+}
+
+} // namespace partition_layout
+
 class Catalog {
     std::unique_ptr<sqlite3, decltype(&sqlite3_close)> db_{nullptr, sqlite3_close};
     std::mutex mutex_;
@@ -278,7 +402,13 @@ class RecorderStorage {
         bool rest = false;
     };
     fs::path root_;
-    Catalog catalog_;
+    fs::path container_;
+    bool partitioned_ = false;
+    std::string partition_id_;
+    std::string partition_day_;
+    std::int64_t partition_created_ns_ = 0;
+    bool partition_closed_ = false;
+    std::optional<Catalog> catalog_;
     std::string run_;
     milliseconds period_;
     std::uint64_t byte_limit_;
@@ -411,7 +541,7 @@ class RecorderStorage {
             {"worst_sync", raw->worst_sync},
         };
 #endif
-        catalog_.sealing(*raw, first, overload_gap);
+        catalog_->sealing(*raw, first, overload_gap);
         const auto basename = hex(raw->identity);
         const auto sealed = fs::path("data/sealed") / (basename + ".bmdr.zst");
         const auto manifest_path =
@@ -472,7 +602,7 @@ class RecorderStorage {
         manifest_output.finish();
         fs::rename(manifest_tmp, root_ / manifest_path);
         sync_directory((root_ / manifest_path).parent_path());
-        catalog_.sealed(manifest, manifest_path);
+        catalog_->sealed(manifest, manifest_path);
         fs::remove(root_ / active);
         sync_directory((root_ / active).parent_path());
         ++sealed_count;
@@ -543,19 +673,121 @@ class RecorderStorage {
         return append_histogram_.size() - 1;
     }
 
+    std::int64_t last_receive_utc_ns() const {
+        std::int64_t last = 0;
+        for (const auto& [key, slot] : slots_) {
+            if (!slot.raw)
+                continue;
+            const auto value = slot.raw->utc_range.value("max", std::int64_t{0});
+            last = std::max(last, value);
+        }
+        return last;
+    }
+
+    void start_sealer() {
+        if (!async_seal_ || sealer_.joinable())
+            return;
+        seal_stopping_ = false;
+        seal_error_ = nullptr;
+        seal_failed_.store(false, std::memory_order_relaxed);
+        sealer_ = std::thread([this] { sealer_loop(); });
+    }
+
+    void seal_all(const char* reason) {
+        try {
+            for (auto& [key, slot] : slots_) {
+                if (slot.raw)
+                    rotate(slot, slot.raw->stream == "rest_observations", reason);
+            }
+        } catch (...) {
+            if (async_seal_) {
+                stop_sealer();
+                if (seal_error_)
+                    std::rethrow_exception(seal_error_);
+            }
+            throw;
+        }
+        if (async_seal_) {
+            stop_sealer();
+            if (seal_error_)
+                std::rethrow_exception(seal_error_);
+        }
+    }
+
+    void switch_partition(std::int64_t now_ns) {
+        if (!partitioned_ || partition_closed_)
+            return;
+        const auto last = last_receive_utc_ns();
+        seal_all("partition");
+        partition_layout::close_partition(root_, last, now_ns);
+        root_ = partition_layout::create_partition(container_, now_ns);
+        partition_id_ = root_.filename().string();
+        partition_day_ = partition_layout::utc_day(now_ns);
+        partition_created_ns_ = now_ns;
+        partition_closed_ = false;
+        catalog_.reset();
+        catalog_.emplace(root_ / "state/catalog.sqlite");
+        rotations["partition"] = rotations.value("partition", 0) + 1;
+        start_sealer();
+    }
+
+    void maybe_rotate_partition(bool allow_time_rotation) {
+        if (!partitioned_ || !allow_time_rotation || partition_closed_)
+            return;
+        const auto now = ns<system_clock>();
+        const auto day = partition_layout::utc_day(now);
+        if (day != partition_day_)
+            switch_partition(now);
+    }
+
     RecorderStorage(fs::path root, std::string run, milliseconds period,
                     std::uint64_t bytes, milliseconds sync_period,
                     DepthRequests* depth_requests = nullptr,
-                    bool async_seal = false)
-        : root_(std::move(root)), catalog_(root_ / "state/catalog.sqlite"),
-          run_(std::move(run)), period_(period), byte_limit_(bytes),
-          sync_period_(sync_period), depth_(depth_requests),
-          requests_(depth_requests) {
+                    bool async_seal = false, bool partitioned = false)
+        : root_(std::move(root)), partitioned_(partitioned), run_(std::move(run)),
+          period_(period), byte_limit_(bytes), sync_period_(sync_period),
+          depth_(depth_requests), requests_(depth_requests) {
         async_seal_ = async_seal;
         next_sync_ = steady_clock::now() + sync_period_;
-        catalog_.startup(run_);
-        if (async_seal_)
-            sealer_ = std::thread([this] { sealer_loop(); });
+        if (partitioned_) {
+            container_ = root_;
+            fs::create_directories(container_ / "partitions");
+            fs::create_directories(container_ / "state");
+            const auto now = ns<system_clock>();
+            auto id = partition_layout::read_current(container_);
+            bool reuse = false;
+            if (!id.empty()) {
+                const auto candidate = container_ / "partitions" / id;
+                if (!fs::is_directory(candidate))
+                    throw std::runtime_error("CURRENT points to a missing partition");
+                const auto metadata = partition_layout::read_json(
+                    candidate / "partition.json");
+                const auto state = metadata.value("state", std::string{});
+                const auto created =
+                    metadata.value("created_at_utc_ns", std::int64_t{0});
+                if (state == "open" &&
+                    partition_layout::utc_day(created) ==
+                        partition_layout::utc_day(now)) {
+                    root_ = candidate;
+                    partition_id_ = id;
+                    partition_day_ = partition_layout::utc_day(created);
+                    partition_created_ns_ = created;
+                    reuse = true;
+                } else {
+                    partition_layout::close_partition(candidate, now, now);
+                }
+            }
+            if (!reuse) {
+                root_ = partition_layout::create_partition(container_, now);
+                partition_id_ = root_.filename().string();
+                partition_day_ = partition_layout::utc_day(now);
+                partition_created_ns_ = now;
+            }
+            partition_layout::ensure_partition_dirs(root_);
+        }
+        catalog_.emplace(root_ / "state/catalog.sqlite");
+        catalog_->startup(run_);
+        start_sealer();
     }
 
     ~RecorderStorage() {
@@ -617,6 +849,7 @@ class RecorderStorage {
             auto& slot = oldest->second;
             rotate(slot, slot.raw->stream == "rest_observations", "time");
         }
+        maybe_rotate_partition(allow_time_rotation);
     }
 
     void append(Message& message) {
@@ -627,7 +860,7 @@ class RecorderStorage {
             const auto event_id =
                 run_ + "-ingress-drop-" + std::to_string(++ingress_drop_sequence_);
             writer_catalog(
-                [&] { catalog_.ingress_drop(event_id, run_, message); });
+                [&] { catalog_->ingress_drop(event_id, run_, message); });
         }
         if (requests_ && !requests_->children.empty() &&
             (message.stream == "diff_depth" ||
@@ -654,7 +887,7 @@ class RecorderStorage {
         slot.raw->append(root_ / slot.active, message, run_, "c1", &scratch_,
                          !async_seal_);
         if (first)
-            writer_catalog([&] { catalog_.active(*slot.raw, slot.active); });
+            writer_catalog([&] { catalog_->active(*slot.raw, slot.active); });
         const auto append_ns = ns<steady_clock>() - message.mono;
         slot.last_append = append_ns + message.mono;
         max_append_ns = std::max(max_append_ns, append_ns);
@@ -681,7 +914,7 @@ class RecorderStorage {
     void mark_overload(bool rest, bool symbol_scoped, const std::string& market,
                        bool configured = false) {
         writer_catalog([&] {
-            catalog_.overload(run_, rest, symbol_scoped, market, configured);
+            catalog_->overload(run_, rest, symbol_scoped, market, configured);
         });
         for (auto& [key, slot] : slots_) {
             if (slot.raw && (slot.raw->stream == "rest_observations") == rest) {
@@ -694,7 +927,7 @@ class RecorderStorage {
     void record_tail_drop(const DropSnapshot& drop) {
         const auto event_id =
             run_ + "-ingress-tail-" + std::to_string(++ingress_drop_sequence_);
-        catalog_.ingress_drop_summary(event_id, run_, drop);
+        catalog_->ingress_drop_summary(event_id, run_, drop);
         const auto found = slots_.find(drop.slot_key);
         if (found != slots_.end() && found->second.raw) {
             found->second.raw->flags.insert("sequence_gap");
@@ -704,23 +937,12 @@ class RecorderStorage {
     }
 
     void finish() {
-        try {
-            for (auto& [key, slot] : slots_) {
-                if (slot.raw)
-                    rotate(slot, slot.raw->stream == "rest_observations", "shutdown");
-            }
-        } catch (...) {
-            if (async_seal_) {
-                stop_sealer();
-                if (seal_error_)
-                    std::rethrow_exception(seal_error_);
-            }
-            throw;
-        }
-        if (async_seal_) {
-            stop_sealer();
-            if (seal_error_)
-                std::rethrow_exception(seal_error_);
+        const auto now = ns<system_clock>();
+        const auto last = last_receive_utc_ns();
+        seal_all("shutdown");
+        if (partitioned_ && !partition_closed_) {
+            partition_layout::close_partition(root_, last, now);
+            partition_closed_ = true;
         }
     }
 };
