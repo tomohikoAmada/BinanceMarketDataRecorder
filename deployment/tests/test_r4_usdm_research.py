@@ -532,3 +532,57 @@ def test_end_to_end_hot_cold_archived_usdm_research_export_and_book_parity(
     assert btc_book["bids"] == [["90119.5", "1"], ["90119", "4"]]
     # Asks: 90121.00 ("2.500"), 90122.00 ("3.000").
     assert btc_book["asks"] == [["90121", "2.5"], ["90122", "3"]]
+
+
+def test_export_usdm_research_prunes_chunks_before_validation(
+    tmp_path: Path,
+) -> None:
+    fixtures = usdm_research.build_usdm_parity_fixtures()
+    root = tmp_path / "partition"
+    layout = ensure_storage_layout(root)
+
+    def write_chunk(stream: str, symbol: str, receive_ns: int) -> Path:
+        env = _ws_envelope(
+            stream=stream,
+            symbol=symbol,
+            payload=fixtures["ws_payloads"][0]["data"]
+            if stream == "agg_trade"
+            else fixtures["ws_payloads"][2]["data"],
+            receive_ns=receive_ns,
+        )
+        with Catalog(layout.catalog) as catalog:
+            writer = RawChunkWriter(
+                layout=layout,
+                catalog=catalog,
+                market="um_perpetual",
+                symbol=symbol,
+                stream=stream,
+                collector_instance_id="inst-r4",
+                collector_version="r4-test",
+                created_at_utc_ns=receive_ns,
+            )
+            writer.append(env)
+            writer.sync()
+            sealed = writer.seal()
+            return root / str(sealed["relative_path"])
+
+    target_ns = 1_762_992_100_000_000_000
+    write_chunk("agg_trade", "BTCUSDT", target_ns)
+    # Out-of-window and unselected-symbol chunks are pruned via manifest metadata
+    # before load_source_chunks validates or decompresses their .bmdr.zst payloads.
+    out_of_window_artifact = write_chunk("agg_trade", "BTCUSDT", target_ns - 60_000_000_000)
+    other_symbol_artifact = write_chunk("mark_price", "ETHUSDT", target_ns)
+    out_of_window_artifact.write_bytes(b"corrupted-not-read")
+    other_symbol_artifact.write_bytes(b"corrupted-not-read")
+
+    out = tmp_path / "export"
+    manifest = usdm_research.export_usdm_research(
+        root,
+        out,
+        symbols=["BTCUSDT"],
+        sources=["agg_trade"],
+        start_ns=target_ns - 1_000_000_000,
+        end_ns=target_ns + 1_000_000_000,
+        reconstruct_books=False,
+    )
+    assert manifest["stream_counts"] == {"agg_trade": 1}

@@ -1435,12 +1435,23 @@ def export_usdm_research(
         resolved_roots = resolve_roots(
             root, cold_root=cold_root, start_ns=start_ns, end_ns=end_ns
         )
+        products = frozenset(
+            {
+                ("um_perpetual", "__GLOBAL__"),
+                *(("um_perpetual", sym) for sym in selected_symbols),
+            }
+        )
         for physical_root in resolved_roots:
             layout = StorageLayout.from_root(physical_root)
             with Catalog(layout.catalog, read_only=True) as catalog:
                 external = _external_roots_for(catalog)
                 chunks = load_source_chunks(
-                    layout=layout, catalog=catalog, external_roots=external
+                    layout=layout,
+                    catalog=catalog,
+                    external_roots=external,
+                    products=products,
+                    start_utc_ns=start_ns,
+                    end_utc_ns=end_ns,
                 )
             for chunk in sorted(
                 chunks, key=lambda c: (c.manifest["created_at_utc_ns"], c.chunk_id)
