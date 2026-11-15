@@ -200,10 +200,17 @@ def verify_access_http_endpoint(
     clean_base = base_url.rstrip("/")
     latest_url = f"{clean_base}/export/latest.json"
 
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> None:
+            return None
+
+    opener = urllib.request.build_opener(_NoRedirect())
+
     def _request(url: str, *, method: str = "GET", headers: dict[str, str] | None = None) -> tuple[int, dict[str, str], bytes]:
-        req = urllib.request.Request(url, method=method, headers=headers or {})
+        merged = {"User-Agent": "S-BMDR-M5A/1.0", **(headers or {})}
+        req = urllib.request.Request(url, method=method, headers=merged)
         try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with opener.open(req, timeout=15) as resp:
                 return resp.status, {k.lower(): v for k, v in resp.headers.items()}, resp.read()
         except urllib.error.HTTPError as exc:
             return exc.code, {k.lower(): v for k, v in exc.headers.items()}, exc.read()
