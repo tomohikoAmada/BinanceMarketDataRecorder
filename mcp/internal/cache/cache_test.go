@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -203,4 +204,90 @@ func TestJobCoordinator_CancelAndResume(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatalf("resumed job did not complete in time")
+}
+
+func TestEnsureFile_CrossManagerFlockSerializesAndReuses(t *testing.T) {
+	payload := []byte("cross-manager-shared-artifact-payload")
+	sum := shaHex(payload)
+	var hits atomic.Int32
+	var forceHits atomic.Int32
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(60 * time.Millisecond)
+		if r.URL.Path == "/latest.json" {
+			forceHits.Add(1)
+			_, _ = w.Write([]byte(`{"revision_id":"r1"}`))
+			return
+		}
+		hits.Add(1)
+		_, _ = w.Write(payload)
+	}))
+	defer srv.Close()
+
+	dataDir := t.TempDir()
+	mgr1 := NewManager(dataDir, srv.Client(), 2, 0, nil)
+	mgr2 := NewManager(dataDir, srv.Client(), 2, 0, nil)
+
+	// Subcase A: concurrent uncached fetch across two separate Managers hits network once via flock + receipt recheck.
+	var wg sync.WaitGroup
+	errs := make(chan error, 2)
+	for _, m := range []*Manager{mgr1, mgr2} {
+		wg.Add(1)
+		go func(mgr *Manager) {
+			defer wg.Done()
+			_, err := mgr.EnsureFile(context.Background(), EnsureOptions{
+				DestRelPath:    "recorder/revisions/r1/manifest.json",
+				Key:            CacheKey{Source: "recorder_manifest", Dataset: "manifest", RevisionOrHash: "r1"},
+				SourceURL:      srv.URL + "/manifest.json",
+				ExpectedSHA256: sum,
+				ExpectedBytes:  int64(len(payload)),
+			})
+			errs <- err
+		}(m)
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("concurrent pinned EnsureFile failed: %v", err)
+		}
+	}
+	if hits.Load() != 1 {
+		t.Fatalf("expected 1 network fetch across locked Managers, got %d", hits.Load())
+	}
+
+	// Subcase B: concurrent ForceRefresh across 4 separate Managers serializes .part -> destPath rename with zero race.
+	errs2 := make(chan error, 4)
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		mgr := NewManager(dataDir, srv.Client(), 2, 0, nil)
+		go func(m *Manager) {
+			defer wg.Done()
+			_, err := m.EnsureFile(context.Background(), EnsureOptions{
+				DestRelPath:  "recorder/latest.json",
+				Key:          CacheKey{Source: "recorder_index", Dataset: "latest"},
+				SourceURL:    srv.URL + "/latest.json",
+				ForceRefresh: true,
+			})
+			errs2 <- err
+		}(mgr)
+	}
+	wg.Wait()
+	close(errs2)
+	for err := range errs2 {
+		if err != nil {
+			t.Fatalf("concurrent ForceRefresh EnsureFile failed: %v", err)
+		}
+	}
+	if forceHits.Load() != 4 {
+		t.Fatalf("expected 4 serialized ForceRefresh fetches, got %d", forceHits.Load())
+	}
+
+	sumInspect, err := mgr1.Inspect(context.Background(), true)
+	if err != nil {
+		t.Fatalf("inspect after flock tests: %v", err)
+	}
+	if sumInspect.TotalFiles != 2 || sumInspect.ReceiptCount != 2 || len(sumInspect.VerifyFailures) != 0 {
+		t.Fatalf("unexpected inspect summary (.locks should be ignored): %+v", sumInspect)
+	}
 }

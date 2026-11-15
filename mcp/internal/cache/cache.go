@@ -265,6 +265,7 @@ type EnsureOptions struct {
 	ExpectedBytes  int64
 	Offline        bool
 	ForceVerify    bool
+	ForceRefresh   bool
 }
 
 // EnsureResult describes cache hit vs download and verified identity.
@@ -274,6 +275,34 @@ type EnsureResult struct {
 	CacheHit  bool     `json:"cache_hit"`
 	Resumed   bool     `json:"resumed"`
 	BytesRead int64    `json:"bytes_downloaded"`
+}
+
+// tryReuseReceipt validates whether destPath already has a matching verified receipt on disk.
+func (m *Manager) tryReuseReceipt(destPath string, opts EnsureOptions) (*EnsureResult, bool, error) {
+	rec, ok := LoadReceipt(destPath)
+	if !ok {
+		return nil, false, nil
+	}
+	matchesExpected := opts.ExpectedSHA256 == "" || strings.EqualFold(rec.SHA256, opts.ExpectedSHA256)
+	matchesBytes := opts.ExpectedBytes <= 0 || rec.SizeBytes == opts.ExpectedBytes
+	if !matchesExpected || !matchesBytes {
+		return nil, false, nil
+	}
+	if opts.ForceVerify {
+		actualHash, _, vErr := FileSHA256(destPath)
+		if vErr != nil {
+			return nil, false, vErr
+		}
+		if !strings.EqualFold(actualHash, rec.SHA256) {
+			return nil, false, fmt.Errorf("cache verification failed for %s: expected %s got %s", destPath, rec.SHA256, actualHash)
+		}
+	}
+	// Fixed hash or offline mode makes zero network requests on subsequent hits.
+	return &EnsureResult{
+		LocalPath: destPath,
+		Receipt:   rec,
+		CacheHit:  true,
+	}, true, nil
 }
 
 // EnsureFile guarantees a verified cached artifact via receipt reuse, single-flight dedup, or resumable fetch.
@@ -286,25 +315,11 @@ func (m *Manager) EnsureFile(ctx context.Context, opts EnsureOptions) (*EnsureRe
 		return nil, err
 	}
 
-	if rec, ok := LoadReceipt(destPath); ok {
-		matchesExpected := opts.ExpectedSHA256 == "" || strings.EqualFold(rec.SHA256, opts.ExpectedSHA256)
-		matchesBytes := opts.ExpectedBytes <= 0 || rec.SizeBytes == opts.ExpectedBytes
-		if matchesExpected && matchesBytes {
-			if opts.ForceVerify {
-				actualHash, _, vErr := FileSHA256(destPath)
-				if vErr != nil {
-					return nil, vErr
-				}
-				if !strings.EqualFold(actualHash, rec.SHA256) {
-					return nil, fmt.Errorf("cache verification failed for %s: expected %s got %s", destPath, rec.SHA256, actualHash)
-				}
-			}
-			// Fixed hash or offline mode makes zero network requests on subsequent hits.
-			return &EnsureResult{
-				LocalPath: destPath,
-				Receipt:   rec,
-				CacheHit:  true,
-			}, nil
+	if !opts.ForceRefresh {
+		if res, ok, rErr := m.tryReuseReceipt(destPath, opts); rErr != nil {
+			return nil, rErr
+		} else if ok {
+			return res, nil
 		}
 	}
 
@@ -340,6 +355,25 @@ func (m *Manager) EnsureFile(ctx context.Context, opts EnsureOptions) (*EnsureRe
 		m.mu.Unlock()
 	}()
 
+	unlock, lockErr := m.acquireFileLock(ctx, destPath)
+	if lockErr != nil {
+		call.err = lockErr
+		return nil, lockErr
+	}
+	defer unlock()
+
+	// Another OS process sharing BINANCE_MCP_DATA_DIR may have completed the file while we waited for the lock.
+	if !opts.ForceRefresh {
+		if res, ok, rErr := m.tryReuseReceipt(destPath, opts); rErr != nil {
+			call.err = rErr
+			return nil, rErr
+		} else if ok {
+			call.path = res.LocalPath
+			call.rec = res.Receipt
+			return res, nil
+		}
+	}
+
 	select {
 	case m.Sem <- struct{}{}:
 		defer func() { <-m.Sem }()
@@ -373,14 +407,19 @@ func (m *Manager) downloadAndFinalize(ctx context.Context, destPath string, opts
 
 	var existingOffset int64
 	var savedMeta partMeta
-	if pst, err := os.Stat(partPath); err == nil && !pst.IsDir() && pst.Size() > 0 {
-		if rawMeta, mErr := os.ReadFile(metaPath); mErr == nil {
-			if jsonErr := json.Unmarshal(rawMeta, &savedMeta); jsonErr == nil {
-				// Only reuse .part if target SHA/URL matches this exact object identity.
-				shaMatch := opts.ExpectedSHA256 == "" || savedMeta.SHA256 == "" || strings.EqualFold(savedMeta.SHA256, opts.ExpectedSHA256)
-				urlMatch := savedMeta.SourceURL == opts.SourceURL
-				if shaMatch && urlMatch {
-					existingOffset = pst.Size()
+	if pst, err := os.Stat(partPath); err == nil {
+		if pst.IsDir() {
+			// Clear an accidental empty directory at .part so OpenFile/Rename cannot fail.
+			_ = os.Remove(partPath)
+		} else if pst.Size() > 0 {
+			if rawMeta, mErr := os.ReadFile(metaPath); mErr == nil {
+				if jsonErr := json.Unmarshal(rawMeta, &savedMeta); jsonErr == nil {
+					// Only reuse .part if target SHA/URL matches this exact object identity.
+					shaMatch := opts.ExpectedSHA256 == "" || savedMeta.SHA256 == "" || strings.EqualFold(savedMeta.SHA256, opts.ExpectedSHA256)
+					urlMatch := savedMeta.SourceURL == opts.SourceURL
+					if shaMatch && urlMatch {
+						existingOffset = pst.Size()
+					}
 				}
 			}
 		}

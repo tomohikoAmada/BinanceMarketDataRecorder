@@ -279,6 +279,9 @@ func (m *Manager) Inspect(ctx context.Context, verify bool) (*InspectSummary, er
 			return ctx.Err()
 		}
 		if d.IsDir() {
+			if d.Name() == ".locks" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		info, iErr := d.Info()

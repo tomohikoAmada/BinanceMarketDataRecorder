@@ -232,13 +232,13 @@ func (c *Client) SyncSnapshot(ctx context.Context, revisionID string, offline bo
 			}
 			// Do NOT cache latest.json across calls: write to a fresh un-pinned fetch via ForceVerify + unique hashless check?
 			// Better: remove prior receipt on latest.json or fetch directly? Using CacheMgr with offline=false and ExpectedSHA256="" without receipt reuse.
-			_ = os.Remove(cache.ReceiptPath(localLatestPath))
 			res, err := c.CacheMgr.EnsureFile(ctx, cache.EnsureOptions{
-				DestRelPath: localLatestRel,
-				Key:         tmpKey,
-				SourceURL:   pri,
-				FallbackURL: sec,
-				Offline:     false,
+				DestRelPath:  localLatestRel,
+				Key:          tmpKey,
+				SourceURL:    pri,
+				FallbackURL:  sec,
+				Offline:      false,
+				ForceRefresh: true,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("sync Recorder export/latest.json: %w", err)
