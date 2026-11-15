@@ -1,0 +1,36 @@
+# Read-only S-BMDR MCP export server block (M5-A)
+# Exposes only published SQLite snapshots (/export/) and verified archive objects (/archive/<storage_id>/).
+# Never exposes /var/lib, /etc/sbmdr, tokens, logs, -wal, -shm, or .partial/.tmp files.
+
+server {
+{{LISTEN_DIRECTIVES}}
+    server_name {{SERVER_NAME}};
+
+    # Never expose internal temp/WAL/hidden paths anywhere under this vhost.
+    location ~* (\.partial|\.tmp|\.sqlite-wal|\.sqlite-shm|/\.) {
+        return 404;
+    }
+
+    location = /export/latest.json {
+        alias {{EXPORT_ROOT}}/latest.json;
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        limit_except GET HEAD { deny all; }
+        gzip off;
+        etag on;
+    }
+
+    location /export/ {
+        alias {{EXPORT_ROOT}}/;
+        limit_except GET HEAD { deny all; }
+        autoindex off;
+        gzip off;
+        etag on;
+    }
+
+{{ARCHIVE_LOCATIONS}}
+
+    location / {
+        return 404;
+    }
+}

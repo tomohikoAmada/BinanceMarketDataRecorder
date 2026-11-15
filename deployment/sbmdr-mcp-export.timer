@@ -1,0 +1,11 @@
+[Unit]
+Description=S-BMDR periodic read-only MCP export refresh
+
+[Timer]
+OnActiveSec=30
+OnUnitInactiveSec=5m
+AccuracySec=15
+Persistent=true
+
+[Install]
+WantedBy=timers.target

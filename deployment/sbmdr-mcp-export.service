@@ -1,0 +1,15 @@
+[Unit]
+Description=S-BMDR read-only MCP export publisher (SQLite online backup)
+RequiresMountsFor=/srv/recorder-data
+After=local-fs.target
+
+[Service]
+Type=oneshot
+Environment=PYTHONPATH=/opt/sbmdr/current/python/src
+ExecStart=/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/deployment/publish_mcp_export.py --export-root /srv/recorder-data/S-BMDR/mcp-export --grant-read-user www-data --nginx-conf-out /etc/sbmdr/nginx-mcp-export.conf --backup-timeout-seconds 15 --retain-revisions 2
+TimeoutStartSec=300
+Nice=15
+IOSchedulingClass=idle
+Slice=sbmdr.slice
+CPUQuota=30%
+NoNewPrivileges=true
