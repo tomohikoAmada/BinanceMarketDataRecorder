@@ -1,0 +1,15 @@
+# Cloudflare Tunnel configuration template for M5-A (HTTP Access + WARP private subnet routing)
+# Supports both:
+#   1. HTTP static export via Cloudflare Access Service Auth / email Allow (hostname -> 127.0.0.1:18080)
+#   2. Private subnet routing (WARP -> <PRIVATE_IP>/32 for bulk nginx :18080, gRPC proxy :50051, and SSH :22)
+
+tunnel: {{TUNNEL_ID}}
+credentials-file: {{CREDENTIALS_FILE}}
+
+warp-routing:
+  enabled: true
+
+ingress:
+  - hostname: {{EXPORT_HOSTNAME}}
+    service: http://127.0.0.1:18080
+  - service: http_status:404

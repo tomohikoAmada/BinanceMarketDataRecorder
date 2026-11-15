@@ -1,0 +1,12 @@
+[Unit]
+Description=S-BMDR private-IP TCP forwarder to loopback bmdg gRPC (127.0.0.1:50051)
+Requires=sbmdr-bmdg-private-proxy.socket
+After=sbmdr-bmdg-private-proxy.socket
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd 127.0.0.1:50051
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+Slice=sbmdr.slice
