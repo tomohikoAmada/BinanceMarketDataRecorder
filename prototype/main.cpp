@@ -892,6 +892,161 @@ void verify_partition_layout() {
         throw;
     }
     fs::remove_all(seam_container);
+
+    // Verify R5-a: same-day abnormal restart (with and without new records) and
+    // cross-day abnormal restart preserve manifest-backed receive_time_utc_range_ns.
+    const auto restart_container = fs::temp_directory_path() /
+                                   ("sbmdr-restart-check-" + uuid_text(uuid_bytes()));
+    fs::create_directories(restart_container / "state");
+    fs::create_directories(restart_container / "partitions");
+    try {
+        const std::int64_t day1_t1 = 1762905600LL * 1000000000LL; // 2025-11-12T00:00:00Z
+        const std::int64_t day1_t2 = day1_t1 + 3600LL * 1000000000LL;
+        const std::int64_t day1_t3 = day1_t2 + 60LL * 1000000000LL;
+        const std::int64_t day2_t1 = day1_t1 + 86400LL * 1000000000LL;
+
+        auto make_restart_msg = [&](std::uint64_t seq, std::int64_t utc_ns) {
+            Message msg;
+            msg.market = "um_perpetual";
+            msg.symbol = "BTCUSDT";
+            msg.stream = "agg_trade";
+            msg.source_stream = "btcusdt@aggTrade";
+            msg.connection_group = "market";
+            msg.utc = utc_ns;
+            msg.mono = ns<steady_clock>();
+            const std::string payload =
+                R"({"stream":"btcusdt@aggTrade","data":{"e":"aggTrade","E":1762905600000,"s":"BTCUSDT","a":)" +
+                std::to_string(seq) +
+                R"(,"p":"100.0","q":"1.0","nq":"1.0","f":1,"l":1,"T":1762905600000,"m":false}})";
+            msg.body.assign(payload.begin(), payload.end());
+            msg.sequence = {{"sourceFamily", "D05"}, {"a", seq}};
+            msg.exchange_time = 1762905600000ULL;
+            msg.trade_time = 1762905600000ULL;
+            msg.transaction_time = nullptr;
+            return msg;
+        };
+
+        std::string same_day_pid;
+        {
+            std::atomic<std::int64_t> fake_utc{day1_t1};
+            RecorderStorage s1(restart_container, "run-1", milliseconds(900000),
+                               200ULL, milliseconds(900), nullptr, false, true,
+                               [&] { return fake_utc.load(std::memory_order_relaxed); });
+            same_day_pid = partition_layout::read_current(restart_container);
+            auto m1 = make_restart_msg(1, day1_t1);
+            auto m2 = make_restart_msg(2, day1_t1 + 1'000'000'000LL);
+            s1.append(m1);
+            s1.append(m2);
+            s1.seal_all("size"); // crash leaves state=open, manifests present
+        }
+        // Case A: same-day restart with T2 records after restart
+        {
+            std::atomic<std::int64_t> fake_utc{day1_t2};
+            RecorderStorage s2(restart_container, "run-2", milliseconds(900000),
+                               200ULL, milliseconds(900), nullptr, false, true,
+                               [&] { return fake_utc.load(std::memory_order_relaxed); });
+            if (partition_layout::read_current(restart_container) != same_day_pid)
+                throw std::runtime_error("restart check: did not reuse same-day partition");
+            auto m3 = make_restart_msg(3, day1_t2);
+            auto m4 = make_restart_msg(4, day1_t2 + 5'000'000'000LL);
+            s2.append(m3);
+            s2.append(m4);
+            s2.switch_partition(day1_t3);
+        }
+        {
+            const auto meta = partition_layout::read_json(
+                restart_container / "partitions" / same_day_pid / "partition.json");
+            const auto range = meta.at("receive_time_utc_range_ns");
+            if (meta.at("state").get<std::string>() != "closed" ||
+                range.at("min").get<std::int64_t>() != day1_t1 ||
+                range.at("max").get<std::int64_t>() != day1_t2 + 5'000'000'000LL)
+                throw std::runtime_error("restart check: same-day restart narrowed range (with T2)");
+        }
+
+        // Case B: same-day restart with zero new records, then finish()
+        const auto zero_new_container = fs::temp_directory_path() /
+                                        ("sbmdr-restart-zero-" + uuid_text(uuid_bytes()));
+        fs::create_directories(zero_new_container / "state");
+        fs::create_directories(zero_new_container / "partitions");
+        try {
+            std::string pid_zero;
+            {
+                std::atomic<std::int64_t> fake_utc{day1_t1};
+                RecorderStorage z1(zero_new_container, "z1", milliseconds(900000),
+                                   200ULL, milliseconds(900), nullptr, false, true,
+                                   [&] { return fake_utc.load(std::memory_order_relaxed); });
+                pid_zero = partition_layout::read_current(zero_new_container);
+                auto m1 = make_restart_msg(1, day1_t1);
+                auto m2 = make_restart_msg(2, day1_t1 + 2'000'000'000LL);
+                z1.append(m1);
+                z1.append(m2);
+                z1.seal_all("size");
+            }
+            {
+                std::atomic<std::int64_t> fake_utc{day1_t2};
+                RecorderStorage z2(zero_new_container, "z2", milliseconds(900000),
+                                   200ULL, milliseconds(900), nullptr, false, true,
+                                   [&] { return fake_utc.load(std::memory_order_relaxed); });
+                z2.finish();
+            }
+            const auto meta = partition_layout::read_json(
+                zero_new_container / "partitions" / pid_zero / "partition.json");
+            const auto range = meta.at("receive_time_utc_range_ns");
+            if (meta.at("state").get<std::string>() != "closed" ||
+                range.at("min").get<std::int64_t>() != day1_t1 ||
+                range.at("max").get<std::int64_t>() != day1_t1 + 2'000'000'000LL)
+                throw std::runtime_error("restart check: same-day restart (zero new records) altered range");
+        } catch (...) {
+            fs::remove_all(zero_new_container);
+            throw;
+        }
+        fs::remove_all(zero_new_container);
+
+        // Case C: cross-day abnormal restart preserves Day 1 manifest range when closing Day 1
+        const auto cross_day_container = fs::temp_directory_path() /
+                                         ("sbmdr-restart-cross-" + uuid_text(uuid_bytes()));
+        fs::create_directories(cross_day_container / "state");
+        fs::create_directories(cross_day_container / "partitions");
+        try {
+            std::string pid_day1;
+            {
+                std::atomic<std::int64_t> fake_utc{day1_t1};
+                RecorderStorage c1(cross_day_container, "c1", milliseconds(900000),
+                                   200ULL, milliseconds(900), nullptr, false, true,
+                                   [&] { return fake_utc.load(std::memory_order_relaxed); });
+                pid_day1 = partition_layout::read_current(cross_day_container);
+                auto m1 = make_restart_msg(1, day1_t1);
+                auto m2 = make_restart_msg(2, day1_t2);
+                c1.append(m1);
+                c1.append(m2);
+                c1.seal_all("size");
+            }
+            {
+                std::atomic<std::int64_t> fake_utc{day2_t1};
+                RecorderStorage c2(cross_day_container, "c2", milliseconds(900000),
+                                   200ULL, milliseconds(900), nullptr, false, true,
+                                   [&] { return fake_utc.load(std::memory_order_relaxed); });
+                if (partition_layout::read_current(cross_day_container) == pid_day1)
+                    throw std::runtime_error("restart check: cross-day did not create new partition");
+                c2.finish();
+            }
+            const auto meta = partition_layout::read_json(
+                cross_day_container / "partitions" / pid_day1 / "partition.json");
+            const auto range = meta.at("receive_time_utc_range_ns");
+            if (meta.at("state").get<std::string>() != "closed" ||
+                range.at("min").get<std::int64_t>() != day1_t1 ||
+                range.at("max").get<std::int64_t>() != day1_t2)
+                throw std::runtime_error("restart check: cross-day close lost Day 1 manifest range");
+        } catch (...) {
+            fs::remove_all(cross_day_container);
+            throw;
+        }
+        fs::remove_all(cross_day_container);
+    } catch (...) {
+        fs::remove_all(restart_container);
+        throw;
+    }
+    fs::remove_all(restart_container);
 }
 
 class WsRenewal : public std::runtime_error {

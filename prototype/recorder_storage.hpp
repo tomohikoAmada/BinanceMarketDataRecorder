@@ -114,6 +114,46 @@ inline fs::path create_partition(const fs::path& container, std::int64_t now) {
     return root;
 }
 
+inline std::optional<std::pair<std::int64_t, std::int64_t>>
+manifest_receive_range(const fs::path& root) {
+    const auto manifests_dir = root / "data" / "manifests";
+    if (!fs::is_directory(manifests_dir))
+        return std::nullopt;
+    bool found = false;
+    std::int64_t min_ns = 0;
+    std::int64_t max_ns = 0;
+    for (const auto& entry : fs::directory_iterator(manifests_dir)) {
+        if (!entry.is_regular_file())
+            continue;
+        const auto name = entry.path().filename().string();
+        if (name.size() < 14 ||
+            name.compare(name.size() - 14, 14, ".manifest.json") != 0)
+            continue;
+        const auto meta = read_json(entry.path());
+        const auto it = meta.find("receive_time_utc_range_ns");
+        if (it == meta.end() || !it->is_object())
+            continue;
+        const auto min_it = it->find("min");
+        const auto max_it = it->find("max");
+        if (min_it == it->end() || max_it == it->end() ||
+            !min_it->is_number_integer() || !max_it->is_number_integer())
+            continue;
+        const auto m_min = min_it->get<std::int64_t>();
+        const auto m_max = max_it->get<std::int64_t>();
+        if (!found) {
+            min_ns = m_min;
+            max_ns = m_max;
+            found = true;
+        } else {
+            min_ns = std::min(min_ns, m_min);
+            max_ns = std::max(max_ns, m_max);
+        }
+    }
+    if (!found)
+        return std::nullopt;
+    return std::make_pair(min_ns, max_ns);
+}
+
 inline void close_partition(const fs::path& root, std::int64_t last_receive_ns,
                             std::int64_t now,
                             std::optional<std::int64_t> first_receive_ns = std::nullopt) {
@@ -121,9 +161,27 @@ inline void close_partition(const fs::path& root, std::int64_t last_receive_ns,
     metadata["state"] = "closed";
     metadata["closed_at_utc_ns"] = now;
     auto& range = metadata["receive_time_utc_range_ns"];
+    const auto manifests = manifest_receive_range(root);
     if (first_receive_ns.has_value()) {
-        range["min"] = *first_receive_ns;
-        range["max"] = std::max<std::int64_t>(*first_receive_ns, last_receive_ns);
+        std::int64_t min_ns = *first_receive_ns;
+        std::int64_t max_ns = std::max<std::int64_t>(*first_receive_ns, last_receive_ns);
+        if (manifests.has_value()) {
+            min_ns = std::min(min_ns, manifests->first);
+            max_ns = std::max(max_ns, manifests->second);
+        }
+        range["min"] = min_ns;
+        range["max"] = max_ns;
+    } else if (manifests.has_value()) {
+        const auto prev_min =
+            range.contains("min") && range["min"].is_number_integer()
+                ? std::min(range["min"].get<std::int64_t>(), manifests->first)
+                : manifests->first;
+        const auto prev_max =
+            range.contains("max") && range["max"].is_number_integer()
+                ? std::max(range["max"].get<std::int64_t>(), manifests->second)
+                : manifests->second;
+        range["min"] = prev_min;
+        range["max"] = std::max<std::int64_t>(prev_max, last_receive_ns);
     } else {
         range["max"] = std::max<std::int64_t>(
             range.value("max", last_receive_ns), last_receive_ns);
@@ -877,9 +935,21 @@ class RecorderStorage {
                     partition_id_ = id;
                     partition_day_ = partition_layout::utc_day(created);
                     partition_created_ns_ = created;
+                    if (const auto manifests =
+                            partition_layout::manifest_receive_range(root_)) {
+                        partition_min_receive_ns_ = manifests->first;
+                        partition_max_receive_ns_ = manifests->second;
+                        partition_has_receive_ = true;
+                    }
                     reuse = true;
-                } else {
-                    partition_layout::close_partition(candidate, now, now);
+                } else if (state != "closed") {
+                    if (const auto manifests =
+                            partition_layout::manifest_receive_range(candidate)) {
+                        partition_layout::close_partition(
+                            candidate, manifests->second, now, manifests->first);
+                    } else {
+                        partition_layout::close_partition(candidate, now, now);
+                    }
                 }
             }
             if (!reuse) {

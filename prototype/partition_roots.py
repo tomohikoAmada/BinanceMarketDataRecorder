@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
 import fcntl
 import json
+import os
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -187,3 +190,157 @@ def reader_lock(market_root: Path, *, exclusive: bool = False, blocking: bool = 
             yield True
         finally:
             fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _fsync_dir(path: Path) -> None:
+    fd = os.open(str(path), os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _write_json_atomic(path: Path, payload: dict) -> None:
+    tmp_path = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    encoded = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    try:
+        with tmp_path.open("w", encoding="utf-8") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, path)
+        _fsync_dir(path.parent)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+
+
+def manifest_receive_range(partition_root: Path) -> tuple[int, int] | None:
+    """Return ``(min_ns, max_ns)`` across sealed chunk manifests, or None."""
+
+    manifests_dir = partition_root / "data" / "manifests"
+    if not manifests_dir.is_dir():
+        return None
+    min_ns: int | None = None
+    max_ns: int | None = None
+    for path in sorted(manifests_dir.iterdir()):
+        if not path.is_file() or not path.name.endswith(".manifest.json"):
+            continue
+        meta = read_json(path)
+        value = meta.get("receive_time_utc_range_ns")
+        if not isinstance(value, dict):
+            continue
+        m_min = value.get("min")
+        m_max = value.get("max")
+        if (
+            isinstance(m_min, bool)
+            or isinstance(m_max, bool)
+            or not isinstance(m_min, int)
+            or not isinstance(m_max, int)
+        ):
+            continue
+        min_ns = m_min if min_ns is None else min(min_ns, m_min)
+        max_ns = m_max if max_ns is None else max(max_ns, m_max)
+    if min_ns is None or max_ns is None:
+        return None
+    return (min_ns, max_ns)
+
+
+def _candidate_partition_dirs(
+    market_root: Path, *, cold_root: Path | None = None
+) -> list[Path]:
+    dirs: list[Path] = []
+    for base in (market_root / "partitions", cold_root):
+        if base is None or not base.is_dir():
+            continue
+        for path in sorted(base.iterdir()):
+            if (
+                not path.is_dir()
+                or path.name.startswith(".")
+                or path.name.endswith(".partial")
+            ):
+                continue
+            if (path / "partition.json").is_file():
+                dirs.append(path)
+    return dirs
+
+
+def partition_range_mismatch(partition_root: Path) -> dict | None:
+    """Return mismatch details if a closed partition disagrees with manifests."""
+
+    metadata = partition_metadata(partition_root)
+    if metadata.get("state") != "closed":
+        return None
+    expected = manifest_receive_range(partition_root)
+    if expected is None:
+        return None
+    expected_min, expected_max = expected
+    recorded = metadata.get("receive_time_utc_range_ns")
+    rec_min = recorded.get("min") if isinstance(recorded, dict) else None
+    rec_max = recorded.get("max") if isinstance(recorded, dict) else None
+    if (
+        isinstance(rec_min, int)
+        and not isinstance(rec_min, bool)
+        and isinstance(rec_max, int)
+        and not isinstance(rec_max, bool)
+        and rec_min == expected_min
+        and rec_max == expected_max
+    ):
+        return None
+    return {
+        "partition_id": metadata.get("partition_id"),
+        "partition_root": str(partition_root),
+        "recorded_range_ns": {"min": rec_min, "max": rec_max},
+        "manifest_range_ns": {"min": expected_min, "max": expected_max},
+    }
+
+
+def reconcile_closed_partition_ranges(
+    market_root: Path,
+    *,
+    cold_root: Path | None = None,
+    apply: bool = False,
+) -> list[dict]:
+    """Audit (and optionally atomically repair) narrowed closed partition metadata."""
+
+    results: list[dict] = []
+    with reader_lock(market_root, exclusive=apply, blocking=True):
+        for root in _candidate_partition_dirs(market_root, cold_root=cold_root):
+            mismatch = partition_range_mismatch(root)
+            if mismatch is None:
+                continue
+            entry = dict(mismatch)
+            if apply:
+                metadata = partition_metadata(root)
+                metadata["receive_time_utc_range_ns"] = dict(
+                    mismatch["manifest_range_ns"]
+                )
+                _write_json_atomic(root / "partition.json", metadata)
+                entry["repaired"] = True
+            else:
+                entry["repaired"] = False
+            results.append(entry)
+    return results
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Audit or repair closed partition metadata ranges from manifests."
+    )
+    parser.add_argument("--market-root", type=Path, required=True)
+    parser.add_argument("--cold-root", type=Path, default=None)
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Atomically repair mismatched closed partition.json files under reader.lock.",
+    )
+    args = parser.parse_args(argv)
+    findings = reconcile_closed_partition_ranges(
+        args.market_root, cold_root=args.cold_root, apply=args.apply
+    )
+    print(json.dumps({"mismatches": findings}, indent=2, sort_keys=True))
+    return 0 if (args.apply or not findings) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

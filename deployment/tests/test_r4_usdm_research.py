@@ -91,6 +91,7 @@ def _ws_envelope(
 
 def _rest_envelope(
     *,
+    market: str = "um_perpetual",
     source_stream: str,
     path: str,
     symbol: str,
@@ -100,6 +101,7 @@ def _rest_envelope(
     status: int = 200,
     valid: bool = True,
     error_type: str | None = None,
+    venue_market: str = "usdm",
 ) -> EventEnvelope:
     raw_body = json.dumps(body_obj, separators=(",", ":")).encode("utf-8")
     provenance = {
@@ -108,7 +110,7 @@ def _rest_envelope(
         "family": "D01" if source_stream == "exchange_info" else "D12",
         "source_stream": source_stream,
         "scope": "__GLOBAL__" if symbol == "__GLOBAL__" else symbol,
-        "venue_market": "usdm",
+        "venue_market": venue_market,
         "request": {
             "request_id": f"req-{source_stream}-{receive_ns}",
             "method": "GET",
@@ -129,7 +131,7 @@ def _rest_envelope(
         },
     }
     return EventEnvelope(
-        market="um_perpetual",
+        market=market,
         symbol=symbol,
         stream="rest_observations",
         module="binance.public.rest.v1",
@@ -207,7 +209,9 @@ def test_usdm_agg_trade_nq_and_mark_price_t_semantics_live_and_legacy() -> None:
 
 def test_usdm_exchange_info_splits_configured_symbols_and_rest_sources() -> None:
     fixtures = usdm_research.build_usdm_parity_fixtures()
+    # Production shared market="um_shared" envelope matches C++ receive_rest().
     ex_env = _rest_envelope(
+        market="um_shared",
         source_stream="exchange_info",
         path="/fapi/v1/exchangeInfo",
         symbol="__GLOBAL__",
@@ -232,6 +236,60 @@ def test_usdm_exchange_info_splits_configured_symbols_and_rest_sources() -> None
     sol = recs[2].c2_event
     assert sol["status"] == "ERROR"
     assert sol["error_code"] == "SYMBOL_MISSING_IN_EXCHANGE_INFO"
+
+    # Legacy um_perpetual/__GLOBAL__ envelope stays compatible.
+    legacy_env = _rest_envelope(
+        market="um_perpetual",
+        source_stream="exchange_info",
+        path="/fapi/v1/exchangeInfo",
+        symbol="__GLOBAL__",
+        parameters={},
+        body_obj=fixtures["exchange_info"],
+        receive_ns=1_762_992_000_000_000_000,
+    )
+    legacy_recs = usdm_research.parse_usdm_envelope(
+        legacy_env, configured_symbols=("BTCUSDT",)
+    )
+    assert legacy_recs[0].c2_event["instrument"] == btc["instrument"]
+
+    # Non-USDM / invalid um_shared combinations are rejected.
+    with pytest.raises(ValueError):
+        usdm_research.parse_usdm_envelope(
+            _rest_envelope(
+                market="spot",
+                source_stream="exchange_info",
+                path="/fapi/v1/exchangeInfo",
+                symbol="__GLOBAL__",
+                parameters={},
+                body_obj=fixtures["exchange_info"],
+                receive_ns=1_762_992_000_000_000_000,
+            )
+        )
+    with pytest.raises(ValueError):
+        usdm_research.parse_usdm_envelope(
+            _rest_envelope(
+                market="um_shared",
+                source_stream="exchange_info",
+                path="/fapi/v1/exchangeInfo",
+                symbol="BTCUSDT",
+                parameters={},
+                body_obj=fixtures["exchange_info"],
+                receive_ns=1_762_992_000_000_000_000,
+            )
+        )
+    with pytest.raises(ValueError):
+        usdm_research.parse_usdm_envelope(
+            _rest_envelope(
+                market="um_shared",
+                source_stream="exchange_info",
+                path="/api/v3/exchangeInfo",
+                symbol="__GLOBAL__",
+                parameters={},
+                body_obj=fixtures["exchange_info"],
+                receive_ns=1_762_992_000_000_000_000,
+                venue_market="spot",
+            )
+        )
 
     # Empty periodic REST response without startTime/endTime parameters:
     empty_env = _rest_envelope(
@@ -323,13 +381,20 @@ def test_end_to_end_hot_cold_archived_usdm_research_export_and_book_parity(
 
     fixtures = usdm_research.build_usdm_parity_fixtures()
 
-    def write_envs(part_root: Path, envs: list[EventEnvelope], stream: str, symbol: str) -> None:
+    def write_envs(
+        part_root: Path,
+        envs: list[EventEnvelope],
+        stream: str,
+        symbol: str,
+        *,
+        market: str = "um_perpetual",
+    ) -> None:
         layout = ensure_storage_layout(part_root)
         with Catalog(layout.catalog) as catalog:
             writer = RawChunkWriter(
                 layout=layout,
                 catalog=catalog,
-                market="um_perpetual",
+                market=market,
                 symbol=symbol,
                 stream=stream,
                 collector_instance_id="inst-r4",
@@ -342,8 +407,9 @@ def test_end_to_end_hot_cold_archived_usdm_research_export_and_book_parity(
             writer.seal()
 
     # Partition 1 (closed -> archived -> migrated to cold_root):
-    # holds exchangeInfo, aggTrades, markPrice, bookTicker, depth_snapshot, diff_depth #1, + 5 REST sources.
+    # holds production um_shared exchangeInfo, aggTrades, markPrice, bookTicker, depth_snapshot, diff_depth #1, + 5 REST sources.
     ex_env = _rest_envelope(
+        market="um_shared",
         source_stream="exchange_info",
         path="/fapi/v1/exchangeInfo",
         symbol="__GLOBAL__",
@@ -403,7 +469,13 @@ def test_end_to_end_hot_cold_archived_usdm_research_export_and_book_parity(
             receive_ns=1_762_992_000_090_000_000,
         ),
     ]
-    write_envs(p_cold_src, [rest_envs[0]], "rest_observations", "__GLOBAL__")
+    write_envs(
+        p_cold_src,
+        [rest_envs[0]],
+        "rest_observations",
+        "__GLOBAL__",
+        market="um_shared",
+    )
     write_envs(p_cold_src, rest_envs[1:], "rest_observations", "BTCUSDT")
     write_envs(
         p_cold_src,
@@ -586,3 +658,279 @@ def test_export_usdm_research_prunes_chunks_before_validation(
         reconstruct_books=False,
     )
     assert manifest["stream_counts"] == {"agg_trade": 1}
+
+
+def test_export_usdm_research_prunes_um_shared_by_symbol_and_time(
+    tmp_path: Path,
+) -> None:
+    fixtures = usdm_research.build_usdm_parity_fixtures()
+    root = tmp_path / "partition"
+    layout = ensure_storage_layout(root)
+    base_ns = 1_762_992_000_000_000_000
+    t_ex1 = base_ns
+    t_ex2 = base_ns + 60_000_000_000
+
+    with Catalog(layout.catalog) as catalog:
+        shared_w1 = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_shared",
+            symbol="__GLOBAL__",
+            stream="rest_observations",
+            collector_instance_id="inst-r4",
+            collector_version="r4-test",
+            created_at_utc_ns=t_ex1,
+        )
+        shared_w1.append(
+            _rest_envelope(
+                market="um_shared",
+                source_stream="exchange_info",
+                path="/fapi/v1/exchangeInfo",
+                symbol="__GLOBAL__",
+                parameters={},
+                body_obj=fixtures["exchange_info"],
+                receive_ns=t_ex1,
+            )
+        )
+        shared_w1.sync()
+        shared_w1.seal()
+
+        shared_w2 = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_shared",
+            symbol="__GLOBAL__",
+            stream="rest_observations",
+            collector_instance_id="inst-r4",
+            collector_version="r4-test",
+            created_at_utc_ns=t_ex2,
+        )
+        shared_w2.append(
+            _rest_envelope(
+                market="um_shared",
+                source_stream="exchange_info",
+                path="/fapi/v1/exchangeInfo",
+                symbol="__GLOBAL__",
+                parameters={},
+                body_obj=fixtures["exchange_info"],
+                receive_ns=t_ex2,
+            )
+        )
+        shared_w2.sync()
+        oow_artifact = root / str(shared_w2.seal()["relative_path"])
+        oow_artifact.write_bytes(b"corrupted-not-read")
+
+        # Also mix in per-symbol open_interest + ETHUSDT noise.
+        oi_w = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="rest_observations",
+            collector_instance_id="inst-r4",
+            collector_version="r4-test",
+            created_at_utc_ns=t_ex1 + 1000,
+        )
+        oi_w.append(
+            _rest_envelope(
+                market="um_perpetual",
+                source_stream="open_interest",
+                path="/fapi/v1/openInterest",
+                symbol="BTCUSDT",
+                parameters={"symbol": "BTCUSDT"},
+                body_obj=fixtures["rest_observations"]["open_interest"],
+                receive_ns=t_ex1 + 1000,
+            )
+        )
+        oi_w.sync()
+        oi_w.seal()
+
+    out = tmp_path / "export"
+    manifest = usdm_research.export_usdm_research(
+        root,
+        out,
+        symbols=["BTCUSDT"],
+        sources=["exchange_info", "open_interest"],
+        start_ns=t_ex1,
+        end_ns=t_ex1 + 10_000,
+        reconstruct_books=False,
+    )
+    assert manifest["stream_counts"] == {"exchange_info": 1, "open_interest": 1}
+    rows = pq.read_table(out / "parquet/exchange_info.parquet").to_pylist()
+    assert [row["symbol"] for row in rows] == ["BTCUSDT"]
+    assert rows[0]["server_time_ms"] == 1762992000000
+    assert json.loads(rows[0]["filters_json"])[0]["tickSize"] == "0.10"
+
+
+def _make_book_records(
+    *,
+    snapshot_specs: list[tuple[int, int, list[list[str]], list[list[str]], str]],
+    depth_specs: list[
+        tuple[int, int, int, int, list[list[str]], list[list[str]], str, tuple[str, ...]]
+    ],
+) -> dict[str, list[usdm_research.ResearchRecord]]:
+    snap_records: list[usdm_research.ResearchRecord] = []
+    for idx, (rx_ns, last_id, bids, asks, conn_id) in enumerate(snapshot_specs):
+        env = _rest_envelope(
+            source_stream="depth_snapshot",
+            path="/fapi/v1/depth",
+            symbol="BTCUSDT",
+            parameters={"symbol": "BTCUSDT", "limit": 1000},
+            body_obj={
+                "lastUpdateId": last_id,
+                "E": 1762992001000 + idx,
+                "T": 1762992001000 + idx,
+                "bids": bids,
+                "asks": asks,
+            },
+            receive_ns=rx_ns,
+        )
+        snap_records.extend(
+            usdm_research.parse_usdm_envelope(
+                env, source_chunk_id=f"snap-{idx}", source_record_ordinal=idx
+            )
+        )
+    depth_records: list[usdm_research.ResearchRecord] = []
+    for idx, (rx_ns, u1, u2, pu, bids, asks, conn_id, flags) in enumerate(depth_specs):
+        payload = {
+            "e": "depthUpdate",
+            "E": 1762992001000 + idx,
+            "T": 1762992001000 + idx,
+            "s": "BTCUSDT",
+            "U": u1,
+            "u": u2,
+            "pu": pu,
+            "b": bids,
+            "a": asks,
+        }
+        env = EventEnvelope(
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="diff_depth",
+            module="binance.public.ws.v1",
+            connection_id=conn_id,
+            collector_instance_id="inst-r4",
+            collector_version="r4-test",
+            receive_time_utc_ns=rx_ns,
+            receive_monotonic_ns=rx_ns,
+            exchange_event_time=payload["E"],
+            exchange_transaction_time=payload["T"],
+            capture_flags=flags,
+            payload_encoding="utf-8-json",
+            raw_payload=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
+        )
+        depth_records.extend(
+            usdm_research.parse_usdm_envelope(
+                env, source_chunk_id=f"depth-{idx}", source_record_ordinal=idx
+            )
+        )
+    return {"depth_snapshot": snap_records, "diff_depth": depth_records}
+
+
+def test_reconstruct_books_retries_pending_snapshot_and_matches_delta_first() -> None:
+    snap = (1_000, 105, [["100.00", "2.000"]], [["101.00", "3.000"]], "rest-1")
+    deltas_after = [
+        (2_000, 90, 100, 89, [["99.00", "1.000"]], [], "ws-1", ()),
+        (3_000, 101, 110, 100, [["100.00", "4.000"]], [["102.00", "1.500"]], "ws-1", ()),
+        (4_000, 111, 115, 110, [["98.00", "5.000"]], [], "ws-1", ()),
+    ]
+    snap_first = usdm_research._reconstruct_books(
+        _make_book_records(snapshot_specs=[snap], depth_specs=deltas_after),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+
+    deltas_before = [
+        (500, 90, 100, 89, [["99.00", "1.000"]], [], "ws-1", ()),
+        (600, 101, 110, 100, [["100.00", "4.000"]], [["102.00", "1.500"]], "ws-1", ()),
+        (4_000, 111, 115, 110, [["98.00", "5.000"]], [], "ws-1", ()),
+    ]
+    delta_first = usdm_research._reconstruct_books(
+        _make_book_records(snapshot_specs=[snap], depth_specs=deltas_before),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+
+    assert snap_first["synchronized"] is True
+    assert snap_first["last_update_id"] == 115
+    assert snap_first["book_hash"] == delta_first["book_hash"]
+    assert snap_first["bids"] == delta_first["bids"]
+    assert snap_first["asks"] == delta_first["asks"]
+    assert snap_first["sync_results"][-1] == "SYNCHRONIZED"
+
+
+def test_reconstruct_books_handles_missing_bridge_pu_gap_boundary_and_resync() -> None:
+    # No bridging delta (only old u < lastUpdateId): must stay unsynchronized.
+    unbridged = usdm_research._reconstruct_books(
+        _make_book_records(
+            snapshot_specs=[
+                (1_000, 105, [["100.00", "2.000"]], [["101.00", "3.000"]], "rest-1")
+            ],
+            depth_specs=[
+                (2_000, 90, 100, 89, [["99.00", "1.000"]], [], "ws-1", ()),
+            ],
+        ),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+    assert unbridged["synchronized"] is False
+
+    # Pending snapshot invalidated across connection change or gap flag -> cannot bridge stale snapshot,
+    # and recovers cleanly when a fresh snapshot arrives after the boundary.
+    invalidated = usdm_research._reconstruct_books(
+        _make_book_records(
+            snapshot_specs=[
+                (1_000, 105, [["100.00", "2.000"]], [["101.00", "3.000"]], "rest-1")
+            ],
+            depth_specs=[
+                (2_000, 90, 100, 89, [["99.00", "1.000"]], [], "ws-1", ()),
+                (3_000, 101, 110, 100, [["100.00", "4.000"]], [], "ws-2", ()),
+            ],
+        ),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+    assert invalidated["synchronized"] is False
+
+    # Gap flag on incoming delta also invalidates pre-gap pending snapshot.
+    flagged = usdm_research._reconstruct_books(
+        _make_book_records(
+            snapshot_specs=[
+                (1_000, 105, [["100.00", "2.000"]], [["101.00", "3.000"]], "rest-1")
+            ],
+            depth_specs=[
+                (3_000, 101, 110, 100, [["100.00", "4.000"]], [], "ws-1", ("sequence_gap",)),
+            ],
+        ),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+    assert flagged["synchronized"] is False
+
+    # Live pu gap makes book unavailable until a newer baseline snapshot bridges.
+    gapped = usdm_research._reconstruct_books(
+        _make_book_records(
+            snapshot_specs=[
+                (1_000, 105, [["100.00", "2.000"]], [["101.00", "3.000"]], "rest-1")
+            ],
+            depth_specs=[
+                (2_000, 101, 110, 100, [["100.00", "4.000"]], [], "ws-1", ()),
+                (3_000, 120, 125, 119, [["99.00", "1.000"]], [], "ws-1", ()),
+            ],
+        ),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+    assert gapped["synchronized"] is False
+
+    recovered = usdm_research._reconstruct_books(
+        _make_book_records(
+            snapshot_specs=[
+                (1_000, 105, [["100.00", "2.000"]], [["101.00", "3.000"]], "rest-1"),
+                (4_000, 127, [["100.00", "6.000"]], [["101.00", "7.000"]], "rest-1"),
+            ],
+            depth_specs=[
+                (2_000, 101, 110, 100, [["100.00", "4.000"]], [], "ws-1", ()),
+                (3_000, 120, 125, 119, [["99.00", "1.000"]], [], "ws-1", ()),
+                (5_000, 126, 130, 125, [["100.00", "8.000"]], [], "ws-1", ()),
+            ],
+        ),
+        ("BTCUSDT",),
+    )["BTCUSDT"]
+    assert recovered["synchronized"] is True
+    assert recovered["last_update_id"] == 130
+    assert recovered["bids"] == [["100", "8"]]

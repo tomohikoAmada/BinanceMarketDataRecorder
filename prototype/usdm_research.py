@@ -23,6 +23,8 @@ from binance_market_data_recorder.normalize.raw import (
 from binance_market_data_recorder.orderbook.model import BookSnapshot, DepthUpdate
 from binance_market_data_recorder.orderbook.reconstructor import (
     LocalBookReconstructor,
+    ReconstructionState,
+    SynchronizeResult,
 )
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import StorageLayout
@@ -951,6 +953,9 @@ def _parse_rest_usdm(
         ok,
         err_code,
     ) = _decode_rest_provenance(envelope)
+    venue_market = provenance.get("venue_market")
+    if envelope.market == "um_shared" and venue_market not in (None, "usdm"):
+        raise ValueError(f"unexpected um_shared venue_market: {venue_market!r}")
     request_id = str(request.get("request_id") or f"rest-{envelope.receive_monotonic_ns}")
     params = request.get("parameters") if isinstance(request.get("parameters"), dict) else {}
 
@@ -1270,6 +1275,25 @@ def _parse_rest_usdm(
     return records
 
 
+_GAP_OR_RECOVERY_FLAGS: frozenset[str] = frozenset(
+    {"sequence_gap", "reconnect_gap", "ingress_drop", "recovered_tail"}
+)
+
+
+def _is_usdm_rest_stream(stream: str) -> bool:
+    return stream == "rest_observations" or stream in REST_SOURCES
+
+
+def _is_supported_usdm_envelope(envelope: EventEnvelope) -> bool:
+    if envelope.market == "um_perpetual":
+        return True
+    return (
+        envelope.market == "um_shared"
+        and envelope.symbol == "__GLOBAL__"
+        and _is_usdm_rest_stream(envelope.stream)
+    )
+
+
 def parse_usdm_envelope(
     envelope: EventEnvelope,
     *,
@@ -1278,9 +1302,12 @@ def parse_usdm_envelope(
     source_record_ordinal: int = 0,
 ) -> list[ResearchRecord]:
     """Parse one Raw EventEnvelope into C2-aligned USD-M ResearchRecords."""
-    if envelope.market != "um_perpetual":
-        raise ValueError(f"expected um_perpetual envelope, got {envelope.market}")
-    if envelope.stream == "rest_observations" or envelope.stream in REST_SOURCES:
+    if not _is_supported_usdm_envelope(envelope):
+        raise ValueError(
+            f"expected um_perpetual or um_shared/__GLOBAL__ REST envelope, "
+            f"got market={envelope.market!r}, symbol={envelope.symbol!r}, stream={envelope.stream!r}"
+        )
+    if _is_usdm_rest_stream(envelope.stream):
         return _parse_rest_usdm(
             envelope,
             configured_symbols=configured_symbols,
@@ -1341,6 +1368,8 @@ def _reconstruct_books(
             )
         )
         sync_results: list[str] = []
+        pending_snapshot: BookSnapshot | None = None
+        last_depth_connection_id: str | None = None
         for _rx, _rank, kind, rec in events:
             row = rec.parquet_row
             if kind == "snapshot":
@@ -1353,8 +1382,24 @@ def _reconstruct_books(
                     bids=bids,
                     asks=asks,
                 )
-                sync_results.append(reconstructor.synchronize(snap).value)
+                pending_snapshot = snap
+                res = reconstructor.synchronize(snap)
+                sync_results.append(res.value)
+                if res is not SynchronizeResult.NEED_MORE_EVENTS:
+                    pending_snapshot = None
             else:
+                flags = set(json.loads(row["capture_flags_json"]))
+                conn_id = row.get("connection_id")
+                gap_boundary = bool(flags & _GAP_OR_RECOVERY_FLAGS)
+                conn_changed = (
+                    last_depth_connection_id is not None
+                    and conn_id != last_depth_connection_id
+                )
+                if gap_boundary or conn_changed:
+                    pending_snapshot = None
+                    if reconstructor.state is not ReconstructionState.SYNCHRONIZED:
+                        reconstructor.restart_bootstrap()
+                last_depth_connection_id = conn_id
                 bids = tuple((p, q) for p, q in json.loads(row["bids_json"]))
                 asks = tuple((p, q) for p, q in json.loads(row["asks_json"]))
                 update = DepthUpdate(
@@ -1367,7 +1412,21 @@ def _reconstruct_books(
                     asks=asks,
                     receive_time_utc_ns=row["receive_time_utc_ns"],
                 )
+                was_sync = reconstructor.state is ReconstructionState.SYNCHRONIZED
                 reconstructor.offer(update)
+                if (
+                    was_sync
+                    and reconstructor.state is ReconstructionState.RESYNC_REQUIRED
+                ):
+                    pending_snapshot = None
+                if (
+                    pending_snapshot is not None
+                    and reconstructor.state is not ReconstructionState.SYNCHRONIZED
+                ):
+                    res = reconstructor.synchronize(pending_snapshot)
+                    sync_results.append(res.value)
+                    if res is not SynchronizeResult.NEED_MORE_EVENTS:
+                        pending_snapshot = None
         if reconstructor.is_reliable:
             book = reconstructor.book
             canonical = book.canonical_mapping()
@@ -1437,6 +1496,7 @@ def export_usdm_research(
         )
         products = frozenset(
             {
+                ("um_shared", "__GLOBAL__"),
                 ("um_perpetual", "__GLOBAL__"),
                 *(("um_perpetual", sym) for sym in selected_symbols),
             }
@@ -1458,7 +1518,7 @@ def export_usdm_research(
             ):
                 for record in iter_source_records(chunk):
                     envelope = record.envelope
-                    if envelope.market != "um_perpetual":
+                    if not _is_supported_usdm_envelope(envelope):
                         continue
                     rx_ns = envelope.receive_time_utc_ns
                     if start_ns is not None and rx_ns < start_ns:

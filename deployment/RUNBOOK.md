@@ -207,3 +207,20 @@ systemctl restart sbmdr-archive.timer
 4. `df -h /` 确认可用 ≥15 GiB 后再启动记录器；归档 timer 必须同时启动。
 
 不要删除未完成目标校验的源文件，不要为腾空间删除 `data/active` 或 `.partial`。
+
+## 10. R5-a 已关闭分区范围核对与元数据修复
+
+同日异常重启修复前的历史已关闭/冷迁移分区，若 `partition.json` 的 `receive_time_utc_range_ns` 曾被收窄，可用 `prototype/partition_roots.py` 在 `reader.lock` 协调下按已封存 `data/manifests/*.manifest.json` 做只读核对或原子修复（不改写 Raw，不改动已匹配或 `open` 分区）：
+
+```sh
+# 只读核对（存在失配返回非 0）
+/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/prototype/partition_roots.py \
+  --market-root /var/lib/recorder-data/S-BMDR/usdm \
+  --cold-root /srv/recorder-data/S-BMDR/metadata/usdm
+
+# 仅原子重写失配分区的 partition.json
+/opt/sbmdr/current/venv/bin/python /opt/sbmdr/current/prototype/partition_roots.py \
+  --market-root /var/lib/recorder-data/S-BMDR/usdm \
+  --cold-root /srv/recorder-data/S-BMDR/metadata/usdm \
+  --apply
+```
