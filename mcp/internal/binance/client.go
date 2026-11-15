@@ -68,6 +68,9 @@ func (c *Client) ExecuteCapability(ctx context.Context, capEntry Capability, par
 		return nil, fmt.Errorf("capability %s is %s: %s", capEntry.EndpointID, capEntry.Status, capEntry.Notes)
 	}
 	if capEntry.Transport == "ws_bounded" {
+		if offline {
+			return nil, fmt.Errorf("offline mode enabled: cannot open live websocket stream %s", capEntry.EndpointID)
+		}
 		return c.sampleWS(ctx, capEntry, params)
 	}
 	if capEntry.Transport != "rest" || capEntry.Method != "GET" {
@@ -212,10 +215,10 @@ func (c *Client) doGETWithBackoff(ctx context.Context, rawURL string, attachAPIK
 			if wait <= 0 {
 				wait = time.Duration(attempt+2) * 2 * time.Second
 			}
+			c.setBackoff(wait)
 			if wait > maxBackoffWait {
 				return nil, resp.StatusCode, fmt.Errorf("binance rate limited (%d) requiring %v wait (> max %v)", resp.StatusCode, wait, maxBackoffWait)
 			}
-			c.setBackoff(wait)
 			lastErr = fmt.Errorf("HTTP %d from %s: %s", resp.StatusCode, rawURL, strings.TrimSpace(string(body)))
 			if attempt < maxHTTPRetries {
 				continue
@@ -378,37 +381,204 @@ type VisionArchiveResult struct {
 	ChecksumHex  string `json:"sha256"`
 	ChecksumURL  string `json:"checksum_url"`
 	ZipURL       string `json:"zip_url"`
+	RelSubPath   string `json:"rel_sub_path,omitempty"`
 	CacheHit     bool   `json:"cache_hit"`
 	Resumed      bool   `json:"resumed"`
 }
 
+// VisionArchiveRequest describes a daily or monthly Binance Vision archive download across supported datasets.
+type VisionArchiveRequest struct {
+	Market   Market
+	Cadence  string // "daily" or "monthly"
+	Dataset  string // e.g. "klines", "markPriceKlines", "indexPriceKlines", "aggTrades", "trades", "metrics", "fundingRate", "bookDepth", "bookTicker"
+	Symbol   string // uppercase symbol (or underlying for options)
+	Interval string // required for interval-indexed kline datasets; "1M" -> "1mo" handled cleanly
+	Period   string // "YYYY-MM-DD" for daily, "YYYY-MM" for monthly
+}
+
+type visionLatestPointer struct {
+	SHA256    string `json:"sha256"`
+	ZipPath   string `json:"zip_path"`
+	RelSub    string `json:"rel_sub"`
+	ZipURL    string `json:"zip_url"`
+	UpdatedAt string `json:"updated_at_utc"`
+}
+
+// VisionRelativePath computes the canonical relative path under https://data.binance.vision/data/.
+func VisionRelativePath(req VisionArchiveRequest) (string, error) {
+	cad := strings.ToLower(strings.TrimSpace(req.Cadence))
+	if cad == "" {
+		cad = "daily"
+	}
+	if cad != "daily" && cad != "monthly" {
+		return "", fmt.Errorf("Vision cadence must be 'daily' or 'monthly', got %q", req.Cadence)
+	}
+	ds := strings.TrimSpace(req.Dataset)
+	if ds == "" {
+		return "", errors.New("Vision dataset is required")
+	}
+	sym := strings.ToUpper(strings.TrimSpace(req.Symbol))
+	if sym == "" {
+		return "", errors.New("Vision symbol is required")
+	}
+	period := strings.TrimSpace(req.Period)
+	if period == "" {
+		return "", errors.New("Vision period (YYYY-MM-DD or YYYY-MM) is required")
+	}
+
+	var marketPrefix string
+	switch req.Market {
+	case MarketSpot:
+		marketPrefix = "spot"
+	case MarketUSDM:
+		marketPrefix = filepath.Join("futures", "um")
+	case MarketCOINM:
+		marketPrefix = filepath.Join("futures", "cm")
+	case MarketOptions:
+		if ds != "BVOLIndex" && ds != "EOHSummary" {
+			return "", fmt.Errorf("Vision dataset %s unsupported for market %s", ds, req.Market)
+		}
+		marketPrefix = "option"
+	default:
+		return "", fmt.Errorf("Vision archives unsupported for market %q", req.Market)
+	}
+
+	intervalDatasets := ds == "klines" || ds == "markPriceKlines" || ds == "indexPriceKlines" || ds == "premiumIndexKlines"
+	if intervalDatasets {
+		vi := VisionInterval(strings.TrimSpace(req.Interval))
+		if vi == "" {
+			return "", fmt.Errorf("Vision dataset %s requires interval", ds)
+		}
+		filename := fmt.Sprintf("%s-%s-%s.zip", sym, vi, period)
+		return filepath.Join(marketPrefix, cad, ds, sym, vi, filename), nil
+	}
+	if ds == "BVOLIndex" {
+		return filepath.Join("option", cad, ds, sym, fmt.Sprintf("%s-%s.zip", sym, period)), nil
+	}
+	filename := fmt.Sprintf("%s-%s-%s.zip", sym, ds, period)
+	return filepath.Join(marketPrefix, cad, ds, sym, filename), nil
+}
+
+// FetchVisionArchive downloads and checksum-verifies any supported daily/monthly Binance Vision ZIP archive
+// using content-addressed storage keyed by SHA-256 so revised upstream files never overwrite earlier revisions.
+func (c *Client) FetchVisionArchive(ctx context.Context, req VisionArchiveRequest, offline bool) (*VisionArchiveResult, error) {
+	relSub, err := VisionRelativePath(req)
+	if err != nil {
+		return nil, err
+	}
+	datasetTag := strings.TrimSpace(req.Cadence) + "_" + strings.TrimSpace(req.Dataset)
+	return c.fetchVisionZip(ctx, req.Market, datasetTag, strings.ToUpper(strings.TrimSpace(req.Symbol)), VisionInterval(req.Interval), req.Period, relSub, offline)
+}
+
+// InspectVisionArchiveLocal checks locally cached state (no network) for a Binance Vision archive.
+func (c *Client) InspectVisionArchiveLocal(req VisionArchiveRequest) (relSub string, cached bool, sha256Hex string, zipPath string, err error) {
+	relSub, err = VisionRelativePath(req)
+	if err != nil {
+		return "", false, "", "", err
+	}
+	legacyDestPath, err := c.CacheMgr.PathFor(filepath.Join("binance_vision", relSub))
+	if err != nil {
+		return "", false, "", "", err
+	}
+	ptrPath := legacyDestPath + ".latest.json"
+	if rawPtr, pErr := os.ReadFile(ptrPath); pErr == nil {
+		var ptr visionLatestPointer
+		if json.Unmarshal(rawPtr, &ptr) == nil && ptr.ZipPath != "" && ptr.SHA256 != "" {
+			if rec, ok := cache.LoadReceipt(ptr.ZipPath); ok && strings.EqualFold(rec.SHA256, ptr.SHA256) {
+				return filepath.ToSlash(relSub), true, rec.SHA256, ptr.ZipPath, nil
+			}
+		}
+	}
+	if rec, ok := cache.LoadReceipt(legacyDestPath); ok {
+		return filepath.ToSlash(relSub), true, rec.SHA256, legacyDestPath, nil
+	}
+	return filepath.ToSlash(relSub), false, "", "", nil
+}
+
+// BuildVisionPrefetchJobItem resolves the upstream .CHECKSUM and returns a content-addressed cache.JobItem.
+func (c *Client) BuildVisionPrefetchJobItem(ctx context.Context, req VisionArchiveRequest) (cache.JobItem, error) {
+	relSub, err := VisionRelativePath(req)
+	if err != nil {
+		return cache.JobItem{}, err
+	}
+	zipURL := VisionBaseURL + "/data/" + filepath.ToSlash(relSub)
+	chkURL := zipURL + ".CHECKSUM"
+	chkBody, _, cErr := c.doGETWithBackoff(ctx, chkURL, false)
+	if cErr != nil {
+		return cache.JobItem{}, fmt.Errorf("fetch Vision checksum %s: %w", chkURL, cErr)
+	}
+	expectedSHA, pErr := cache.ParseChecksumText(string(chkBody))
+	if pErr != nil {
+		return cache.JobItem{}, fmt.Errorf("parse Vision checksum %s: %w", chkURL, pErr)
+	}
+	expectedLower := strings.ToLower(expectedSHA)
+	destRel := filepath.Join("binance_vision", relSub)
+	if len(expectedLower) >= 2 {
+		destRel = filepath.Join("binance_vision", "by_sha256", expectedLower[:2], expectedLower+".zip")
+	}
+	destAbs, err := c.CacheMgr.PathFor(destRel)
+	if err != nil {
+		return cache.JobItem{}, err
+	}
+	ptrRel := filepath.Join("binance_vision", relSub) + ".latest.json"
+	ptrBytes, _ := json.Marshal(visionLatestPointer{
+		SHA256:    expectedLower,
+		ZipPath:   destAbs,
+		RelSub:    filepath.ToSlash(relSub),
+		ZipURL:    zipURL,
+		UpdatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+	})
+	cad := strings.ToLower(strings.TrimSpace(req.Cadence))
+	if cad == "" {
+		cad = "daily"
+	}
+	datasetTag := cad + "_" + strings.TrimSpace(req.Dataset)
+	already := false
+	if rec, ok := cache.LoadReceipt(destAbs); ok && strings.EqualFold(rec.SHA256, expectedLower) {
+		already = true
+	}
+	return cache.JobItem{
+		ItemID:      filepath.ToSlash(relSub),
+		DestRelPath: destRel,
+		SourceURL:   zipURL,
+		SHA256:      expectedLower,
+		Key: cache.CacheKey{
+			Source:         "binance_vision",
+			Market:         string(req.Market),
+			Dataset:        datasetTag,
+			Symbol:         strings.ToUpper(strings.TrimSpace(req.Symbol)),
+			Interval:       VisionInterval(req.Interval),
+			StartUTCNS:     req.Period,
+			RevisionOrHash: expectedLower,
+		},
+		Completed:        already,
+		PostWriteRelPath: ptrRel,
+		PostWriteContent: ptrBytes,
+	}, nil
+}
+
 // FetchVisionDailyKlines downloads and checksum-verifies one Binance Vision daily klines zip.
 func (c *Client) FetchVisionDailyKlines(ctx context.Context, m Market, symbol, interval, dateYYYYMMDD string, offline bool) (*VisionArchiveResult, error) {
-	vInterval := VisionInterval(interval)
-	var relSub string
-	switch m {
-	case MarketSpot:
-		relSub = filepath.Join("spot", "daily", "klines", symbol, vInterval, fmt.Sprintf("%s-%s-%s.zip", symbol, vInterval, dateYYYYMMDD))
-	case MarketUSDM:
-		relSub = filepath.Join("futures", "um", "daily", "klines", symbol, vInterval, fmt.Sprintf("%s-%s-%s.zip", symbol, vInterval, dateYYYYMMDD))
-	case MarketCOINM:
-		relSub = filepath.Join("futures", "cm", "daily", "klines", symbol, vInterval, fmt.Sprintf("%s-%s-%s.zip", symbol, vInterval, dateYYYYMMDD))
-	default:
-		return nil, fmt.Errorf("Vision daily klines unsupported for market %s", m)
-	}
-	return c.fetchVisionZip(ctx, m, "daily_klines", symbol, vInterval, dateYYYYMMDD, relSub, offline)
+	return c.FetchVisionArchive(ctx, VisionArchiveRequest{
+		Market:   m,
+		Cadence:  "daily",
+		Dataset:  "klines",
+		Symbol:   symbol,
+		Interval: interval,
+		Period:   dateYYYYMMDD,
+	}, offline)
 }
 
 func (c *Client) fetchVisionZip(ctx context.Context, m Market, dataset, symbol, interval, windowTag, relSub string, offline bool) (*VisionArchiveResult, error) {
 	zipURL := VisionBaseURL + "/data/" + filepath.ToSlash(relSub)
 	chkURL := zipURL + ".CHECKSUM"
-	destRel := filepath.Join("binance_vision", relSub)
-	destPath, err := c.CacheMgr.PathFor(destRel)
+	legacyDestRel := filepath.Join("binance_vision", relSub)
+	legacyDestPath, err := c.CacheMgr.PathFor(legacyDestRel)
 	if err != nil {
 		return nil, err
 	}
+	ptrPath := legacyDestPath + ".latest.json"
 
-	var expectedSHA string
 	key := cache.CacheKey{
 		Source:     "binance_vision",
 		Market:     string(m),
@@ -418,45 +588,98 @@ func (c *Client) fetchVisionZip(ctx context.Context, m Market, dataset, symbol, 
 		StartUTCNS: windowTag,
 	}
 
-	// If offline or already locally cached with receipt, honor without refreshing CHECKSUM unless forced.
-	if rec, ok := cache.LoadReceipt(destPath); ok && offline {
+	resolveOffline := func() (*VisionArchiveResult, bool) {
+		if rawPtr, pErr := os.ReadFile(ptrPath); pErr == nil {
+			var ptr visionLatestPointer
+			if json.Unmarshal(rawPtr, &ptr) == nil && ptr.ZipPath != "" && ptr.SHA256 != "" {
+				if rec, ok := cache.LoadReceipt(ptr.ZipPath); ok && strings.EqualFold(rec.SHA256, ptr.SHA256) {
+					return &VisionArchiveResult{
+						ZipPath:     ptr.ZipPath,
+						ChecksumHex: rec.SHA256,
+						ChecksumURL: chkURL,
+						ZipURL:      zipURL,
+						RelSubPath:  filepath.ToSlash(relSub),
+						CacheHit:    true,
+					}, true
+				}
+			}
+		}
+		if rec, ok := cache.LoadReceipt(legacyDestPath); ok {
+			return &VisionArchiveResult{
+				ZipPath:     legacyDestPath,
+				ChecksumHex: rec.SHA256,
+				ChecksumURL: chkURL,
+				ZipURL:      zipURL,
+				RelSubPath:  filepath.ToSlash(relSub),
+				CacheHit:    true,
+			}, true
+		}
+		return nil, false
+	}
+
+	if offline {
+		if hit, ok := resolveOffline(); ok {
+			return hit, nil
+		}
+		return nil, fmt.Errorf("offline mode enabled and no cached Vision archive for %s", relSub)
+	}
+
+	chkBody, _, cErr := c.doGETWithBackoff(ctx, chkURL, false)
+	if cErr != nil {
+		return nil, fmt.Errorf("fetch Vision checksum %s: %w", chkURL, cErr)
+	}
+	expectedSHA, pErr := cache.ParseChecksumText(string(chkBody))
+	if pErr != nil {
+		return nil, fmt.Errorf("parse Vision checksum %s: %w", chkURL, pErr)
+	}
+	expectedLower := strings.ToLower(expectedSHA)
+	key.RevisionOrHash = expectedLower
+
+	destRel := legacyDestRel
+	if len(expectedLower) >= 2 {
+		destRel = filepath.Join("binance_vision", "by_sha256", expectedLower[:2], expectedLower+".zip")
+	}
+
+	// Preserve existing legacy un-content-addressed cache if checksum already matches it.
+	if rec, ok := cache.LoadReceipt(legacyDestPath); ok && strings.EqualFold(rec.SHA256, expectedLower) {
 		return &VisionArchiveResult{
-			ZipPath:     destPath,
+			ZipPath:     legacyDestPath,
 			ChecksumHex: rec.SHA256,
 			ChecksumURL: chkURL,
 			ZipURL:      zipURL,
+			RelSubPath:  filepath.ToSlash(relSub),
 			CacheHit:    true,
 		}, nil
-	}
-
-	if !offline {
-		chkBody, _, cErr := c.doGETWithBackoff(ctx, chkURL, false)
-		if cErr != nil {
-			return nil, fmt.Errorf("fetch Vision checksum %s: %w", chkURL, cErr)
-		}
-		parsedSHA, pErr := cache.ParseChecksumText(string(chkBody))
-		if pErr != nil {
-			return nil, fmt.Errorf("parse Vision checksum %s: %w", chkURL, pErr)
-		}
-		expectedSHA = parsedSHA
-		key.RevisionOrHash = parsedSHA
 	}
 
 	res, err := c.CacheMgr.EnsureFile(ctx, cache.EnsureOptions{
 		DestRelPath:    destRel,
 		Key:            key,
 		SourceURL:      zipURL,
-		ExpectedSHA256: expectedSHA,
-		Offline:        offline,
+		ExpectedSHA256: expectedLower,
+		Offline:        false,
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	_ = os.MkdirAll(filepath.Dir(ptrPath), 0o755)
+	if encoded, mErr := json.Marshal(visionLatestPointer{
+		SHA256:    res.Receipt.SHA256,
+		ZipPath:   res.LocalPath,
+		RelSub:    filepath.ToSlash(relSub),
+		ZipURL:    zipURL,
+		UpdatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+	}); mErr == nil {
+		_ = os.WriteFile(ptrPath, encoded, 0o644)
+	}
+
 	return &VisionArchiveResult{
 		ZipPath:     res.LocalPath,
 		ChecksumHex: res.Receipt.SHA256,
 		ChecksumURL: chkURL,
 		ZipURL:      zipURL,
+		RelSubPath:  filepath.ToSlash(relSub),
 		CacheHit:    res.CacheHit,
 		Resumed:     res.Resumed,
 	}, nil
@@ -471,7 +694,8 @@ type VisionKlineRow struct {
 	Low            string `json:"low"`
 	Close          string `json:"close"`
 	Volume         string `json:"volume"`
-	QuoteVolume    string `json:"quote_volume"`
+	QuoteVolume    string `json:"quote_volume,omitempty"`
+	BaseVolume     string `json:"base_volume,omitempty"`
 	TradeCount     int64  `json:"trade_count"`
 	QtyUnit        string `json:"qty_unit"`
 	Source         string `json:"source"`
@@ -525,7 +749,7 @@ func ReadVisionKlinesZip(zipPath string, m Market, checksumHex string, startMS, 
 				continue
 			}
 			cnt, _ := strconv.ParseInt(rec[8], 10, 64)
-			out = append(out, VisionKlineRow{
+			row := VisionKlineRow{
 				OpenTimeUTCNS:  openNS,
 				CloseTimeUTCNS: closeNS,
 				Open:           rec[1],
@@ -533,12 +757,17 @@ func ReadVisionKlinesZip(zipPath string, m Market, checksumHex string, startMS, 
 				Low:            rec[3],
 				Close:          rec[4],
 				Volume:         rec[5],
-				QuoteVolume:    rec[7],
 				TradeCount:     cnt,
 				QtyUnit:        qtyUnit,
 				Source:         "binance_vision",
 				RevisionOrHash: checksumHex,
-			})
+			}
+			if m == MarketCOINM {
+				row.BaseVolume = rec[7]
+			} else {
+				row.QuoteVolume = rec[7]
+			}
+			out = append(out, row)
 		}
 		rc.Close()
 	}

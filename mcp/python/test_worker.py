@@ -334,3 +334,131 @@ def test_worker_usdm_and_spot_end_to_end(tmp_path: Path) -> None:
         "chunks": [ch_mark, ch_rest],
     })
     assert dm["total_rows"] == 2
+
+
+def test_m6b_m6c_chronological_chunks_ohlc_and_reconnect_recovery(tmp_path: Path) -> None:
+    """Regression suite for M6-B (sha256-independent ordering & OHLC determinism), M6-C (capture_flag_gap + connection_reset recovery), and M6-F streaming writer."""
+    storage_root = tmp_path / "source_layout"
+    layout = ensure_storage_layout(storage_root)
+    catalog = Catalog(layout.catalog)
+    ext_root = tmp_path / "external_storage"
+    sid = "storage-m6-test"
+
+    base_ms = 1_794_700_800_000  # divisible by 1000 and 60_000
+
+    # --- 1. M6-B: Two chunks intentionally passed out-of-order & spanning one 1s candle ---
+    # Chunk A (earlier: +100ms, agg_id=10, p=63916.7; +400ms, agg_id=11, p=63910.0)
+    # Chunk B (later:   +700ms, agg_id=12, p=63905.0; +900ms, agg_id=13, p=63900.9)
+    ch_agg_early = _make_archived_chunk(
+        layout, catalog, ext_root, sid,
+        market="um_perpetual", symbol="BTCUSDT", stream="agg_trade",
+        envelopes=[
+            _env("um_perpetual", "BTCUSDT", "agg_trade", base_ms + 100, {"e": "aggTrade", "E": base_ms + 100, "s": "BTCUSDT", "a": 10, "p": "63916.7", "q": "1.0", "f": 10, "l": 10, "T": base_ms + 100, "m": False}),
+            _env("um_perpetual", "BTCUSDT", "agg_trade", base_ms + 400, {"e": "aggTrade", "E": base_ms + 400, "s": "BTCUSDT", "a": 11, "p": "63910.0", "q": "1.0", "f": 11, "l": 11, "T": base_ms + 400, "m": True}),
+        ],
+    )
+    ch_agg_late = _make_archived_chunk(
+        layout, catalog, ext_root, sid,
+        market="um_perpetual", symbol="BTCUSDT", stream="agg_trade",
+        envelopes=[
+            _env("um_perpetual", "BTCUSDT", "agg_trade", base_ms + 700, {"e": "aggTrade", "E": base_ms + 700, "s": "BTCUSDT", "a": 12, "p": "63905.0", "q": "1.0", "f": 12, "l": 12, "T": base_ms + 700, "m": False}),
+            _env("um_perpetual", "BTCUSDT", "agg_trade", base_ms + 900, {"e": "aggTrade", "E": base_ms + 900, "s": "BTCUSDT", "a": 13, "p": "63900.9", "q": "1.0", "f": 13, "l": 13, "T": base_ms + 900, "m": True}),
+        ],
+    )
+
+    # Pass late chunk FIRST in request; worker must sort by time and preserve open=63916.7, close=63900.9!
+    kl = worker.dispatch({
+        "operation": "query_klines",
+        "market": "usdm",
+        "symbols": ["BTCUSDT"],
+        "interval": "1s",
+        "start_utc_ns": base_ms * 1_000_000,
+        "end_utc_ns": (base_ms + 1000) * 1_000_000,
+        "partitions": [{"partition_id": "p-test", "catalog_path": str(layout.catalog)}],
+        "external_roots": {sid: str(ext_root)},
+        "chunks": [ch_agg_late, ch_agg_early],
+    })
+    assert kl["total_rows"] == 1
+    assert kl["rows"][0]["open"] == "63916.7"
+    assert kl["rows"][0]["close"] == "63900.9"
+    assert kl["rows"][0]["high"] == "63916.7"
+    assert kl["rows"][0]["low"] == "63900.9"
+
+    # --- 2. M6-C: Reconnect + capture_flag_gap + new snapshot recovery across warmup and window ---
+    # Scenario:
+    # - t=-5000ms (conn1): synced before gap -> at t=-3000ms conn2 sends TWO consecutive reconnect_gap flagged messages
+    # - t=-2500ms (conn2): depth_snapshot (U=200) -> t=-2000ms (conn2, clean): U=199, u=202, pu=198 -> MUST recover cleanly!
+    # - t=+1000ms (conn2, in window): U=203, u=204, pu=202 -> MUST emit inside [base_ms, base_ms + 5000)!
+    ch_depth_1 = _make_archived_chunk(
+        layout, catalog, ext_root, sid,
+        market="um_perpetual", symbol="BTCUSDT", stream="diff_depth",
+        envelopes=[
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms - 5000, {"e": "depthUpdate", "s": "BTCUSDT", "U": 99, "u": 102, "pu": 98, "b": [["64000", "1.0"]], "a": [["64001", "1.0"]]}, conn="conn1"),
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms - 3000, {"e": "depthUpdate", "s": "BTCUSDT", "U": 150, "u": 151, "pu": 149, "b": [], "a": []}, conn="conn2", flags=("reconnect_gap",)),
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms - 2900, {"e": "depthUpdate", "s": "BTCUSDT", "U": 152, "u": 153, "pu": 151, "b": [], "a": []}, conn="conn2", flags=("reconnect_gap",)),
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms - 2000, {"e": "depthUpdate", "s": "BTCUSDT", "U": 199, "u": 202, "pu": 198, "b": [["64000.5", "2.0"]], "a": [["64001.5", "2.0"]]}, conn="conn2"),
+        ],
+    )
+    ch_depth_2 = _make_archived_chunk(
+        layout, catalog, ext_root, sid,
+        market="um_perpetual", symbol="BTCUSDT", stream="diff_depth",
+        envelopes=[
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 1000, {"e": "depthUpdate", "s": "BTCUSDT", "U": 203, "u": 204, "pu": 202, "b": [["64002.0", "3.0"]], "a": []}, conn="conn2"),
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 2500, {"e": "depthUpdate", "s": "BTCUSDT", "U": 205, "u": 206, "pu": 204, "b": [], "a": [["64003.0", "1.5"]]}, conn="conn2"),
+        ],
+    )
+    ch_snaps = _make_archived_chunk(
+        layout, catalog, ext_root, sid,
+        market="um_shared", symbol="BTCUSDT", stream="rest_observations",
+        envelopes=[
+            _rest_env("um_shared", "BTCUSDT", "depth_snapshot", base_ms - 4500, {"lastUpdateId": 100, "bids": [["64000", "1.0"]], "asks": [["64001", "1.0"]]}),
+            _rest_env("um_shared", "BTCUSDT", "depth_snapshot", base_ms - 2500, {"lastUpdateId": 200, "bids": [["64000.5", "1.5"]], "asks": [["64001.5", "1.5"]]}),
+        ],
+    )
+    catalog.close()
+
+    ob = worker.dispatch({
+        "operation": "query_orderbook",
+        "market": "usdm",
+        "symbols": ["BTCUSDT"],
+        "depth_levels": 5,
+        "sample_step_ms": 1000,
+        "start_utc_ns": base_ms * 1_000_000,
+        "end_utc_ns": (base_ms + 5000) * 1_000_000,
+        "partitions": [{"partition_id": "p-test", "catalog_path": str(layout.catalog)}],
+        "external_roots": {sid: str(ext_root)},
+        # Pass depth chunks intentionally out of order too!
+        "chunks": [ch_depth_2, ch_snaps, ch_depth_1],
+    })
+    assert ob["total_rows"] == 2
+    assert ob["stats"]["warmup_resync_count"] == 1  # two consecutive gap flags collapsed into 1 reset, no duplicate conn2 reset!
+    assert ob["stats"]["window_resync_count"] == 0
+    assert ob["stats"]["recovery_count"] == 1
+    assert ob["unsynchronized_reason"] is None
+    assert ob["rows"][0]["bids"][0][0] == "64002"
+
+    # --- 3. M6-D + M6-F: No snapshot gives explicit unsynchronized_reason; batched Parquet writer streams cleanly ---
+    ob_nosnap = worker.dispatch({
+        "operation": "query_orderbook",
+        "market": "usdm",
+        "symbols": ["BTCUSDT"],
+        "depth_levels": 5,
+        "sample_step_ms": 1000,
+        "start_utc_ns": base_ms * 1_000_000,
+        "end_utc_ns": (base_ms + 5000) * 1_000_000,
+        "partitions": [{"partition_id": "p-test", "catalog_path": str(layout.catalog)}],
+        "external_roots": {sid: str(ext_root)},
+        "chunks": [ch_depth_2],
+    })
+    assert ob_nosnap["total_rows"] == 0
+    assert ob_nosnap["unsynchronized_reason"] == "no_depth_snapshots_for_symbol"
+
+    # Batched Parquet streaming write test (small batch_size=2 across 5 rows)
+    pq_batched = tmp_path / "batched.parquet"
+    with worker._RowStreamWriter(str(pq_batched), "parquet", batch_size=2) as w:
+        for i in range(5):
+            w.write({"idx": i, "meta": {"ok": True}})
+        out_p = w.close_and_commit()
+    assert out_p == str(pq_batched)
+    assert pq.read_table(pq_batched).num_rows == 5
+

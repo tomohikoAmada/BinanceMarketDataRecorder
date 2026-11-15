@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/cache"
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/config"
@@ -70,25 +71,93 @@ type ArchiveTarget struct {
 
 // ChunkEntry represents one line of chunks.jsonl inside a partition snapshot.
 type ChunkEntry struct {
-	ChunkID                    string  `json:"chunk_id"`
-	Market                     string  `json:"market"`
-	Stream                     string  `json:"stream"`
-	State                      string  `json:"state"`
-	ArchiveState               *string `json:"archive_state"`
-	Ready                      bool    `json:"ready"`
-	PendingReason              *string `json:"pending_reason"`
-	StorageID                  *string `json:"storage_id"`
-	TargetRelativePath         *string `json:"target_relative_path"`
-	ExternalManifestRelPath    *string `json:"external_manifest_relative_path"`
-	ArchiveURLPath             *string `json:"archive_url_path"`
-	ManifestURLPath            *string `json:"manifest_url_path"`
-	StoredBytes                *int64  `json:"stored_bytes"`
-	StoredSHA256               *string `json:"stored_sha256"`
-	UncompressedBytes          *int64  `json:"uncompressed_bytes"`
-	UncompressedSHA256         *string `json:"uncompressed_sha256"`
-	RecordCount                *int64  `json:"record_count"`
-	CreatedAtUTCNS             int64   `json:"created_at_utc_ns"`
-	UpdatedAtUTCNS             int64   `json:"updated_at_utc_ns"`
+	ChunkID                    string                 `json:"chunk_id"`
+	Market                     string                 `json:"market"`
+	Symbol                     *string                `json:"symbol,omitempty"`
+	Stream                     string                 `json:"stream"`
+	State                      string                 `json:"state"`
+	ArchiveState               *string                `json:"archive_state"`
+	Ready                      bool                   `json:"ready"`
+	PendingReason              *string                `json:"pending_reason"`
+	StorageID                  *string                `json:"storage_id"`
+	TargetRelativePath         *string                `json:"target_relative_path"`
+	ExternalManifestRelPath    *string                `json:"external_manifest_relative_path"`
+	ArchiveURLPath             *string                `json:"archive_url_path"`
+	ManifestURLPath            *string                `json:"manifest_url_path"`
+	StoredBytes                *int64                 `json:"stored_bytes"`
+	StoredSHA256               *string                `json:"stored_sha256"`
+	UncompressedBytes          *int64                 `json:"uncompressed_bytes"`
+	UncompressedSHA256         *string                `json:"uncompressed_sha256"`
+	RecordCount                *int64                 `json:"record_count"`
+	CreatedAtUTCNS             int64                  `json:"created_at_utc_ns"`
+	UpdatedAtUTCNS             int64                  `json:"updated_at_utc_ns"`
+	ReceiveTimeUTCRangeNS      *TimeRangeNS           `json:"receive_time_utc_range_ns,omitempty"`
+	ExchangeTimeRanges         map[string]TimeRangeNS `json:"exchange_time_ranges,omitempty"`
+	SequenceRanges             map[string]any         `json:"sequence_ranges,omitempty"`
+	ConnectionIDs              []string               `json:"connection_ids,omitempty"`
+}
+
+// EffectiveTimeRangeNS returns the chunk's data time range in UTC nanoseconds when available.
+// When preferExchange is true, it builds the hull over receive_time_utc_range_ns and exchange_time_ranges (* 1e6).
+func (ch ChunkEntry) EffectiveTimeRangeNS(preferExchange bool) (int64, int64, bool) {
+	var have bool
+	var minNS, maxNS int64
+	if ch.ReceiveTimeUTCRangeNS != nil && ch.ReceiveTimeUTCRangeNS.Max > 0 {
+		minNS = ch.ReceiveTimeUTCRangeNS.Min
+		maxNS = ch.ReceiveTimeUTCRangeNS.Max
+		have = true
+	}
+	if preferExchange && len(ch.ExchangeTimeRanges) > 0 {
+		for _, r := range ch.ExchangeTimeRanges {
+			if r.Max <= 0 {
+				continue
+			}
+			rMin := r.Min * 1_000_000
+			rMax := r.Max * 1_000_000
+			if !have {
+				minNS = rMin
+				maxNS = rMax
+				have = true
+			} else {
+				if rMin > 0 && (minNS == 0 || rMin < minNS) {
+					minNS = rMin
+				}
+				if rMax > maxNS {
+					maxNS = rMax
+				}
+			}
+		}
+	}
+	return minNS, maxNS, have
+}
+
+// SymbolName returns the normalized upper-case symbol name if known.
+func (ch ChunkEntry) SymbolName() string {
+	if ch.Symbol == nil {
+		return ""
+	}
+	return strings.ToUpper(strings.TrimSpace(*ch.Symbol))
+}
+
+// HasDepthSnapshotMetadata reports whether sequence_ranges indicates a rest_observations chunk holds a depth snapshot.
+func (ch ChunkEntry) HasDepthSnapshotMetadata() bool {
+	if ch.Stream != "rest_observations" || len(ch.SequenceRanges) == 0 {
+		return ch.Stream == "rest_observations"
+	}
+	if _, ok := ch.SequenceRanges["lastUpdateId"]; ok {
+		return true
+	}
+	if _, ok := ch.SequenceRanges["depthSnapshotEpoch"]; ok {
+		return true
+	}
+	if ssRaw, ok := ch.SequenceRanges["sourceStream"].(map[string]any); ok {
+		minS, _ := ssRaw["min"].(string)
+		maxS, _ := ssRaw["max"].(string)
+		if minS != "" && maxS != "" {
+			return minS <= "depth_snapshot" && "depth_snapshot" <= maxS
+		}
+	}
+	return false
 }
 
 // TimeRangeNS represents min/max UTC nanosecond bounds in partition.json.
@@ -113,6 +182,8 @@ type PartitionMetadata struct {
 type AvailabilityMetadata struct {
 	Market               string                   `json:"market"`
 	PartitionID          string                   `json:"partition_id"`
+	RecordedSymbols      []string                 `json:"recorded_symbols,omitempty"`
+	RecordedStreams      []string                 `json:"recorded_streams,omitempty"`
 	Gaps                 []map[string]any         `json:"gaps"`
 	DiscontinuityEvents  []map[string]any         `json:"discontinuity_events"`
 	QuarantinedArtifacts []map[string]any         `json:"quarantined_artifacts"`
@@ -138,11 +209,26 @@ type SyncedSnapshot struct {
 	Partitions     []LoadedPartition
 }
 
+// PlanOptions configures M6-A metadata-aware Recorder slice planning.
+type PlanOptions struct {
+	Market                   string
+	Streams                  []string
+	Symbols                  []string
+	StartUTCNS               int64
+	EndUTCNS                 int64
+	IncludePrecedingBaseline bool
+	PreferExchangeTime       bool
+	OrderbookMode            bool
+}
+
 // QueryPlan estimates chunks, bytes, pending items, and gaps for a Recorder slice.
 type QueryPlan struct {
 	RevisionID                 string             `json:"revision_id"`
 	Market                     string             `json:"market"`
 	Streams                    []string           `json:"streams"`
+	RequestedSymbols           []string           `json:"requested_symbols,omitempty"`
+	RecordedSymbols            []string           `json:"recorded_symbols,omitempty"`
+	UnrecordedSymbols          []string           `json:"unrecorded_symbols,omitempty"`
 	PartitionsMatched          int                `json:"partitions_matched"`
 	ReadyChunksMatched         int                `json:"ready_chunks_matched"`
 	AlreadyCachedChunks        int                `json:"already_cached_chunks"`
@@ -150,6 +236,7 @@ type QueryPlan struct {
 	EstimatedDownloadBytes     int64              `json:"estimated_download_bytes"`
 	EstimatedUncompressedBytes int64              `json:"estimated_uncompressed_bytes"`
 	PendingOmittedCount        int                `json:"pending_omitted_count"`
+	PendingUnknownStreamCount  int                `json:"pending_unknown_stream_count,omitempty"`
 	PendingReasons             map[string]int     `json:"pending_reasons,omitempty"`
 	GapCount                   int                `json:"gap_count"`
 	QuarantinedCount           int                `json:"quarantined_count"`
@@ -172,13 +259,19 @@ type PlannedChunk struct {
 
 // Client syncs Recorder index metadata, plans chunk downloads, and materializes local storage roots.
 type Client struct {
-	Cfg      *config.Config
-	CacheMgr *cache.Manager
+	Cfg        *config.Config
+	CacheMgr   *cache.Manager
+	workerOnce sync.Once
+	workerSem  chan struct{}
 }
 
 // NewClient constructs a Recorder client backed by the shared Cache Manager.
 func NewClient(cfg *config.Config, cacheMgr *cache.Manager) *Client {
-	return &Client{Cfg: cfg, CacheMgr: cacheMgr}
+	return &Client{
+		Cfg:       cfg,
+		CacheMgr:  cacheMgr,
+		workerSem: make(chan struct{}, 1),
+	}
 }
 
 func (c *Client) urlsFor(relURLPath string) (string, string) {
@@ -411,67 +504,141 @@ func (c *Client) ensurePartitionMetadata(ctx context.Context, part PartitionMani
 }
 
 // PlanQuery scans synced partition manifests & chunks.jsonl without downloading raw chunks yet.
-// For depth reconstruction (when streams include depth or book_ticker), includePrecedingBaseline keeps
-// earlier chunks in matching partitions so R5-c persistent snapshot baseline resolution still works.
+// For legacy compatibility, this calls PlanQueryWithOptions without symbol filtering.
 func (c *Client) PlanQuery(snap *SyncedSnapshot, market string, streams []string, startNS, endNS int64, includePrecedingBaseline bool) (*QueryPlan, error) {
+	return c.PlanQueryWithOptions(snap, PlanOptions{
+		Market:                   market,
+		Streams:                  streams,
+		StartUTCNS:               startNS,
+		EndUTCNS:                 endNS,
+		IncludePrecedingBaseline: includePrecedingBaseline,
+	})
+}
+
+// PlanQueryWithOptions selects partitions & chunks using data timestamps, symbol filters, and orderbook baseline rules.
+func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*QueryPlan, error) {
 	if snap == nil {
 		return nil, errors.New("snapshot is nil")
 	}
-	streamSet := make(map[string]bool, len(streams))
-	for _, s := range streams {
-		streamSet[s] = true
+	streamSet := make(map[string]bool, len(opts.Streams))
+	for _, s := range opts.Streams {
+		if trimmed := strings.TrimSpace(s); trimmed != "" {
+			streamSet[trimmed] = true
+		}
 	}
+	symbolSet := make(map[string]bool, len(opts.Symbols))
+	var normalizedSyms []string
+	for _, sym := range opts.Symbols {
+		u := strings.ToUpper(strings.TrimSpace(sym))
+		if u != "" && !symbolSet[u] {
+			symbolSet[u] = true
+			normalizedSyms = append(normalizedSyms, u)
+		}
+	}
+	sort.Strings(normalizedSyms)
 
 	plan := &QueryPlan{
-		RevisionID:     snap.RevisionID,
-		Market:         market,
-		Streams:        append([]string(nil), streams...),
-		PendingReasons: make(map[string]int),
+		RevisionID:       snap.RevisionID,
+		Market:           opts.Market,
+		Streams:          append([]string(nil), opts.Streams...),
+		RequestedSymbols: normalizedSyms,
+		PendingReasons:   make(map[string]int),
 	}
 
+	type candPart struct {
+		part         LoadedPartition
+		baselineOnly bool
+	}
+	var marketParts []LoadedPartition
 	for _, part := range snap.Partitions {
-		if market != "" && part.Manifest.Market != market {
+		if opts.Market != "" && part.Manifest.Market != opts.Market {
 			continue
 		}
+		marketParts = append(marketParts, part)
+	}
+	sort.Slice(marketParts, func(i, j int) bool {
+		pi, pj := marketParts[i].Metadata.ReceiveTimeUTCRangeNS.Min, marketParts[j].Metadata.ReceiveTimeUTCRangeNS.Min
+		if pi != pj {
+			return pi < pj
+		}
+		return marketParts[i].Manifest.PartitionID < marketParts[j].Manifest.PartitionID
+	})
+
+	var selected []candPart
+	prevClosedIdx := -1
+	for i, part := range marketParts {
 		pMin := part.Metadata.ReceiveTimeUTCRangeNS.Min
 		pMax := part.Metadata.ReceiveTimeUTCRangeNS.Max
-		// Filter out partitions whose receive_time_utc_range_ns lies wholly outside [startNS, endNS).
-		// Note: open/active partitions (and pre-R5-a live catalogs) may have pMax == pMin until closed;
-		// never prune an open/non-closed partition using pMax < startNS.
-		if endNS > 0 && pMin > 0 && pMin >= endNS {
+		if opts.EndUTCNS > 0 && pMin > 0 && pMin >= opts.EndUTCNS {
 			continue
 		}
-		if startNS > 0 && part.Metadata.State == "closed" && pMax > pMin && pMax < startNS {
+		if opts.StartUTCNS > 0 && part.Metadata.State == "closed" && pMax > pMin && pMax < opts.StartUTCNS {
+			prevClosedIdx = i
 			continue
 		}
+		selected = append(selected, candPart{part: part, baselineOnly: false})
+	}
+	if opts.IncludePrecedingBaseline && opts.StartUTCNS > 0 && prevClosedIdx >= 0 {
+		selected = append([]candPart{{part: marketParts[prevClosedIdx], baselineOnly: true}}, selected...)
+	}
 
-		plan.PartitionsMatched++
+	recordedSymSet := make(map[string]bool)
+	type chunkCand struct {
+		partID       string
+		catalogPath  string
+		ch           ChunkEntry
+		localRaw     string
+		localMan     string
+		rawCached    bool
+		manCached    bool
+		minNS        int64
+		maxNS        int64
+		hasDataRange bool
+		baselineOnly bool
+	}
+	var allCandidates []chunkCand
+
+	for _, sp := range selected {
+		part := sp.part
+		if !sp.baselineOnly {
+			plan.PartitionsMatched++
+			plan.GapCount += len(part.Availability.Gaps)
+			plan.QuarantinedCount += len(part.Availability.QuarantinedArtifacts)
+			plan.DiscontinuityCount += len(part.Availability.DiscontinuityEvents)
+		}
 		plan.SelectedPartitions = append(plan.SelectedPartitions, part)
-		plan.GapCount += len(part.Availability.Gaps)
-		plan.QuarantinedCount += len(part.Availability.QuarantinedArtifacts)
-		plan.DiscontinuityCount += len(part.Availability.DiscontinuityEvents)
+		for _, sym := range part.Availability.RecordedSymbols {
+			u := strings.ToUpper(strings.TrimSpace(sym))
+			if u != "" && u != "__GLOBAL__" {
+				recordedSymSet[u] = true
+			}
+		}
 
 		chunks, err := ReadChunksJSONL(part.ChunksPath)
 		if err != nil {
 			return nil, err
 		}
-		sort.Slice(chunks, func(i, j int) bool {
-			if chunks[i].CreatedAtUTCNS != chunks[j].CreatedAtUTCNS {
-				return chunks[i].CreatedAtUTCNS < chunks[j].CreatedAtUTCNS
-			}
-			return chunks[i].ChunkID < chunks[j].ChunkID
-		})
-
-		// Track per-stream last baseline chunk before startNS if requested (needed by orderbook reconstructor).
-		latestPreStart := make(map[string]ChunkEntry)
-		var matchedForPart []ChunkEntry
 
 		for _, ch := range chunks {
-			if len(streamSet) > 0 && !streamSet[ch.Stream] {
-				continue
-			}
 			if !ch.Ready {
+				if len(streamSet) > 0 && ch.Stream != "" && !streamSet[ch.Stream] {
+					continue
+				}
+				cMin, cMax, hasRange := ch.EffectiveTimeRangeNS(opts.PreferExchangeTime)
+				if hasRange {
+					if opts.EndUTCNS > 0 && cMin >= opts.EndUTCNS {
+						continue
+					}
+					if opts.StartUTCNS > 0 && cMax > 0 && cMax < opts.StartUTCNS {
+						continue
+					}
+				} else if sp.baselineOnly {
+					continue
+				}
 				plan.PendingOmittedCount++
+				if ch.Stream == "" {
+					plan.PendingUnknownStreamCount++
+				}
 				reason := "pending"
 				if ch.PendingReason != nil && *ch.PendingReason != "" {
 					reason = *ch.PendingReason
@@ -479,43 +646,17 @@ func (c *Client) PlanQuery(snap *SyncedSnapshot, market string, streams []string
 				plan.PendingReasons[reason]++
 				continue
 			}
-			if endNS > 0 && ch.CreatedAtUTCNS >= endNS {
+
+			if len(streamSet) > 0 && !streamSet[ch.Stream] {
 				continue
 			}
-			if startNS > 0 && ch.UpdatedAtUTCNS > 0 && ch.UpdatedAtUTCNS < startNS {
-				if includePrecedingBaseline {
-					prev, ok := latestPreStart[ch.Stream]
-					if !ok || ch.UpdatedAtUTCNS >= prev.UpdatedAtUTCNS {
-						latestPreStart[ch.Stream] = ch
-					}
-				}
-				continue
-			}
-			matchedForPart = append(matchedForPart, ch)
-		}
-
-		if includePrecedingBaseline && len(latestPreStart) > 0 {
-			seen := make(map[string]bool, len(matchedForPart))
-			for _, ch := range matchedForPart {
-				seen[ch.ChunkID] = true
-			}
-			for _, base := range latestPreStart {
-				if !seen[base.ChunkID] {
-					matchedForPart = append(matchedForPart, base)
-				}
-			}
-			sort.Slice(matchedForPart, func(i, j int) bool {
-				return matchedForPart[i].CreatedAtUTCNS < matchedForPart[j].CreatedAtUTCNS
-			})
-		}
-
-		for _, ch := range matchedForPart {
 			if ch.StorageID == nil || ch.TargetRelativePath == nil || ch.ExternalManifestRelPath == nil ||
 				ch.ArchiveURLPath == nil || ch.ManifestURLPath == nil || ch.StoredSHA256 == nil || ch.StoredBytes == nil {
 				plan.PendingOmittedCount++
 				plan.PendingReasons["incomplete_chunk_metadata"]++
 				continue
 			}
+
 			sid := *ch.StorageID
 			rawRel := filepath.Join("recorder", "storage", sid, filepath.FromSlash(*ch.TargetRelativePath))
 			manRel := filepath.Join("recorder", "storage", sid, filepath.FromSlash(*ch.ExternalManifestRelPath))
@@ -527,39 +668,225 @@ func (c *Client) PlanQuery(snap *SyncedSnapshot, market string, streams []string
 			if err != nil {
 				return nil, err
 			}
-			rawCached := isReceiptMatching(localRaw, *ch.StoredSHA256)
-			manCached := hasFileAndReceipt(localMan)
 
-			plan.ReadyChunksMatched++
-			if ch.UncompressedBytes != nil {
-				plan.EstimatedUncompressedBytes += *ch.UncompressedBytes
+			if ch.ReceiveTimeUTCRangeNS == nil || ch.Symbol == nil {
+				hydrateChunkMetadataFromLocalManifest(&ch, localMan)
 			}
-			if rawCached && manCached {
-				plan.AlreadyCachedChunks++
-			} else {
-				plan.DownloadChunks++
-				if !rawCached {
-					plan.EstimatedDownloadBytes += *ch.StoredBytes
+			if sym := ch.SymbolName(); sym != "" && sym != "__GLOBAL__" {
+				recordedSymSet[sym] = true
+			}
+			if len(symbolSet) > 0 {
+				sym := ch.SymbolName()
+				if sym != "" && sym != "__GLOBAL__" && !symbolSet[sym] {
+					continue
 				}
 			}
 
-			plan.PlannedChunks = append(plan.PlannedChunks, PlannedChunk{
-				PartitionID:       part.Manifest.PartitionID,
-				CatalogPath:       part.CatalogPath,
-				StorageID:         sid,
-				Chunk:             ch,
-				LocalRawPath:      localRaw,
-				LocalManifestPath: localMan,
-				RawCached:         rawCached,
-				ManifestCached:    manCached,
+			minNS, maxNS, hasDataRange := ch.EffectiveTimeRangeNS(opts.PreferExchangeTime)
+			allCandidates = append(allCandidates, chunkCand{
+				partID:       part.Manifest.PartitionID,
+				catalogPath:  part.CatalogPath,
+				ch:           ch,
+				localRaw:     localRaw,
+				localMan:     localMan,
+				rawCached:    isReceiptMatching(localRaw, *ch.StoredSHA256),
+				manCached:    hasFileAndReceipt(localMan),
+				minNS:        minNS,
+				maxNS:        maxNS,
+				hasDataRange: hasDataRange,
+				baselineOnly: sp.baselineOnly,
 			})
 		}
 	}
 
+	sort.Slice(allCandidates, func(i, j int) bool {
+		ti, tj := allCandidates[i].minNS, allCandidates[j].minNS
+		if !allCandidates[i].hasDataRange {
+			ti = allCandidates[i].ch.CreatedAtUTCNS
+		}
+		if !allCandidates[j].hasDataRange {
+			tj = allCandidates[j].ch.CreatedAtUTCNS
+		}
+		if ti != tj {
+			return ti < tj
+		}
+		if allCandidates[i].ch.CreatedAtUTCNS != allCandidates[j].ch.CreatedAtUTCNS {
+			return allCandidates[i].ch.CreatedAtUTCNS < allCandidates[j].ch.CreatedAtUTCNS
+		}
+		return allCandidates[i].ch.ChunkID < allCandidates[j].ch.ChunkID
+	})
+
+	type baseKey struct {
+		market string
+		symbol string
+		stream string
+	}
+	chosen := make(map[string]bool)
+	latestPreSnapshotMinNS := make(map[string]int64)
+	latestPreRestChunk := make(map[baseKey]int)
+	latestPreStreamChunk := make(map[baseKey]int)
+
+	for idx, cand := range allCandidates {
+		ch := cand.ch
+		if cand.hasDataRange {
+			if opts.EndUTCNS > 0 && cand.minNS >= opts.EndUTCNS {
+				continue
+			}
+			inOrAfterStart := opts.StartUTCNS <= 0 || cand.maxNS == 0 || cand.maxNS >= opts.StartUTCNS
+			if inOrAfterStart {
+				if !cand.baselineOnly {
+					chosen[ch.ChunkID] = true
+				}
+				continue
+			}
+			if opts.IncludePrecedingBaseline {
+				bk := baseKey{market: ch.Market, symbol: ch.SymbolName(), stream: ch.Stream}
+				if ch.Stream == "rest_observations" {
+					if ch.HasDepthSnapshotMetadata() {
+						latestPreRestChunk[bk] = idx
+						symKey := ch.Market + "|" + ch.SymbolName()
+						if prev, ok := latestPreSnapshotMinNS[symKey]; !ok || cand.minNS > prev {
+							latestPreSnapshotMinNS[symKey] = cand.minNS
+						}
+					} else if _, hasSnap := latestPreRestChunk[bk]; !hasSnap {
+						latestPreRestChunk[bk] = idx
+					}
+				} else {
+					latestPreStreamChunk[bk] = idx
+				}
+			}
+			continue
+		}
+
+		if opts.EndUTCNS > 0 && ch.CreatedAtUTCNS >= opts.EndUTCNS && ch.Stream != "rest_observations" {
+			continue
+		}
+		if opts.StartUTCNS > 0 && ch.UpdatedAtUTCNS > 0 && ch.UpdatedAtUTCNS < opts.StartUTCNS {
+			if opts.IncludePrecedingBaseline {
+				bk := baseKey{market: ch.Market, symbol: ch.SymbolName(), stream: ch.Stream}
+				if ch.Stream == "rest_observations" {
+					latestPreRestChunk[bk] = idx
+				} else {
+					latestPreStreamChunk[bk] = idx
+				}
+			}
+			continue
+		}
+		if !cand.baselineOnly || opts.IncludePrecedingBaseline {
+			chosen[ch.ChunkID] = true
+		}
+	}
+
+	if opts.IncludePrecedingBaseline {
+		for _, idx := range latestPreRestChunk {
+			chosen[allCandidates[idx].ch.ChunkID] = true
+		}
+		if opts.OrderbookMode && len(latestPreSnapshotMinNS) > 0 {
+			for _, cand := range allCandidates {
+				if cand.ch.Stream != "diff_depth" || !cand.hasDataRange {
+					continue
+				}
+				if opts.EndUTCNS > 0 && cand.minNS >= opts.EndUTCNS {
+					continue
+				}
+				symKey := cand.ch.Market + "|" + cand.ch.SymbolName()
+				snapStart, ok := latestPreSnapshotMinNS[symKey]
+				if !ok {
+					snapStart, ok = latestPreSnapshotMinNS[cand.ch.Market+"|"]
+				}
+				if ok && cand.maxNS >= snapStart {
+					chosen[cand.ch.ChunkID] = true
+				}
+			}
+		} else {
+			for _, idx := range latestPreStreamChunk {
+				chosen[allCandidates[idx].ch.ChunkID] = true
+			}
+		}
+	}
+
+	for _, cand := range allCandidates {
+		if !chosen[cand.ch.ChunkID] {
+			continue
+		}
+		ch := cand.ch
+		plan.ReadyChunksMatched++
+		if ch.UncompressedBytes != nil {
+			plan.EstimatedUncompressedBytes += *ch.UncompressedBytes
+		}
+		if cand.rawCached && cand.manCached {
+			plan.AlreadyCachedChunks++
+		} else {
+			plan.DownloadChunks++
+			if !cand.rawCached && ch.StoredBytes != nil {
+				plan.EstimatedDownloadBytes += *ch.StoredBytes
+			}
+		}
+		plan.PlannedChunks = append(plan.PlannedChunks, PlannedChunk{
+			PartitionID:       cand.partID,
+			CatalogPath:       cand.catalogPath,
+			StorageID:         *ch.StorageID,
+			Chunk:             ch,
+			LocalRawPath:      cand.localRaw,
+			LocalManifestPath: cand.localMan,
+			RawCached:         cand.rawCached,
+			ManifestCached:    cand.manCached,
+		})
+	}
+
+	for sym := range recordedSymSet {
+		plan.RecordedSymbols = append(plan.RecordedSymbols, sym)
+	}
+	sort.Strings(plan.RecordedSymbols)
+	if len(normalizedSyms) > 0 && len(recordedSymSet) > 0 {
+		for _, sym := range normalizedSyms {
+			if !recordedSymSet[sym] {
+				plan.UnrecordedSymbols = append(plan.UnrecordedSymbols, sym)
+			}
+		}
+	}
 	if len(plan.PendingReasons) == 0 {
 		plan.PendingReasons = nil
 	}
 	return plan, nil
+}
+
+func hydrateChunkMetadataFromLocalManifest(ch *ChunkEntry, localMan string) {
+	if localMan == "" {
+		return
+	}
+	rawBytes, err := os.ReadFile(localMan)
+	if err != nil {
+		return
+	}
+	var doc struct {
+		RawManifest *struct {
+			Symbol                string                 `json:"symbol"`
+			ReceiveTimeUTCRangeNS *TimeRangeNS           `json:"receive_time_utc_range_ns"`
+			ExchangeTimeRanges    map[string]TimeRangeNS `json:"exchange_time_ranges"`
+			SequenceRanges        map[string]any         `json:"sequence_ranges"`
+			ConnectionIDs         []string               `json:"connection_ids"`
+		} `json:"raw_manifest"`
+	}
+	if json.Unmarshal(rawBytes, &doc) != nil || doc.RawManifest == nil {
+		return
+	}
+	if ch.Symbol == nil && doc.RawManifest.Symbol != "" {
+		s := doc.RawManifest.Symbol
+		ch.Symbol = &s
+	}
+	if ch.ReceiveTimeUTCRangeNS == nil && doc.RawManifest.ReceiveTimeUTCRangeNS != nil {
+		ch.ReceiveTimeUTCRangeNS = doc.RawManifest.ReceiveTimeUTCRangeNS
+	}
+	if len(ch.ExchangeTimeRanges) == 0 && len(doc.RawManifest.ExchangeTimeRanges) > 0 {
+		ch.ExchangeTimeRanges = doc.RawManifest.ExchangeTimeRanges
+	}
+	if len(ch.SequenceRanges) == 0 && len(doc.RawManifest.SequenceRanges) > 0 {
+		ch.SequenceRanges = doc.RawManifest.SequenceRanges
+	}
+	if len(ch.ConnectionIDs) == 0 && len(doc.RawManifest.ConnectionIDs) > 0 {
+		ch.ConnectionIDs = doc.RawManifest.ConnectionIDs
+	}
 }
 
 // MaterializePlan downloads (or verifies offline) every planned raw chunk & archive manifest into

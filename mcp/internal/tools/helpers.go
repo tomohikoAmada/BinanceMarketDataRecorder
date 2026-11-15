@@ -101,7 +101,11 @@ func writeRecordsFile(path, format string, rows []map[string]any) (string, error
 			}
 		}
 		w.Flush()
-		return path, w.Error()
+		if wErr := w.Error(); wErr != nil {
+			_ = f.Close()
+			return "", wErr
+		}
+		return path, f.Close()
 	case "json":
 		encoded, err := json.MarshalIndent(rows, "", "  ")
 		if err != nil {
@@ -113,17 +117,18 @@ func writeRecordsFile(path, format string, rows []map[string]any) (string, error
 		if err != nil {
 			return "", err
 		}
-		defer f.Close()
 		for _, r := range rows {
 			line, err := json.Marshal(r)
 			if err != nil {
+				_ = f.Close()
 				return "", err
 			}
 			if _, err := f.Write(append(line, '\n')); err != nil {
+				_ = f.Close()
 				return "", err
 			}
 		}
-		return path, nil
+		return path, f.Close()
 	}
 }
 
@@ -149,7 +154,7 @@ func formatScalar(v any) string {
 
 // applyResponseBudget enforces <= ResponseBudgetBytes (~64 KiB) by spilling full rows to disk
 // and trimming the preview slice cleanly without truncating mid-row or breaking JSON.
-func applyResponseBudget(cfg *config.Config, toolPrefix string, payload map[string]any, rowsKey string, fullRows []map[string]any, saveToFile bool, outputFormat string, limit int) map[string]any {
+func applyResponseBudget(cfg *config.Config, toolPrefix string, payload map[string]any, rowsKey string, fullRows []map[string]any, saveToFile bool, outputFormat string, limit int) (map[string]any, error) {
 	budget := cfg.ResponseBudgetBytes
 	if budget <= 0 {
 		budget = 64 * 1024
@@ -171,17 +176,20 @@ func applyResponseBudget(cfg *config.Config, toolPrefix string, payload map[stri
 	mustSpill := saveToFile || previewCount < len(fullRows) || (err == nil && len(encoded) > budget)
 
 	existingFile, _ := payload["result_file"].(string)
-	if mustSpill && existingFile == "" && len(fullRows) > 0 {
+	if mustSpill && existingFile == "" && (saveToFile || len(fullRows) > 0) {
 		ext := "jsonl"
-		if strings.ToLower(outputFormat) == "csv" {
+		switch strings.ToLower(outputFormat) {
+		case "csv":
 			ext = "csv"
-		} else if strings.ToLower(outputFormat) == "json" {
+		case "json":
 			ext = "json"
 		}
 		outPath := makeResultFilePath(cfg, toolPrefix, ext)
-		if written, wErr := writeRecordsFile(outPath, ext, fullRows); wErr == nil {
-			payload["result_file"] = written
+		written, wErr := writeRecordsFile(outPath, ext, fullRows)
+		if wErr != nil {
+			return nil, fmt.Errorf("write result file %s: %w", outPath, wErr)
 		}
+		payload["result_file"] = written
 	}
 
 	// Iteratively shrink preview rows if serialized JSON still exceeds 64 KiB budget.
@@ -203,14 +211,17 @@ func applyResponseBudget(cfg *config.Config, toolPrefix string, payload map[stri
 	if encoded, err = json.Marshal(payload); err == nil {
 		payload["response_bytes"] = len(encoded)
 	}
-	return payload
+	return payload, nil
 }
 
 // applyWorkerResponseBudget applies 64 KiB budget cleanly to responses already written by python/worker.py.
-func applyWorkerResponseBudget(cfg *config.Config, toolPrefix string, resp map[string]any, limit int) map[string]any {
+func applyWorkerResponseBudget(cfg *config.Config, toolPrefix string, resp map[string]any, limit int) (map[string]any, error) {
 	budget := cfg.ResponseBudgetBytes
 	if budget <= 0 {
 		budget = 64 * 1024
+	}
+	if wErrMsg, ok := resp["output_file_error"].(string); ok && wErrMsg != "" {
+		return nil, fmt.Errorf("worker write failed: %s", wErrMsg)
 	}
 	if outFile, ok := resp["output_file"].(string); ok && outFile != "" {
 		resp["result_file"] = outFile
@@ -218,7 +229,7 @@ func applyWorkerResponseBudget(cfg *config.Config, toolPrefix string, resp map[s
 	}
 	rowsRaw, hasRows := resp["rows"].([]any)
 	if !hasRows {
-		return resp
+		return resp, nil
 	}
 	totalRows := len(rowsRaw)
 	if tr, ok := resp["total_rows"].(float64); ok && int(tr) > totalRows {
@@ -246,15 +257,17 @@ func applyWorkerResponseBudget(cfg *config.Config, toolPrefix string, resp map[s
 	if b, err := json.Marshal(resp); err == nil {
 		resp["response_bytes"] = len(b)
 	}
-	return resp
+	return resp, nil
 }
 
-func parseRESTKlineArray(raw json.RawMessage, symbol string, m binance.Market, source string) ([]map[string]any, error) {
+func parseRESTKlineArray(raw json.RawMessage, symbol string, m binance.Market, klineType string, source string) ([]map[string]any, error) {
 	qtyUnit := "base_asset"
-	if m == binance.MarketCOINM {
+	if klineType == "mark" || klineType == "index" || klineType == "premium" {
+		qtyUnit = "price_only"
+	} else if m == binance.MarketCOINM {
 		qtyUnit = "contracts"
 	}
-	// Spot/USDM/COINM klines are [[openTime, open, high, low, close, volume, closeTime, quoteVol, count, takerBuyBase, takerBuyQuote, ignore], ...]
+	// Spot/USDM/COINM klines are [[openTime, open, high, low, close, volume, closeTime, quoteVolOrBaseVol, count, takerBuyBase, takerBuyQuote, ignore], ...]
 	// Options klines may be object list [{"openTime":...}] OR arrays. Handle both!
 	var arrRows [][]any
 	if err := json.Unmarshal(raw, &arrRows); err == nil {
@@ -275,13 +288,25 @@ func parseRESTKlineArray(raw json.RawMessage, symbol string, m binance.Market, s
 				"low":               formatScalar(r[3]),
 				"close":             formatScalar(r[4]),
 				"volume":            formatScalar(r[5]),
-				"quote_volume":      formatScalar(r[7]),
 				"trade_count":       cnt,
 				"qty_unit":          qtyUnit,
 				"source":            source,
 			}
-			if len(r) > 9 {
-				row["taker_buy_volume"] = formatScalar(r[9])
+			if qtyUnit != "price_only" {
+				if m == binance.MarketCOINM {
+					row["base_volume"] = formatScalar(r[7])
+					if len(r) > 9 {
+						row["taker_buy_volume"] = formatScalar(r[9])
+					}
+					if len(r) > 10 {
+						row["taker_buy_base_volume"] = formatScalar(r[10])
+					}
+				} else {
+					row["quote_volume"] = formatScalar(r[7])
+					if len(r) > 9 {
+						row["taker_buy_volume"] = formatScalar(r[9])
+					}
+				}
 			}
 			out = append(out, row)
 		}
@@ -330,29 +355,37 @@ func toInt64Any(v any) (int64, bool) {
 	}
 }
 
-func datesForNSWindow(startNS, endNS int64) []string {
+func datesForNSWindow(startNS, endNS int64, maxDays int) (days []string, truncated bool, nextStartNS int64) {
 	if startNS <= 0 {
-		return nil
+		return nil, false, 0
 	}
 	if endNS <= startNS {
 		endNS = startNS + int64(24*time.Hour)
 	}
+	if maxDays <= 0 {
+		maxDays = 31
+	}
 	startDay := time.Unix(0, startNS).UTC().Truncate(24 * time.Hour)
 	endDay := time.Unix(0, endNS-1).UTC().Truncate(24 * time.Hour)
-	var days []string
 	for d := startDay; !d.After(endDay); d = d.Add(24 * time.Hour) {
-		days = append(days, d.Format("2006-01-02"))
-		if len(days) >= 31 { // Bounded single-call date fan-out
-			break
+		if len(days) >= maxDays {
+			return days, true, d.UnixNano()
 		}
+		days = append(days, d.Format("2006-01-02"))
 	}
-	return days
+	return days, false, 0
 }
 
 func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 	if plan == nil {
 		return nil
 	}
+	partial := plan.PendingOmittedCount > 0 ||
+		plan.PendingUnknownStreamCount > 0 ||
+		plan.GapCount > 0 ||
+		plan.QuarantinedCount > 0 ||
+		plan.DiscontinuityCount > 0 ||
+		len(plan.UnrecordedSymbols) > 0
 	m := map[string]any{
 		"revision_id":                  plan.RevisionID,
 		"partitions_matched":           plan.PartitionsMatched,
@@ -362,13 +395,124 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 		"estimated_download_bytes":     plan.EstimatedDownloadBytes,
 		"estimated_uncompressed_bytes": plan.EstimatedUncompressedBytes,
 		"pending_omitted_count":        plan.PendingOmittedCount,
+		"pending_unknown_stream_count": plan.PendingUnknownStreamCount,
 		"gap_count":                    plan.GapCount,
 		"quarantined_count":            plan.QuarantinedCount,
 		"discontinuity_count":          plan.DiscontinuityCount,
-		"partial_coverage":             plan.PendingOmittedCount > 0 || plan.GapCount > 0 || plan.QuarantinedCount > 0 || plan.DiscontinuityCount > 0,
+		"partial_coverage":             partial,
+	}
+	if len(plan.RequestedSymbols) > 0 {
+		m["requested_symbols"] = plan.RequestedSymbols
+	}
+	if len(plan.RecordedSymbols) > 0 {
+		m["recorded_symbols"] = plan.RecordedSymbols
+	}
+	if len(plan.UnrecordedSymbols) > 0 {
+		m["unrecorded_symbols"] = plan.UnrecordedSymbols
 	}
 	if len(plan.PendingReasons) > 0 {
 		m["pending_reasons"] = plan.PendingReasons
 	}
 	return m
+}
+
+func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, workerStats map[string]any, orderbookMode bool, unsyncReason string) map[string]any {
+	if plan == nil {
+		return map[string]any{
+			"status":            "unknown",
+			"requested_symbols": requestedSymbols,
+			"disclosure":        "No Recorder query plan available.",
+		}
+	}
+	var reasons []string
+	if len(plan.UnrecordedSymbols) > 0 {
+		reasons = append(reasons, "unrecorded_symbols")
+	}
+	if plan.GapCount > 0 {
+		reasons = append(reasons, "gaps_present")
+	}
+	if plan.QuarantinedCount > 0 {
+		reasons = append(reasons, "quarantined_chunks")
+	}
+	if plan.DiscontinuityCount > 0 {
+		reasons = append(reasons, "discontinuity_events")
+	}
+	if plan.PendingOmittedCount > 0 {
+		reasons = append(reasons, "pending_chunks_omitted")
+	}
+	if plan.PendingUnknownStreamCount > 0 {
+		reasons = append(reasons, "pending_unknown_stream")
+	}
+
+	status := "complete"
+	if plan.ReadyChunksMatched == 0 {
+		status = "unavailable"
+		reasons = append(reasons, "no_ready_chunks")
+	}
+
+	if orderbookMode && workerStats != nil {
+		relEmissions := intFromAny(workerStats["reliable_emissions"])
+		winResyncs := intFromAny(workerStats["window_resync_count"])
+		gapFrames := intFromAny(workerStats["gap_count"])
+		if gapFrames > 0 && plan.GapCount == 0 {
+			reasons = append(reasons, "worker_gap_detected")
+		}
+		if winResyncs > 0 {
+			reasons = append(reasons, "window_resync_occurred")
+		}
+		if relEmissions == 0 {
+			status = "unavailable"
+			if unsyncReason != "" {
+				reasons = append(reasons, unsyncReason)
+			} else {
+				reasons = append(reasons, "no_reliable_orderbook_frames")
+			}
+		}
+	}
+
+	if status != "unavailable" && len(reasons) > 0 {
+		status = "partial"
+	}
+
+	var notes []string
+	if len(plan.UnrecordedSymbols) > 0 {
+		notes = append(notes, fmt.Sprintf("Requested symbols not in Recorder history (%d omitted): %s (recorded: %s)", len(plan.UnrecordedSymbols), strings.Join(plan.UnrecordedSymbols, ","), strings.Join(plan.RecordedSymbols, ",")))
+	}
+	if plan.GapCount > 0 || plan.DiscontinuityCount > 0 {
+		notes = append(notes, fmt.Sprintf("Recorder partition reported gaps=%d, discontinuities=%d", plan.GapCount, plan.DiscontinuityCount))
+	}
+	if plan.PendingUnknownStreamCount > 0 {
+		notes = append(notes, fmt.Sprintf("%d pending chunks have stream=null and could not be cleanly excluded from stream coverage", plan.PendingUnknownStreamCount))
+	}
+	if unsyncReason != "" {
+		notes = append(notes, "Orderbook reconstruction unsynchronized: "+unsyncReason)
+	}
+
+	out := map[string]any{
+		"status":                       status,
+		"requested_symbols":            requestedSymbols,
+		"recorded_symbols":             plan.RecordedSymbols,
+		"unrecorded_symbols":           plan.UnrecordedSymbols,
+		"missing_symbols_count":        len(plan.UnrecordedSymbols),
+		"gaps_count":                   plan.GapCount,
+		"quarantined_count":            plan.QuarantinedCount,
+		"discontinuity_count":          plan.DiscontinuityCount,
+		"pending_omitted_count":        plan.PendingOmittedCount,
+		"pending_unknown_stream_count": plan.PendingUnknownStreamCount,
+	}
+	if len(reasons) > 0 {
+		out["partial_reasons"] = reasons
+	}
+	if len(notes) > 0 {
+		out["disclosure"] = strings.Join(notes, "; ")
+	}
+	return out
+}
+
+func intFromAny(v any) int {
+	n, ok := toInt64Any(v)
+	if !ok {
+		return 0
+	}
+	return int(n)
 }

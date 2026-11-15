@@ -41,6 +41,7 @@ type Capability struct {
 	QtyUnit           string           `json:"qty_unit"`
 	Intervals         []string         `json:"intervals,omitempty"`
 	VisionDatasets    []string         `json:"vision_datasets,omitempty"`
+	VisionStatus      CapabilityStatus `json:"vision_status,omitempty"`
 	RetentionBoundary string           `json:"retention_boundary"`
 	TTLSeconds        int              `json:"ttl_seconds"` // 0 = do not serve stale cache for live snapshots
 	DocURL            string           `json:"doc_url"`
@@ -72,7 +73,7 @@ var (
 var registry = buildRegistry()
 
 func buildRegistry() []Capability {
-	return []Capability{
+	entries := []Capability{
 		// ===== SPOT =====
 		{
 			EndpointID: "spot.ping", Market: MarketSpot, Transport: "rest", Method: "GET",
@@ -628,11 +629,29 @@ func buildRegistry() []Capability {
 			EndpointID: "options.vision.EOHSummary", Market: MarketOptions, Transport: "vision", Method: "GET",
 			BaseURL: VisionBaseURL, Path: "/data/option/daily/EOHSummary/{underlying}/{date}/{underlying}-{date}.zip",
 			RequiredParams: []string{"underlying", "date"}, Weight: "static", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			VisionDatasets: []string{"daily/EOHSummary"}, VisionStatus: StatusUpstreamUnavailable,
 			RetentionBoundary: "upstream-sparse (recent 2026-11 dates observed returning HTTP 404)", TTLSeconds: 86400,
 			DocURL: VisionDocURL, Status: StatusUpstreamUnavailable,
 			Notes:  "Probed on 2026-11-10 -> HTTP 404; reported honestly as upstream-unavailable rather than fabricating data.",
 		},
+		{
+			EndpointID: "vision.archive", Market: MarketUSDM, Transport: "vision", Method: "GET",
+			BaseURL: VisionBaseURL, Path: "/data/<market>/<cadence>/<dataset>/<symbol>/...",
+			RequiredParams: []string{"market", "cadence", "dataset", "symbol"}, OptionalParams: []string{"interval", "date", "month"},
+			Weight: "static", Auth: "none", TimeUnit: "ms/us", QtyUnit: "market-dependent",
+			VisionDatasets: []string{"daily/aggTrades", "monthly/aggTrades", "daily/trades", "monthly/trades", "daily/klines", "monthly/klines", "daily/markPriceKlines", "monthly/markPriceKlines", "daily/indexPriceKlines", "monthly/indexPriceKlines", "daily/metrics", "monthly/fundingRate"},
+			VisionStatus: StatusImplemented,
+			RetentionBoundary: "official-bulk-zip-with-sha256-checksum (via manage_local_cache vision prefetch or FetchVisionArchive)", TTLSeconds: 86400,
+			DocURL: VisionDocURL, Status: StatusImplemented,
+			Notes:  "Supports Spot (2025+ us timestamps) and Futures UM/CM daily & monthly ZIP + CHECKSUM verification.",
+		},
 	}
+	for i := range entries {
+		if len(entries[i].VisionDatasets) > 0 && entries[i].VisionStatus == "" {
+			entries[i].VisionStatus = StatusImplemented
+		}
+	}
+	return entries
 }
 
 // Capabilities returns sorted capabilities filtered optionally by market or query substring.

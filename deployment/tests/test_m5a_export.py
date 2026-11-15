@@ -580,3 +580,145 @@ def test_cold_partition_reuse_r5a_invalidation_and_timeout_rollback(
     # Retain=2 should keep r2 and r3 and prune r1!
     revs = sorted(p.name for p in (export_root / "revisions").iterdir())
     assert revs == sorted([r2["revision_id"], r3["revision_id"]])
+
+
+def test_m6a_chunk_manifest_time_symbol_metadata_and_incremental_reuse(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """M6-A: chunks.jsonl carries symbol/time/sequence metadata without touching .bmdr.zst and reuses unchanged chunks."""
+    active_usdm = tmp_path / "active-usdm"
+    cold_usdm = tmp_path / "cold-usdm"
+    cold_usdm.mkdir(parents=True, exist_ok=True)
+    archive_usdm = tmp_path / "archive-usdm"
+    export_root = tmp_path / "export"
+
+    active_part = _create_partition(
+        active_usdm,
+        name="2026-11-15",
+        partition_id="usdm-2026-11-15",
+        state="open",
+        start_ns=1_000_000,
+        end_ns=5_000_000,
+        is_cold=False,
+    )
+    _insert_chunk_and_archive(
+        active_part / "state/catalog.sqlite",
+        chunk_id="chunk-btc-1",
+        chunk_state="ARCHIVED_VERIFIED",
+        created_ns=9_000_000,
+        archive_target_dir=archive_usdm,
+        storage_id="arch-usdm-1",
+        archive_state="VERIFIED",
+        market="usdm",
+        stream="diff_depth",
+        target_rel_path="raw/chunk-btc-1.bmdr.zst",
+        payload=b"not-a-valid-zst-never-decompressed",
+    )
+    mfile = archive_usdm / "manifests/chunk-btc-1.archive-manifest.json"
+    mfile.write_text(
+        json.dumps(
+            {
+                "chunk_id": "chunk-btc-1",
+                "raw_manifest": {
+                    "market": "usdm",
+                    "symbol": "BTCUSDT",
+                    "stream": "diff_depth",
+                    "receive_time_utc_range_ns": {"min": 1_500_000, "max": 2_500_000},
+                    "exchange_time_ranges": {"event_time_ms": {"min": 1, "max": 2}},
+                    "sequence_ranges": {"lastUpdateId": {"min": 100, "max": 200}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    roots_cfg, cold_cfg, archive_cfg, legacy_cfg = _write_configs(
+        tmp_path,
+        roots={"usdm": str(active_usdm)},
+        cold_roots={"usdm": str(cold_usdm)},
+        archive_targets={"usdm": str(archive_usdm)},
+    )
+    configs = publish_mcp_export.discover_market_configs(
+        roots_config=roots_cfg,
+        metadata_roots_config=cold_cfg,
+        archive_targets_config=archive_cfg,
+        legacy_roots_config=legacy_cfg,
+    )
+
+    r1 = publish_mcp_export.publish_export(
+        export_root=export_root, configs=configs, retain_revisions=2
+    )
+    m1 = json.loads((export_root / r1["manifest_rel_path"]).read_text(encoding="utf-8"))
+    p1 = m1["partitions"][0]
+    assert p1["chunk_metadata_version"] == "m6a.v1"
+    chunks1 = [
+        json.loads(line)
+        for line in (export_root / p1["files"]["chunks_jsonl"]["url_path"].removeprefix("export/"))
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    assert chunks1[0]["symbol"] == "BTCUSDT"
+    assert chunks1[0]["receive_time_utc_range_ns"] == {"min": 1_500_000, "max": 2_500_000}
+    assert chunks1[0]["exchange_time_ranges"] == {"event_time_ms": {"min": 1, "max": 2}}
+    assert chunks1[0]["sequence_ranges"] == {"lastUpdateId": {"min": 100, "max": 200}}
+    avail1 = json.loads(
+        (export_root / p1["files"]["availability_json"]["url_path"].removeprefix("export/")).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert avail1["recorded_symbols"] == ["BTCUSDT"]
+    assert avail1["recorded_streams"] == ["diff_depth"]
+
+    # Add a second chunk and verify unchanged chunk-btc-1 does NOT re-read archive-manifest.json.
+    _insert_chunk_and_archive(
+        active_part / "state/catalog.sqlite",
+        chunk_id="chunk-eth-2",
+        chunk_state="ARCHIVED_VERIFIED",
+        created_ns=9_500_000,
+        archive_target_dir=archive_usdm,
+        storage_id="arch-usdm-1",
+        archive_state="VERIFIED",
+        market="usdm",
+        stream="agg_trade",
+        target_rel_path="raw/chunk-eth-2.bmdr.zst",
+    )
+    (archive_usdm / "manifests/chunk-eth-2.archive-manifest.json").write_text(
+        json.dumps(
+            {
+                "chunk_id": "chunk-eth-2",
+                "raw_manifest": {
+                    "market": "usdm",
+                    "symbol": "ETHUSDT",
+                    "stream": "agg_trade",
+                    "receive_time_utc_range_ns": {"min": 3_000_000, "max": 4_000_000},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    seen_paths: list[str] = []
+    orig_extract = publish_mcp_export._extract_raw_manifest_fields
+
+    def _tracking_extract(path: Path) -> dict[str, object]:
+        seen_paths.append(path.name)
+        return orig_extract(path)
+
+    with monkeypatch.context() as mp:
+        mp.setattr(publish_mcp_export, "_extract_raw_manifest_fields", _tracking_extract)
+        r2 = publish_mcp_export.publish_export(
+            export_root=export_root, configs=configs, retain_revisions=2
+        )
+
+    assert seen_paths == ["chunk-eth-2.archive-manifest.json"]
+    m2 = json.loads((export_root / r2["manifest_rel_path"]).read_text(encoding="utf-8"))
+    p2 = m2["partitions"][0]
+    avail2 = json.loads(
+        (export_root / p2["files"]["availability_json"]["url_path"].removeprefix("export/")).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert avail2["recorded_symbols"] == ["BTCUSDT", "ETHUSDT"]
+    assert avail2["recorded_streams"] == ["agg_trade", "diff_depth"]
+

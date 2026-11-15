@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import csv
 import datetime as dt
+import heapq
 import json
 import os
 import sys
@@ -139,8 +140,68 @@ def _materialize_raw_manifest(archive_manifest_path: Path, out_dir: Path, chunk_
     return dest
 
 
+def _chunk_sort_key(chunk: SourceChunk) -> tuple[int, int, int, str]:
+    """Order SourceChunks chronologically using manifest receive time bounds rather than sha256."""
+    m = chunk.manifest if isinstance(chunk.manifest, dict) else {}
+    r = m.get("receive_time_utc_range_ns")
+    created_ns = int(m.get("created_at_utc_ns") or 0)
+    if isinstance(r, dict) and r.get("max"):
+        return (int(r.get("min") or created_ns), int(r.get("max") or created_ns), created_ns, chunk.chunk_id)
+    return (created_ns, created_ns, created_ns, chunk.chunk_id)
+
+
+def _chunk_time_bounds_ns(chunk: SourceChunk) -> tuple[int, int]:
+    m = chunk.manifest if isinstance(chunk.manifest, dict) else {}
+    r = m.get("receive_time_utc_range_ns")
+    created_ns = int(m.get("created_at_utc_ns") or 0)
+    if isinstance(r, dict) and r.get("max"):
+        return (int(r.get("min") or created_ns), int(r.get("max") or created_ns))
+    return (created_ns, created_ns)
+
+
+def _iter_chronological_chunk_records(loaded_chunks: list[SourceChunk]) -> Iterator[tuple[SourceChunk, SourceRecord]]:
+    """Yield (SourceChunk, SourceRecord) ordered chronologically, k-way merging only overlapping chunks."""
+    ordered_chunks = sorted(loaded_chunks, key=_chunk_sort_key)
+    n = len(ordered_chunks)
+    next_idx = 0
+    # Heap items: (receive_time_utc_ns, chunk_idx, rec_seq, chunk, rec, it)
+    heap: list[tuple[int, int, int, SourceChunk, SourceRecord, Iterator[SourceRecord]]] = []
+
+    def _activate_chunk(cidx: int) -> int:
+        chunk = ordered_chunks[cidx]
+        it = iter_source_records(chunk)
+        try:
+            first_rec = next(it)
+        except StopIteration:
+            return _chunk_time_bounds_ns(chunk)[1]
+        heapq.heappush(heap, (first_rec.envelope.receive_time_utc_ns, cidx, 0, chunk, first_rec, it))
+        return _chunk_time_bounds_ns(chunk)[1]
+
+    while next_idx < n or heap:
+        if not heap:
+            active_max_ns = _activate_chunk(next_idx)
+            next_idx += 1
+            while next_idx < n and _chunk_time_bounds_ns(ordered_chunks[next_idx])[0] <= active_max_ns:
+                cmax = _activate_chunk(next_idx)
+                if cmax > active_max_ns:
+                    active_max_ns = cmax
+                next_idx += 1
+
+        ts_ns, cidx, seq, chunk, rec, it = heapq.heappop(heap)
+        yield chunk, rec
+        try:
+            nxt = next(it)
+            heapq.heappush(heap, (nxt.envelope.receive_time_utc_ns, cidx, seq + 1, chunk, nxt, it))
+        except StopIteration:
+            pass
+        # Activate any following chunk whose time window starts before or at current record timestamp.
+        while next_idx < n and _chunk_time_bounds_ns(ordered_chunks[next_idx])[0] <= ts_ns:
+            _activate_chunk(next_idx)
+            next_idx += 1
+
+
 def _iter_partition_records(req: dict[str, Any]) -> Iterator[tuple[str, SourceChunk, SourceRecord]]:
-    """Build ephemeral read-only StorageLayout per partition and yield verified SourceRecords."""
+    """Build ephemeral read-only StorageLayout per partition and yield verified SourceRecords in chronological order."""
     ext_roots = {
         str(k): Path(str(v))
         for k, v in (req.get("external_roots") or {}).items()
@@ -154,7 +215,27 @@ def _iter_partition_records(req: dict[str, Any]) -> Iterator[tuple[str, SourceCh
         pid = str(ch["partition_id"])
         chunks_by_part.setdefault(pid, []).append(ch)
 
-    for pid in sorted(partitions):
+    def _part_sort_key(pid: str) -> tuple[int, str]:
+        pchunks = chunks_by_part.get(pid) or []
+        return (len(pchunks), pid)
+
+    # Order partitions chronologically by earliest chunk manifest timestamp if possible.
+    part_order_keys: dict[str, tuple[int, str]] = {}
+    for pid, pchunks in chunks_by_part.items():
+        min_ts: int | None = None
+        for ch in pchunks:
+            try:
+                doc = json.loads(Path(str(ch["manifest_path"])).read_text(encoding="utf-8"))
+                rm = doc.get("raw_manifest") if isinstance(doc.get("raw_manifest"), dict) else doc
+                r = rm.get("receive_time_utc_range_ns") if isinstance(rm, dict) else None
+                t = int(r["min"]) if isinstance(r, dict) and "min" in r else int(rm.get("created_at_utc_ns") or 0)
+                if min_ts is None or (t > 0 and t < min_ts):
+                    min_ts = t
+            except Exception:
+                continue
+        part_order_keys[pid] = (min_ts if min_ts is not None else 0, pid)
+
+    for pid in sorted(partitions, key=lambda p: part_order_keys.get(p, (0, p))):
         part_chunks = chunks_by_part.get(pid)
         if not part_chunks:
             continue
@@ -186,49 +267,131 @@ def _iter_partition_records(req: dict[str, Any]) -> Iterator[tuple[str, SourceCh
             finally:
                 catalog.close()
 
-            for chunk in loaded_chunks:
-                for rec in iter_source_records(chunk):
-                    yield pid, chunk, rec
+            for chunk, rec in _iter_chronological_chunk_records(loaded_chunks):
+                yield pid, chunk, rec
+
+
+class _RowStreamWriter:
+    """Streaming incremental writer (.part -> atomic replace) for JSONL, CSV, and batched Parquet."""
+
+    def __init__(self, output_file: str | None, output_format: str, batch_size: int = 4096) -> None:
+        self.output_file = output_file
+        self.fmt = (output_format or "jsonl").lower()
+        self.batch_size = max(64, batch_size)
+        self.out_path: Path | None = Path(output_file) if output_file else None
+        self.part_path: Path | None = (
+            self.out_path.with_name(f".{self.out_path.name}.{os.getpid()}.part")
+            if self.out_path is not None
+            else None
+        )
+        self._fh: Any = None
+        self._csv_writer: csv.DictWriter[str] | None = None
+        self._pq_writer: Any = None
+        self._pq_batch: list[dict[str, Any]] = []
+        self._pa: Any = None
+        self._pq: Any = None
+
+    def __enter__(self) -> _RowStreamWriter:
+        if self.out_path is not None and self.part_path is not None:
+            self.out_path.parent.mkdir(parents=True, exist_ok=True)
+            if self.fmt == "parquet":
+                import pyarrow as pa  # type: ignore
+                import pyarrow.parquet as pq  # type: ignore
+
+                self._pa = pa
+                self._pq = pq
+            elif self.fmt == "csv":
+                self._fh = self.part_path.open("w", encoding="utf-8", newline="")
+            else:
+                self._fh = self.part_path.open("w", encoding="utf-8")
+        return self
+
+    def write(self, row: dict[str, Any]) -> None:
+        if self.part_path is None:
+            return
+        if self.fmt == "csv":
+            assert self._fh is not None
+            flat = {
+                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v
+                for k, v in row.items()
+            }
+            if self._csv_writer is None:
+                self._csv_writer = csv.DictWriter(self._fh, fieldnames=list(flat.keys()))
+                self._csv_writer.writeheader()
+            self._csv_writer.writerow(flat)
+        elif self.fmt == "parquet":
+            flat = {
+                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v
+                for k, v in row.items()
+            }
+            self._pq_batch.append(flat)
+            if len(self._pq_batch) >= self.batch_size:
+                self._flush_parquet_batch()
+        else:
+            assert self._fh is not None
+            self._fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    def _flush_parquet_batch(self) -> None:
+        if not self._pq_batch or self.part_path is None:
+            return
+        table = self._pa.Table.from_pylist(self._pq_batch)
+        if self._pq_writer is None:
+            self._pq_writer = self._pq.ParquetWriter(self.part_path, table.schema)
+        self._pq_writer.write_table(table)
+        self._pq_batch.clear()
+
+    def close_and_commit(self) -> str | None:
+        if self.out_path is None or self.part_path is None:
+            return None
+        try:
+            if self.fmt == "parquet":
+                self._flush_parquet_batch()
+                if self._pq_writer is not None:
+                    self._pq_writer.close()
+                    self._pq_writer = None
+                else:
+                    self._pq.write_table(self._pa.table({}), self.part_path)
+            elif self._fh is not None:
+                self._fh.flush()
+                self._fh.close()
+                self._fh = None
+            os.replace(self.part_path, self.out_path)
+            return str(self.out_path)
+        except Exception:
+            self._cleanup_abort()
+            raise
+
+    def _cleanup_abort(self) -> None:
+        try:
+            if self._pq_writer is not None:
+                self._pq_writer.close()
+        except Exception:
+            pass
+        self._pq_writer = None
+        try:
+            if self._fh is not None:
+                self._fh.close()
+        except Exception:
+            pass
+        self._fh = None
+        if self.part_path is not None and self.part_path.exists():
+            try:
+                self.part_path.unlink()
+            except Exception:
+                pass
+
+    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        if exc_type is not None:
+            self._cleanup_abort()
 
 
 def _write_rows(output_file: str | None, output_format: str, rows: list[dict[str, Any]]) -> str | None:
     if not output_file:
         return None
-    out_path = Path(output_file)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fmt = (output_format or "jsonl").lower()
-    if fmt == "csv":
-        if not rows:
-            out_path.write_text("", encoding="utf-8")
-            return str(out_path)
-        fieldnames = list(rows[0].keys())
-        with out_path.open("w", encoding="utf-8", newline="") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fieldnames)
-            writer.writeheader()
-            for r in rows:
-                flat = {
-                    k: json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v
-                    for k, v in r.items()
-                }
-                writer.writerow(flat)
-    elif fmt == "parquet":
-        import pyarrow as pa  # type: ignore
-        import pyarrow.parquet as pq  # type: ignore
-
-        normalized_rows = [
-            {
-                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v
-                for k, v in r.items()
-            }
-            for r in rows
-        ]
-        table = pa.Table.from_pylist(normalized_rows)
-        pq.write_table(table, out_path)
-    else:
-        with out_path.open("w", encoding="utf-8") as fh:
-            for r in rows:
-                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    return str(out_path)
+    with _RowStreamWriter(output_file, output_format) as w:
+        for r in rows:
+            w.write(r)
+        return w.close_and_commit()
 
 
 def _in_window(ts_ns: int, start_ns: int, end_ns: int) -> bool:
@@ -299,6 +462,8 @@ class _KlineAccum:
     symbol: str
     open_ms: int
     close_ms: int
+    first_key: tuple[int, int]
+    last_key: tuple[int, int]
     open_px: Decimal
     high_px: Decimal
     low_px: Decimal
@@ -342,6 +507,7 @@ def _run_query_klines(req: dict[str, Any]) -> dict[str, Any]:
     qty_unit = "contracts" if market == "coinm" else "base_asset"
 
     buckets: dict[tuple[str, int], _KlineAccum] = {}
+    observed_symbols: set[str] = set()
     scanned_records = 0
 
     for _pid, chunk, rec in _iter_partition_records(req):
@@ -351,6 +517,7 @@ def _run_query_klines(req: dict[str, Any]) -> dict[str, Any]:
         sym = env.symbol.upper()
         if symbols and sym not in symbols:
             continue
+        observed_symbols.add(sym)
         scanned_records += 1
         try:
             payload = _unwrap_ws_json(env)
@@ -358,12 +525,14 @@ def _run_query_klines(req: dict[str, Any]) -> dict[str, Any]:
             trade_ns = trade_ms * 1_000_000
             if not _in_window(trade_ns, start_ns, end_ns):
                 continue
+            agg_id = int(payload.get("a") or 0)
             price = Decimal(str(payload["p"]))
             qty = Decimal(str(payload["q"]))
             buyer_is_maker = bool(payload["m"])
         except (KeyError, ValueError, TypeError, InvalidOperation):
             continue
 
+        t_key = (trade_ms, agg_id)
         b_open_ms = (trade_ms // width_ms) * width_ms
         b_close_ms = b_open_ms + width_ms - 1
         key = (sym, b_open_ms)
@@ -375,6 +544,8 @@ def _run_query_klines(req: dict[str, Any]) -> dict[str, Any]:
                 symbol=sym,
                 open_ms=b_open_ms,
                 close_ms=b_close_ms,
+                first_key=t_key,
+                last_key=t_key,
                 open_px=price,
                 high_px=price,
                 low_px=price,
@@ -390,21 +561,37 @@ def _run_query_klines(req: dict[str, Any]) -> dict[str, Any]:
                 acc.high_px = price
             if price < acc.low_px:
                 acc.low_px = price
-            acc.close_px = price
+            if t_key < acc.first_key:
+                acc.first_key = t_key
+                acc.open_px = price
+            if t_key >= acc.last_key:
+                acc.last_key = t_key
+                acc.close_px = price
             acc.volume += qty
             acc.quote_volume += q_vol
             acc.taker_buy_volume += tb_vol
             acc.trade_count += 1
             acc.chunk_ids.add(chunk.chunk_id)
 
-    rows = [buckets[k].to_row(qty_unit) for k in sorted(buckets)]
-    written_file = _write_rows(req.get("output_file"), str(req.get("output_format") or "jsonl"), rows)
+    sorted_keys = sorted(buckets)
+    preview_rows: list[dict[str, Any]] = []
+    total_rows = 0
+    with _RowStreamWriter(req.get("output_file"), str(req.get("output_format") or "jsonl")) as writer:
+        for k in sorted_keys:
+            row = buckets[k].to_row(qty_unit)
+            writer.write(row)
+            total_rows += 1
+            if len(preview_rows) < limit:
+                preview_rows.append(row)
+        written_file = writer.close_and_commit()
+
     return {
         "operation": "query_klines",
         "interval": interval,
         "scanned_agg_trades": scanned_records,
-        "total_rows": len(rows),
-        "rows": rows[:limit],
+        "observed_symbols": sorted(observed_symbols),
+        "total_rows": total_rows,
+        "rows": preview_rows,
         "output_file": written_file,
     }
 
@@ -423,6 +610,51 @@ def _try_bridge(
     return None
 
 
+def _run_inspect_orderbook_snapshots(req: dict[str, Any]) -> dict[str, Any]:
+    """Lightweight pre-scan of rest_observations chunks to locate latest depth_snapshot timestamps."""
+    symbols = {s.upper() for s in (req.get("symbols") or []) if s}
+    start_ns = int(req.get("start_utc_ns") or 0)
+    end_ns = int(req.get("end_utc_ns") or 0)
+    latest_before_start: dict[str, int] = {}
+    latest_in_window: dict[str, int] = {}
+    earliest_any: dict[str, int] = {}
+    snapshots_found = 0
+
+    for _pid, _chunk, rec in _iter_partition_records(req):
+        env = rec.envelope
+        if env.stream != "rest_observations":
+            continue
+        try:
+            src_stream, req_meta, model, ok, _err = _decode_rest_observation(env)
+        except Exception:
+            continue
+        if not ok or src_stream != "depth_snapshot" or not isinstance(model, dict):
+            continue
+        params = req_meta.get("parameters") if isinstance(req_meta.get("parameters"), dict) else {}
+        sym = str(params.get("symbol") or env.symbol).upper()
+        if sym == "__GLOBAL__" or (symbols and sym not in symbols):
+            continue
+        ts = env.receive_time_utc_ns
+        if end_ns > 0 and ts >= end_ns:
+            continue
+        snapshots_found += 1
+        if sym not in earliest_any or ts < earliest_any[sym]:
+            earliest_any[sym] = ts
+        if start_ns <= 0 or ts <= start_ns:
+            if sym not in latest_before_start or ts > latest_before_start[sym]:
+                latest_before_start[sym] = ts
+        elif sym not in latest_in_window or ts > latest_in_window[sym]:
+            latest_in_window[sym] = ts
+
+    return {
+        "operation": "inspect_orderbook_snapshots",
+        "snapshots_found": snapshots_found,
+        "latest_before_start_ns": {k: str(v) for k, v in sorted(latest_before_start.items())},
+        "latest_in_window_ns": {k: str(v) for k, v in sorted(latest_in_window.items())},
+        "earliest_snapshot_ns": {k: str(v) for k, v in sorted(earliest_any.items())},
+    }
+
+
 def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
     symbols = {s.upper() for s in (req.get("symbols") or []) if s}
     start_ns = int(req.get("start_utc_ns") or 0)
@@ -433,15 +665,24 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
 
     reconstructors: dict[tuple[str, str], LocalBookReconstructor] = {}
     last_conn: dict[tuple[str, str], str] = {}
+    last_event_ts: dict[tuple[str, str], int] = {}
+    gap_episode_open: dict[tuple[str, str], bool] = {}
     pending_snaps: dict[tuple[str, str], dict[str, Any] | None] = {}
     last_emitted_ns: dict[tuple[str, str], int] = {}
+    snap_timestamps_by_sym: dict[str, list[int]] = {}
+    first_sync_ns: int | None = None
+    last_sync_ns: int | None = None
+    in_window_depth_seen: dict[str, int] = {}
 
-    rows: list[dict[str, Any]] = []
+    preview_rows: list[dict[str, Any]] = []
     unsync_events: list[dict[str, Any]] = []
-    stats = {
+    stats: dict[str, Any] = {
         "snapshots_seen": 0,
         "depth_updates_seen": 0,
         "resync_count": 0,
+        "warmup_resync_count": 0,
+        "window_resync_count": 0,
+        "recovery_count": 0,
         "reliable_emissions": 0,
     }
 
@@ -455,11 +696,33 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
             reconstructors[key] = r
         return r
 
-    def maybe_emit(mkt: str, sym: str, chunk_id: str, ts_ns: int, force: bool = False) -> None:
+    def record_resync(sym: str, ts_ns: int, reason: str) -> None:
+        stats["resync_count"] += 1
+        if start_ns > 0 and ts_ns < start_ns:
+            stats["warmup_resync_count"] += 1
+            phase = "warmup"
+        else:
+            stats["window_resync_count"] += 1
+            phase = "window"
+        unsync_events.append(
+            {
+                "symbol": sym,
+                "receive_time_utc_ns": str(ts_ns),
+                "reason": reason,
+                "phase": phase,
+            }
+        )
+
+    def write_frame(writer: _RowStreamWriter, mkt: str, sym: str, chunk_id: str, ts_ns: int, force: bool = False) -> None:
+        nonlocal first_sync_ns, last_sync_ns
         key = (mkt, sym)
         recon = reconstructors.get(key)
         if recon is None or not recon.is_reliable:
             return
+        if first_sync_ns is None or ts_ns < first_sync_ns:
+            first_sync_ns = ts_ns
+        if last_sync_ns is None or ts_ns > last_sync_ns:
+            last_sync_ns = ts_ns
         if not _in_window(ts_ns, start_ns, end_ns):
             return
         prev_ns = last_emitted_ns.get(key, -1)
@@ -479,40 +742,46 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
         spread = canonical_decimal(best_ask[0] - best_bid[0]) if (best_bid and best_ask) else None
         mid = canonical_decimal((best_bid[0] + best_ask[0]) / Decimal("2")) if (best_bid and best_ask) else None
 
-        rows.append(
-            {
-                "symbol": sym,
-                "market": mkt,
-                "receive_time_utc_ns": str(ts_ns),
-                "update_id": str(book.update_id),
-                "mid_price": mid,
-                "spread": spread,
-                f"top_{top_k}_depth_imbalance": imbalance,
-                "top_k": top_k,
-                "bids": bids,
-                "asks": asks,
-                "state": "SYNCHRONIZED",
-                "source": "recorder",
-                "source_chunk_id": chunk_id,
-            }
-        )
+        row = {
+            "symbol": sym,
+            "market": mkt,
+            "receive_time_utc_ns": str(ts_ns),
+            "update_id": str(book.update_id),
+            "mid_price": mid,
+            "spread": spread,
+            f"top_{top_k}_depth_imbalance": imbalance,
+            "top_k": top_k,
+            "bids": bids,
+            "asks": asks,
+            "state": "SYNCHRONIZED",
+            "source": "recorder",
+            "source_chunk_id": chunk_id,
+        }
+        writer.write(row)
+        if len(preview_rows) < limit:
+            preview_rows.append(row)
         last_emitted_ns[key] = ts_ns
         stats["reliable_emissions"] += 1
 
-    def drain_due_snapshots(key: tuple[str, str], up_to_ts_ns: int | None) -> None:
+    def drain_due_snapshots(writer: _RowStreamWriter, key: tuple[str, str], up_to_ts_ns: int | None) -> None:
         q = snapshot_queues.get(key)
         if not q:
             return
         recon = get_recon(*key)
         while q and (up_to_ts_ns is None or q[0][0] <= up_to_ts_ns):
+            was_reliable = recon.is_reliable
             snap_ts, _uid, snap, snap_chunk_id = q.pop(0)
+            if was_reliable:
+                continue
             pending_snaps[key] = {"snapshot": snap, "ts_ns": snap_ts}
             pending_snaps[key] = _try_bridge(recon, pending_snaps[key])
             if recon.is_reliable:
-                maybe_emit(key[0], key[1], snap_chunk_id, snap_ts, force=True)
+                gap_episode_open[key] = False
+                stats["recovery_count"] += 1
+                write_frame(writer, key[0], key[1], snap_chunk_id, snap_ts, force=True)
 
     # First pass collects lightweight rest_observations depth_snapshots, sorted chronologically,
-    # then second pass streams diff_depth in chunk order interleaved by receive_time_utc_ns.
+    # then second pass streams diff_depth chronologically.
     rest_req = {**req, "chunks": [c for c in (req.get("chunks") or []) if c.get("stream") == "rest_observations"]}
     diff_req = {**req, "chunks": [c for c in (req.get("chunks") or []) if c.get("stream") != "rest_observations"]}
 
@@ -544,99 +813,123 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
         except Exception:
             continue
         stats["snapshots_seen"] += 1
+        snap_timestamps_by_sym.setdefault(sym, []).append(env.receive_time_utc_ns)
         snapshot_queues.setdefault((mkt, sym), []).append((env.receive_time_utc_ns, snap.last_update_id, snap, chunk.chunk_id))
 
     for q in snapshot_queues.values():
         q.sort(key=lambda item: (item[0], item[1]))
 
-    for _pid, chunk, rec in _iter_partition_records(diff_req):
-        env = rec.envelope
-        if end_ns > 0 and env.receive_time_utc_ns >= end_ns and env.stream == "diff_depth":
-            continue
-        if env.stream != "diff_depth" or "malformed" in env.capture_flags:
-            continue
-        sym = env.symbol.upper()
-        if symbols and sym not in symbols:
-            continue
-        mkt = "spot" if env.market == "spot" else env.market
-        key = (mkt, sym)
-        recon = get_recon(mkt, sym)
-        drain_due_snapshots(key, env.receive_time_utc_ns)
+    with _RowStreamWriter(req.get("output_file"), str(req.get("output_format") or "jsonl")) as writer:
+        for _pid, chunk, rec in _iter_partition_records(diff_req):
+            env = rec.envelope
+            if end_ns > 0 and env.receive_time_utc_ns >= end_ns and env.stream == "diff_depth":
+                continue
+            if env.stream != "diff_depth" or "malformed" in env.capture_flags:
+                continue
+            sym = env.symbol.upper()
+            if symbols and sym not in symbols:
+                continue
+            if _in_window(env.receive_time_utc_ns, start_ns, end_ns):
+                in_window_depth_seen[sym] = in_window_depth_seen.get(sym, 0) + 1
+            mkt = "spot" if env.market == "spot" else env.market
+            key = (mkt, sym)
+            recon = get_recon(mkt, sym)
 
-        if any(f in env.capture_flags for f in ("sequence_gap", "reconnect_gap", "ingress_drop")):
-            if recon.state is not ReconstructionState.RESYNC_REQUIRED:
+            # Drain snapshots up to previous event before processing connection/gap boundary on this event
+            # so a post-disconnect snapshot is never wiped by the new connection's first message.
+            if key in last_event_ts:
+                drain_due_snapshots(writer, key, last_event_ts[key])
+            last_event_ts[key] = env.receive_time_utc_ns
+
+            gap_flag = any(f in env.capture_flags for f in ("sequence_gap", "reconnect_gap", "ingress_drop"))
+            prev_conn = last_conn.get(key)
+            conn_changed = prev_conn is not None and prev_conn != env.connection_id
+
+            if gap_flag:
+                last_conn[key] = env.connection_id
+                q = snapshot_queues.get(key)
+                if q:
+                    snapshot_queues[key] = [item for item in q if item[0] > env.receive_time_utc_ns]
+                if not gap_episode_open.get(key, False) or recon.is_reliable or pending_snaps.get(key) is not None:
+                    recon.restart_bootstrap()
+                    pending_snaps[key] = None
+                    record_resync(sym, env.receive_time_utc_ns, "capture_flag_gap")
+                    gap_episode_open[key] = True
+                continue
+
+            last_conn[key] = env.connection_id
+            if conn_changed:
                 recon.restart_bootstrap()
                 pending_snaps[key] = None
-                stats["resync_count"] += 1
-                unsync_events.append(
-                    {
-                        "symbol": sym,
-                        "receive_time_utc_ns": str(env.receive_time_utc_ns),
-                        "reason": "capture_flag_gap",
-                    }
+                record_resync(sym, env.receive_time_utc_ns, "connection_reset")
+                gap_episode_open[key] = False
+
+            try:
+                payload = _unwrap_ws_json(env)
+                pu_val = int(payload["pu"]) if (mkt != "spot" and "pu" in payload and payload["pu"] is not None) else None
+                upd = DepthUpdate(
+                    market=mkt,  # type: ignore[arg-type]
+                    symbol=sym,
+                    first_update_id=int(payload["U"]),
+                    final_update_id=int(payload["u"]),
+                    previous_final_update_id=pu_val,
+                    bids=tuple((str(p), str(q)) for p, q in payload.get("b") or []),
+                    asks=tuple((str(p), str(q)) for p, q in payload.get("a") or []),
+                    receive_time_utc_ns=env.receive_time_utc_ns,
                 )
-            continue
+            except Exception:
+                continue
 
-        prev_conn = last_conn.get(key)
-        if prev_conn is not None and prev_conn != env.connection_id:
-            recon.restart_bootstrap()
-            pending_snaps[key] = None
-            stats["resync_count"] += 1
-            unsync_events.append(
-                {
-                    "symbol": sym,
-                    "receive_time_utc_ns": str(env.receive_time_utc_ns),
-                    "reason": "connection_reset",
-                }
-            )
-        last_conn[key] = env.connection_id
+            gap_episode_open[key] = False
+            stats["depth_updates_seen"] += 1
+            was_reliable = recon.is_reliable
+            applied = recon.offer(upd)
+            if was_reliable and recon.state is ReconstructionState.RESYNC_REQUIRED and not applied:
+                recon.restart_bootstrap()
+                pending_snaps[key] = None
+                record_resync(sym, env.receive_time_utc_ns, "sequence_gap")
+                gap_episode_open[key] = True
+                continue
 
-        try:
-            payload = _unwrap_ws_json(env)
-            pu_val = int(payload["pu"]) if (mkt != "spot" and "pu" in payload and payload["pu"] is not None) else None
-            upd = DepthUpdate(
-                market=mkt,  # type: ignore[arg-type]
-                symbol=sym,
-                first_update_id=int(payload["U"]),
-                final_update_id=int(payload["u"]),
-                previous_final_update_id=pu_val,
-                bids=tuple((str(p), str(q)) for p, q in payload.get("b") or []),
-                asks=tuple((str(p), str(q)) for p, q in payload.get("a") or []),
-                receive_time_utc_ns=env.receive_time_utc_ns,
-            )
-        except Exception:
-            continue
+            drain_due_snapshots(writer, key, env.receive_time_utc_ns)
+            pending_snaps[key] = _try_bridge(recon, pending_snaps.get(key))
+            if recon.is_reliable:
+                write_frame(writer, mkt, sym, chunk.chunk_id, env.receive_time_utc_ns)
 
-        stats["depth_updates_seen"] += 1
-        applied = recon.offer(upd)
-        if recon.state is ReconstructionState.RESYNC_REQUIRED and not applied:
-            recon.restart_bootstrap()
-            pending_snaps[key] = None
-            stats["resync_count"] += 1
-            unsync_events.append(
-                {
-                    "symbol": sym,
-                    "receive_time_utc_ns": str(env.receive_time_utc_ns),
-                    "reason": "sequence_gap",
-                }
-            )
-            continue
+        for key in list(snapshot_queues):
+            drain_due_snapshots(writer, key, None)
 
-        pending_snaps[key] = _try_bridge(recon, pending_snaps.get(key))
-        if recon.is_reliable:
-            maybe_emit(mkt, sym, chunk.chunk_id, env.receive_time_utc_ns)
+        written_file = writer.close_and_commit()
 
-    for key in list(snapshot_queues):
-        drain_due_snapshots(key, None)
+    all_snaps = [ts for vals in snap_timestamps_by_sym.values() for ts in vals]
+    unsync_reason = None
+    if stats["reliable_emissions"] == 0:
+        if stats["snapshots_seen"] == 0:
+            unsync_reason = "no_depth_snapshots_for_symbol"
+        elif stats["depth_updates_seen"] == 0:
+            unsync_reason = "no_diff_depth_events_before_end"
+        elif any(e.get("phase") == "window" or e.get("reason") in ("capture_flag_gap", "connection_reset", "sequence_gap") for e in unsync_events):
+            unsync_reason = "resync_required_after_gap_or_reconnect_no_subsequent_snapshot"
+        else:
+            unsync_reason = "updates_did_not_bridge_snapshot"
 
-    written_file = _write_rows(req.get("output_file"), str(req.get("output_format") or "jsonl"), rows)
     return {
         "operation": "query_orderbook",
         "stats": stats,
+        "unsynchronized_reason": unsync_reason,
         "unsynchronized_events": unsync_events[:50],
+        "actual_time_range": {
+            "first_snapshot_utc_ns": str(min(all_snaps)) if all_snaps else None,
+            "last_snapshot_utc_ns": str(max(all_snaps)) if all_snaps else None,
+            "first_synchronized_utc_ns": str(first_sync_ns) if first_sync_ns is not None else None,
+            "last_synchronized_utc_ns": str(last_sync_ns) if last_sync_ns is not None else None,
+            "first_emitted_utc_ns": preview_rows[0]["receive_time_utc_ns"] if preview_rows else None,
+            "in_window_depth_updates": sum(in_window_depth_seen.values()),
+        },
+        "sampling_semantics": "emit_on_synchronized_update_with_min_step (irregular event-driven timestamps, NOT uniform forward-fill)",
         "imbalance_definition": f"top_{top_k}_depth_imbalance = (sum(bid_qty_top_{top_k}) - sum(ask_qty_top_{top_k})) / (sum(bid_qty_top_{top_k}) + sum(ask_qty_top_{top_k})); NOT order-flow imbalance (OFI)",
-        "total_rows": len(rows),
-        "rows": rows[:limit],
+        "total_rows": stats["reliable_emissions"],
+        "rows": preview_rows,
         "output_file": written_file,
     }
 
@@ -650,28 +943,32 @@ def _run_query_trades_and_liquidations(req: dict[str, Any]) -> dict[str, Any]:
     market = str(req.get("market") or "")
     qty_unit = "contracts" if market == "coinm" else "base_asset"
 
-    rows: list[dict[str, Any]] = []
+    preview_rows: list[dict[str, Any]] = []
+    total_rows = 0
     saw_liq_stream = False
     saw_trade_stream = False
+    observed_symbols: set[str] = set()
 
-    for _pid, chunk, rec in _iter_partition_records(req):
-        env = rec.envelope
-        if "malformed" in env.capture_flags:
-            continue
-        sym = env.symbol.upper()
-        if symbols and sym not in symbols:
-            continue
+    with _RowStreamWriter(req.get("output_file"), str(req.get("output_format") or "jsonl")) as writer:
+        for _pid, chunk, rec in _iter_partition_records(req):
+            env = rec.envelope
+            if "malformed" in env.capture_flags:
+                continue
+            sym = env.symbol.upper()
+            if sym and sym != "__GLOBAL__":
+                observed_symbols.add(sym)
+            if symbols and sym not in symbols:
+                continue
 
-        if env.stream == "agg_trade" and kind in ("all", "trades"):
-            saw_trade_stream = True
-            try:
-                p = _unwrap_ws_json(env)
-                t_ms = int(p.get("T") or env.exchange_trade_time or (env.receive_time_utc_ns // 1_000_000))
-                t_ns = t_ms * 1_000_000
-                if not _in_window(t_ns, start_ns, end_ns):
-                    continue
-                rows.append(
-                    {
+            if env.stream == "agg_trade" and kind in ("all", "trades"):
+                saw_trade_stream = True
+                try:
+                    p = _unwrap_ws_json(env)
+                    t_ms = int(p.get("T") or env.exchange_trade_time or (env.receive_time_utc_ns // 1_000_000))
+                    t_ns = t_ms * 1_000_000
+                    if not _in_window(t_ns, start_ns, end_ns):
+                        continue
+                    row = {
                         "record_type": "agg_trade",
                         "symbol": sym,
                         "trade_time_utc_ns": str(t_ns),
@@ -684,23 +981,25 @@ def _run_query_trades_and_liquidations(req: dict[str, Any]) -> dict[str, Any]:
                         "source": "recorder",
                         "source_chunk_id": chunk.chunk_id,
                     }
-                )
-            except Exception:
-                continue
+                    writer.write(row)
+                    total_rows += 1
+                    if len(preview_rows) < limit:
+                        preview_rows.append(row)
+                except Exception:
+                    continue
 
-        elif env.stream == "liquidation" and kind in ("all", "liquidations"):
-            saw_liq_stream = True
-            try:
-                p = _unwrap_ws_json(env)
-                o = p.get("o")
-                if not isinstance(o, dict):
-                    continue
-                t_ms = int(o.get("T") or p.get("E") or (env.receive_time_utc_ns // 1_000_000))
-                t_ns = t_ms * 1_000_000
-                if not _in_window(t_ns, start_ns, end_ns):
-                    continue
-                rows.append(
-                    {
+            elif env.stream == "liquidation" and kind in ("all", "liquidations"):
+                saw_liq_stream = True
+                try:
+                    p = _unwrap_ws_json(env)
+                    o = p.get("o")
+                    if not isinstance(o, dict):
+                        continue
+                    t_ms = int(o.get("T") or p.get("E") or (env.receive_time_utc_ns // 1_000_000))
+                    t_ns = t_ms * 1_000_000
+                    if not _in_window(t_ns, start_ns, end_ns):
+                        continue
+                    row = {
                         "record_type": "liquidation",
                         "symbol": sym,
                         "order_trade_time_utc_ns": str(t_ns),
@@ -716,9 +1015,14 @@ def _run_query_trades_and_liquidations(req: dict[str, Any]) -> dict[str, Any]:
                         "source": "recorder",
                         "source_chunk_id": chunk.chunk_id,
                     }
-                )
-            except Exception:
-                continue
+                    writer.write(row)
+                    total_rows += 1
+                    if len(preview_rows) < limit:
+                        preview_rows.append(row)
+                except Exception:
+                    continue
+
+        written_file = writer.close_and_commit()
 
     liq_status = "observed"
     if market == "spot" and kind in ("all", "liquidations"):
@@ -726,16 +1030,41 @@ def _run_query_trades_and_liquidations(req: dict[str, Any]) -> dict[str, Any]:
     elif not saw_liq_stream and kind in ("all", "liquidations"):
         liq_status = "no_liquidation_chunks_or_events_in_window"
 
-    written_file = _write_rows(req.get("output_file"), str(req.get("output_format") or "jsonl"), rows)
-    return {
+    out: dict[str, Any] = {
         "operation": "query_trades_and_liquidations",
         "saw_trade_stream": saw_trade_stream,
         "saw_liquidation_stream": saw_liq_stream,
         "liquidation_status": liq_status,
-        "total_rows": len(rows),
-        "rows": rows[:limit],
+        "observed_symbols": sorted(observed_symbols),
+        "total_rows": total_rows,
+        "rows": preview_rows,
         "output_file": written_file,
     }
+    if kind in ("all", "liquidations") and market != "spot":
+        out["liquidation_semantics"] = (
+            "Binance USDM <symbol>@forceOrder is a sampled liquidation stream per recorded symbol (not full market-wide or per-fill complete ledger); "
+            "prefer average_price * filled_quantity (ap * z) for executed liquidation notional rather than limit order price * original_quantity (p * q)."
+        )
+    return out
+
+
+_METRIC_MAP = {
+    "": "all",
+    "all": "all",
+    "mark_price_funding": "mark_price_funding",
+    "open_interest": "open_interest",
+    "open_interest_hist": "open_interest_statistics_5m",
+    "open_interest_statistics_5m": "open_interest_statistics_5m",
+    "top_long_short_account_ratio": "top_long_short_account_ratio_5m",
+    "top_long_short_account_ratio_5m": "top_long_short_account_ratio_5m",
+    "top_long_short_position_ratio": "top_long_short_position_ratio_5m",
+    "top_long_short_position_ratio_5m": "top_long_short_position_ratio_5m",
+    "global_long_short_account_ratio": "global_long_short_ratio_5m",
+    "global_long_short_ratio_5m": "global_long_short_ratio_5m",
+    "taker_buy_sell_ratio": "taker_buy_sell_volume_5m",
+    "taker_buy_sell_volume_5m": "taker_buy_sell_volume_5m",
+    "contract_specs": "contract_specs",
+}
 
 
 def _run_query_derivatives_metrics(req: dict[str, Any]) -> dict[str, Any]:
@@ -743,26 +1072,33 @@ def _run_query_derivatives_metrics(req: dict[str, Any]) -> dict[str, Any]:
     start_ns = int(req.get("start_utc_ns") or 0)
     end_ns = int(req.get("end_utc_ns") or 0)
     limit = int(req.get("limit") or 100)
-    rows: list[dict[str, Any]] = []
+    raw_metric = str(req.get("metric") or "").strip().lower()
+    target_metric = _METRIC_MAP.get(raw_metric, raw_metric)
+
+    preview_rows: list[dict[str, Any]] = []
+    total_rows = 0
     contract_specs: dict[str, dict[str, Any]] = {}
+    observed_symbols: set[str] = set()
 
-    for _pid, chunk, rec in _iter_partition_records(req):
-        env = rec.envelope
-        if "malformed" in env.capture_flags:
-            continue
-
-        if env.stream == "mark_price":
-            sym = env.symbol.upper()
-            if symbols and sym not in symbols:
+    with _RowStreamWriter(req.get("output_file"), str(req.get("output_format") or "jsonl")) as writer:
+        for _pid, chunk, rec in _iter_partition_records(req):
+            env = rec.envelope
+            if "malformed" in env.capture_flags:
                 continue
-            try:
-                p = _unwrap_ws_json(env)
-                e_ms = int(p.get("E") or (env.receive_time_utc_ns // 1_000_000))
-                e_ns = e_ms * 1_000_000
-                if not _in_window(e_ns, start_ns, end_ns):
+
+            if env.stream == "mark_price" and target_metric in ("all", "mark_price_funding"):
+                sym = env.symbol.upper()
+                if sym and sym != "__GLOBAL__":
+                    observed_symbols.add(sym)
+                if symbols and sym not in symbols:
                     continue
-                rows.append(
-                    {
+                try:
+                    p = _unwrap_ws_json(env)
+                    e_ms = int(p.get("E") or (env.receive_time_utc_ns // 1_000_000))
+                    e_ns = e_ms * 1_000_000
+                    if not _in_window(e_ns, start_ns, end_ns):
+                        continue
+                    row = {
                         "metric_type": "mark_price_funding",
                         "symbol": sym,
                         "event_time_utc_ns": str(e_ns),
@@ -775,44 +1111,47 @@ def _run_query_derivatives_metrics(req: dict[str, Any]) -> dict[str, Any]:
                         "source": "recorder",
                         "source_chunk_id": chunk.chunk_id,
                     }
-                )
-            except Exception:
-                continue
-
-        elif env.stream == "rest_observations":
-            try:
-                src_stream, req_meta, model, ok, _err = _decode_rest_observation(env)
-            except Exception:
-                continue
-            if not ok:
-                continue
-            params = req_meta.get("parameters") if isinstance(req_meta.get("parameters"), dict) else {}
-            scope_sym = str(params.get("symbol") or env.symbol).upper()
-
-            if src_stream == "exchange_info" and isinstance(model, dict):
-                for entry in model.get("symbols") or []:
-                    if not isinstance(entry, dict):
-                        continue
-                    sym = str(entry.get("symbol") or "").upper()
-                    if not sym or (symbols and sym not in symbols):
-                        continue
-                    contract_specs[sym] = {
-                        "symbol": sym,
-                        "status": entry.get("status"),
-                        "contract_type": entry.get("contractType"),
-                        "base_asset": entry.get("baseAsset"),
-                        "quote_asset": entry.get("quoteAsset"),
-                        "margin_asset": entry.get("marginAsset"),
-                    }
-            elif src_stream == "open_interest" and isinstance(model, dict):
-                sym = str(model.get("symbol") or scope_sym).upper()
-                if symbols and sym not in symbols:
+                    writer.write(row)
+                    total_rows += 1
+                    if len(preview_rows) < limit:
+                        preview_rows.append(row)
+                except Exception:
                     continue
-                ts_ns = int(model.get("time") or (env.receive_time_utc_ns // 1_000_000)) * 1_000_000
-                if not _in_window(ts_ns, start_ns, end_ns):
+
+            elif env.stream == "rest_observations":
+                try:
+                    src_stream, req_meta, model, ok, _err = _decode_rest_observation(env)
+                except Exception:
                     continue
-                rows.append(
-                    {
+                if not ok:
+                    continue
+                params = req_meta.get("parameters") if isinstance(req_meta.get("parameters"), dict) else {}
+                scope_sym = str(params.get("symbol") or env.symbol).upper()
+
+                if src_stream == "exchange_info" and isinstance(model, dict) and target_metric in ("all", "contract_specs"):
+                    for entry in model.get("symbols") or []:
+                        if not isinstance(entry, dict):
+                            continue
+                        sym = str(entry.get("symbol") or "").upper()
+                        if not sym or (symbols and sym not in symbols):
+                            continue
+                        contract_specs[sym] = {
+                            "symbol": sym,
+                            "status": entry.get("status"),
+                            "contract_type": entry.get("contractType"),
+                            "base_asset": entry.get("baseAsset"),
+                            "quote_asset": entry.get("quoteAsset"),
+                            "margin_asset": entry.get("marginAsset"),
+                        }
+                elif src_stream == "open_interest" and isinstance(model, dict) and target_metric in ("all", "open_interest"):
+                    sym = str(model.get("symbol") or scope_sym).upper()
+                    observed_symbols.add(sym)
+                    if symbols and sym not in symbols:
+                        continue
+                    ts_ns = int(model.get("time") or (env.receive_time_utc_ns // 1_000_000)) * 1_000_000
+                    if not _in_window(ts_ns, start_ns, end_ns):
+                        continue
+                    row = {
                         "metric_type": "open_interest",
                         "symbol": sym,
                         "event_time_utc_ns": str(ts_ns),
@@ -821,40 +1160,54 @@ def _run_query_derivatives_metrics(req: dict[str, Any]) -> dict[str, Any]:
                         "source": "recorder",
                         "source_chunk_id": chunk.chunk_id,
                     }
-                )
-            elif src_stream in {
-                "open_interest_statistics_5m",
-                "top_long_short_account_ratio_5m",
-                "top_long_short_position_ratio_5m",
-                "global_long_short_ratio_5m",
-                "taker_buy_sell_volume_5m",
-            } and isinstance(model, list):
-                if symbols and scope_sym not in symbols:
-                    continue
-                for item in model:
-                    if not isinstance(item, dict):
+                    writer.write(row)
+                    total_rows += 1
+                    if len(preview_rows) < limit:
+                        preview_rows.append(row)
+                elif src_stream in {
+                    "open_interest_statistics_5m",
+                    "top_long_short_account_ratio_5m",
+                    "top_long_short_position_ratio_5m",
+                    "global_long_short_ratio_5m",
+                    "taker_buy_sell_volume_5m",
+                } and isinstance(model, list):
+                    if target_metric not in ("all", src_stream):
                         continue
-                    ts_ns = int(item.get("timestamp") or (env.receive_time_utc_ns // 1_000_000)) * 1_000_000
-                    if not _in_window(ts_ns, start_ns, end_ns):
+                    if scope_sym and scope_sym != "__GLOBAL__":
+                        observed_symbols.add(scope_sym)
+                    if symbols and scope_sym not in symbols:
                         continue
-                    rows.append(
-                        {
+                    for item in model:
+                        if not isinstance(item, dict):
+                            continue
+                        ts_ns = int(item.get("timestamp") or (env.receive_time_utc_ns // 1_000_000)) * 1_000_000
+                        if not _in_window(ts_ns, start_ns, end_ns):
+                            continue
+                        sym = str(item.get("symbol") or scope_sym).upper()
+                        observed_symbols.add(sym)
+                        row = {
                             "metric_type": src_stream,
-                            "symbol": str(item.get("symbol") or scope_sym).upper(),
+                            "symbol": sym,
                             "event_time_utc_ns": str(ts_ns),
                             "receive_time_utc_ns": str(env.receive_time_utc_ns),
                             "values": item,
                             "source": "recorder",
                             "source_chunk_id": chunk.chunk_id,
                         }
-                    )
+                        writer.write(row)
+                        total_rows += 1
+                        if len(preview_rows) < limit:
+                            preview_rows.append(row)
 
-    written_file = _write_rows(req.get("output_file"), str(req.get("output_format") or "jsonl"), rows)
+        written_file = writer.close_and_commit()
+
     return {
         "operation": "query_derivatives_metrics",
+        "metric": raw_metric or "all",
         "contract_specs": contract_specs,
-        "total_rows": len(rows),
-        "rows": rows[:limit],
+        "observed_symbols": sorted(observed_symbols),
+        "total_rows": total_rows,
+        "rows": preview_rows,
         "output_file": written_file,
     }
 
@@ -863,6 +1216,8 @@ def dispatch(req: dict[str, Any]) -> dict[str, Any]:
     op = req.get("operation")
     if op == "inspect_overview":
         return _run_inspect_overview(req)
+    if op == "inspect_orderbook_snapshots":
+        return _run_inspect_orderbook_snapshots(req)
     if op == "query_klines":
         return _run_query_klines(req)
     if op == "query_orderbook":

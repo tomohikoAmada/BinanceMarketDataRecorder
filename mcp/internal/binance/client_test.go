@@ -221,3 +221,127 @@ func TestVisionDailyKlines_SpotMicrosecondsAndOffline(t *testing.T) {
 	_ = filepath.Base(res.ZipPath)
 	_ = os.ErrNotExist
 }
+
+func TestM6E_M6G_M6H_OfflineWS_RetryAfterBackoff_ContentAddressedVision_AndCOINM(t *testing.T) {
+	// Build two versions of a Vision archive for the same date+symbol to prove checksum updates preserve both revisions.
+	buildZip := func(csvName, csvContent string) ([]byte, string) {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		fw, _ := zw.Create(csvName)
+		_, _ = fw.Write([]byte(csvContent))
+		_ = zw.Close()
+		b := buf.Bytes()
+		h := sha256.Sum256(b)
+		return b, hex.EncodeToString(h[:])
+	}
+	zip1, sha1 := buildZip("BTCUSD_PERP-1m-2026-11-10.csv", "open_time,open,high,low,close,volume,close_time,base_asset_volume,count,taker_buy_volume,taker_buy_base_asset_volume,ignore\n1794268800000,90000,90100,89900,90050,1000,1794268859999,1.111,25,600,0.666,0\n")
+	zip2, sha2 := buildZip("BTCUSD_PERP-1m-2026-11-10.csv", "open_time,open,high,low,close,volume,close_time,base_asset_volume,count,taker_buy_volume,taker_buy_base_asset_volume,ignore\n1794268800000,90000,90100,89900,90050,1200,1794268859999,1.333,30,600,0.666,0\n")
+	metricsZip, metricsSHA := buildZip("BTCUSDT-metrics-2026-11-10.csv", "create_time,symbol,sum_open_interest,sum_open_interest_value\n2026-11-10 00:05:00,BTCUSDT,10000,900000000\n")
+
+	var version atomic.Int32
+	version.Store(1)
+	var rateCalls atomic.Int32
+
+	cl, _ := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/api/v3/ping":
+			n := rateCalls.Add(1)
+			if n == 1 {
+				w.Header().Set("Retry-After", "30")
+				w.WriteHeader(http.StatusTooManyRequests)
+				_, _ = w.Write([]byte(`rate limit`))
+				return
+			}
+			_, _ = w.Write([]byte(`{}`))
+		case strings.HasSuffix(r.URL.Path, "BTCUSD_PERP-1m-2026-11-10.zip.CHECKSUM"):
+			if version.Load() == 1 {
+				_, _ = w.Write([]byte(sha1 + "  BTCUSD_PERP-1m-2026-11-10.zip\n"))
+			} else {
+				_, _ = w.Write([]byte(sha2 + "  BTCUSD_PERP-1m-2026-11-10.zip\n"))
+			}
+		case strings.HasSuffix(r.URL.Path, "BTCUSD_PERP-1m-2026-11-10.zip"):
+			if version.Load() == 1 {
+				_, _ = w.Write(zip1)
+			} else {
+				_, _ = w.Write(zip2)
+			}
+		case strings.HasSuffix(r.URL.Path, "BTCUSDT-metrics-2026-11-10.zip.CHECKSUM"):
+			_, _ = w.Write([]byte(metricsSHA + "  BTCUSDT-metrics-2026-11-10.zip\n"))
+		case strings.HasSuffix(r.URL.Path, "BTCUSDT-metrics-2026-11-10.zip"):
+			_, _ = w.Write(metricsZip)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}), "")
+
+	// 1. M6-G: ws_bounded MUST reject offline=true without dialing network.
+	wsCap, ok := LookupCapability("spot.ws.bookTicker")
+	if !ok {
+		t.Fatal("missing spot.ws.bookTicker")
+	}
+	if _, err := cl.ExecuteCapability(context.Background(), wsCap, map[string]string{"symbol": "BTCUSDT"}, true); err == nil {
+		t.Fatal("expected offline ws_bounded call to fail before network dial")
+	}
+
+	// 2. M6-G: Long Retry-After (> maxBackoffWait) MUST persist cooldown so the next immediate request respects backoffTill!
+	pingCap, _ := LookupCapability("spot.ping")
+	if _, err := cl.ExecuteCapability(context.Background(), pingCap, nil, false); err == nil {
+		t.Fatal("expected 429 Retry-After=30 to error")
+	}
+	shortCtx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+	defer cancel()
+	if _, err := cl.ExecuteCapability(shortCtx, pingCap, nil, false); err == nil {
+		t.Fatal("expected second call during persistent 30s backoff window to wait and hit short context deadline")
+	}
+	// Reset backoff so subsequent Vision test requests aren't stalled 30s.
+	cl.rateMu.Lock()
+	cl.backoffTill = time.Time{}
+	cl.rateMu.Unlock()
+
+	// 3. M6-G + M6-E: Content-addressed Vision revisions don't overwrite each other, and COIN-M maps col 7 to BaseVolume!
+	r1, err := cl.FetchVisionDailyKlines(context.Background(), MarketCOINM, "BTCUSD_PERP", "1m", "2026-11-10", false)
+	if err != nil {
+		t.Fatalf("FetchVision v1 failed: %v", err)
+	}
+	version.Store(2)
+	r2, err := cl.FetchVisionDailyKlines(context.Background(), MarketCOINM, "BTCUSD_PERP", "1m", "2026-11-10", false)
+	if err != nil {
+		t.Fatalf("FetchVision v2 failed: %v", err)
+	}
+	if r1.ZipPath == r2.ZipPath {
+		t.Fatalf("expected distinct content-addressed paths for different checksums, got %s", r1.ZipPath)
+	}
+	if _, err := os.Stat(r1.ZipPath); err != nil {
+		t.Fatalf("v1 content-addressed archive was lost/overwritten: %v", err)
+	}
+	coinmRows, err := ReadVisionKlinesZip(r2.ZipPath, MarketCOINM, r2.ChecksumHex, 0, 0)
+	if err != nil || len(coinmRows) != 1 {
+		t.Fatalf("ReadVisionKlinesZip COIN-M failed: err=%v len=%d", err, len(coinmRows))
+	}
+	if coinmRows[0].QtyUnit != "contracts" || coinmRows[0].Volume != "1200" || coinmRows[0].BaseVolume != "1.333" || coinmRows[0].QuoteVolume != "" {
+		t.Fatalf("unexpected COIN-M Vision row mapping: %+v", coinmRows[0])
+	}
+
+	// 4. M6-H: Generalized Vision daily metrics download & monthly mapping
+	mRes, err := cl.FetchVisionArchive(context.Background(), VisionArchiveRequest{
+		Market:  MarketUSDM,
+		Cadence: "daily",
+		Dataset: "metrics",
+		Symbol:  "BTCUSDT",
+		Period:  "2026-11-10",
+	}, false)
+	if err != nil || mRes.ChecksumHex != metricsSHA {
+		t.Fatalf("FetchVisionArchive metrics failed: err=%v res=%+v", err, mRes)
+	}
+	monthlyRel, err := VisionRelativePath(VisionArchiveRequest{
+		Market:   MarketSpot,
+		Cadence:  "monthly",
+		Dataset:  "klines",
+		Symbol:   "BTCUSDT",
+		Interval: "1M",
+		Period:   "2026-10",
+	})
+	if err != nil || !strings.Contains(monthlyRel, "/1mo/BTCUSDT-1mo-2026-10.zip") {
+		t.Fatalf("expected 1M -> 1mo monthly Vision path, got %q err=%v", monthlyRel, err)
+	}
+}

@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -97,6 +98,8 @@ type QueryKlinesInput struct {
 	RevisionID       string   `json:"revision_id,omitempty" jsonschema:"Pinned Recorder export revision ID for reproducible/offline reads"`
 	Offline          bool     `json:"offline,omitempty" jsonschema:"If true, never touch the network; reuse verified local caches only"`
 	Limit            int      `json:"limit,omitempty" jsonschema:"Max preview rows returned in JSON response (default 100, max 1000)"`
+	MaxFetchRows     int      `json:"max_fetch_rows,omitempty" jsonschema:"Max total rows paginated across REST before spill/preview (default 5000, max 50000)"`
+	Cursor           string   `json:"cursor,omitempty" jsonschema:"Pagination cursor (UTC ns start returned as next_cursor by previous call)"`
 	OutputFormat     string   `json:"output_format,omitempty" jsonschema:"Spill file format: jsonl, csv, or parquet (default jsonl)"`
 	SaveToFile       bool     `json:"save_to_file,omitempty" jsonschema:"Force saving full dataset to BINANCE_MCP_DATA_DIR/results"`
 	MaxDownloadBytes int64    `json:"max_download_bytes,omitempty" jsonschema:"Safety cap in bytes for automatic Recorder downloads (default 256 MiB)"`
@@ -115,6 +118,18 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	if err != nil {
 		return nil, nil, err
 	}
+	if strings.TrimSpace(in.Cursor) != "" {
+		curNS, cErr := recorder.ParseNSString(in.Cursor)
+		if cErr != nil {
+			return nil, nil, fmt.Errorf("invalid cursor: %w", cErr)
+		}
+		if curNS > startNS {
+			startNS = curNS
+		}
+		if endNS > 0 && startNS >= endNS {
+			return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
+		}
+	}
 	interval := strings.TrimSpace(in.Interval)
 	if interval == "" {
 		interval = "1m"
@@ -123,14 +138,29 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	if sourcePref == "" {
 		sourcePref = "auto"
 	}
+	switch sourcePref {
+	case "auto", "recorder", "vision", "rest":
+	default:
+		return nil, nil, fmt.Errorf("invalid source %q; expected auto, recorder, vision, or rest", in.Source)
+	}
 	klineType := strings.ToLower(strings.TrimSpace(in.KlineType))
 	if klineType == "" {
 		klineType = "standard"
 	}
 	limit := clampLimit(in.Limit, s.Cfg.PreviewDefaultRows, s.Cfg.PreviewMaxRows)
+	maxFetchRows := clampLimit(in.MaxFetchRows, 5000, 50000)
 	outFmt := strings.ToLower(strings.TrimSpace(in.OutputFormat))
 	if outFmt == "" {
 		outFmt = "jsonl"
+	}
+
+	if sourcePref == "recorder" {
+		if m != binance.MarketSpot && m != binance.MarketUSDM {
+			return nil, nil, fmt.Errorf("Recorder mode only supports market=spot or market=usdm (got %s)", m)
+		}
+		if klineType != "standard" {
+			return nil, nil, fmt.Errorf("Recorder mode only supports kline_type='standard' aggregated from agg_trade (got %q)", klineType)
+		}
 	}
 
 	// Route 1: Recorder agg_trade Decimal aggregation when supported and available.
@@ -139,7 +169,13 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	if canTryRecorder && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
 		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if sErr == nil {
-			plan, pErr := s.Recorder.PlanQuery(snap, string(m), []string{"agg_trade"}, startNS, endNS, false)
+			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+				Market:     string(m),
+				Streams:    []string{"agg_trade"},
+				Symbols:    symbols,
+				StartUTCNS: startNS,
+				EndUTCNS:   endNS,
+			})
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
 					if sourcePref == "recorder" {
@@ -154,12 +190,7 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 					wReq.Interval = interval
 					wReq.Limit = limit
 					wReq.OutputFormat = outFmt
-					if in.SaveToFile {
-						wReq.OutputFile = makeResultFilePath(s.Cfg, "klines_recorder", outFmt)
-					} else {
-						// Always pass an output file if potentially >100 rows or parquet asked; worker writes only when non-empty.
-						wReq.OutputFile = makeResultFilePath(s.Cfg, "klines_recorder", outFmt)
-					}
+					wReq.OutputFile = makeResultFilePath(s.Cfg, "klines_recorder", outFmt)
 					wRes, wErr := s.Recorder.RunWorker(ctx, wReq)
 					if wErr == nil {
 						totalRowsF, _ := wRes["total_rows"].(float64)
@@ -167,7 +198,12 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 							wRes["market"] = string(m)
 							wRes["data_source"] = "recorder"
 							wRes["recorder_provenance"] = planSummaryMap(plan)
-							return nil, applyWorkerResponseBudget(s.Cfg, "klines", wRes, limit), nil
+							wRes["coverage"] = buildRecorderCoverage(plan, symbols, nil, false, "")
+							out, bErr := applyWorkerResponseBudget(s.Cfg, "klines", wRes, limit)
+							if bErr != nil {
+								return nil, nil, bErr
+							}
+							return nil, out, nil
 						}
 						fallbackNote = "Recorder matched chunks contained zero agg_trade rows for requested symbol(s)/window; fell back cleanly to Binance"
 					} else if sourcePref == "recorder" {
@@ -177,7 +213,7 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 					}
 				}
 			} else if sourcePref == "recorder" {
-				return nil, nil, fmt.Errorf("no Recorder agg_trade chunks found for market=%s window=[%d,%d)", m, startNS, endNS)
+				return nil, nil, fmt.Errorf("no Recorder agg_trade chunks found for market=%s symbols=%v window=[%d,%d)", m, symbols, startNS, endNS)
 			} else {
 				fallbackNote = "No ready Recorder agg_trade chunks covered the requested market/window; queried Binance upstream"
 			}
@@ -188,15 +224,12 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		}
 	}
 
-	if sourcePref == "recorder" {
-		return nil, nil, fmt.Errorf("Recorder mode requires spot/usdm standard klines (got market=%s kline_type=%s)", m, klineType)
-	}
-
 	// Route 2: Binance Vision daily zip archives (historical, deterministic SHA-256 CHECKSUM).
 	if sourcePref == "vision" || (sourcePref == "auto" && klineType == "standard" && m != binance.MarketOptions && startNS > 0) {
-		days := datesForNSWindow(startNS, endNS)
+		days, daysTruncated, nextStartNS := datesForNSWindow(startNS, endNS, 31)
 		var allRows []map[string]any
 		var archives []map[string]any
+		seen := make(map[string]bool)
 		visionOK := len(days) > 0
 		for _, sym := range symbols {
 			for _, day := range days {
@@ -221,7 +254,12 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 					return nil, nil, rErr
 				}
 				for _, vr := range vRows {
-					allRows = append(allRows, map[string]any{
+					dedupKey := sym + ":" + vr.OpenTimeUTCNS
+					if seen[dedupKey] {
+						continue
+					}
+					seen[dedupKey] = true
+					row := map[string]any{
 						"symbol":            sym,
 						"open_time_utc_ns":  vr.OpenTimeUTCNS,
 						"close_time_utc_ns": vr.CloseTimeUTCNS,
@@ -230,12 +268,18 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 						"low":               vr.Low,
 						"close":             vr.Close,
 						"volume":            vr.Volume,
-						"quote_volume":      vr.QuoteVolume,
 						"trade_count":       vr.TradeCount,
 						"qty_unit":          vr.QtyUnit,
 						"source":            "binance_vision",
 						"checksum_sha256":   vr.RevisionOrHash,
-					})
+					}
+					if vr.QuoteVolume != "" {
+						row["quote_volume"] = vr.QuoteVolume
+					}
+					if vr.BaseVolume != "" {
+						row["base_volume"] = vr.BaseVolume
+					}
+					allRows = append(allRows, row)
 				}
 			}
 			if !visionOK {
@@ -244,20 +288,30 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		}
 		if visionOK {
 			payload := map[string]any{
-				"market":       string(m),
-				"interval":     interval,
-				"data_source":  "binance_vision",
-				"archives":     archives,
-				"qty_unit":     qtyUnitForMarket(m),
+				"market":      string(m),
+				"interval":    interval,
+				"data_source": "binance_vision",
+				"archives":    archives,
+				"qty_unit":    qtyUnitForMarket(m),
+				"has_more":    daysTruncated,
 			}
-			if fallbackNote != "" {
+			if daysTruncated && nextStartNS > 0 {
+				nextStr := strconv.FormatInt(nextStartNS, 10)
+				payload["next_start_utc_ns"] = nextStr
+				payload["next_cursor"] = nextStr
+				payload["note"] = "Window exceeded 31 days per Vision batch; pass cursor/next_start_utc_ns to continue cleanly."
+			} else if fallbackNote != "" {
 				payload["note"] = fallbackNote
 			}
-			return nil, applyResponseBudget(s.Cfg, "klines_vision", payload, "rows", allRows, in.SaveToFile, outFmt, limit), nil
+			out, bErr := applyResponseBudget(s.Cfg, "klines_vision", payload, "rows", allRows, in.SaveToFile, outFmt, limit)
+			if bErr != nil {
+				return nil, nil, bErr
+			}
+			return nil, out, nil
 		}
 	}
 
-	// Route 3: Binance REST API (exact homogeneous series by kline_type & market).
+	// Route 3: Binance REST API (exact homogeneous series by kline_type & market, paginated cleanly).
 	endpointID, err := klineEndpointID(m, klineType)
 	if err != nil {
 		return nil, nil, err
@@ -267,53 +321,140 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		return nil, nil, fmt.Errorf("missing capability %s", endpointID)
 	}
 	var allRows []map[string]any
+	hasMore := false
+	var nextCursorNS int64
+	const restMaxPage = 1000
+
 	for _, sym := range symbols {
-		params := map[string]string{
-			"interval": interval,
-			"limit":    strconv.Itoa(limit),
-		}
-		switch klineType {
-		case "continuous":
-			params["pair"] = sym
-			ct := strings.ToUpper(strings.TrimSpace(in.ContractType))
-			if ct == "" {
-				ct = "PERPETUAL"
-			}
-			params["contractType"] = ct
-		case "index":
-			params["pair"] = sym
-		default:
-			params["symbol"] = sym
-		}
+		seenSym := make(map[string]bool)
+		curStartMS := int64(0)
 		if startNS > 0 {
-			params["startTime"] = strconv.FormatInt(startNS/1_000_000, 10)
+			curStartMS = startNS / 1_000_000
 		}
+		endMS := int64(0)
 		if endNS > 0 {
-			params["endTime"] = strconv.FormatInt((endNS-1)/1_000_000, 10)
+			endMS = (endNS - 1) / 1_000_000
 		}
-		res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
-		if err != nil {
-			return nil, nil, err
+		fetchedSym := 0
+
+		for {
+			remaining := maxFetchRows - fetchedSym
+			if remaining <= 0 {
+				hasMore = true
+				if curStartMS > 0 && (nextCursorNS == 0 || curStartMS*1_000_000 < nextCursorNS) {
+					nextCursorNS = curStartMS * 1_000_000
+				}
+				break
+			}
+			pageLimit := restMaxPage
+			if remaining < pageLimit {
+				pageLimit = remaining
+			}
+			if startNS == 0 && limit < pageLimit {
+				pageLimit = limit
+			}
+
+			params := map[string]string{
+				"interval": interval,
+				"limit":    strconv.Itoa(pageLimit),
+			}
+			switch klineType {
+			case "continuous":
+				params["pair"] = sym
+				ct := strings.ToUpper(strings.TrimSpace(in.ContractType))
+				if ct == "" {
+					ct = "PERPETUAL"
+				}
+				params["contractType"] = ct
+			case "index":
+				params["pair"] = sym
+			default:
+				params["symbol"] = sym
+			}
+			if curStartMS > 0 {
+				params["startTime"] = strconv.FormatInt(curStartMS, 10)
+			}
+			if endMS > 0 {
+				params["endTime"] = strconv.FormatInt(endMS, 10)
+			}
+			res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
+			if err != nil {
+				return nil, nil, err
+			}
+			parsed, pErr := parseRESTKlineArray(res.Payload, sym, m, klineType, "binance_rest")
+			if pErr != nil {
+				return nil, nil, fmt.Errorf("%s parse: %w", endpointID, pErr)
+			}
+
+			addedInPage := 0
+			var lastOpenMS, lastCloseMS int64
+			for _, row := range parsed {
+				openNSStr, _ := row["open_time_utc_ns"].(string)
+				openNS, _ := strconv.ParseInt(openNSStr, 10, 64)
+				if startNS > 0 && openNS < startNS {
+					continue
+				}
+				if endNS > 0 && openNS >= endNS {
+					continue
+				}
+				openMS := openNS / 1_000_000
+				if openMS > lastOpenMS {
+					lastOpenMS = openMS
+				}
+				if closeNSStr, ok := row["close_time_utc_ns"].(string); ok {
+					if cNS, err := strconv.ParseInt(closeNSStr, 10, 64); err == nil && cNS/1_000_000 > lastCloseMS {
+						lastCloseMS = cNS / 1_000_000
+					}
+				}
+				if seenSym[openNSStr] {
+					continue
+				}
+				seenSym[openNSStr] = true
+				allRows = append(allRows, row)
+				fetchedSym++
+				addedInPage++
+			}
+
+			if startNS == 0 || len(parsed) < pageLimit || addedInPage == 0 || lastOpenMS == 0 {
+				break
+			}
+			nextMS := lastCloseMS + 1
+			if nextMS <= lastOpenMS {
+				nextMS = lastOpenMS + 1
+			}
+			if endMS > 0 && nextMS > endMS {
+				break
+			}
+			curStartMS = nextMS
 		}
-		parsed, pErr := parseRESTKlineArray(res.Payload, sym, m, "binance_rest")
-		if pErr != nil {
-			return nil, nil, fmt.Errorf("%s parse: %w", endpointID, pErr)
-		}
-		allRows = append(allRows, parsed...)
 	}
 
+	qtyUnit := qtyUnitForMarket(m)
+	if klineType == "mark" || klineType == "index" || klineType == "premium" {
+		qtyUnit = "price_only"
+	}
 	payload := map[string]any{
 		"market":      string(m),
 		"interval":    interval,
 		"kline_type":  klineType,
 		"endpoint_id": endpointID,
 		"data_source": "binance_rest",
-		"qty_unit":    qtyUnitForMarket(m),
+		"qty_unit":    qtyUnit,
+		"has_more":    hasMore,
+	}
+	if hasMore && nextCursorNS > 0 {
+		nextStr := strconv.FormatInt(nextCursorNS, 10)
+		payload["next_cursor"] = nextStr
+		payload["next_start_utc_ns"] = nextStr
 	}
 	if fallbackNote != "" {
 		payload["note"] = fallbackNote
 	}
-	return nil, applyResponseBudget(s.Cfg, "klines_rest", payload, "rows", allRows, in.SaveToFile, outFmt, limit), nil
+	out, bErr := applyResponseBudget(s.Cfg, "klines_rest", payload, "rows", allRows, in.SaveToFile, outFmt, limit)
+	if bErr != nil {
+		return nil, nil, bErr
+	}
+	return nil, out, nil
 }
 
 func klineEndpointID(m binance.Market, klineType string) (string, error) {
@@ -407,7 +548,76 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 		if err != nil {
 			return nil, nil, fmt.Errorf("Recorder sync failed for historical orderbook (refusing REST backfill): %w", err)
 		}
-		plan, err := s.Recorder.PlanQuery(snap, string(m), []string{"diff_depth", "rest_observations"}, startNS, endNS, true)
+
+		// Two-stage planning (M6-A): first locate snapshot baseline chunks in rest_observations so
+		// pre-window depth snapshots and bridging diff_depth chunks are included cleanly.
+		planStart := startNS
+		snapPlan, sPlanErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			Market:                   string(m),
+			Streams:                  []string{"rest_observations"},
+			Symbols:                  symbols,
+			StartUTCNS:               startNS,
+			EndUTCNS:                 endNS,
+			IncludePrecedingBaseline: true,
+			OrderbookMode:            true,
+		})
+		hasIndexedSnapMeta := false
+		if sPlanErr == nil {
+			for _, pc := range snapPlan.PlannedChunks {
+				if pc.Chunk.HasDepthSnapshotMetadata() {
+					cMin, _, ok := pc.Chunk.EffectiveTimeRangeNS(false)
+					if ok && (startNS == 0 || cMin <= startNS) {
+						hasIndexedSnapMeta = true
+						break
+					}
+				}
+			}
+		}
+		if startNS > 0 && !hasIndexedSnapMeta {
+			lookbackStart := startNS - int64(6*time.Hour)
+			if lookbackStart < 0 {
+				lookbackStart = 0
+			}
+			if widerSnapPlan, wErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+				Market:                   string(m),
+				Streams:                  []string{"rest_observations"},
+				Symbols:                  symbols,
+				StartUTCNS:               lookbackStart,
+				EndUTCNS:                 endNS,
+				IncludePrecedingBaseline: true,
+				OrderbookMode:            true,
+			}); wErr == nil && widerSnapPlan.ReadyChunksMatched > snapPlan.ReadyChunksMatched {
+				snapPlan = widerSnapPlan
+			}
+		}
+		if snapPlan != nil && snapPlan.ReadyChunksMatched > 0 {
+			if matErr := s.Recorder.MaterializePlan(ctx, snapPlan, in.Offline, in.MaxDownloadBytes); matErr != nil {
+				return nil, nil, matErr
+			}
+			inspectReq := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", snapPlan)
+			inspectReq.Symbols = symbols
+			inspectReq.StartUTCNS = startNS
+			inspectReq.EndUTCNS = endNS
+			if inspectRes, iErr := s.Recorder.RunWorker(ctx, inspectReq); iErr == nil {
+				if rawBefore, ok := inspectRes["latest_before_start_ns"].(string); ok && rawBefore != "" {
+					if beforeNS, pErr := strconv.ParseInt(rawBefore, 10, 64); pErr == nil && beforeNS > 0 {
+						if planStart == 0 || beforeNS < planStart {
+							planStart = beforeNS
+						}
+					}
+				}
+			}
+		}
+
+		plan, err := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			Market:                   string(m),
+			Streams:                  []string{"diff_depth", "rest_observations"},
+			Symbols:                  symbols,
+			StartUTCNS:               planStart,
+			EndUTCNS:                 endNS,
+			IncludePrecedingBaseline: true,
+			OrderbookMode:            true,
+		})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -430,10 +640,17 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 		if err != nil {
 			return nil, nil, err
 		}
+		statsMap := mapStringAny(wRes["stats"])
+		unsyncReason, _ := wRes["unsynchronized_reason"].(string)
 		wRes["market"] = string(m)
 		wRes["data_source"] = "recorder"
 		wRes["recorder_provenance"] = planSummaryMap(plan)
-		return nil, applyWorkerResponseBudget(s.Cfg, "orderbook", wRes, limit), nil
+		wRes["coverage"] = buildRecorderCoverage(plan, symbols, statsMap, true, unsyncReason)
+		out, bErr := applyWorkerResponseBudget(s.Cfg, "orderbook", wRes, limit)
+		if bErr != nil {
+			return nil, nil, bErr
+		}
+		return nil, out, nil
 	}
 
 	// Live snapshot mode (only when no historical window/revision was requested).
@@ -487,7 +704,11 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 		"data_source":          "binance_rest",
 		"imbalance_definition": fmt.Sprintf("top_%d_depth_imbalance = (sum_bid_qty - sum_ask_qty) / (sum_bid_qty + sum_ask_qty); NOT order-flow imbalance (OFI)", topK),
 	}
-	return nil, applyResponseBudget(s.Cfg, "orderbook_live", payload, "rows", rows, in.SaveToFile, outFmt, limit), nil
+	out, bErr := applyResponseBudget(s.Cfg, "orderbook_live", payload, "rows", rows, in.SaveToFile, outFmt, limit)
+	if bErr != nil {
+		return nil, nil, bErr
+	}
+	return nil, out, nil
 }
 
 func computeTopKImbalance(bids, asks [][]string) string {
@@ -526,6 +747,8 @@ type QueryTradesLiquidationsInput struct {
 	RevisionID       string   `json:"revision_id,omitempty" jsonschema:"Pinned Recorder export revision ID"`
 	Offline          bool     `json:"offline,omitempty" jsonschema:"Offline zero-network mode"`
 	Limit            int      `json:"limit,omitempty" jsonschema:"Max preview rows (default 100, max 1000)"`
+	MaxFetchRows     int      `json:"max_fetch_rows,omitempty" jsonschema:"Max total REST rows paginated before spill/preview (default 5000, max 50000)"`
+	Cursor           string   `json:"cursor,omitempty" jsonschema:"Pagination cursor (UTC ns start returned as next_cursor by previous REST call)"`
 	OutputFormat     string   `json:"output_format,omitempty" jsonschema:"jsonl, csv, or parquet"`
 	SaveToFile       bool     `json:"save_to_file,omitempty" jsonschema:"Save full dataset to file"`
 	MaxDownloadBytes int64    `json:"max_download_bytes,omitempty" jsonschema:"Safety download cap in bytes"`
@@ -544,9 +767,26 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 	if err != nil {
 		return nil, nil, err
 	}
+	if strings.TrimSpace(in.Cursor) != "" {
+		curNS, cErr := recorder.ParseNSString(in.Cursor)
+		if cErr != nil {
+			return nil, nil, fmt.Errorf("invalid cursor: %w", cErr)
+		}
+		if curNS > startNS {
+			startNS = curNS
+		}
+		if endNS > 0 && startNS >= endNS {
+			return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
+		}
+	}
 	kind := strings.ToLower(strings.TrimSpace(in.RecordKind))
 	if kind == "" {
 		kind = "all"
+	}
+	switch kind {
+	case "all", "trades", "liquidations":
+	default:
+		return nil, nil, fmt.Errorf("invalid record_kind %q; expected all, trades, or liquidations", in.RecordKind)
 	}
 	if m == binance.MarketSpot && kind == "liquidations" {
 		return nil, map[string]any{
@@ -559,6 +799,7 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 	}
 
 	limit := clampLimit(in.Limit, s.Cfg.PreviewDefaultRows, s.Cfg.PreviewMaxRows)
+	maxFetchRows := clampLimit(in.MaxFetchRows, 5000, 50000)
 	outFmt := strings.ToLower(strings.TrimSpace(in.OutputFormat))
 	if outFmt == "" {
 		outFmt = "jsonl"
@@ -566,6 +807,14 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 	sourcePref := strings.ToLower(strings.TrimSpace(in.Source))
 	if sourcePref == "" {
 		sourcePref = "auto"
+	}
+	switch sourcePref {
+	case "auto", "recorder", "rest":
+	default:
+		return nil, nil, fmt.Errorf("invalid source %q; expected auto, recorder, or rest", in.Source)
+	}
+	if sourcePref == "recorder" && m != binance.MarketSpot && m != binance.MarketUSDM {
+		return nil, nil, fmt.Errorf("Recorder mode only supports market=spot or market=usdm (got %s)", m)
 	}
 
 	canRecorder := (sourcePref == "recorder" || (sourcePref == "auto" && (m == binance.MarketSpot || m == binance.MarketUSDM)))
@@ -578,7 +827,13 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 			} else if kind == "all" && m == binance.MarketUSDM {
 				streams = []string{"agg_trade", "liquidation"}
 			}
-			plan, pErr := s.Recorder.PlanQuery(snap, string(m), streams, startNS, endNS, false)
+			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+				Market:     string(m),
+				Streams:    streams,
+				Symbols:    symbols,
+				StartUTCNS: startNS,
+				EndUTCNS:   endNS,
+			})
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
 					if sourcePref == "recorder" {
@@ -598,13 +853,18 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 						wRes["market"] = string(m)
 						wRes["data_source"] = "recorder"
 						wRes["recorder_provenance"] = planSummaryMap(plan)
-						return nil, applyWorkerResponseBudget(s.Cfg, "trades_liq", wRes, limit), nil
+						wRes["coverage"] = buildRecorderCoverage(plan, symbols, nil, false, "")
+						out, bErr := applyWorkerResponseBudget(s.Cfg, "trades_liq", wRes, limit)
+						if bErr != nil {
+							return nil, nil, bErr
+						}
+						return nil, out, nil
 					} else if sourcePref == "recorder" {
 						return nil, nil, wErr
 					}
 				}
 			} else if sourcePref == "recorder" {
-				return nil, nil, fmt.Errorf("no ready Recorder chunks for streams=%v in window [%d,%d)", streams, startNS, endNS)
+				return nil, nil, fmt.Errorf("no ready Recorder chunks for streams=%v symbols=%v in window [%d,%d)", streams, symbols, startNS, endNS)
 			}
 		} else if sourcePref == "recorder" || in.RevisionID != "" {
 			return nil, nil, sErr
@@ -622,6 +882,10 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 		}, nil
 	}
 
+	if m == binance.MarketOptions && (startNS > 0 || endNS > 0) {
+		return nil, nil, fmt.Errorf("options.trades (/eapi/v1/trades) only returns recent trades and does not support historical start_utc_ns/end_utc_ns windows; omit time bounds for live recent trades")
+	}
+
 	endpointID := string(m) + ".aggTrades"
 	if m == binance.MarketOptions {
 		endpointID = "options.trades"
@@ -630,47 +894,138 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 	if !ok {
 		return nil, nil, fmt.Errorf("missing capability %s", endpointID)
 	}
+
 	var allRows []map[string]any
+	hasMore := false
+	var nextCursorNS int64
+	const restMaxPage = 1000
+	optionsLimitCap := 500
+
 	for _, sym := range symbols {
-		params := map[string]string{"symbol": sym, "limit": strconv.Itoa(limit)}
-		if m != binance.MarketOptions {
-			if startNS > 0 {
-				params["startTime"] = strconv.FormatInt(startNS/1_000_000, 10)
-			}
-			if endNS > 0 {
-				params["endTime"] = strconv.FormatInt((endNS-1)/1_000_000, 10)
-			}
+		seenIDs := make(map[string]bool)
+		var nextFromID int64
+		curStartMS := int64(0)
+		if startNS > 0 {
+			curStartMS = startNS / 1_000_000
 		}
-		res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
-		if err != nil {
-			return nil, nil, err
+		endMS := int64(0)
+		if endNS > 0 {
+			endMS = (endNS - 1) / 1_000_000
 		}
-		var items []map[string]any
-		if err := json.Unmarshal(res.Payload, &items); err != nil {
-			return nil, nil, fmt.Errorf("parse %s response: %w", endpointID, err)
-		}
-		for _, it := range items {
-			tsMS, _ := toInt64Any(it["T"])
-			if tsMS == 0 {
-				tsMS, _ = toInt64Any(it["time"])
+		fetchedSym := 0
+
+		for {
+			remaining := maxFetchRows - fetchedSym
+			if remaining <= 0 {
+				hasMore = true
+				if curStartMS > 0 && (nextCursorNS == 0 || curStartMS*1_000_000 < nextCursorNS) {
+					nextCursorNS = curStartMS * 1_000_000
+				}
+				break
 			}
-			row := map[string]any{
-				"record_type":   "trade",
-				"symbol":        sym,
-				"trade_utc_ns":  strconv.FormatInt(tsMS*1_000_000, 10),
-				"price":         formatScalar(it["p"]),
-				"quantity":      formatScalar(it["q"]),
-				"buyer_is_maker": it["m"],
-				"qty_unit":      qtyUnitForMarket(m),
-				"source":        "binance_rest",
+			pageLimit := restMaxPage
+			if m == binance.MarketOptions && pageLimit > optionsLimitCap {
+				pageLimit = optionsLimitCap
 			}
-			if it["price"] != nil && row["price"] == "" {
-				row["price"] = formatScalar(it["price"])
+			if remaining < pageLimit {
+				pageLimit = remaining
 			}
-			if it["qty"] != nil && row["quantity"] == "" {
-				row["quantity"] = formatScalar(it["qty"])
+			if startNS == 0 && limit < pageLimit {
+				pageLimit = limit
 			}
-			allRows = append(allRows, row)
+
+			params := map[string]string{"symbol": sym, "limit": strconv.Itoa(pageLimit)}
+			if m != binance.MarketOptions {
+				if nextFromID > 0 {
+					params["fromId"] = strconv.FormatInt(nextFromID, 10)
+				} else {
+					if curStartMS > 0 {
+						params["startTime"] = strconv.FormatInt(curStartMS, 10)
+					}
+					if endMS > 0 {
+						params["endTime"] = strconv.FormatInt(endMS, 10)
+					}
+				}
+			}
+			res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
+			if err != nil {
+				return nil, nil, err
+			}
+			var items []map[string]any
+			if err := json.Unmarshal(res.Payload, &items); err != nil {
+				return nil, nil, fmt.Errorf("parse %s response: %w", endpointID, err)
+			}
+
+			addedInPage := 0
+			hitWindowEnd := false
+			var lastMS, lastID int64
+			for _, it := range items {
+				tsMS, _ := toInt64Any(it["T"])
+				if tsMS == 0 {
+					tsMS, _ = toInt64Any(it["time"])
+				}
+				tsNS := tsMS * 1_000_000
+				if endNS > 0 && tsNS >= endNS {
+					hitWindowEnd = true
+					continue
+				}
+				if startNS > 0 && tsNS < startNS {
+					continue
+				}
+				aggID, hasID := toInt64Any(it["a"])
+				if !hasID {
+					aggID, hasID = toInt64Any(it["id"])
+				}
+				if hasID {
+					idKey := sym + ":" + strconv.FormatInt(aggID, 10)
+					if seenIDs[idKey] {
+						continue
+					}
+					seenIDs[idKey] = true
+					if aggID > lastID {
+						lastID = aggID
+					}
+				}
+				if tsMS > lastMS {
+					lastMS = tsMS
+				}
+				row := map[string]any{
+					"record_type":    "trade",
+					"symbol":         sym,
+					"trade_utc_ns":   strconv.FormatInt(tsNS, 10),
+					"price":          formatScalar(it["p"]),
+					"quantity":       formatScalar(it["q"]),
+					"buyer_is_maker": it["m"],
+					"qty_unit":       qtyUnitForMarket(m),
+					"source":         "binance_rest",
+				}
+				if hasID {
+					row["agg_trade_id"] = aggID
+				}
+				if it["price"] != nil && row["price"] == "" {
+					row["price"] = formatScalar(it["price"])
+				}
+				if it["qty"] != nil && row["quantity"] == "" {
+					row["quantity"] = formatScalar(it["qty"])
+				}
+				allRows = append(allRows, row)
+				fetchedSym++
+				addedInPage++
+			}
+
+			if m == binance.MarketOptions || startNS == 0 || hitWindowEnd || len(items) < pageLimit || (addedInPage == 0 && lastID == 0 && lastMS == 0) {
+				break
+			}
+			if lastID > 0 {
+				nextFromID = lastID + 1
+				if lastMS > curStartMS {
+					curStartMS = lastMS
+				}
+			} else if lastMS > curStartMS {
+				curStartMS = lastMS + 1
+			} else {
+				break
+			}
 		}
 	}
 
@@ -683,8 +1038,18 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 		"data_source":        "binance_rest",
 		"endpoint_id":        endpointID,
 		"liquidation_status": liqStatus,
+		"has_more":           hasMore,
 	}
-	return nil, applyResponseBudget(s.Cfg, "trades_rest", payload, "rows", allRows, in.SaveToFile, outFmt, limit), nil
+	if hasMore && nextCursorNS > 0 {
+		nextStr := strconv.FormatInt(nextCursorNS, 10)
+		payload["next_cursor"] = nextStr
+		payload["next_start_utc_ns"] = nextStr
+	}
+	out, bErr := applyResponseBudget(s.Cfg, "trades_rest", payload, "rows", allRows, in.SaveToFile, outFmt, limit)
+	if bErr != nil {
+		return nil, nil, bErr
+	}
+	return nil, out, nil
 }
 
 // ---------- 4. query_derivatives_metrics ----------
@@ -741,16 +1106,41 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	if sourcePref == "" {
 		sourcePref = "auto"
 	}
+	switch sourcePref {
+	case "auto", "recorder", "rest":
+	default:
+		return nil, nil, fmt.Errorf("invalid source %q; expected auto, recorder, or rest", in.Source)
+	}
+
+	recorderSupportedMetric := metric == "all" || metric == "mark_price_funding" || metric == "open_interest"
+	if sourcePref == "recorder" {
+		if m != binance.MarketUSDM {
+			return nil, nil, fmt.Errorf("Recorder derivatives metrics only support market=usdm (got %s)", m)
+		}
+		if !recorderSupportedMetric {
+			return nil, nil, fmt.Errorf("Recorder only stores usdm mark_price and rest_observations (mark_price_funding, open_interest); metric %q requires source='rest' or 'auto'", metric)
+		}
+		if strings.TrimSpace(in.Period) != "" && period != "5m" && metric != "mark_price_funding" {
+			return nil, nil, fmt.Errorf("Recorder derivatives metrics do not resample custom period=%q; omit period or use source='rest'", period)
+		}
+	}
 
 	// Route 1: Recorder USD-M historical mark_price & rest_observations metrics.
-	if (sourcePref == "recorder" || (sourcePref == "auto" && m == binance.MarketUSDM)) && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
+	if (sourcePref == "recorder" || (sourcePref == "auto" && m == binance.MarketUSDM && recorderSupportedMetric)) && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
 		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if sErr == nil {
-			plan, pErr := s.Recorder.PlanQuery(snap, "usdm", []string{"mark_price", "rest_observations"}, startNS, endNS, false)
+			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+				Market:     "usdm",
+				Streams:    []string{"mark_price", "rest_observations"},
+				Symbols:    symbols,
+				StartUTCNS: startNS,
+				EndUTCNS:   endNS,
+			})
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err == nil {
 					wReq := s.Recorder.BuildWorkerRequest("query_derivatives_metrics", plan)
 					wReq.Symbols = symbols
+					wReq.Metric = metric
 					wReq.StartUTCNS = startNS
 					wReq.EndUTCNS = endNS
 					wReq.Limit = limit
@@ -761,9 +1151,15 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 						tr, _ := wRes["total_rows"].(float64)
 						if int(tr) > 0 || sourcePref == "recorder" {
 							wRes["market"] = string(m)
+							wRes["metric"] = metric
 							wRes["data_source"] = "recorder"
 							wRes["recorder_provenance"] = planSummaryMap(plan)
-							return nil, applyWorkerResponseBudget(s.Cfg, "deriv", wRes, limit), nil
+							wRes["coverage"] = buildRecorderCoverage(plan, symbols, nil, false, "")
+							out, bErr := applyWorkerResponseBudget(s.Cfg, "deriv", wRes, limit)
+							if bErr != nil {
+								return nil, nil, bErr
+							}
+							return nil, out, nil
 						}
 					} else if sourcePref == "recorder" {
 						return nil, nil, wErr
@@ -824,7 +1220,15 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		"data_source": "binance_rest",
 		"qty_unit":    capEntry.QtyUnit,
 	}
-	return nil, applyResponseBudget(s.Cfg, "deriv_rest", payload, "rows", rows, in.SaveToFile, outFmt, limit), nil
+	out, bErr := applyResponseBudget(s.Cfg, "deriv_rest", payload, "rows", rows, in.SaveToFile, outFmt, limit)
+	if bErr != nil {
+		return nil, nil, bErr
+	}
+	return nil, out, nil
+}
+
+var allowedFuturesPeriods = map[string]bool{
+	"5m": true, "15m": true, "30m": true, "1h": true, "2h": true, "4h": true, "6h": true, "12h": true, "1d": true,
 }
 
 func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDerivativesInput, symbols []string, startNS, endNS int64, limit int) (string, func(string) map[string]string, error) {
@@ -840,6 +1244,13 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 	ct := strings.ToUpper(strings.TrimSpace(in.ContractType))
 	if ct == "" {
 		ct = "PERPETUAL"
+	}
+
+	validatePeriod := func() error {
+		if !allowedFuturesPeriods[period] {
+			return fmt.Errorf("invalid period %q; allowed values: 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d", period)
+		}
+		return nil
 	}
 
 	addWindow := func(p map[string]string) {
@@ -895,10 +1306,19 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 			return p
 		}, nil
 	case "open_interest":
+		if len(symbols) == 0 {
+			return "", nil, fmt.Errorf("open_interest requires symbol")
+		}
 		return string(m) + ".openInterest", func(sym string) map[string]string {
 			return map[string]string{"symbol": sym}
 		}, nil
 	case "open_interest_hist":
+		if err := validatePeriod(); err != nil {
+			return "", nil, err
+		}
+		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
+			return "", nil, fmt.Errorf("coinm open_interest_hist requires pair or symbol")
+		}
 		return string(m) + ".openInterestHist", func(sym string) map[string]string {
 			p := map[string]string{"period": period}
 			if m == binance.MarketCOINM {
@@ -911,6 +1331,12 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 			return p
 		}, nil
 	case "top_long_short_account":
+		if err := validatePeriod(); err != nil {
+			return "", nil, err
+		}
+		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
+			return "", nil, fmt.Errorf("coinm top_long_short_account requires pair or symbol")
+		}
 		return string(m) + ".topLongShortAccountRatio", func(sym string) map[string]string {
 			p := map[string]string{"period": period}
 			if m == binance.MarketCOINM {
@@ -922,6 +1348,12 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 			return p
 		}, nil
 	case "top_long_short_position":
+		if err := validatePeriod(); err != nil {
+			return "", nil, err
+		}
+		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
+			return "", nil, fmt.Errorf("coinm top_long_short_position requires pair or symbol")
+		}
 		return string(m) + ".topLongShortPositionRatio", func(sym string) map[string]string {
 			p := map[string]string{"period": period}
 			if m == binance.MarketCOINM {
@@ -933,6 +1365,12 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 			return p
 		}, nil
 	case "global_long_short":
+		if err := validatePeriod(); err != nil {
+			return "", nil, err
+		}
+		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
+			return "", nil, fmt.Errorf("coinm global_long_short requires pair or symbol")
+		}
 		return string(m) + ".globalLongShortAccountRatio", func(sym string) map[string]string {
 			p := map[string]string{"period": period}
 			if m == binance.MarketCOINM {
@@ -944,7 +1382,13 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 			return p
 		}, nil
 	case "taker_buy_sell_vol":
+		if err := validatePeriod(); err != nil {
+			return "", nil, err
+		}
 		if m == binance.MarketCOINM {
+			if derivePair(strings.Join(symbols, "")) == "" {
+				return "", nil, fmt.Errorf("coinm taker_buy_sell_vol requires pair or symbol")
+			}
 			return "coinm.takerBuySellVol", func(sym string) map[string]string {
 				p := map[string]string{"pair": derivePair(sym), "contractType": ct, "period": period}
 				addWindow(p)
@@ -957,6 +1401,12 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 			return p
 		}, nil
 	case "basis":
+		if err := validatePeriod(); err != nil {
+			return "", nil, err
+		}
+		if derivePair(strings.Join(symbols, "")) == "" {
+			return "", nil, fmt.Errorf("basis requires pair or symbol")
+		}
 		return string(m) + ".basis", func(sym string) map[string]string {
 			p := map[string]string{"pair": derivePair(sym), "contractType": ct, "period": period}
 			addWindow(p)
@@ -1168,8 +1618,15 @@ func summarizeExchangeInfo(raw json.RawMessage, m binance.Market, filter []strin
 type ManageCacheInput struct {
 	Action      string   `json:"action" jsonschema:"inspect (default), estimate, prefetch, jobs, cancel, or resume"`
 	Verify      bool     `json:"verify,omitempty" jsonschema:"When action='inspect', verify SHA-256 checksums of cached files"`
-	Market      string   `json:"market,omitempty" jsonschema:"spot or usdm"`
+	Source      string   `json:"source,omitempty" jsonschema:"Cache source for estimate/prefetch: recorder (default) or binance_vision"`
+	Market      string   `json:"market,omitempty" jsonschema:"spot, usdm (for recorder); spot, usdm, coinm, or options (for binance_vision)"`
 	Streams     []string `json:"streams,omitempty" jsonschema:"Recorder stream names, e.g. [\"agg_trade\", \"diff_depth\", \"rest_observations\"]"`
+	Symbols     []string `json:"symbols,omitempty" jsonschema:"Symbols list for Recorder filtering or Binance Vision archives"`
+	Symbol      string   `json:"symbol,omitempty" jsonschema:"Single symbol convenience alias"`
+	Dataset     string   `json:"dataset,omitempty" jsonschema:"Binance Vision dataset name (e.g. klines, aggTrades, trades, bookDepth, metrics, BVOLIndex)"`
+	Cadence     string   `json:"cadence,omitempty" jsonschema:"Binance Vision cadence: daily (default) or monthly"`
+	Interval    string   `json:"interval,omitempty" jsonschema:"Binance Vision kline interval (e.g. 1m, 1h)"`
+	Period      string   `json:"period,omitempty" jsonschema:"Single Binance Vision period YYYY-MM-DD (daily) or YYYY-MM (monthly)"`
 	StartUTCNS  string   `json:"start_utc_ns,omitempty" jsonschema:"Window start in UTC nanoseconds"`
 	EndUTCNS    string   `json:"end_utc_ns,omitempty" jsonschema:"Window end in UTC nanoseconds"`
 	RevisionID  string   `json:"revision_id,omitempty" jsonschema:"Pinned Recorder revision ID"`
@@ -1245,25 +1702,162 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 		return nil, map[string]any{"action": "resume", "job": job}, nil
 
 	case "estimate", "prefetch":
-		m := binance.NormalizeMarket(in.Market)
-		if m != binance.MarketSpot && m != binance.MarketUSDM {
-			return nil, nil, fmt.Errorf("Recorder estimate/prefetch requires market=spot or market=usdm (got %q)", in.Market)
+		sourcePref := strings.ToLower(strings.TrimSpace(in.Source))
+		if sourcePref == "" && strings.TrimSpace(in.Dataset) != "" {
+			sourcePref = "binance_vision"
+		}
+		if sourcePref == "" {
+			sourcePref = "recorder"
 		}
 		startNS, endNS, err := parseNSBounds(in.StartUTCNS, in.EndUTCNS)
 		if err != nil {
 			return nil, nil, err
 		}
+		symbols := mergeSymbols(in.Symbols, in.Symbol)
+
+		if sourcePref == "binance_vision" {
+			m := binance.NormalizeMarket(in.Market)
+			if m == "" {
+				return nil, nil, fmt.Errorf("Binance Vision estimate/prefetch requires market=spot, usdm, coinm, or options (got %q)", in.Market)
+			}
+			if len(symbols) == 0 {
+				return nil, nil, fmt.Errorf("Binance Vision estimate/prefetch requires at least one symbol")
+			}
+			cadence := strings.ToLower(strings.TrimSpace(in.Cadence))
+			if cadence == "" {
+				cadence = "daily"
+			}
+			dataset := strings.TrimSpace(in.Dataset)
+			if dataset == "" {
+				dataset = "klines"
+			}
+			var periods []string
+			var truncated bool
+			var nextStartNS int64
+			if strings.TrimSpace(in.Period) != "" {
+				periods = []string{strings.TrimSpace(in.Period)}
+			} else if startNS > 0 {
+				if cadence == "monthly" {
+					periods, truncated, nextStartNS = monthsForNSWindow(startNS, endNS, 24)
+				} else {
+					periods, truncated, nextStartNS = datesForNSWindow(startNS, endNS, 31)
+				}
+			} else {
+				return nil, nil, fmt.Errorf("Binance Vision estimate/prefetch requires period or start_utc_ns")
+			}
+
+			var reqs []binance.VisionArchiveRequest
+			for _, sym := range symbols {
+				for _, per := range periods {
+					req := binance.VisionArchiveRequest{
+						Market:   m,
+						Cadence:  cadence,
+						Dataset:  dataset,
+						Symbol:   sym,
+						Interval: strings.TrimSpace(in.Interval),
+						Period:   per,
+					}
+					if _, vErr := binance.VisionRelativePath(req); vErr != nil {
+						return nil, nil, vErr
+					}
+					reqs = append(reqs, req)
+				}
+			}
+
+			if action == "estimate" {
+				var planned []map[string]any
+				cachedCount := 0
+				for _, req := range reqs {
+					relSub, cached, shaHex, _, lErr := s.Binance.InspectVisionArchiveLocal(req)
+					if lErr != nil {
+						return nil, nil, lErr
+					}
+					if cached {
+						cachedCount++
+					}
+					entry := map[string]any{
+						"symbol":   req.Symbol,
+						"period":   req.Period,
+						"rel_sub":  relSub,
+						"cached":   cached,
+					}
+					if shaHex != "" {
+						entry["sha256"] = shaHex
+					}
+					planned = append(planned, entry)
+				}
+				est := map[string]any{
+					"action":           "estimate",
+					"source":           "binance_vision",
+					"market":           string(m),
+					"dataset":          dataset,
+					"cadence":          cadence,
+					"archives_planned": len(reqs),
+					"already_cached":   cachedCount,
+					"download_needed":  len(reqs) - cachedCount,
+					"archives":         planned,
+					"has_more":         truncated,
+				}
+				if truncated && nextStartNS > 0 {
+					est["next_start_utc_ns"] = strconv.FormatInt(nextStartNS, 10)
+				}
+				return nil, est, nil
+			}
+
+			if in.Offline {
+				return nil, nil, fmt.Errorf("cannot start network prefetch when offline=true")
+			}
+			var items []cache.JobItem
+			for _, req := range reqs {
+				it, bErr := s.Binance.BuildVisionPrefetchJobItem(ctx, req)
+				if bErr != nil {
+					return nil, nil, bErr
+				}
+				items = append(items, it)
+			}
+			desc := strings.TrimSpace(in.Description)
+			if desc == "" {
+				desc = fmt.Sprintf("prefetch vision %s/%s/%s symbols=%v (%d archives)", m, cadence, dataset, symbols, len(items))
+			}
+			job, err := s.Jobs.StartOrResume(desc, items, in.JobID)
+			if err != nil {
+				return nil, nil, err
+			}
+			resMap := map[string]any{
+				"action":           "prefetch",
+				"source":           "binance_vision",
+				"archives_planned": len(items),
+				"has_more":         truncated,
+				"job":              job,
+			}
+			if truncated && nextStartNS > 0 {
+				resMap["next_start_utc_ns"] = strconv.FormatInt(nextStartNS, 10)
+			}
+			return nil, resMap, nil
+		}
+
+		m := binance.NormalizeMarket(in.Market)
+		if m != binance.MarketSpot && m != binance.MarketUSDM {
+			return nil, nil, fmt.Errorf("Recorder estimate/prefetch requires market=spot or market=usdm (got %q)", in.Market)
+		}
 		snap, err := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if err != nil {
 			return nil, nil, err
 		}
-		plan, err := s.Recorder.PlanQuery(snap, string(m), in.Streams, startNS, endNS, false)
+		plan, err := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			Market:     string(m),
+			Streams:    in.Streams,
+			Symbols:    symbols,
+			StartUTCNS: startNS,
+			EndUTCNS:   endNS,
+		})
 		if err != nil {
 			return nil, nil, err
 		}
 		if action == "estimate" {
 			return nil, map[string]any{
 				"action":   "estimate",
+				"source":   "recorder",
 				"estimate": planSummaryMap(plan),
 			}, nil
 		}
@@ -1281,6 +1875,7 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 		}
 		return nil, map[string]any{
 			"action":   "prefetch",
+			"source":   "recorder",
 			"estimate": planSummaryMap(plan),
 			"job":      job,
 		}, nil
@@ -1288,6 +1883,30 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 	default:
 		return nil, nil, fmt.Errorf("unknown manage_local_cache action %q", in.Action)
 	}
+}
+
+func monthsForNSWindow(startNS, endNS int64, maxMonths int) (months []string, truncated bool, nextStartNS int64) {
+	if startNS <= 0 {
+		return nil, false, 0
+	}
+	if endNS <= startNS {
+		endNS = startNS + int64(24*time.Hour)
+	}
+	if maxMonths <= 0 {
+		maxMonths = 24
+	}
+	st := time.Unix(0, startNS).UTC()
+	en := time.Unix(0, endNS-1).UTC()
+	cur := time.Date(st.Year(), st.Month(), 1, 0, 0, 0, 0, time.UTC)
+	endMonth := time.Date(en.Year(), en.Month(), 1, 0, 0, 0, 0, time.UTC)
+	for !cur.After(endMonth) {
+		if len(months) >= maxMonths {
+			return months, true, cur.UnixNano()
+		}
+		months = append(months, cur.Format("2006-01"))
+		cur = cur.AddDate(0, 1, 0)
+	}
+	return months, false, 0
 }
 
 // ---------- 7. query_public_endpoint ----------
@@ -1333,10 +1952,13 @@ func (s *Server) handleQueryPublicEndpoint(ctx context.Context, _ *mcp.CallToolR
 			ext = "jsonl"
 		}
 		outPath := makeResultFilePath(s.Cfg, strings.ReplaceAll(capEntry.EndpointID, ".", "_"), ext)
-		if wErr := os.MkdirAll(filepath.Dir(outPath), 0o755); wErr == nil {
-			_ = os.WriteFile(outPath, res.Payload, 0o644)
-			out["result_file"] = outPath
+		if wErr := os.MkdirAll(filepath.Dir(outPath), 0o755); wErr != nil {
+			return nil, nil, fmt.Errorf("create result dir for %s: %w", outPath, wErr)
 		}
+		if wErr := os.WriteFile(outPath, res.Payload, 0o644); wErr != nil {
+			return nil, nil, fmt.Errorf("write result file %s: %w", outPath, wErr)
+		}
+		out["result_file"] = outPath
 		if len(encoded) > budget-512 {
 			// Replace huge array/object payload with concise preview so JSON stays well under 64 KiB.
 			var arr []any

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -411,11 +412,85 @@ def _scan_archive_target(target_root: Path) -> dict[str, int]:
     return index
 
 
+CHUNK_METADATA_VERSION = "m6a.v1"
+
+
+def _extract_raw_manifest_fields(manifest_path: Path) -> dict[str, Any]:
+    """Read raw-manifest.v1 metadata from local manifest or archive-manifest without touching .bmdr.zst."""
+
+    try:
+        doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(doc, dict):
+        return {}
+    raw: dict[str, Any] | None = None
+    if isinstance(doc.get("raw_manifest"), dict):
+        raw = doc["raw_manifest"]
+    elif isinstance(doc.get("raw_manifest_bytes_base64"), str) and doc["raw_manifest_bytes_base64"]:
+        try:
+            decoded = json.loads(
+                base64.b64decode(doc["raw_manifest_bytes_base64"], validate=True).decode("utf-8")
+            )
+            if isinstance(decoded, dict):
+                raw = decoded
+        except (ValueError, json.JSONDecodeError):
+            raw = None
+    elif doc.get("schema_version") == "raw-manifest.v1" or "receive_time_utc_range_ns" in doc:
+        raw = doc
+    if not raw:
+        return {}
+    out: dict[str, Any] = {}
+    for key in (
+        "symbol",
+        "stream",
+        "receive_time_utc_range_ns",
+        "exchange_time_ranges",
+        "sequence_ranges",
+        "connection_ids",
+    ):
+        val = raw.get(key)
+        if val is not None:
+            out[key] = val
+    return out
+
+
+def _load_previous_chunks_map(export_root: Path, prev_partition: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    """Index previously published chunks.jsonl rows by chunk_id for O(new) manifest hydration."""
+
+    if not isinstance(prev_partition, dict):
+        return {}
+    files = prev_partition.get("files")
+    if not isinstance(files, dict):
+        return {}
+    meta = files.get("chunks_jsonl")
+    if not isinstance(meta, dict) or not isinstance(meta.get("url_path"), str):
+        return {}
+    chunks_path = export_root / meta["url_path"].removeprefix("export/")
+    if not chunks_path.is_file():
+        return {}
+    by_id: dict[str, dict[str, Any]] = {}
+    try:
+        with chunks_path.open("r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                obj = json.loads(line)
+                cid = obj.get("chunk_id")
+                if isinstance(cid, str) and cid:
+                    by_id[cid] = obj
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return by_id
+
+
 def _inspect_snapshot_catalog(
     *,
     snapshot_db_path: Path,
     partition: DiscoveredPartition,
     external_roots: dict[str, Path],
+    previous_chunks_by_id: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any], set[Path]]:
     """Build deterministic chunk, readiness, quarantine, and gap payloads from backup DB."""
 
@@ -476,10 +551,13 @@ def _inspect_snapshot_catalog(
 
     chunk_entries: list[dict[str, Any]] = []
     ready_files_to_grant: set[Path] = set()
+    recorded_symbols: set[str] = set()
+    recorded_streams: set[str] = set()
     target_indexes = {
         sid: _scan_archive_target(target_root)
         for sid, target_root in external_roots.items()
     }
+    prev_chunks = previous_chunks_by_id or {}
     counts = {
         "total": 0,
         "ready": 0,
@@ -503,6 +581,7 @@ def _inspect_snapshot_catalog(
         manifest_url_path: str | None = None
         verified_bytes = row["stored_bytes"]
         verified_sha256 = row["stored_sha256"]
+        resolved_manifest_file: Path | None = None
 
         if tx is None:
             pending_reason = (
@@ -510,6 +589,13 @@ def _inspect_snapshot_catalog(
                 if chunk_state == ChunkState.ACTIVE.value
                 else f"unarchived_{chunk_state.lower()}"
             )
+            raw_mp = row["manifest_path"]
+            if isinstance(raw_mp, str) and raw_mp:
+                cand_mp = Path(raw_mp)
+                if not cand_mp.is_absolute():
+                    cand_mp = partition.partition_root / raw_mp
+                if cand_mp.is_file():
+                    resolved_manifest_file = cand_mp
         else:
             tx_state = str(tx["state"])
             storage_id = str(tx["storage_id"])
@@ -553,20 +639,56 @@ def _inspect_snapshot_catalog(
                         if manifest_norm in file_sizes or manifest_path.is_file():
                             manifest_url_path = f"archive/{storage_id}/{manifest_norm}"
                             ready_files_to_grant.add(manifest_path)
+                            resolved_manifest_file = manifest_path
 
         if ready:
             counts["ready"] += 1
         else:
             counts["pending"] += 1
 
-        entry = {
+        tx_archive_state = tx["state"] if tx else None
+        prev_entry = prev_chunks.get(chunk_id)
+        can_reuse_meta = (
+            prev_entry is not None
+            and prev_entry.get("state") == chunk_state
+            and prev_entry.get("archive_state") == tx_archive_state
+            and prev_entry.get("stored_sha256") == verified_sha256
+            and prev_entry.get("receive_time_utc_range_ns") is not None
+        )
+        if can_reuse_meta:
+            raw_meta = {
+                key: prev_entry[key]
+                for key in (
+                    "symbol",
+                    "stream",
+                    "receive_time_utc_range_ns",
+                    "exchange_time_ranges",
+                    "sequence_ranges",
+                    "connection_ids",
+                )
+                if prev_entry.get(key) is not None
+            }
+        elif resolved_manifest_file is not None:
+            raw_meta = _extract_raw_manifest_fields(resolved_manifest_file)
+        else:
+            raw_meta = {}
+
+        stream_val = tx["stream"] if tx else raw_meta.get("stream")
+        symbol_val = raw_meta.get("symbol")
+        if isinstance(symbol_val, str) and symbol_val and symbol_val != "__GLOBAL__":
+            recorded_symbols.add(symbol_val)
+        if isinstance(stream_val, str) and stream_val:
+            recorded_streams.add(stream_val)
+
+        entry: dict[str, Any] = {
             "chunk_id": chunk_id,
             "market": tx["market"] if tx else partition.market,
-            "stream": tx["stream"] if tx else None,
+            "symbol": symbol_val,
+            "stream": stream_val,
             "state": chunk_state,
             "ready": ready,
             "pending_reason": pending_reason,
-            "archive_state": tx["state"] if tx else None,
+            "archive_state": tx_archive_state,
             "storage_id": storage_id,
             "target_relative_path": target_rel,
             "external_manifest_relative_path": ext_manifest_rel,
@@ -580,11 +702,22 @@ def _inspect_snapshot_catalog(
             "created_at_utc_ns": int(row["created_at_utc_ns"]),
             "updated_at_utc_ns": int(row["updated_at_utc_ns"]),
         }
+        for opt_key in (
+            "receive_time_utc_range_ns",
+            "exchange_time_ranges",
+            "sequence_ranges",
+            "connection_ids",
+        ):
+            if opt_key in raw_meta:
+                entry[opt_key] = raw_meta[opt_key]
         chunk_entries.append(entry)
 
     availability_payload = {
+        "chunk_metadata_version": CHUNK_METADATA_VERSION,
         "partition_id": partition.partition_id,
         "market": partition.market,
+        "recorded_symbols": sorted(recorded_symbols),
+        "recorded_streams": sorted(recorded_streams),
         "sources": [
             {
                 "source_id": str(r["source_id"]),
@@ -834,6 +967,7 @@ def publish_export(
                     and wal_empty
                     and prev is not None
                     and prev.get("fingerprint") == fp
+                    and prev.get("chunk_metadata_version") == CHUNK_METADATA_VERSION
                     and int((prev.get("counts") or {}).get("pending") or 0) == 0
                     and _snapshot_is_valid(export_root, prev)
                 )
@@ -889,11 +1023,13 @@ def publish_export(
                             ext_conn.close()
 
                 _verify_sqlite_integrity(staged_db)
+                previous_chunks = _load_previous_chunks_map(export_root, prev)
                 counts, chunk_entries, availability, part_grant_files = (
                     _inspect_snapshot_catalog(
                         snapshot_db_path=staged_db,
                         partition=part,
                         external_roots=external_roots,
+                        previous_chunks_by_id=previous_chunks,
                     )
                 )
                 ready_files_to_grant.update(part_grant_files)
@@ -947,6 +1083,7 @@ def publish_export(
                     "is_cold": part.is_cold,
                     "source_partition_root": str(part.partition_root),
                     "fingerprint": fp,
+                    "chunk_metadata_version": CHUNK_METADATA_VERSION,
                     "snapshot_rel_dir": snap_rel,
                     "counts": counts,
                     "resolved_archive_targets": {

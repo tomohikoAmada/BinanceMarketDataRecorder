@@ -33,6 +33,7 @@ type WorkerRequest struct {
 	StartUTCNS   int64                `json:"start_utc_ns,omitempty"`
 	EndUTCNS     int64                `json:"end_utc_ns,omitempty"`
 	Interval     string               `json:"interval,omitempty"`
+	Metric       string               `json:"metric,omitempty"`
 	DepthLevels  int                  `json:"depth_levels,omitempty"`
 	SampleStepMS int                  `json:"sample_step_ms,omitempty"`
 	RecordKind   string               `json:"record_kind,omitempty"`
@@ -80,10 +81,23 @@ func (c *Client) BuildWorkerRequest(op string, plan *QueryPlan) WorkerRequest {
 }
 
 // RunWorker executes python/worker.py against local verified Recorder caches and returns parsed JSON.
+// Concurrent invocations are serialized per Client to keep memory bounded during heavy multi-tool turns.
 func (c *Client) RunWorker(ctx context.Context, req WorkerRequest) (map[string]any, error) {
 	if c.Cfg.PythonBin == "" || c.Cfg.WorkerScript == "" {
 		return nil, fmt.Errorf("python worker not configured (python=%q script=%q)", c.Cfg.PythonBin, c.Cfg.WorkerScript)
 	}
+	c.workerOnce.Do(func() {
+		if c.workerSem == nil {
+			c.workerSem = make(chan struct{}, 1)
+		}
+	})
+	select {
+	case c.workerSem <- struct{}{}:
+		defer func() { <-c.workerSem }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
 	payload, err := json.Marshal(req)
 	if err != nil {
 		return nil, err

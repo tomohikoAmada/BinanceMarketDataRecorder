@@ -17,15 +17,17 @@ import (
 
 // JobItem describes a single downloadable file inside a persistent prefetch job.
 type JobItem struct {
-	ItemID      string   `json:"item_id"`
-	DestRelPath string   `json:"dest_rel_path"`
-	SourceURL   string   `json:"source_url"`
-	FallbackURL string   `json:"fallback_url,omitempty"`
-	SHA256      string   `json:"sha256,omitempty"`
-	SizeBytes   int64    `json:"size_bytes,omitempty"`
-	Key         CacheKey `json:"key"`
-	Completed   bool     `json:"completed"`
-	Error       string   `json:"error,omitempty"`
+	ItemID           string          `json:"item_id"`
+	DestRelPath      string          `json:"dest_rel_path"`
+	SourceURL        string          `json:"source_url"`
+	FallbackURL      string          `json:"fallback_url,omitempty"`
+	SHA256           string          `json:"sha256,omitempty"`
+	SizeBytes        int64           `json:"size_bytes,omitempty"`
+	Key              CacheKey        `json:"key"`
+	Completed        bool            `json:"completed"`
+	Error            string          `json:"error,omitempty"`
+	PostWriteRelPath string          `json:"post_write_rel_path,omitempty"`
+	PostWriteContent json.RawMessage `json:"post_write_content,omitempty"`
 }
 
 // PrefetchJob tracks durable chunk-level/file-level bulk download progress across cancellations and restarts.
@@ -204,6 +206,12 @@ func (jc *JobCoordinator) runWorker(ctx context.Context, job *PrefetchJob) {
 		// Skip already locally cached files without redoing work across resume.
 		if dest, err := jc.Mgr.PathFor(item.DestRelPath); err == nil {
 			if rec, ok := LoadReceipt(dest); ok && (item.SHA256 == "" || strings.EqualFold(rec.SHA256, item.SHA256)) {
+				if item.PostWriteRelPath != "" && len(item.PostWriteContent) > 0 {
+					if pwPath, pwErr := jc.Mgr.PathFor(item.PostWriteRelPath); pwErr == nil {
+						_ = os.MkdirAll(filepath.Dir(pwPath), 0o755)
+						_ = os.WriteFile(pwPath, item.PostWriteContent, 0o644)
+					}
+				}
 				item.Completed = true
 				item.Error = ""
 				_ = jc.SaveJob(job)
@@ -229,6 +237,12 @@ func (jc *JobCoordinator) runWorker(ctx context.Context, job *PrefetchJob) {
 			job.LastError = err.Error()
 			_ = jc.SaveJob(job)
 			return
+		}
+		if item.PostWriteRelPath != "" && len(item.PostWriteContent) > 0 {
+			if pwPath, pwErr := jc.Mgr.PathFor(item.PostWriteRelPath); pwErr == nil {
+				_ = os.MkdirAll(filepath.Dir(pwPath), 0o755)
+				_ = os.WriteFile(pwPath, item.PostWriteContent, 0o644)
+			}
 		}
 		item.Completed = true
 		item.Error = ""
