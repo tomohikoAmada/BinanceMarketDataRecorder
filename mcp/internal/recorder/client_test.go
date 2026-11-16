@@ -292,3 +292,143 @@ func TestM6APlanQueryOrderbookMultiBridgeCrossPartitionAndSymbolFilter(t *testin
 		t.Fatalf("expected DOGEUSDT unrecorded, got %+v", plan.UnrecordedSymbols)
 	}
 }
+
+func TestM6R1PlanOverlappingSnapshotTwoPartitionWalkbackAndExchangeTime(t *testing.T) {
+	dir := t.TempDir()
+	cfg := &config.Config{DataDir: dir, HTTPTimeout: 5 * time.Second}
+	if err := cfg.EnsureDirectories(); err != nil {
+		t.Fatal(err)
+	}
+	cl := NewClient(cfg, cache.NewManager(dir, nil, 1, 0, nil))
+
+	makeChunk := func(id, stream string, lo, hi int64) ChunkEntry {
+		sym := "BTCUSDT"
+		st := "store"
+		rawRel := id + ".raw"
+		manRel := id + ".json"
+		sha := "a"
+		sz := int64(1)
+		ch := ChunkEntry{
+			ChunkID:                 id,
+			Market:                  "um_perpetual",
+			Symbol:                  &sym,
+			Stream:                  stream,
+			Ready:                   true,
+			StorageID:               &st,
+			TargetRelativePath:      &rawRel,
+			ExternalManifestRelPath: &manRel,
+			ArchiveURLPath:          &rawRel,
+			ManifestURLPath:         &manRel,
+			StoredSHA256:            &sha,
+			StoredBytes:             &sz,
+			CreatedAtUTCNS:          lo,
+			UpdatedAtUTCNS:          hi,
+			ReceiveTimeUTCRangeNS:   &TimeRangeNS{Min: lo, Max: hi},
+		}
+		if stream == "rest_observations" {
+			ch.SequenceRanges = map[string]any{"lastUpdateId": map[string]any{"min": 100, "max": 100}}
+		}
+		return ch
+	}
+	makePart := func(id, state string, lo, hi int64, chunks []ChunkEntry) LoadedPartition {
+		path := filepath.Join(dir, id+".jsonl")
+		f, err := os.Create(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		enc := json.NewEncoder(f)
+		for _, ch := range chunks {
+			if err := enc.Encode(ch); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+		return LoadedPartition{
+			Manifest:     PartitionManifest{Market: "usdm", PartitionID: id},
+			Metadata:     PartitionMetadata{State: state, ReceiveTimeUTCRangeNS: TimeRangeNS{Min: lo, Max: hi}},
+			ChunksPath:   path,
+			Availability: AvailabilityMetadata{RecordedSymbols: []string{"BTCUSDT"}},
+		}
+	}
+	chunkIDs := func(plan *QueryPlan) []string {
+		out := make([]string, 0, len(plan.PlannedChunks))
+		for _, pc := range plan.PlannedChunks {
+			out = append(out, pc.Chunk.ChunkID)
+		}
+		return out
+	}
+
+	// 1. Overlapping REST snapshot chunk [50, 250] across start=200 must bridge all pre-start diff_depth chunks.
+	overlapPart := makePart("overlap", "open", 10, 400, []ChunkEntry{
+		makeChunk("baseline_in_overlapping_rest", "rest_observations", 50, 250),
+		makeChunk("bridge1", "diff_depth", 60, 110),
+		makeChunk("bridge2", "diff_depth", 111, 150),
+		makeChunk("bridge3", "diff_depth", 151, 199),
+		makeChunk("window", "diff_depth", 200, 310),
+	})
+	plan1, err := cl.PlanQueryWithOptions(&SyncedSnapshot{Partitions: []LoadedPartition{overlapPart}}, PlanOptions{
+		Market:                   "usdm",
+		Streams:                  []string{"rest_observations", "diff_depth"},
+		Symbols:                  []string{"BTCUSDT"},
+		StartUTCNS:               200,
+		EndUTCNS:                 300,
+		IncludePrecedingBaseline: true,
+		OrderbookMode:            true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantOverlap := []string{"baseline_in_overlapping_rest", "bridge1", "bridge2", "bridge3", "window"}
+	if got := chunkIDs(plan1); !reflect.DeepEqual(got, wantOverlap) {
+		t.Fatalf("overlapping baseline plan mismatch:\n got=%v\nwant=%v", got, wantOverlap)
+	}
+
+	// 2. Late trade whose exchange time (149ms) is before end (150ms) even though receive partition starts at 151ms.
+	late := makeChunk("late_trade", "agg_trade", 151000000, 160000000)
+	late.ExchangeTimeRanges = map[string]TimeRangeNS{"exchange_trade_time": {Min: 149, Max: 149}}
+	laterPart := makePart("later_partition", "open", 151000000, 160000000, []ChunkEntry{late})
+	plan2, err := cl.PlanQueryWithOptions(&SyncedSnapshot{Partitions: []LoadedPartition{laterPart}}, PlanOptions{
+		Market:             "usdm",
+		Streams:            []string{"agg_trade"},
+		Symbols:            []string{"BTCUSDT"},
+		StartUTCNS:         100000000,
+		EndUTCNS:           150000000,
+		PreferExchangeTime: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := chunkIDs(plan2); !reflect.DeepEqual(got, []string{"late_trade"}) {
+		t.Fatalf("PreferExchangeTime late-trade plan mismatch: got=%v want=[late_trade]", got)
+	}
+
+	// 3. Baseline snapshot located two partitions earlier (through an intermediate bridge-only partition).
+	p0 := makePart("baseline_partition", "closed", 10, 90, []ChunkEntry{
+		makeChunk("old_baseline", "rest_observations", 10, 30),
+		makeChunk("old_bridge", "diff_depth", 20, 90),
+	})
+	p1 := makePart("middle_partition", "closed", 100, 190, []ChunkEntry{
+		makeChunk("middle_bridge", "diff_depth", 100, 190),
+	})
+	p2 := makePart("query_partition", "open", 200, 400, []ChunkEntry{
+		makeChunk("new_bridge", "diff_depth", 200, 400),
+	})
+	plan3, err := cl.PlanQueryWithOptions(&SyncedSnapshot{Partitions: []LoadedPartition{p0, p1, p2}}, PlanOptions{
+		Market:                   "usdm",
+		Streams:                  []string{"diff_depth", "rest_observations"},
+		Symbols:                  []string{"BTCUSDT"},
+		StartUTCNS:               300,
+		EndUTCNS:                 400,
+		IncludePrecedingBaseline: true,
+		OrderbookMode:            true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantWalk := []string{"old_baseline", "old_bridge", "middle_bridge", "new_bridge"}
+	if got := chunkIDs(plan3); !reflect.DeepEqual(got, wantWalk) {
+		t.Fatalf("multi-partition baseline walkback mismatch:\n got=%v\nwant=%v", got, wantWalk)
+	}
+}

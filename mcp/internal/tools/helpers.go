@@ -2,6 +2,7 @@ package tools
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
@@ -416,6 +417,42 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 	return m
 }
 
+type restPaginationCursor struct {
+	SymbolIndex int    `json:"si,omitempty"`
+	Symbol      string `json:"sym,omitempty"`
+	FromID      int64  `json:"fid,omitempty"`
+	StartNS     int64  `json:"sns,omitempty"`
+	EndNS       int64  `json:"ens,omitempty"`
+}
+
+func encodeRESTCursor(cur restPaginationCursor) string {
+	b, _ := json.Marshal(cur)
+	return "v1:" + base64.RawURLEncoding.EncodeToString(b)
+}
+
+func decodeRESTCursor(raw string) (restPaginationCursor, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return restPaginationCursor{}, nil
+	}
+	if strings.HasPrefix(trimmed, "v1:") {
+		decoded, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(trimmed, "v1:"))
+		if err != nil {
+			return restPaginationCursor{}, fmt.Errorf("invalid v1 cursor encoding: %w", err)
+		}
+		var cur restPaginationCursor
+		if err := json.Unmarshal(decoded, &cur); err != nil {
+			return restPaginationCursor{}, fmt.Errorf("invalid v1 cursor payload: %w", err)
+		}
+		return cur, nil
+	}
+	ns, err := recorder.ParseNSString(trimmed)
+	if err != nil {
+		return restPaginationCursor{}, err
+	}
+	return restPaginationCursor{StartNS: ns}, nil
+}
+
 func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, workerStats map[string]any, orderbookMode bool, unsyncReason string) map[string]any {
 	if plan == nil {
 		return map[string]any{
@@ -444,13 +481,21 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 		reasons = append(reasons, "pending_unknown_stream")
 	}
 
+	unknownMetadata := plan.ReadyChunksMatched > 0 && len(plan.RecordedSymbols) == 0 && !plan.HasSymbolMetadata
 	status := "complete"
+	if unknownMetadata {
+		status = "unknown"
+		reasons = append(reasons, "missing_symbol_coverage_metadata")
+	}
 	if plan.ReadyChunksMatched == 0 {
 		status = "unavailable"
 		reasons = append(reasons, "no_ready_chunks")
 	}
 
-	if orderbookMode && workerStats != nil {
+	var notes []string
+	var symCoverage map[string]any
+
+	if orderbookMode && workerStats != nil && status != "unavailable" {
 		relEmissions := intFromAny(workerStats["reliable_emissions"])
 		winResyncs := intFromAny(workerStats["window_resync_count"])
 		gapFrames := intFromAny(workerStats["gap_count"])
@@ -460,7 +505,77 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 		if winResyncs > 0 {
 			reasons = append(reasons, "window_resync_occurred")
 		}
-		if relEmissions == 0 {
+
+		symCoverage = mapStringAny(workerStats["symbol_coverage"])
+		if len(symCoverage) > 0 {
+			checked := requestedSymbols
+			if len(checked) == 0 {
+				for k := range symCoverage {
+					checked = append(checked, k)
+				}
+			}
+			nComplete, nPartial, nUnavailable := 0, 0, 0
+			for _, sym := range checked {
+				uSym := strings.ToUpper(strings.TrimSpace(sym))
+				entry := mapStringAny(symCoverage[uSym])
+				if len(entry) == 0 {
+					nUnavailable++
+					reasons = append(reasons, "symbol_missing_in_worker_coverage:"+uSym)
+					continue
+				}
+				symStat, _ := entry["status"].(string)
+				symReason, _ := entry["reason"].(string)
+				switch symStat {
+				case "complete":
+					nComplete++
+				case "partial":
+					nPartial++
+					if symReason != "" {
+						reasons = append(reasons, uSym+":"+symReason)
+						notes = append(notes, fmt.Sprintf("%s orderbook partial (%s)", uSym, symReason))
+					} else {
+						reasons = append(reasons, uSym+":partial")
+					}
+				default:
+					nUnavailable++
+					if symReason != "" {
+						reasons = append(reasons, uSym+":"+symReason)
+						notes = append(notes, fmt.Sprintf("%s orderbook unavailable (%s)", uSym, symReason))
+					} else {
+						reasons = append(reasons, uSym+":unavailable")
+					}
+				}
+			}
+			if len(checked) > 0 {
+				if nUnavailable == len(checked) {
+					status = "unavailable"
+				} else if nPartial > 0 || nUnavailable > 0 {
+					if status != "unknown" {
+						status = "partial"
+					}
+				}
+			}
+		} else {
+			// Direct caller/legacy stats without per-symbol worker coverage: never claim complete on multi-symbol
+			// requests unless per-symbol reconstruction or per-symbol snapshots prove every requested symbol succeeded.
+			if relEmissions == 0 {
+				status = "unavailable"
+				if unsyncReason != "" {
+					reasons = append(reasons, unsyncReason)
+				} else {
+					reasons = append(reasons, "no_reliable_orderbook_frames")
+				}
+			} else if len(requestedSymbols) > 1 {
+				snapsSeen := intFromAny(workerStats["snapshots_seen"])
+				if snapsSeen < len(requestedSymbols) {
+					reasons = append(reasons, "missing_per_symbol_snapshots")
+				} else {
+					reasons = append(reasons, "unverified_per_symbol_reconstruction")
+				}
+				notes = append(notes, fmt.Sprintf("Per-symbol orderbook coverage was not verified across all %d requested symbols (%s)", len(requestedSymbols), strings.Join(requestedSymbols, ",")))
+			}
+		}
+		if relEmissions == 0 && status != "unavailable" {
 			status = "unavailable"
 			if unsyncReason != "" {
 				reasons = append(reasons, unsyncReason)
@@ -470,11 +585,13 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 		}
 	}
 
-	if status != "unavailable" && len(reasons) > 0 {
+	if status == "complete" && len(reasons) > 0 {
 		status = "partial"
 	}
 
-	var notes []string
+	if unknownMetadata {
+		notes = append(notes, "Recorder partition/chunk metadata lacks recorded symbol coverage evidence; completeness cannot be verified")
+	}
 	if len(plan.UnrecordedSymbols) > 0 {
 		notes = append(notes, fmt.Sprintf("Requested symbols not in Recorder history (%d omitted): %s (recorded: %s)", len(plan.UnrecordedSymbols), strings.Join(plan.UnrecordedSymbols, ","), strings.Join(plan.RecordedSymbols, ",")))
 	}
@@ -500,6 +617,9 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 		"pending_omitted_count":        plan.PendingOmittedCount,
 		"pending_unknown_stream_count": plan.PendingUnknownStreamCount,
 	}
+	if len(symCoverage) > 0 {
+		out["symbol_coverage"] = symCoverage
+	}
 	if len(reasons) > 0 {
 		out["partial_reasons"] = reasons
 	}
@@ -507,6 +627,18 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 		out["disclosure"] = strings.Join(notes, "; ")
 	}
 	return out
+}
+
+func syncProvenanceCoverage(resp map[string]any) {
+	cov := mapStringAny(resp["coverage"])
+	prov := mapStringAny(resp["recorder_provenance"])
+	if len(cov) == 0 || len(prov) == 0 {
+		return
+	}
+	status, _ := cov["status"].(string)
+	if status != "" && status != "complete" {
+		prov["partial_coverage"] = true
+	}
 }
 
 func intFromAny(v any) int {

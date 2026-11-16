@@ -462,3 +462,151 @@ def test_m6b_m6c_chronological_chunks_ohlc_and_reconnect_recovery(tmp_path: Path
     assert out_p == str(pq_batched)
     assert pq.read_table(pq_batched).num_rows == 5
 
+
+def test_m6r2_r3_r4_r6_lookahead_mixed_export_coverage_and_bounded_streaming(tmp_path: Path, monkeypatch) -> None:
+    """Formal regression for M6-R2 (no snapshot lookahead), M6-R3 (mixed schema + write error propagation), M6-R4 (per-symbol coverage), and M6-R6 (bounded overlap iterators + streaming klines)."""
+    import csv
+    import tracemalloc
+    from types import SimpleNamespace
+
+    base_ms = 1_794_700_800_000
+
+    def _mock_events(events):
+        def _it(req):
+            wanted = {x["stream"] for x in req.get("chunks", [])}
+            for env in events:
+                if not wanted or env.stream in wanted:
+                    yield "p-mock", SimpleNamespace(chunk_id="chunk-" + env.stream), SimpleNamespace(envelope=env)
+
+        monkeypatch.setattr(worker, "_iter_partition_records", _it)
+
+    # 1. M6-R2: Snapshot at +100ms (ID 100) + delta at +200ms (ID 101) -> no +100ms lookahead frame, short [0, +150ms) yields 0 rows!
+    snap_early = _rest_env("um_shared", "BTCUSDT", "depth_snapshot", base_ms + 100, {"lastUpdateId": 100, "bids": [["100", "1"]], "asks": [["101", "1"]]})
+    delta_late = _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 200, {"e": "depthUpdate", "E": base_ms + 200, "T": base_ms + 200, "s": "BTCUSDT", "U": 100, "u": 101, "pu": 99, "b": [["100", "2"]], "a": [["101", "1"]]})
+    _mock_events([snap_early, delta_late])
+    book_req = {
+        "operation": "query_orderbook",
+        "market": "usdm",
+        "symbols": ["BTCUSDT"],
+        "start_utc_ns": base_ms * 1_000_000,
+        "end_utc_ns": (base_ms + 500) * 1_000_000,
+        "chunks": [{"stream": "rest_observations"}, {"stream": "diff_depth"}],
+        "sample_step_ms": 1,
+        "limit": 100,
+    }
+    ob_long = worker.dispatch(book_req)
+    assert len(ob_long["rows"]) == 1
+    assert ob_long["rows"][0]["receive_time_utc_ns"] == str((base_ms + 200) * 1_000_000)
+    assert ob_long["rows"][0]["update_id"] == "101"
+    ob_short = worker.dispatch({**book_req, "end_utc_ns": (base_ms + 150) * 1_000_000})
+    assert ob_short["rows"] == []
+
+    # Also delta arriving BEFORE snapshot (+100ms delta, +200ms snapshot, +300ms follow-up delta) -> bridged state uses +200ms, never +100ms.
+    delta_first = _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 100, {"e": "depthUpdate", "E": base_ms + 100, "T": base_ms + 100, "s": "BTCUSDT", "U": 100, "u": 101, "pu": 99, "b": [["100", "2"]], "a": [["101", "1"]]})
+    snap_after = _rest_env("um_shared", "BTCUSDT", "depth_snapshot", base_ms + 200, {"lastUpdateId": 100, "bids": [["100", "1"]], "asks": [["101", "1"]]})
+    delta_follow = _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 300, {"e": "depthUpdate", "E": base_ms + 300, "T": base_ms + 300, "s": "BTCUSDT", "U": 102, "u": 102, "pu": 101, "b": [["100", "3"]], "a": []})
+    _mock_events([delta_first, snap_after, delta_follow])
+    ob_rev = worker.dispatch(book_req)
+    assert [r["receive_time_utc_ns"] for r in ob_rev["rows"]] == [
+        str((base_ms + 200) * 1_000_000),
+        str((base_ms + 300) * 1_000_000),
+    ]
+    assert ob_rev["rows"][0]["update_id"] == "101"
+    assert ob_rev["rows"][1]["update_id"] == "102"
+
+    # 2. M6-R4: Mixed BTC (mid-window sync) + ETH (no snapshot) reports accurate per-symbol coverage.
+    delta_eth = _env("um_perpetual", "ETHUSDT", "diff_depth", base_ms + 210, {"e": "depthUpdate", "E": base_ms + 210, "T": base_ms + 210, "s": "ETHUSDT", "U": 100, "u": 101, "pu": 99, "b": [["3000", "1"]], "a": [["3001", "1"]]})
+    _mock_events([snap_early, delta_late, delta_eth])
+    ob_mixed = worker.dispatch({**book_req, "symbols": ["BTCUSDT", "ETHUSDT"]})
+    assert ob_mixed["symbol_coverage"]["BTCUSDT"]["status"] == "partial"
+    assert ob_mixed["symbol_coverage"]["ETHUSDT"]["status"] == "unavailable"
+    assert ob_mixed["symbol_coverage"]["ETHUSDT"]["reason"] == "no_depth_snapshots_for_symbol"
+
+    # 3. M6-R3: Mixed agg_trade + liquidation in both orders across jsonl/csv/parquet + multi-batch Parquet + write OSError propagation.
+    trade = _env("um_perpetual", "BTCUSDT", "agg_trade", base_ms + 200, {"a": 1, "T": base_ms + 200, "p": "100", "q": "2", "m": False})
+    liq = _env("um_perpetual", "BTCUSDT", "liquidation", base_ms + 300, {"e": "forceOrder", "E": base_ms + 300, "o": {"s": "BTCUSDT", "T": base_ms + 300, "S": "SELL", "o": "LIMIT", "p": "99", "ap": "98", "q": "3", "z": "3", "X": "FILLED"}})
+    for idx, seq in enumerate(([trade, liq], [liq, trade])):
+        _mock_events(seq)
+        for fmt in ("jsonl", "csv", "parquet"):
+            out_path = tmp_path / f"mixed_{idx}.{fmt}"
+            res = worker.dispatch({"operation": "query_trades_and_liquidations", "market": "usdm", "symbols": ["BTCUSDT"], "record_kind": "all", "limit": 10, "output_file": str(out_path), "output_format": fmt})
+            assert res["total_rows"] == 2
+            if fmt == "csv":
+                rows = list(csv.DictReader(out_path.open()))
+            elif fmt == "parquet":
+                rows = pq.read_table(out_path).to_pylist()
+            else:
+                rows = [json.loads(ln) for ln in out_path.read_text().splitlines()]
+            assert len(rows) == 2
+            liq_rows = [r for r in rows if r["record_type"] == "liquidation"]
+            tr_rows = [r for r in rows if r["record_type"] == "agg_trade"]
+            assert len(liq_rows) == 1 and len(tr_rows) == 1
+            assert liq_rows[0]["average_price"] == "98" and liq_rows[0]["filled_quantity"] == "3" and liq_rows[0]["side"] == "SELL"
+            assert tr_rows[0]["agg_trade_id"] == "1"
+
+    # Multi-batch Parquet test (batch 0 all trades, batch 1 liquidation across > batch boundary).
+    pq_mixed = tmp_path / "mixed_multibatch.parquet"
+    with worker._RowStreamWriter(str(pq_mixed), "parquet", batch_size=64, fieldnames=worker._TRADES_LIQ_FIELDS, parquet_field_types=worker._TRADES_LIQ_PARQUET_TYPES) as w:
+        for i in range(64):
+            w.write({"record_type": "agg_trade", "symbol": "BTCUSDT", "trade_time_utc_ns": str(base_ms + i), "receive_time_utc_ns": str(base_ms + i), "agg_trade_id": str(i + 1), "price": "100", "quantity": "1", "buyer_is_maker": False, "qty_unit": "base_asset", "source": "recorder", "source_chunk_id": "c1"})
+        w.write({"record_type": "liquidation", "symbol": "BTCUSDT", "order_trade_time_utc_ns": str(base_ms + 999), "receive_time_utc_ns": str(base_ms + 999), "side": "SELL", "order_type": "LIMIT", "price": "99", "average_price": "98", "original_quantity": "3", "filled_quantity": "3", "order_status": "FILLED", "qty_unit": "base_asset", "source": "recorder", "source_chunk_id": "c2"})
+        w.close_and_commit()
+    pq_rows = pq.read_table(pq_mixed).to_pylist()
+    assert len(pq_rows) == 65 and pq_rows[-1]["average_price"] == "98"
+
+    _mock_events([trade, liq])
+    orig_write = worker._RowStreamWriter.write
+    def _fail_write(self, row):
+        raise OSError("injected disk full")
+    monkeypatch.setattr(worker._RowStreamWriter, "write", _fail_write)
+    fail_path = tmp_path / "should_fail.jsonl"
+    try:
+        try:
+            worker.dispatch({"operation": "query_trades_and_liquidations", "market": "usdm", "symbols": ["BTCUSDT"], "record_kind": "all", "output_file": str(fail_path)})
+            raise AssertionError("expected OSError from writer.write to propagate")
+        except OSError as exc:
+            assert "injected disk full" in str(exc)
+        assert not fail_path.exists()
+    finally:
+        monkeypatch.setattr(worker._RowStreamWriter, "write", orig_write)
+
+    # 4. M6-R6: Overlap iterator stays bounded at 2 on a 100-chunk overlapping chain, and streaming kline memory stays bounded between 1000 and 4000 bars.
+    active = [0]
+    peak = [0]
+    chain_chunks = [
+        SimpleNamespace(chunk_id=str(i), manifest={"receive_time_utc_range_ns": {"min": 10 + 2 * i, "max": 13 + 2 * i}})
+        for i in range(100)
+    ]
+
+    def _fake_iter_source_records(ch):
+        active[0] += 1
+        peak[0] = max(peak[0], active[0])
+        try:
+            for ts in (ch.manifest["receive_time_utc_range_ns"]["min"], ch.manifest["receive_time_utc_range_ns"]["max"]):
+                yield SimpleNamespace(envelope=SimpleNamespace(receive_time_utc_ns=ts))
+        finally:
+            active[0] -= 1
+
+    monkeypatch.setattr(worker, "iter_source_records", _fake_iter_source_records)
+    out_times = [r.envelope.receive_time_utc_ns for _, r in worker._iter_chronological_chunk_records(chain_chunks)]
+    assert peak[0] == 2
+    assert out_times == sorted(out_times)
+
+    peaks_mem: dict[int, int] = {}
+    for count in (1000, 4000):
+        def _kline_it(_req, n=count):
+            for i in range(n):
+                env = _env("um_perpetual", "BTCUSDT", "agg_trade", base_ms + 1000 * i, {"a": i + 1, "T": base_ms + 1000 * i, "p": "100", "q": "1", "m": False})
+                yield "p", SimpleNamespace(chunk_id="c1"), SimpleNamespace(envelope=env)
+
+        monkeypatch.setattr(worker, "_iter_partition_records", _kline_it)
+        out_kl = tmp_path / f"bars_{count}.jsonl"
+        tracemalloc.start()
+        kl_res = worker.dispatch({"operation": "query_klines", "market": "usdm", "symbols": ["BTCUSDT"], "interval": "1s", "limit": 1, "output_file": str(out_kl)})
+        _, peak_b = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        assert kl_res["total_rows"] == count and len(out_kl.read_text().splitlines()) == count
+        peaks_mem[count] = peak_b
+    assert peaks_mem[4000] < peaks_mem[1000] * 2
+
+

@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/cache"
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/config"
@@ -241,6 +242,8 @@ type QueryPlan struct {
 	GapCount                   int                `json:"gap_count"`
 	QuarantinedCount           int                `json:"quarantined_count"`
 	DiscontinuityCount         int                `json:"discontinuity_count"`
+	HasSymbolMetadata          bool               `json:"has_symbol_metadata,omitempty"`
+	HasTimeRangeMetadata       bool               `json:"has_time_range_metadata,omitempty"`
 	PlannedChunks              []PlannedChunk     `json:"-"`
 	SelectedPartitions         []LoadedPartition  `json:"-"`
 }
@@ -546,8 +549,9 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 	}
 
 	type candPart struct {
-		part         LoadedPartition
-		baselineOnly bool
+		part                 LoadedPartition
+		baselineOnly         bool
+		exchangeBoundaryOnly bool
 	}
 	var marketParts []LoadedPartition
 	for _, part := range snap.Partitions {
@@ -564,49 +568,138 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		return marketParts[i].Manifest.PartitionID < marketParts[j].Manifest.PartitionID
 	})
 
+	const exchangeUpperLeewayNS = int64(24 * time.Hour)
+	const exchangeLowerLeewayNS = int64(5 * time.Minute)
 	var selected []candPart
-	prevClosedIdx := -1
+	var precedingClosedIdxs []int
 	for i, part := range marketParts {
 		pMin := part.Metadata.ReceiveTimeUTCRangeNS.Min
 		pMax := part.Metadata.ReceiveTimeUTCRangeNS.Max
 		if opts.EndUTCNS > 0 && pMin > 0 && pMin >= opts.EndUTCNS {
+			if !opts.PreferExchangeTime || (pMin-opts.EndUTCNS) > exchangeUpperLeewayNS {
+				continue
+			}
+			selected = append(selected, candPart{part: part, exchangeBoundaryOnly: true})
 			continue
 		}
-		if opts.StartUTCNS > 0 && part.Metadata.State == "closed" && pMax > pMin && pMax < opts.StartUTCNS {
-			prevClosedIdx = i
+		lowerSkew := int64(0)
+		if opts.PreferExchangeTime {
+			lowerSkew = exchangeLowerLeewayNS
+		}
+		if opts.StartUTCNS > 0 && part.Metadata.State == "closed" && pMax > pMin && (pMax+lowerSkew) < opts.StartUTCNS {
+			precedingClosedIdxs = append(precedingClosedIdxs, i)
 			continue
 		}
 		selected = append(selected, candPart{part: part, baselineOnly: false})
 	}
-	if opts.IncludePrecedingBaseline && opts.StartUTCNS > 0 && prevClosedIdx >= 0 {
-		selected = append([]candPart{{part: marketParts[prevClosedIdx], baselineOnly: true}}, selected...)
+	if opts.IncludePrecedingBaseline && opts.StartUTCNS > 0 && len(precedingClosedIdxs) > 0 {
+		if !opts.OrderbookMode {
+			lastIdx := precedingClosedIdxs[len(precedingClosedIdxs)-1]
+			selected = append([]candPart{{part: marketParts[lastIdx], baselineOnly: true}}, selected...)
+		} else {
+			satisfied := make(map[string]bool)
+			allSymsSatisfied := func() bool {
+				if satisfied["*"] {
+					return true
+				}
+				if len(symbolSet) == 0 {
+					return false
+				}
+				for sym := range symbolSet {
+					if !satisfied[sym] {
+						return false
+					}
+				}
+				return true
+			}
+			// Check whether already-selected window partitions definitely contain a strict pre-start snapshot baseline.
+			for _, sp := range selected {
+				if sp.exchangeBoundaryOnly {
+					continue
+				}
+				if chunks, cErr := ReadChunksJSONL(sp.part.ChunksPath); cErr == nil {
+					for _, ch := range chunks {
+						if !ch.Ready || ch.Stream != "rest_observations" || !ch.HasDepthSnapshotMetadata() {
+							continue
+						}
+						_, cMax, hasRange := ch.EffectiveTimeRangeNS(false)
+						strictPre := (hasRange && cMax > 0 && cMax < opts.StartUTCNS) || (!hasRange && ch.UpdatedAtUTCNS > 0 && ch.UpdatedAtUTCNS < opts.StartUTCNS)
+						if !strictPre {
+							continue
+						}
+						sym := ch.SymbolName()
+						if sym == "" || sym == "__GLOBAL__" {
+							satisfied["*"] = true
+						} else if len(symbolSet) == 0 || symbolSet[sym] {
+							satisfied[sym] = true
+						}
+					}
+				}
+			}
+			if !allSymsSatisfied() {
+				var prependParts []candPart
+				for k := len(precedingClosedIdxs) - 1; k >= 0; k-- {
+					p := marketParts[precedingClosedIdxs[k]]
+					prependParts = append(prependParts, candPart{part: p, baselineOnly: true})
+					if chunks, cErr := ReadChunksJSONL(p.ChunksPath); cErr == nil {
+						for _, ch := range chunks {
+							if !ch.Ready || ch.Stream != "rest_observations" || !ch.HasDepthSnapshotMetadata() {
+								continue
+							}
+							sym := ch.SymbolName()
+							if sym == "" || sym == "__GLOBAL__" {
+								satisfied["*"] = true
+							} else if len(symbolSet) == 0 || symbolSet[sym] {
+								satisfied[sym] = true
+							}
+						}
+					}
+					if allSymsSatisfied() {
+						break
+					}
+				}
+				// Prepend in ascending chronological order (reverse of walk-back).
+				for i, j := 0, len(prependParts)-1; i < j; i, j = i+1, j-1 {
+					prependParts[i], prependParts[j] = prependParts[j], prependParts[i]
+				}
+				selected = append(prependParts, selected...)
+			}
+		}
 	}
 
 	recordedSymSet := make(map[string]bool)
 	type chunkCand struct {
-		partID       string
-		catalogPath  string
-		ch           ChunkEntry
-		localRaw     string
-		localMan     string
-		rawCached    bool
-		manCached    bool
-		minNS        int64
-		maxNS        int64
-		hasDataRange bool
-		baselineOnly bool
+		partID               string
+		catalogPath          string
+		ch                   ChunkEntry
+		localRaw             string
+		localMan             string
+		rawCached            bool
+		manCached            bool
+		minNS                int64
+		maxNS                int64
+		hasDataRange         bool
+		baselineOnly         bool
+		exchangeBoundaryOnly bool
 	}
 	var allCandidates []chunkCand
+	partByID := make(map[string]LoadedPartition, len(selected))
+	partIncludedInPlan := make(map[string]bool, len(selected))
 
 	for _, sp := range selected {
 		part := sp.part
-		if !sp.baselineOnly {
+		partByID[part.Manifest.PartitionID] = part
+		if !sp.baselineOnly && !sp.exchangeBoundaryOnly {
 			plan.PartitionsMatched++
 			plan.GapCount += len(part.Availability.Gaps)
 			plan.QuarantinedCount += len(part.Availability.QuarantinedArtifacts)
 			plan.DiscontinuityCount += len(part.Availability.DiscontinuityEvents)
+			plan.SelectedPartitions = append(plan.SelectedPartitions, part)
+			partIncludedInPlan[part.Manifest.PartitionID] = true
+		} else if sp.baselineOnly {
+			plan.SelectedPartitions = append(plan.SelectedPartitions, part)
+			partIncludedInPlan[part.Manifest.PartitionID] = true
 		}
-		plan.SelectedPartitions = append(plan.SelectedPartitions, part)
 		for _, sym := range part.Availability.RecordedSymbols {
 			u := strings.ToUpper(strings.TrimSpace(sym))
 			if u != "" && u != "__GLOBAL__" {
@@ -632,7 +725,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 					if opts.StartUTCNS > 0 && cMax > 0 && cMax < opts.StartUTCNS {
 						continue
 					}
-				} else if sp.baselineOnly {
+				} else if sp.baselineOnly || sp.exchangeBoundaryOnly {
 					continue
 				}
 				plan.PendingOmittedCount++
@@ -684,17 +777,18 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 
 			minNS, maxNS, hasDataRange := ch.EffectiveTimeRangeNS(opts.PreferExchangeTime)
 			allCandidates = append(allCandidates, chunkCand{
-				partID:       part.Manifest.PartitionID,
-				catalogPath:  part.CatalogPath,
-				ch:           ch,
-				localRaw:     localRaw,
-				localMan:     localMan,
-				rawCached:    isReceiptMatching(localRaw, *ch.StoredSHA256),
-				manCached:    hasFileAndReceipt(localMan),
-				minNS:        minNS,
-				maxNS:        maxNS,
-				hasDataRange: hasDataRange,
-				baselineOnly: sp.baselineOnly,
+				partID:               part.Manifest.PartitionID,
+				catalogPath:          part.CatalogPath,
+				ch:                   ch,
+				localRaw:             localRaw,
+				localMan:             localMan,
+				rawCached:            isReceiptMatching(localRaw, *ch.StoredSHA256),
+				manCached:            hasFileAndReceipt(localMan),
+				minNS:                minNS,
+				maxNS:                maxNS,
+				hasDataRange:         hasDataRange,
+				baselineOnly:         sp.baselineOnly,
+				exchangeBoundaryOnly: sp.exchangeBoundaryOnly,
 			})
 		}
 	}
@@ -722,9 +816,22 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		stream string
 	}
 	chosen := make(map[string]bool)
-	latestPreSnapshotMinNS := make(map[string]int64)
+	strictPreSnapshotMinNS := make(map[string]int64)
+	overlapPreSnapshotMinNS := make(map[string]int64)
 	latestPreRestChunk := make(map[baseKey]int)
 	latestPreStreamChunk := make(map[baseKey]int)
+
+	recordRestSnapshotStart := func(symKey string, cMin int64, overlapsWindow bool) {
+		if overlapsWindow {
+			if prev, ok := overlapPreSnapshotMinNS[symKey]; !ok || cMin < prev {
+				overlapPreSnapshotMinNS[symKey] = cMin
+			}
+			return
+		}
+		if prev, ok := strictPreSnapshotMinNS[symKey]; !ok || cMin > prev {
+			strictPreSnapshotMinNS[symKey] = cMin
+		}
+	}
 
 	for idx, cand := range allCandidates {
 		ch := cand.ch
@@ -737,6 +844,11 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				if !cand.baselineOnly {
 					chosen[ch.ChunkID] = true
 				}
+				if opts.IncludePrecedingBaseline && opts.OrderbookMode && ch.Stream == "rest_observations" && ch.HasDepthSnapshotMetadata() {
+					if opts.StartUTCNS <= 0 || cand.minNS <= opts.StartUTCNS {
+						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), cand.minNS, true)
+					}
+				}
 				continue
 			}
 			if opts.IncludePrecedingBaseline {
@@ -744,10 +856,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				if ch.Stream == "rest_observations" {
 					if ch.HasDepthSnapshotMetadata() {
 						latestPreRestChunk[bk] = idx
-						symKey := ch.Market + "|" + ch.SymbolName()
-						if prev, ok := latestPreSnapshotMinNS[symKey]; !ok || cand.minNS > prev {
-							latestPreSnapshotMinNS[symKey] = cand.minNS
-						}
+						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), cand.minNS, false)
 					} else if _, hasSnap := latestPreRestChunk[bk]; !hasSnap {
 						latestPreRestChunk[bk] = idx
 					}
@@ -766,6 +875,9 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				bk := baseKey{market: ch.Market, symbol: ch.SymbolName(), stream: ch.Stream}
 				if ch.Stream == "rest_observations" {
 					latestPreRestChunk[bk] = idx
+					if ch.HasDepthSnapshotMetadata() {
+						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.CreatedAtUTCNS, false)
+					}
 				} else {
 					latestPreStreamChunk[bk] = idx
 				}
@@ -774,6 +886,11 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		}
 		if !cand.baselineOnly || opts.IncludePrecedingBaseline {
 			chosen[ch.ChunkID] = true
+			if opts.IncludePrecedingBaseline && opts.OrderbookMode && ch.Stream == "rest_observations" && ch.HasDepthSnapshotMetadata() {
+				if opts.StartUTCNS <= 0 || ch.CreatedAtUTCNS <= opts.StartUTCNS {
+					recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.CreatedAtUTCNS, true)
+				}
+			}
 		}
 	}
 
@@ -781,21 +898,53 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		for _, idx := range latestPreRestChunk {
 			chosen[allCandidates[idx].ch.ChunkID] = true
 		}
+		latestPreSnapshotMinNS := make(map[string]int64)
+		for k, v := range strictPreSnapshotMinNS {
+			latestPreSnapshotMinNS[k] = v
+		}
+		for k, v := range overlapPreSnapshotMinNS {
+			if prev, ok := latestPreSnapshotMinNS[k]; !ok || v < prev {
+				latestPreSnapshotMinNS[k] = v
+			}
+		}
+		lookupSnapStart := func(market, sym string) (int64, bool) {
+			candidates := []string{
+				market + "|" + sym,
+				market + "|__GLOBAL__",
+				market + "|",
+			}
+			switch market {
+			case "um_perpetual", "um_delivery", "usdm":
+				candidates = append(candidates, "um_shared|"+sym, "um_shared|__GLOBAL__", "um_shared|")
+			case "cm_perpetual", "cm_delivery", "coinm":
+				candidates = append(candidates, "cm_shared|"+sym, "cm_shared|__GLOBAL__", "cm_shared|")
+			}
+			for _, key := range candidates {
+				if v, ok := latestPreSnapshotMinNS[key]; ok {
+					return v, true
+				}
+			}
+			return 0, false
+		}
 		if opts.OrderbookMode && len(latestPreSnapshotMinNS) > 0 {
 			for _, cand := range allCandidates {
-				if cand.ch.Stream != "diff_depth" || !cand.hasDataRange {
+				if cand.ch.Stream != "diff_depth" {
 					continue
 				}
-				if opts.EndUTCNS > 0 && cand.minNS >= opts.EndUTCNS {
-					continue
-				}
-				symKey := cand.ch.Market + "|" + cand.ch.SymbolName()
-				snapStart, ok := latestPreSnapshotMinNS[symKey]
-				if !ok {
-					snapStart, ok = latestPreSnapshotMinNS[cand.ch.Market+"|"]
-				}
-				if ok && cand.maxNS >= snapStart {
-					chosen[cand.ch.ChunkID] = true
+				if cand.hasDataRange {
+					if opts.EndUTCNS > 0 && cand.minNS >= opts.EndUTCNS {
+						continue
+					}
+					if snapStart, ok := lookupSnapStart(cand.ch.Market, cand.ch.SymbolName()); ok && cand.maxNS >= snapStart {
+						chosen[cand.ch.ChunkID] = true
+					}
+				} else {
+					if opts.EndUTCNS > 0 && cand.ch.CreatedAtUTCNS >= opts.EndUTCNS {
+						continue
+					}
+					if snapStart, ok := lookupSnapStart(cand.ch.Market, cand.ch.SymbolName()); ok && (cand.ch.UpdatedAtUTCNS == 0 || cand.ch.UpdatedAtUTCNS >= snapStart) {
+						chosen[cand.ch.ChunkID] = true
+					}
 				}
 			}
 		} else {
@@ -805,9 +954,23 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		}
 	}
 
+	allChosenHaveTime := true
 	for _, cand := range allCandidates {
 		if !chosen[cand.ch.ChunkID] {
 			continue
+		}
+		if !partIncludedInPlan[cand.partID] {
+			partIncludedInPlan[cand.partID] = true
+			if p, ok := partByID[cand.partID]; ok {
+				plan.SelectedPartitions = append(plan.SelectedPartitions, p)
+				plan.PartitionsMatched++
+				plan.GapCount += len(p.Availability.Gaps)
+				plan.QuarantinedCount += len(p.Availability.QuarantinedArtifacts)
+				plan.DiscontinuityCount += len(p.Availability.DiscontinuityEvents)
+			}
+		}
+		if !cand.hasDataRange {
+			allChosenHaveTime = false
 		}
 		ch := cand.ch
 		plan.ReadyChunksMatched++
@@ -838,6 +1001,8 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		plan.RecordedSymbols = append(plan.RecordedSymbols, sym)
 	}
 	sort.Strings(plan.RecordedSymbols)
+	plan.HasSymbolMetadata = len(plan.RecordedSymbols) > 0
+	plan.HasTimeRangeMetadata = plan.ReadyChunksMatched > 0 && allChosenHaveTime
 	if len(normalizedSyms) > 0 && len(recordedSymSet) > 0 {
 		for _, sym := range normalizedSyms {
 			if !recordedSymSet[sym] {

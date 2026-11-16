@@ -118,17 +118,15 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	if err != nil {
 		return nil, nil, err
 	}
-	if strings.TrimSpace(in.Cursor) != "" {
-		curNS, cErr := recorder.ParseNSString(in.Cursor)
-		if cErr != nil {
-			return nil, nil, fmt.Errorf("invalid cursor: %w", cErr)
-		}
-		if curNS > startNS {
-			startNS = curNS
-		}
-		if endNS > 0 && startNS >= endNS {
-			return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
-		}
+	restCur, curErr := decodeRESTCursor(in.Cursor)
+	if curErr != nil {
+		return nil, nil, fmt.Errorf("invalid cursor: %w", curErr)
+	}
+	if restCur.EndNS == 0 && restCur.StartNS > startNS {
+		startNS = restCur.StartNS
+	}
+	if startNS > 0 && endNS > 0 && startNS >= endNS {
+		return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
 	}
 	interval := strings.TrimSpace(in.Interval)
 	if interval == "" {
@@ -170,11 +168,12 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if sErr == nil {
 			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-				Market:     string(m),
-				Streams:    []string{"agg_trade"},
-				Symbols:    symbols,
-				StartUTCNS: startNS,
-				EndUTCNS:   endNS,
+				Market:             string(m),
+				Streams:            []string{"agg_trade"},
+				Symbols:            symbols,
+				StartUTCNS:         startNS,
+				EndUTCNS:           endNS,
+				PreferExchangeTime: true,
 			})
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
@@ -197,8 +196,10 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 						if int(totalRowsF) > 0 || sourcePref == "recorder" {
 							wRes["market"] = string(m)
 							wRes["data_source"] = "recorder"
+							wRes["kline_type"] = klineType
 							wRes["recorder_provenance"] = planSummaryMap(plan)
 							wRes["coverage"] = buildRecorderCoverage(plan, symbols, nil, false, "")
+							syncProvenanceCoverage(wRes)
 							out, bErr := applyWorkerResponseBudget(s.Cfg, "klines", wRes, limit)
 							if bErr != nil {
 								return nil, nil, bErr
@@ -226,88 +227,113 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 
 	// Route 2: Binance Vision daily zip archives (historical, deterministic SHA-256 CHECKSUM).
 	if sourcePref == "vision" || (sourcePref == "auto" && klineType == "standard" && m != binance.MarketOptions && startNS > 0) {
-		days, daysTruncated, nextStartNS := datesForNSWindow(startNS, endNS, 31)
-		var allRows []map[string]any
-		var archives []map[string]any
-		seen := make(map[string]bool)
-		visionOK := len(days) > 0
-		for _, sym := range symbols {
-			for _, day := range days {
-				arch, vErr := s.Binance.FetchVisionDailyKlines(ctx, m, sym, interval, day, in.Offline)
-				if vErr != nil {
-					visionOK = false
-					if sourcePref == "vision" {
-						return nil, nil, vErr
+		visionDS, visionQtyUnit, visionUsePair, vSpecErr := visionDatasetForKlineType(m, klineType)
+		if vSpecErr != nil {
+			if sourcePref == "vision" {
+				return nil, nil, vSpecErr
+			}
+		} else {
+			days, daysTruncated, nextStartNS := datesForNSWindow(startNS, endNS, 31)
+			var allRows []map[string]any
+			var archives []map[string]any
+			seen := make(map[string]bool)
+			visionOK := len(days) > 0
+			for _, sym := range symbols {
+				visionSym := sym
+				if visionUsePair {
+					if idx := strings.Index(sym, "_"); idx > 0 {
+						visionSym = sym[:idx]
 					}
-					fallbackNote = fmt.Sprintf("Vision %s %s %s unavailable (%v); fell back to REST", sym, interval, day, vErr)
+				}
+				for _, day := range days {
+					arch, vErr := s.Binance.FetchVisionArchive(ctx, binance.VisionArchiveRequest{
+						Market:   m,
+						Cadence:  "daily",
+						Dataset:  visionDS,
+						Symbol:   visionSym,
+						Interval: interval,
+						Period:   day,
+					}, in.Offline)
+					if vErr != nil {
+						visionOK = false
+						if sourcePref == "vision" {
+							return nil, nil, vErr
+						}
+						fallbackNote = fmt.Sprintf("Vision %s %s %s unavailable (%v); fell back to REST", visionSym, interval, day, vErr)
+						break
+					}
+					archives = append(archives, map[string]any{
+						"symbol":    visionSym,
+						"dataset":   visionDS,
+						"date":      day,
+						"sha256":    arch.ChecksumHex,
+						"cache_hit": arch.CacheHit,
+						"zip_path":  arch.ZipPath,
+					})
+					vRows, rErr := binance.ReadVisionKlinesZip(arch.ZipPath, m, arch.ChecksumHex, startNS/1_000_000, endNS/1_000_000)
+					if rErr != nil {
+						return nil, nil, rErr
+					}
+					for _, vr := range vRows {
+						dedupKey := sym + ":" + vr.OpenTimeUTCNS
+						if seen[dedupKey] {
+							continue
+						}
+						seen[dedupKey] = true
+						row := map[string]any{
+							"symbol":            sym,
+							"open_time_utc_ns":  vr.OpenTimeUTCNS,
+							"close_time_utc_ns": vr.CloseTimeUTCNS,
+							"open":              vr.Open,
+							"high":              vr.High,
+							"low":               vr.Low,
+							"close":             vr.Close,
+							"volume":            vr.Volume,
+							"trade_count":       vr.TradeCount,
+							"qty_unit":          visionQtyUnit,
+							"kline_type":        klineType,
+							"source":            "binance_vision",
+							"checksum_sha256":   vr.RevisionOrHash,
+						}
+						if visionQtyUnit != "price_only" {
+							if vr.QuoteVolume != "" {
+								row["quote_volume"] = vr.QuoteVolume
+							}
+							if vr.BaseVolume != "" {
+								row["base_volume"] = vr.BaseVolume
+							}
+						}
+						allRows = append(allRows, row)
+					}
+				}
+				if !visionOK {
 					break
 				}
-				archives = append(archives, map[string]any{
-					"symbol":    sym,
-					"date":      day,
-					"sha256":    arch.ChecksumHex,
-					"cache_hit": arch.CacheHit,
-					"zip_path":  arch.ZipPath,
-				})
-				vRows, rErr := binance.ReadVisionKlinesZip(arch.ZipPath, m, arch.ChecksumHex, startNS/1_000_000, endNS/1_000_000)
-				if rErr != nil {
-					return nil, nil, rErr
+			}
+			if visionOK {
+				payload := map[string]any{
+					"market":      string(m),
+					"interval":    interval,
+					"kline_type":  klineType,
+					"data_source": "binance_vision",
+					"archives":    archives,
+					"qty_unit":    visionQtyUnit,
+					"has_more":    daysTruncated,
 				}
-				for _, vr := range vRows {
-					dedupKey := sym + ":" + vr.OpenTimeUTCNS
-					if seen[dedupKey] {
-						continue
-					}
-					seen[dedupKey] = true
-					row := map[string]any{
-						"symbol":            sym,
-						"open_time_utc_ns":  vr.OpenTimeUTCNS,
-						"close_time_utc_ns": vr.CloseTimeUTCNS,
-						"open":              vr.Open,
-						"high":              vr.High,
-						"low":               vr.Low,
-						"close":             vr.Close,
-						"volume":            vr.Volume,
-						"trade_count":       vr.TradeCount,
-						"qty_unit":          vr.QtyUnit,
-						"source":            "binance_vision",
-						"checksum_sha256":   vr.RevisionOrHash,
-					}
-					if vr.QuoteVolume != "" {
-						row["quote_volume"] = vr.QuoteVolume
-					}
-					if vr.BaseVolume != "" {
-						row["base_volume"] = vr.BaseVolume
-					}
-					allRows = append(allRows, row)
+				if daysTruncated && nextStartNS > 0 {
+					nextStr := strconv.FormatInt(nextStartNS, 10)
+					payload["next_start_utc_ns"] = nextStr
+					payload["next_cursor"] = nextStr
+					payload["note"] = "Window exceeded 31 days per Vision batch; pass cursor/next_start_utc_ns to continue cleanly."
+				} else if fallbackNote != "" {
+					payload["note"] = fallbackNote
 				}
+				out, bErr := applyResponseBudget(s.Cfg, "klines_vision", payload, "rows", allRows, in.SaveToFile, outFmt, limit)
+				if bErr != nil {
+					return nil, nil, bErr
+				}
+				return nil, out, nil
 			}
-			if !visionOK {
-				break
-			}
-		}
-		if visionOK {
-			payload := map[string]any{
-				"market":      string(m),
-				"interval":    interval,
-				"data_source": "binance_vision",
-				"archives":    archives,
-				"qty_unit":    qtyUnitForMarket(m),
-				"has_more":    daysTruncated,
-			}
-			if daysTruncated && nextStartNS > 0 {
-				nextStr := strconv.FormatInt(nextStartNS, 10)
-				payload["next_start_utc_ns"] = nextStr
-				payload["next_cursor"] = nextStr
-				payload["note"] = "Window exceeded 31 days per Vision batch; pass cursor/next_start_utc_ns to continue cleanly."
-			} else if fallbackNote != "" {
-				payload["note"] = fallbackNote
-			}
-			out, bErr := applyResponseBudget(s.Cfg, "klines_vision", payload, "rows", allRows, in.SaveToFile, outFmt, limit)
-			if bErr != nil {
-				return nil, nil, bErr
-			}
-			return nil, out, nil
 		}
 	}
 
@@ -322,10 +348,24 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	}
 	var allRows []map[string]any
 	hasMore := false
+	var nextCursorStr string
 	var nextCursorNS int64
 	const restMaxPage = 1000
 
-	for _, sym := range symbols {
+	resumeSymIdx := 0
+	if restCur.SymbolIndex > 0 && restCur.SymbolIndex < len(symbols) {
+		resumeSymIdx = restCur.SymbolIndex
+	} else if restCur.Symbol != "" {
+		for idx, sName := range symbols {
+			if sName == restCur.Symbol {
+				resumeSymIdx = idx
+				break
+			}
+		}
+	}
+
+	for si := resumeSymIdx; si < len(symbols); si++ {
+		sym := symbols[si]
 		seenSym := make(map[string]bool)
 		curStartMS := int64(0)
 		if startNS > 0 {
@@ -335,15 +375,124 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		if endNS > 0 {
 			endMS = (endNS - 1) / 1_000_000
 		}
-		fetchedSym := 0
 
+		if m == binance.MarketCOINM && startNS > 0 {
+			// COIN-M kline endpoints return the trailing `limit` bars up to `endTime`; paginate backward then sort ascending.
+			curEndMS := endMS
+			if curEndMS == 0 {
+				curEndMS = time.Now().UTC().UnixMilli()
+			}
+			if si == resumeSymIdx && restCur.EndNS > 0 {
+				if cEnd := restCur.EndNS / 1_000_000; cEnd < curEndMS {
+					curEndMS = cEnd
+				}
+			}
+			var symRows []map[string]any
+			budgetHit := false
+			for {
+				if curEndMS < curStartMS {
+					break
+				}
+				remaining := maxFetchRows - (len(allRows) + len(symRows))
+				if remaining <= 0 {
+					hasMore = true
+					nextCursorNS = (curEndMS + 1) * 1_000_000
+					nextCursorStr = encodeRESTCursor(restPaginationCursor{
+						SymbolIndex: si,
+						Symbol:      sym,
+						StartNS:     curStartMS * 1_000_000,
+						EndNS:       curEndMS * 1_000_000,
+					})
+					budgetHit = true
+					break
+				}
+				pageLimit := restMaxPage
+				if remaining < pageLimit {
+					pageLimit = remaining
+				}
+				params := map[string]string{
+					"interval":  interval,
+					"limit":     strconv.Itoa(pageLimit),
+					"startTime": strconv.FormatInt(curStartMS, 10),
+					"endTime":   strconv.FormatInt(curEndMS, 10),
+				}
+				switch klineType {
+				case "continuous":
+					params["pair"] = sym
+					ct := strings.ToUpper(strings.TrimSpace(in.ContractType))
+					if ct == "" {
+						ct = "PERPETUAL"
+					}
+					params["contractType"] = ct
+				case "index":
+					params["pair"] = sym
+				default:
+					params["symbol"] = sym
+				}
+				res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
+				if err != nil {
+					return nil, nil, err
+				}
+				parsed, pErr := parseRESTKlineArray(res.Payload, sym, m, klineType, "binance_rest")
+				if pErr != nil {
+					return nil, nil, fmt.Errorf("%s parse: %w", endpointID, pErr)
+				}
+				addedInPage := 0
+				var earliestOpenMS int64
+				for _, row := range parsed {
+					openNSStr, _ := row["open_time_utc_ns"].(string)
+					openNS, _ := strconv.ParseInt(openNSStr, 10, 64)
+					if startNS > 0 && openNS < startNS {
+						continue
+					}
+					if endNS > 0 && openNS >= endNS {
+						continue
+					}
+					openMS := openNS / 1_000_000
+					if earliestOpenMS == 0 || openMS < earliestOpenMS {
+						earliestOpenMS = openMS
+					}
+					if seenSym[openNSStr] {
+						continue
+					}
+					seenSym[openNSStr] = true
+					symRows = append(symRows, row)
+					addedInPage++
+				}
+				if len(parsed) < pageLimit || addedInPage == 0 || earliestOpenMS == 0 || earliestOpenMS <= curStartMS {
+					break
+				}
+				curEndMS = earliestOpenMS - 1
+			}
+			sort.Slice(symRows, func(i, j int) bool {
+				ti, _ := strconv.ParseInt(fmt.Sprint(symRows[i]["open_time_utc_ns"]), 10, 64)
+				tj, _ := strconv.ParseInt(fmt.Sprint(symRows[j]["open_time_utc_ns"]), 10, 64)
+				return ti < tj
+			})
+			allRows = append(allRows, symRows...)
+			if budgetHit {
+				break
+			}
+			continue
+		}
+
+		if si == resumeSymIdx && restCur.StartNS > 0 {
+			if cStart := restCur.StartNS / 1_000_000; cStart > curStartMS {
+				curStartMS = cStart
+			}
+		}
+		budgetHit := false
 		for {
-			remaining := maxFetchRows - fetchedSym
+			remaining := maxFetchRows - len(allRows)
 			if remaining <= 0 {
 				hasMore = true
-				if curStartMS > 0 && (nextCursorNS == 0 || curStartMS*1_000_000 < nextCursorNS) {
-					nextCursorNS = curStartMS * 1_000_000
-				}
+				nextCursorNS = curStartMS * 1_000_000
+				nextCursorStr = encodeRESTCursor(restPaginationCursor{
+					SymbolIndex: si,
+					Symbol:      sym,
+					StartNS:     nextCursorNS,
+				})
+				budgetHit = true
 				break
 			}
 			pageLimit := restMaxPage
@@ -411,7 +560,6 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 				}
 				seenSym[openNSStr] = true
 				allRows = append(allRows, row)
-				fetchedSym++
 				addedInPage++
 			}
 
@@ -426,6 +574,9 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 				break
 			}
 			curStartMS = nextMS
+		}
+		if budgetHit {
+			break
 		}
 	}
 
@@ -442,10 +593,17 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		"qty_unit":    qtyUnit,
 		"has_more":    hasMore,
 	}
-	if hasMore && nextCursorNS > 0 {
-		nextStr := strconv.FormatInt(nextCursorNS, 10)
-		payload["next_cursor"] = nextStr
-		payload["next_start_utc_ns"] = nextStr
+	if hasMore {
+		if nextCursorStr != "" {
+			payload["next_cursor"] = nextCursorStr
+		}
+		if nextCursorNS > 0 {
+			nextStr := strconv.FormatInt(nextCursorNS, 10)
+			if payload["next_cursor"] == nil {
+				payload["next_cursor"] = nextStr
+			}
+			payload["next_start_utc_ns"] = nextStr
+		}
 	}
 	if fallbackNote != "" {
 		payload["note"] = fallbackNote
@@ -455,6 +613,28 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 		return nil, nil, bErr
 	}
 	return nil, out, nil
+}
+
+func visionDatasetForKlineType(m binance.Market, klineType string) (dataset string, qtyUnit string, usePair bool, err error) {
+	if m == binance.MarketOptions {
+		return "", "", false, fmt.Errorf("Binance Vision kline archives do not support options market")
+	}
+	switch klineType {
+	case "standard":
+		return "klines", qtyUnitForMarket(m), false, nil
+	case "mark":
+		if m != binance.MarketUSDM && m != binance.MarketCOINM {
+			return "", "", false, fmt.Errorf("Binance Vision markPriceKlines only support usdm/coinm futures (got %s)", m)
+		}
+		return "markPriceKlines", "price_only", false, nil
+	case "index":
+		if m != binance.MarketUSDM && m != binance.MarketCOINM {
+			return "", "", false, fmt.Errorf("Binance Vision indexPriceKlines only support usdm/coinm futures (got %s)", m)
+		}
+		return "indexPriceKlines", "price_only", true, nil
+	default:
+		return "", "", false, fmt.Errorf("Binance Vision archives do not support kline_type=%q for source='vision'; supported Vision kline types are standard (spot/usdm/coinm) and mark/index (usdm/coinm)", klineType)
+	}
 }
 
 func klineEndpointID(m binance.Market, klineType string) (string, error) {
@@ -549,9 +729,55 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 			return nil, nil, fmt.Errorf("Recorder sync failed for historical orderbook (refusing REST backfill): %w", err)
 		}
 
-		// Two-stage planning (M6-A): first locate snapshot baseline chunks in rest_observations so
-		// pre-window depth snapshots and bridging diff_depth chunks are included cleanly.
+		// Two-stage planning (M6-A + M6-R1): inspect rest_observations chunks first to locate actual
+		// pre-start depth_snapshot timestamps for each requested symbol (walking backwards across closed partitions as needed).
 		planStart := startNS
+		foundBeforeBySym := make(map[string]bool, len(symbols))
+		parseInspectBeforeMap := func(inspectRes map[string]any) {
+			applyTS := func(sym string, rawVal any) {
+				rawStr, ok := rawVal.(string)
+				if !ok || strings.TrimSpace(rawStr) == "" {
+					return
+				}
+				if beforeNS, pErr := recorder.ParseNSString(rawStr); pErr == nil && beforeNS > 0 {
+					if sym != "" {
+						foundBeforeBySym[strings.ToUpper(strings.TrimSpace(sym))] = true
+					}
+					if planStart == 0 || beforeNS < planStart {
+						planStart = beforeNS
+					}
+				}
+			}
+			if beforeMap := mapStringAny(inspectRes["latest_before_start_ns"]); len(beforeMap) > 0 {
+				if len(symbols) > 0 {
+					for _, sym := range symbols {
+						if val, exists := beforeMap[sym]; exists {
+							applyTS(sym, val)
+						}
+					}
+				} else {
+					for k, val := range beforeMap {
+						applyTS(k, val)
+					}
+				}
+			} else if rawBefore, ok := inspectRes["latest_before_start_ns"].(string); ok && rawBefore != "" {
+				applyTS("", rawBefore)
+			}
+		}
+
+		missingSnapSymbols := func() []string {
+			if len(symbols) == 0 {
+				return nil
+			}
+			var missing []string
+			for _, sym := range symbols {
+				if !foundBeforeBySym[sym] {
+					missing = append(missing, sym)
+				}
+			}
+			return missing
+		}
+
 		snapPlan, sPlanErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
 			Market:                   string(m),
 			Streams:                  []string{"rest_observations"},
@@ -561,34 +787,8 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 			IncludePrecedingBaseline: true,
 			OrderbookMode:            true,
 		})
-		hasIndexedSnapMeta := false
-		if sPlanErr == nil {
-			for _, pc := range snapPlan.PlannedChunks {
-				if pc.Chunk.HasDepthSnapshotMetadata() {
-					cMin, _, ok := pc.Chunk.EffectiveTimeRangeNS(false)
-					if ok && (startNS == 0 || cMin <= startNS) {
-						hasIndexedSnapMeta = true
-						break
-					}
-				}
-			}
-		}
-		if startNS > 0 && !hasIndexedSnapMeta {
-			lookbackStart := startNS - int64(6*time.Hour)
-			if lookbackStart < 0 {
-				lookbackStart = 0
-			}
-			if widerSnapPlan, wErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-				Market:                   string(m),
-				Streams:                  []string{"rest_observations"},
-				Symbols:                  symbols,
-				StartUTCNS:               lookbackStart,
-				EndUTCNS:                 endNS,
-				IncludePrecedingBaseline: true,
-				OrderbookMode:            true,
-			}); wErr == nil && widerSnapPlan.ReadyChunksMatched > snapPlan.ReadyChunksMatched {
-				snapPlan = widerSnapPlan
-			}
+		if sPlanErr != nil {
+			return nil, nil, fmt.Errorf("plan orderbook baseline snapshots: %w", sPlanErr)
 		}
 		if snapPlan != nil && snapPlan.ReadyChunksMatched > 0 {
 			if matErr := s.Recorder.MaterializePlan(ctx, snapPlan, in.Offline, in.MaxDownloadBytes); matErr != nil {
@@ -598,14 +798,58 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 			inspectReq.Symbols = symbols
 			inspectReq.StartUTCNS = startNS
 			inspectReq.EndUTCNS = endNS
-			if inspectRes, iErr := s.Recorder.RunWorker(ctx, inspectReq); iErr == nil {
-				if rawBefore, ok := inspectRes["latest_before_start_ns"].(string); ok && rawBefore != "" {
-					if beforeNS, pErr := strconv.ParseInt(rawBefore, 10, 64); pErr == nil && beforeNS > 0 {
-						if planStart == 0 || beforeNS < planStart {
-							planStart = beforeNS
-						}
+			inspectRes, iErr := s.Recorder.RunWorker(ctx, inspectReq)
+			if iErr != nil {
+				return nil, nil, fmt.Errorf("inspect orderbook snapshots: %w", iErr)
+			}
+			parseInspectBeforeMap(inspectRes)
+
+			// If any requested symbol had no pre-start depth_snapshot inside the inspected partitions
+			// (for example, when an unindexed rest_observations partition held only exchange_info),
+			// step backwards across earlier partitions bounded by existing MaxDownloadBytes cap.
+			earliestInspectedMin := int64(0)
+			for _, sp := range snapPlan.SelectedPartitions {
+				pMin := sp.Metadata.ReceiveTimeUTCRangeNS.Min
+				if pMin > 0 && (earliestInspectedMin == 0 || pMin < earliestInspectedMin) {
+					earliestInspectedMin = pMin
+				}
+			}
+			for missing := missingSnapSymbols(); len(missing) > 0 && earliestInspectedMin > 0; missing = missingSnapSymbols() {
+				olderPlan, oErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+					Market:                   string(m),
+					Streams:                  []string{"rest_observations"},
+					Symbols:                  missing,
+					StartUTCNS:               earliestInspectedMin,
+					EndUTCNS:                 earliestInspectedMin,
+					IncludePrecedingBaseline: true,
+					OrderbookMode:            true,
+				})
+				if oErr != nil || olderPlan == nil || olderPlan.ReadyChunksMatched == 0 {
+					break
+				}
+				nextEarliestMin := earliestInspectedMin
+				for _, sp := range olderPlan.SelectedPartitions {
+					pMin := sp.Metadata.ReceiveTimeUTCRangeNS.Min
+					if pMin > 0 && pMin < nextEarliestMin {
+						nextEarliestMin = pMin
 					}
 				}
+				if matErr := s.Recorder.MaterializePlan(ctx, olderPlan, in.Offline, in.MaxDownloadBytes); matErr != nil {
+					break
+				}
+				olderInspect := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", olderPlan)
+				olderInspect.Symbols = missing
+				olderInspect.StartUTCNS = startNS
+				olderInspect.EndUTCNS = endNS
+				olderRes, oIErr := s.Recorder.RunWorker(ctx, olderInspect)
+				if oIErr != nil {
+					return nil, nil, fmt.Errorf("inspect earlier orderbook snapshots: %w", oIErr)
+				}
+				parseInspectBeforeMap(olderRes)
+				if nextEarliestMin >= earliestInspectedMin {
+					break
+				}
+				earliestInspectedMin = nextEarliestMin
 			}
 		}
 
@@ -646,6 +890,7 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 		wRes["data_source"] = "recorder"
 		wRes["recorder_provenance"] = planSummaryMap(plan)
 		wRes["coverage"] = buildRecorderCoverage(plan, symbols, statsMap, true, unsyncReason)
+		syncProvenanceCoverage(wRes)
 		out, bErr := applyWorkerResponseBudget(s.Cfg, "orderbook", wRes, limit)
 		if bErr != nil {
 			return nil, nil, bErr
@@ -767,17 +1012,15 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 	if err != nil {
 		return nil, nil, err
 	}
-	if strings.TrimSpace(in.Cursor) != "" {
-		curNS, cErr := recorder.ParseNSString(in.Cursor)
-		if cErr != nil {
-			return nil, nil, fmt.Errorf("invalid cursor: %w", cErr)
-		}
-		if curNS > startNS {
-			startNS = curNS
-		}
-		if endNS > 0 && startNS >= endNS {
-			return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
-		}
+	restCur, curErr := decodeRESTCursor(in.Cursor)
+	if curErr != nil {
+		return nil, nil, fmt.Errorf("invalid cursor: %w", curErr)
+	}
+	if restCur.EndNS == 0 && restCur.StartNS > startNS {
+		startNS = restCur.StartNS
+	}
+	if startNS > 0 && endNS > 0 && startNS >= endNS {
+		return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
 	}
 	kind := strings.ToLower(strings.TrimSpace(in.RecordKind))
 	if kind == "" {
@@ -828,11 +1071,12 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 				streams = []string{"agg_trade", "liquidation"}
 			}
 			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-				Market:     string(m),
-				Streams:    streams,
-				Symbols:    symbols,
-				StartUTCNS: startNS,
-				EndUTCNS:   endNS,
+				Market:             string(m),
+				Streams:            streams,
+				Symbols:            symbols,
+				StartUTCNS:         startNS,
+				EndUTCNS:           endNS,
+				PreferExchangeTime: true,
 			})
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
@@ -854,6 +1098,7 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 						wRes["data_source"] = "recorder"
 						wRes["recorder_provenance"] = planSummaryMap(plan)
 						wRes["coverage"] = buildRecorderCoverage(plan, symbols, nil, false, "")
+						syncProvenanceCoverage(wRes)
 						out, bErr := applyWorkerResponseBudget(s.Cfg, "trades_liq", wRes, limit)
 						if bErr != nil {
 							return nil, nil, bErr
@@ -897,30 +1142,59 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 
 	var allRows []map[string]any
 	hasMore := false
+	var nextCursorStr string
 	var nextCursorNS int64
 	const restMaxPage = 1000
 	optionsLimitCap := 500
 
-	for _, sym := range symbols {
+	resumeSymIdx := 0
+	if restCur.SymbolIndex > 0 && restCur.SymbolIndex < len(symbols) {
+		resumeSymIdx = restCur.SymbolIndex
+	} else if restCur.Symbol != "" {
+		for idx, sName := range symbols {
+			if sName == restCur.Symbol {
+				resumeSymIdx = idx
+				break
+			}
+		}
+	}
+
+	for si := resumeSymIdx; si < len(symbols); si++ {
+		sym := symbols[si]
 		seenIDs := make(map[string]bool)
 		var nextFromID int64
 		curStartMS := int64(0)
 		if startNS > 0 {
 			curStartMS = startNS / 1_000_000
 		}
+		if si == resumeSymIdx {
+			if restCur.FromID > 0 {
+				nextFromID = restCur.FromID
+			}
+			if restCur.StartNS > 0 && restCur.StartNS/1_000_000 > curStartMS {
+				curStartMS = restCur.StartNS / 1_000_000
+			}
+		}
 		endMS := int64(0)
 		if endNS > 0 {
 			endMS = (endNS - 1) / 1_000_000
 		}
-		fetchedSym := 0
+		budgetHit := false
 
 		for {
-			remaining := maxFetchRows - fetchedSym
+			remaining := maxFetchRows - len(allRows)
 			if remaining <= 0 {
 				hasMore = true
-				if curStartMS > 0 && (nextCursorNS == 0 || curStartMS*1_000_000 < nextCursorNS) {
+				if curStartMS > 0 {
 					nextCursorNS = curStartMS * 1_000_000
 				}
+				nextCursorStr = encodeRESTCursor(restPaginationCursor{
+					SymbolIndex: si,
+					Symbol:      sym,
+					FromID:      nextFromID,
+					StartNS:     nextCursorNS,
+				})
+				budgetHit = true
 				break
 			}
 			pageLimit := restMaxPage
@@ -1009,11 +1283,10 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 					row["quantity"] = formatScalar(it["qty"])
 				}
 				allRows = append(allRows, row)
-				fetchedSym++
 				addedInPage++
 			}
 
-			if m == binance.MarketOptions || startNS == 0 || hitWindowEnd || len(items) < pageLimit || (addedInPage == 0 && lastID == 0 && lastMS == 0) {
+			if m == binance.MarketOptions || (startNS == 0 && nextFromID == 0) || hitWindowEnd || len(items) < pageLimit || (addedInPage == 0 && lastID == 0 && lastMS == 0) {
 				break
 			}
 			if lastID > 0 {
@@ -1026,6 +1299,9 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 			} else {
 				break
 			}
+		}
+		if budgetHit {
+			break
 		}
 	}
 
@@ -1040,10 +1316,17 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 		"liquidation_status": liqStatus,
 		"has_more":           hasMore,
 	}
-	if hasMore && nextCursorNS > 0 {
-		nextStr := strconv.FormatInt(nextCursorNS, 10)
-		payload["next_cursor"] = nextStr
-		payload["next_start_utc_ns"] = nextStr
+	if hasMore {
+		if nextCursorStr != "" {
+			payload["next_cursor"] = nextCursorStr
+		}
+		if nextCursorNS > 0 {
+			nextStr := strconv.FormatInt(nextCursorNS, 10)
+			if payload["next_cursor"] == nil {
+				payload["next_cursor"] = nextStr
+			}
+			payload["next_start_utc_ns"] = nextStr
+		}
 	}
 	out, bErr := applyResponseBudget(s.Cfg, "trades_rest", payload, "rows", allRows, in.SaveToFile, outFmt, limit)
 	if bErr != nil {
@@ -1070,6 +1353,8 @@ type QueryDerivativesInput struct {
 	RevisionID       string   `json:"revision_id,omitempty" jsonschema:"Pinned Recorder export revision ID"`
 	Offline          bool     `json:"offline,omitempty" jsonschema:"Offline zero-network mode"`
 	Limit            int      `json:"limit,omitempty" jsonschema:"Max preview rows (default 100, max 1000)"`
+	MaxFetchRows     int      `json:"max_fetch_rows,omitempty" jsonschema:"Max total REST rows paginated before spill/preview (default 5000, max 50000)"`
+	Cursor           string   `json:"cursor,omitempty" jsonschema:"Pagination cursor returned as next_cursor by previous REST call"`
 	OutputFormat     string   `json:"output_format,omitempty" jsonschema:"jsonl or csv"`
 	SaveToFile       bool     `json:"save_to_file,omitempty" jsonschema:"Save full dataset to file"`
 	MaxDownloadBytes int64    `json:"max_download_bytes,omitempty" jsonschema:"Safety download cap in bytes"`
@@ -1085,6 +1370,16 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	if err != nil {
 		return nil, nil, err
 	}
+	restCur, curErr := decodeRESTCursor(in.Cursor)
+	if curErr != nil {
+		return nil, nil, fmt.Errorf("invalid cursor: %w", curErr)
+	}
+	if restCur.EndNS == 0 && restCur.StartNS > startNS {
+		startNS = restCur.StartNS
+	}
+	if startNS > 0 && endNS > 0 && startNS >= endNS {
+		return nil, nil, fmt.Errorf("cursor (%d) is >= end_utc_ns (%d)", startNS, endNS)
+	}
 	metric := strings.ToLower(strings.TrimSpace(in.Metric))
 	if metric == "" {
 		if m == binance.MarketOptions {
@@ -1098,6 +1393,7 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		period = "5m"
 	}
 	limit := clampLimit(in.Limit, s.Cfg.PreviewDefaultRows, s.Cfg.PreviewMaxRows)
+	maxFetchRows := clampLimit(in.MaxFetchRows, 5000, 50000)
 	outFmt := strings.ToLower(strings.TrimSpace(in.OutputFormat))
 	if outFmt == "" {
 		outFmt = "jsonl"
@@ -1130,11 +1426,12 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if sErr == nil {
 			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-				Market:     "usdm",
-				Streams:    []string{"mark_price", "rest_observations"},
-				Symbols:    symbols,
-				StartUTCNS: startNS,
-				EndUTCNS:   endNS,
+				Market:             "usdm",
+				Streams:            []string{"mark_price", "rest_observations"},
+				Symbols:            symbols,
+				StartUTCNS:         startNS,
+				EndUTCNS:           endNS,
+				PreferExchangeTime: true,
 			})
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err == nil {
@@ -1155,6 +1452,7 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 							wRes["data_source"] = "recorder"
 							wRes["recorder_provenance"] = planSummaryMap(plan)
 							wRes["coverage"] = buildRecorderCoverage(plan, symbols, nil, false, "")
+							syncProvenanceCoverage(wRes)
 							out, bErr := applyWorkerResponseBudget(s.Cfg, "deriv", wRes, limit)
 							if bErr != nil {
 								return nil, nil, bErr
@@ -1176,49 +1474,179 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	}
 
 	// Route 2: Binance REST API across usdm, coinm, options.
-	endpointID, paramsBuilder, err := resolveDerivativesREST(m, metric, period, in, symbols, startNS, endNS, limit)
+	derivSpec, err := resolveDerivativesREST(m, metric, period, in, symbols, startNS, endNS)
 	if err != nil {
 		return nil, nil, err
 	}
-	capEntry, ok := binance.LookupCapability(endpointID)
+	capEntry, ok := binance.LookupCapability(derivSpec.endpointID)
 	if !ok {
-		return nil, nil, fmt.Errorf("missing capability %s", endpointID)
+		return nil, nil, fmt.Errorf("missing capability %s", derivSpec.endpointID)
 	}
 
 	targets := symbols
 	if len(targets) == 0 {
 		targets = []string{""}
 	}
-	var rows []map[string]any
-	for _, sym := range targets {
-		params := paramsBuilder(sym)
-		res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
-		if err != nil {
-			return nil, nil, err
+	resumeSymIdx := 0
+	if restCur.SymbolIndex > 0 && restCur.SymbolIndex < len(targets) {
+		resumeSymIdx = restCur.SymbolIndex
+	} else if restCur.Symbol != "" {
+		for idx, sName := range targets {
+			if sName == restCur.Symbol {
+				resumeSymIdx = idx
+				break
+			}
 		}
-		var arr []map[string]any
-		if err := json.Unmarshal(res.Payload, &arr); err == nil {
-			for _, item := range arr {
-				item["_query_symbol"] = sym
-				item["source"] = "binance_rest"
-				rows = append(rows, item)
+	}
+
+	var rows []map[string]any
+	hasMore := false
+	var nextCursorStr string
+	var nextCursorNS int64
+
+	for si := resumeSymIdx; si < len(targets); si++ {
+		sym := targets[si]
+		if !derivSpec.paginated {
+			params := derivSpec.paramsBuilder(sym, 0, limit)
+			res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
+			if err != nil {
+				return nil, nil, err
+			}
+			var arr []map[string]any
+			if err := json.Unmarshal(res.Payload, &arr); err == nil {
+				for _, item := range arr {
+					item["_query_symbol"] = sym
+					item["source"] = "binance_rest"
+					rows = append(rows, item)
+				}
+				continue
+			}
+			var obj map[string]any
+			if err := json.Unmarshal(res.Payload, &obj); err == nil {
+				obj["_query_symbol"] = sym
+				obj["source"] = "binance_rest"
+				rows = append(rows, obj)
 			}
 			continue
 		}
-		var obj map[string]any
-		if err := json.Unmarshal(res.Payload, &obj); err == nil {
-			obj["_query_symbol"] = sym
-			obj["source"] = "binance_rest"
-			rows = append(rows, obj)
+
+		seenSym := make(map[string]bool)
+		curStartMS := int64(0)
+		if startNS > 0 {
+			curStartMS = startNS / 1_000_000
+		}
+		if si == resumeSymIdx && restCur.StartNS > 0 && restCur.StartNS/1_000_000 > curStartMS {
+			curStartMS = restCur.StartNS / 1_000_000
+		}
+		endMS := int64(0)
+		if endNS > 0 {
+			endMS = (endNS - 1) / 1_000_000
+		}
+		budgetHit := false
+
+		for {
+			remaining := maxFetchRows - len(rows)
+			if remaining <= 0 {
+				hasMore = true
+				if curStartMS > 0 {
+					nextCursorNS = curStartMS * 1_000_000
+				}
+				nextCursorStr = encodeRESTCursor(restPaginationCursor{
+					SymbolIndex: si,
+					Symbol:      sym,
+					StartNS:     nextCursorNS,
+				})
+				budgetHit = true
+				break
+			}
+			pageLimit := derivSpec.pageCap
+			if remaining < pageLimit {
+				pageLimit = remaining
+			}
+			params := derivSpec.paramsBuilder(sym, curStartMS, pageLimit)
+			res, err := s.Binance.ExecuteCapability(ctx, capEntry, params, in.Offline)
+			if err != nil {
+				return nil, nil, err
+			}
+			var arr []map[string]any
+			if err := json.Unmarshal(res.Payload, &arr); err != nil {
+				var obj map[string]any
+				if err2 := json.Unmarshal(res.Payload, &obj); err2 == nil {
+					obj["_query_symbol"] = sym
+					obj["source"] = "binance_rest"
+					rows = append(rows, obj)
+					break
+				}
+				return nil, nil, fmt.Errorf("parse %s response: %w", derivSpec.endpointID, err)
+			}
+
+			addedInPage := 0
+			hitWindowEnd := false
+			var lastMS int64
+			for _, item := range arr {
+				tsMS, hasTS := toInt64Any(item[derivSpec.tsField])
+				if !hasTS {
+					tsMS, hasTS = toInt64Any(item["timestamp"])
+				}
+				if !hasTS {
+					tsMS, hasTS = toInt64Any(item["fundingTime"])
+				}
+				if !hasTS {
+					tsMS, hasTS = toInt64Any(item["time"])
+				}
+				if hasTS {
+					tsNS := tsMS * 1_000_000
+					if startNS > 0 && tsNS < startNS {
+						continue
+					}
+					if endNS > 0 && tsNS >= endNS {
+						hitWindowEnd = true
+						continue
+					}
+					if tsMS > lastMS {
+						lastMS = tsMS
+					}
+					dedupKey := sym + ":" + strconv.FormatInt(tsMS, 10)
+					if seenSym[dedupKey] {
+						continue
+					}
+					seenSym[dedupKey] = true
+				}
+				item["_query_symbol"] = sym
+				item["source"] = "binance_rest"
+				rows = append(rows, item)
+				addedInPage++
+			}
+
+			if len(arr) < pageLimit || addedInPage == 0 || hitWindowEnd || lastMS == 0 || (endMS > 0 && lastMS >= endMS) {
+				break
+			}
+			curStartMS = lastMS + 1
+		}
+		if budgetHit {
+			break
 		}
 	}
 
 	payload := map[string]any{
 		"market":      string(m),
 		"metric":      metric,
-		"endpoint_id": endpointID,
+		"endpoint_id": derivSpec.endpointID,
 		"data_source": "binance_rest",
 		"qty_unit":    capEntry.QtyUnit,
+		"has_more":    hasMore,
+	}
+	if hasMore {
+		if nextCursorStr != "" {
+			payload["next_cursor"] = nextCursorStr
+		}
+		if nextCursorNS > 0 {
+			nextStr := strconv.FormatInt(nextCursorNS, 10)
+			if payload["next_cursor"] == nil {
+				payload["next_cursor"] = nextStr
+			}
+			payload["next_start_utc_ns"] = nextStr
+		}
 	}
 	out, bErr := applyResponseBudget(s.Cfg, "deriv_rest", payload, "rows", rows, in.SaveToFile, outFmt, limit)
 	if bErr != nil {
@@ -1227,11 +1655,19 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	return nil, out, nil
 }
 
+type derivativesRESTSpec struct {
+	endpointID    string
+	pageCap       int
+	paginated     bool
+	tsField       string
+	paramsBuilder func(sym string, curStartMS int64, pageLimit int) map[string]string
+}
+
 var allowedFuturesPeriods = map[string]bool{
 	"5m": true, "15m": true, "30m": true, "1h": true, "2h": true, "4h": true, "6h": true, "12h": true, "1d": true,
 }
 
-func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDerivativesInput, symbols []string, startNS, endNS int64, limit int) (string, func(string) map[string]string, error) {
+func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDerivativesInput, symbols []string, startNS, endNS int64) (derivativesRESTSpec, error) {
 	derivePair := func(sym string) string {
 		if strings.TrimSpace(in.Pair) != "" {
 			return strings.ToUpper(strings.TrimSpace(in.Pair))
@@ -1253,167 +1689,245 @@ func resolveDerivativesREST(m binance.Market, metric, period string, in QueryDer
 		return nil
 	}
 
-	addWindow := func(p map[string]string) {
-		if startNS > 0 {
+	hasHistWindow := startNS > 0 || endNS > 0
+
+	addWindow := func(p map[string]string, curStartMS int64, pageLimit int) {
+		if curStartMS > 0 {
+			p["startTime"] = strconv.FormatInt(curStartMS, 10)
+		} else if startNS > 0 {
 			p["startTime"] = strconv.FormatInt(startNS/1_000_000, 10)
 		}
 		if endNS > 0 {
 			p["endTime"] = strconv.FormatInt((endNS-1)/1_000_000, 10)
 		}
-		p["limit"] = strconv.Itoa(limit)
+		if pageLimit > 0 {
+			p["limit"] = strconv.Itoa(pageLimit)
+		}
 	}
 
 	if m == binance.MarketOptions {
 		switch metric {
 		case "options_mark", "mark_price_funding", "all":
-			return "options.mark", func(sym string) map[string]string {
-				if sym != "" {
-					return map[string]string{"symbol": sym}
-				}
-				return map[string]string{}
+			if hasHistWindow {
+				return derivativesRESTSpec{}, fmt.Errorf("options.mark (/eapi/v1/mark) only returns current live mark/Greeks and does not support historical start_utc_ns/end_utc_ns queries")
+			}
+			return derivativesRESTSpec{
+				endpointID: "options.mark",
+				paramsBuilder: func(sym string, _ int64, _ int) map[string]string {
+					if sym != "" {
+						return map[string]string{"symbol": sym}
+					}
+					return map[string]string{}
+				},
 			}, nil
 		case "options_open_interest", "open_interest":
-			if strings.TrimSpace(in.UnderlyingAsset) == "" || strings.TrimSpace(in.Expiration) == "" {
-				return "", nil, fmt.Errorf("options openInterest requires underlying_asset (e.g. BTC) and expiration (e.g. 261225)")
+			if hasHistWindow {
+				return derivativesRESTSpec{}, fmt.Errorf("options.openInterest (/eapi/v1/openInterest) only returns current live open interest and does not support historical start_utc_ns/end_utc_ns queries")
 			}
-			return "options.openInterest", func(_ string) map[string]string {
-				return map[string]string{
-					"underlyingAsset": strings.ToUpper(strings.TrimSpace(in.UnderlyingAsset)),
-					"expiration":      strings.TrimSpace(in.Expiration),
-				}
+			if strings.TrimSpace(in.UnderlyingAsset) == "" || strings.TrimSpace(in.Expiration) == "" {
+				return derivativesRESTSpec{}, fmt.Errorf("options openInterest requires underlying_asset (e.g. BTC) and expiration (e.g. 261225)")
+			}
+			return derivativesRESTSpec{
+				endpointID: "options.openInterest",
+				paramsBuilder: func(_ string, _ int64, _ int) map[string]string {
+					return map[string]string{
+						"underlyingAsset": strings.ToUpper(strings.TrimSpace(in.UnderlyingAsset)),
+						"expiration":      strings.TrimSpace(in.Expiration),
+					}
+				},
 			}, nil
 		default:
-			return "", nil, fmt.Errorf("unsupported options metric %q", metric)
+			return derivativesRESTSpec{}, fmt.Errorf("unsupported options metric %q", metric)
 		}
 	}
 
 	// usdm & coinm
 	switch metric {
 	case "mark_price_funding", "all":
-		return string(m) + ".premiumIndex", func(sym string) map[string]string {
-			if sym != "" {
-				return map[string]string{"symbol": sym}
-			}
-			return map[string]string{}
+		if hasHistWindow {
+			return derivativesRESTSpec{}, fmt.Errorf("%s.premiumIndex only returns current snapshot mark/funding and does not support historical start_utc_ns/end_utc_ns queries; use source='recorder' for recorded history, metric='funding_history' for historical funding, or query_klines(kline_type='mark'/'index'/'premium')", m)
+		}
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".premiumIndex",
+			paramsBuilder: func(sym string, _ int64, _ int) map[string]string {
+				if sym != "" {
+					return map[string]string{"symbol": sym}
+				}
+				return map[string]string{}
+			},
 		}, nil
 	case "funding_history":
-		return string(m) + ".fundingRate", func(sym string) map[string]string {
-			p := map[string]string{}
-			if sym != "" {
-				p["symbol"] = sym
-			}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".fundingRate",
+			pageCap:    1000,
+			paginated:  true,
+			tsField:    "fundingTime",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{}
+				if sym != "" {
+					p["symbol"] = sym
+				}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	case "open_interest":
-		if len(symbols) == 0 {
-			return "", nil, fmt.Errorf("open_interest requires symbol")
+		if hasHistWindow {
+			return derivativesRESTSpec{}, fmt.Errorf("%s.openInterest only returns current open interest without historical timestamps and cannot serve start_utc_ns/end_utc_ns; use metric='open_interest_hist' (30d REST rolling / Vision metrics) or source='recorder'", m)
 		}
-		return string(m) + ".openInterest", func(sym string) map[string]string {
-			return map[string]string{"symbol": sym}
+		if len(symbols) == 0 {
+			return derivativesRESTSpec{}, fmt.Errorf("open_interest requires symbol")
+		}
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".openInterest",
+			paramsBuilder: func(sym string, _ int64, _ int) map[string]string {
+				return map[string]string{"symbol": sym}
+			},
 		}, nil
 	case "open_interest_hist":
 		if err := validatePeriod(); err != nil {
-			return "", nil, err
+			return derivativesRESTSpec{}, err
 		}
 		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
-			return "", nil, fmt.Errorf("coinm open_interest_hist requires pair or symbol")
+			return derivativesRESTSpec{}, fmt.Errorf("coinm open_interest_hist requires pair or symbol")
 		}
-		return string(m) + ".openInterestHist", func(sym string) map[string]string {
-			p := map[string]string{"period": period}
-			if m == binance.MarketCOINM {
-				p["pair"] = derivePair(sym)
-				p["contractType"] = ct
-			} else {
-				p["symbol"] = sym
-			}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".openInterestHist",
+			pageCap:    500,
+			paginated:  true,
+			tsField:    "timestamp",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{"period": period}
+				if m == binance.MarketCOINM {
+					p["pair"] = derivePair(sym)
+					p["contractType"] = ct
+				} else {
+					p["symbol"] = sym
+				}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	case "top_long_short_account":
 		if err := validatePeriod(); err != nil {
-			return "", nil, err
+			return derivativesRESTSpec{}, err
 		}
 		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
-			return "", nil, fmt.Errorf("coinm top_long_short_account requires pair or symbol")
+			return derivativesRESTSpec{}, fmt.Errorf("coinm top_long_short_account requires pair or symbol")
 		}
-		return string(m) + ".topLongShortAccountRatio", func(sym string) map[string]string {
-			p := map[string]string{"period": period}
-			if m == binance.MarketCOINM {
-				p["pair"] = derivePair(sym)
-			} else {
-				p["symbol"] = sym
-			}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".topLongShortAccountRatio",
+			pageCap:    500,
+			paginated:  true,
+			tsField:    "timestamp",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{"period": period}
+				if m == binance.MarketCOINM {
+					p["pair"] = derivePair(sym)
+				} else {
+					p["symbol"] = sym
+				}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	case "top_long_short_position":
 		if err := validatePeriod(); err != nil {
-			return "", nil, err
+			return derivativesRESTSpec{}, err
 		}
 		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
-			return "", nil, fmt.Errorf("coinm top_long_short_position requires pair or symbol")
+			return derivativesRESTSpec{}, fmt.Errorf("coinm top_long_short_position requires pair or symbol")
 		}
-		return string(m) + ".topLongShortPositionRatio", func(sym string) map[string]string {
-			p := map[string]string{"period": period}
-			if m == binance.MarketCOINM {
-				p["pair"] = derivePair(sym)
-			} else {
-				p["symbol"] = sym
-			}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".topLongShortPositionRatio",
+			pageCap:    500,
+			paginated:  true,
+			tsField:    "timestamp",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{"period": period}
+				if m == binance.MarketCOINM {
+					p["pair"] = derivePair(sym)
+				} else {
+					p["symbol"] = sym
+				}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	case "global_long_short":
 		if err := validatePeriod(); err != nil {
-			return "", nil, err
+			return derivativesRESTSpec{}, err
 		}
 		if m == binance.MarketCOINM && derivePair(strings.Join(symbols, "")) == "" {
-			return "", nil, fmt.Errorf("coinm global_long_short requires pair or symbol")
+			return derivativesRESTSpec{}, fmt.Errorf("coinm global_long_short requires pair or symbol")
 		}
-		return string(m) + ".globalLongShortAccountRatio", func(sym string) map[string]string {
-			p := map[string]string{"period": period}
-			if m == binance.MarketCOINM {
-				p["pair"] = derivePair(sym)
-			} else {
-				p["symbol"] = sym
-			}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".globalLongShortAccountRatio",
+			pageCap:    500,
+			paginated:  true,
+			tsField:    "timestamp",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{"period": period}
+				if m == binance.MarketCOINM {
+					p["pair"] = derivePair(sym)
+				} else {
+					p["symbol"] = sym
+				}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	case "taker_buy_sell_vol":
 		if err := validatePeriod(); err != nil {
-			return "", nil, err
+			return derivativesRESTSpec{}, err
 		}
 		if m == binance.MarketCOINM {
 			if derivePair(strings.Join(symbols, "")) == "" {
-				return "", nil, fmt.Errorf("coinm taker_buy_sell_vol requires pair or symbol")
+				return derivativesRESTSpec{}, fmt.Errorf("coinm taker_buy_sell_vol requires pair or symbol")
 			}
-			return "coinm.takerBuySellVol", func(sym string) map[string]string {
-				p := map[string]string{"pair": derivePair(sym), "contractType": ct, "period": period}
-				addWindow(p)
-				return p
+			return derivativesRESTSpec{
+				endpointID: "coinm.takerBuySellVol",
+				pageCap:    500,
+				paginated:  true,
+				tsField:    "timestamp",
+				paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+					p := map[string]string{"pair": derivePair(sym), "contractType": ct, "period": period}
+					addWindow(p, curStartMS, pageLimit)
+					return p
+				},
 			}, nil
 		}
-		return "usdm.takerlongshortRatio", func(sym string) map[string]string {
-			p := map[string]string{"symbol": sym, "period": period}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: "usdm.takerlongshortRatio",
+			pageCap:    500,
+			paginated:  true,
+			tsField:    "timestamp",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{"symbol": sym, "period": period}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	case "basis":
 		if err := validatePeriod(); err != nil {
-			return "", nil, err
+			return derivativesRESTSpec{}, err
 		}
 		if derivePair(strings.Join(symbols, "")) == "" {
-			return "", nil, fmt.Errorf("basis requires pair or symbol")
+			return derivativesRESTSpec{}, fmt.Errorf("basis requires pair or symbol")
 		}
-		return string(m) + ".basis", func(sym string) map[string]string {
-			p := map[string]string{"pair": derivePair(sym), "contractType": ct, "period": period}
-			addWindow(p)
-			return p
+		return derivativesRESTSpec{
+			endpointID: string(m) + ".basis",
+			pageCap:    500,
+			paginated:  true,
+			tsField:    "timestamp",
+			paramsBuilder: func(sym string, curStartMS int64, pageLimit int) map[string]string {
+				p := map[string]string{"pair": derivePair(sym), "contractType": ct, "period": period}
+				addWindow(p, curStartMS, pageLimit)
+				return p
+			},
 		}, nil
 	default:
-		return "", nil, fmt.Errorf("unknown metric %q", metric)
+		return derivativesRESTSpec{}, fmt.Errorf("unknown metric %q", metric)
 	}
 }
 

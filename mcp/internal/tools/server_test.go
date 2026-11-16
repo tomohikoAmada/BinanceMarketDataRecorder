@@ -476,3 +476,381 @@ func TestM6E_M6F_M6H_Pagination_Guardrails_WriteErrors_And_VisionPrefetch(t *tes
 		t.Fatal("expected error when query_public_endpoint save_to_file fails")
 	}
 }
+
+func TestM6R1_M6R4_M6R5_OrderbookInspect_Coverage_Pagination_And_VisionRouting(t *testing.T) {
+	const baseMS int64 = 1794700800000
+
+	var zipBytes bytes.Buffer
+	zw := zip.NewWriter(&zipBytes)
+	zf, _ := zw.Create("mark.csv")
+	fmt.Fprintln(zf, "1794700800000,100,101,99,100,1,1794700859999,0,1,0,0,0")
+	zw.Close()
+	zipBody := zipBytes.Bytes()
+	zipHash := fmt.Sprintf("%x", sha256.Sum256(zipBody))
+
+	var seenPaths []string
+	session, _ := setupTestMCPClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPaths = append(seenPaths, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.Path, ".CHECKSUM"):
+			fmt.Fprintf(w, "%s file.zip\n", zipHash)
+		case strings.HasSuffix(r.URL.Path, ".zip"):
+			w.Header().Set("Content-Type", "application/zip")
+			w.Write(zipBody)
+		case r.URL.Path == "/fapi/v1/aggTrades":
+			n, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+			if n <= 0 {
+				n = 100
+			}
+			from, _ := strconv.Atoi(r.URL.Query().Get("fromId"))
+			if from < 1 {
+				from = 1
+			}
+			items := []map[string]any{}
+			for id := from; id <= 1500 && len(items) < n; id++ {
+				items = append(items, map[string]any{"a": id, "T": baseMS, "p": "100", "q": "1", "m": false})
+			}
+			json.NewEncoder(w).Encode(items)
+		case r.URL.Path == "/dapi/v1/klines":
+			n, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+			if n <= 0 {
+				n = 100
+			}
+			lo, _ := strconv.ParseInt(r.URL.Query().Get("startTime"), 10, 64)
+			hi, _ := strconv.ParseInt(r.URL.Query().Get("endTime"), 10, 64)
+			rows := [][]any{}
+			for i := 0; i < 1500; i++ {
+				ms := baseMS + int64(i)*60000
+				if ms >= lo && ms <= hi {
+					rows = append(rows, []any{ms, "100", "101", "99", "100", "1", ms + 59999, "0.01", 1, "1", "0.01", "0"})
+				}
+			}
+			if len(rows) > n {
+				rows = rows[len(rows)-n:]
+			}
+			json.NewEncoder(w).Encode(rows)
+		case r.URL.Path == "/fapi/v1/fundingRate":
+			n, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+			if n <= 0 {
+				n = 100
+			}
+			rows := []map[string]any{}
+			for i := 0; i < 10 && len(rows) < n; i++ {
+				rows = append(rows, map[string]any{"symbol": "BTCUSDT", "fundingTime": baseMS + int64(i)*60000, "fundingRate": "0.001"})
+			}
+			json.NewEncoder(w).Encode(rows)
+		case r.URL.Path == "/fapi/v1/openInterest":
+			json.NewEncoder(w).Encode(map[string]any{"symbol": "BTCUSDT", "time": baseMS, "openInterest": "999"})
+		case r.URL.Path == "/fapi/v1/premiumIndex" || r.URL.Path == "/eapi/v1/mark":
+			json.NewEncoder(w).Encode(map[string]any{"symbol": "BTCUSDT", "markPrice": "100"})
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+
+	// 1. M6-R5-a: 1500 same-millisecond aggTrades split across two calls must yield 1500 unique IDs and 0 duplicates.
+	tArgs := map[string]any{
+		"market":         "usdm",
+		"symbol":         "BTCUSDT",
+		"source":         "rest",
+		"record_kind":    "trades",
+		"start_utc_ns":   strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":     strconv.FormatInt((baseMS+1000)*1_000_000, 10),
+		"max_fetch_rows": 1000,
+		"limit":          1,
+	}
+	t1, t1Res := callToolMap(t, session, "query_trades_and_liquidations", tArgs)
+	if t1Res.IsError || t1["total_rows"] != float64(1000) || t1["has_more"] != true {
+		t.Fatalf("expected 1000 rows + has_more on first page, got isErr=%v out=%v", t1Res.IsError, t1)
+	}
+	tArgs["cursor"] = t1["next_cursor"]
+	t2, t2Res := callToolMap(t, session, "query_trades_and_liquidations", tArgs)
+	if t2Res.IsError || t2["total_rows"] != float64(500) || t2["has_more"] != false {
+		t.Fatalf("expected remaining 500 rows + has_more=false on second page, got isErr=%v out=%v", t2Res.IsError, t2)
+	}
+	readAggIDs := func(out map[string]any) []string {
+		p, _ := out["result_file"].(string)
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			t.Fatalf("read result_file %q: %v", p, err)
+		}
+		var ids []string
+		for _, ln := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+			var row map[string]any
+			if err := json.Unmarshal([]byte(ln), &row); err != nil {
+				t.Fatal(err)
+			}
+			ids = append(ids, fmt.Sprint(row["agg_trade_id"]))
+		}
+		return ids
+	}
+	seenIDs := make(map[string]bool)
+	for _, id := range append(readAggIDs(t1), readAggIDs(t2)...) {
+		seenIDs[id] = true
+	}
+	if len(seenIDs) != 1500 {
+		t.Fatalf("expected 1500 unique same-ms agg_trade IDs across both calls, got %d", len(seenIDs))
+	}
+
+	// 2. M6-R5-b: COIN-M end-anchored klines must return all 1500 bars sorted chronologically ascending.
+	cmOut, cmRes := callToolMap(t, session, "query_klines", map[string]any{
+		"market":         "coinm",
+		"symbol":         "BTCUSD_PERP",
+		"source":         "rest",
+		"interval":       "1m",
+		"start_utc_ns":   strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":     strconv.FormatInt((baseMS+1500*60000)*1_000_000, 10),
+		"max_fetch_rows": 5000,
+		"limit":          1,
+	})
+	if cmRes.IsError || cmOut["total_rows"] != float64(1500) || cmOut["has_more"] != false {
+		t.Fatalf("expected 1500 COIN-M bars with has_more=false, got isErr=%v out=%v", cmRes.IsError, cmOut)
+	}
+	cmFile, _ := cmOut["result_file"].(string)
+	cmLines := strings.Split(strings.TrimSpace(mustReadString(t, cmFile)), "\n")
+	if len(cmLines) != 1500 {
+		t.Fatalf("expected 1500 COIN-M lines in file, got %d", len(cmLines))
+	}
+	var firstBar, lastBar map[string]any
+	_ = json.Unmarshal([]byte(cmLines[0]), &firstBar)
+	_ = json.Unmarshal([]byte(cmLines[1499]), &lastBar)
+	if firstBar["open_time_utc_ns"] != strconv.FormatInt(baseMS*1_000_000, 10) || lastBar["open_time_utc_ns"] != strconv.FormatInt((baseMS+1499*60000)*1_000_000, 10) {
+		t.Fatalf("unexpected COIN-M chronological range: first=%v last=%v", firstBar["open_time_utc_ns"], lastBar["open_time_utc_ns"])
+	}
+
+	// 3. M6-R5-c: Derivatives historical metric separates preview limit from pagination budget.
+	fundOut, fundRes := callToolMap(t, session, "query_derivatives_metrics", map[string]any{
+		"market":       "usdm",
+		"symbol":       "BTCUSDT",
+		"source":       "rest",
+		"metric":       "funding_history",
+		"start_utc_ns": strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":   strconv.FormatInt((baseMS+10*60000)*1_000_000, 10),
+		"limit":        2,
+	})
+	if fundRes.IsError || fundOut["total_rows"] != float64(10) || fundOut["returned_rows"] != float64(2) || fundOut["truncated"] != true {
+		t.Fatalf("expected 10 total_rows / 2 preview rows / truncated=true, got isErr=%v out=%v", fundRes.IsError, fundOut)
+	}
+
+	// 4. M6-R5-d: Current-only REST metrics must reject historical windows explicitly.
+	for _, tc := range []map[string]any{
+		{"market": "usdm", "symbol": "BTCUSDT", "source": "rest", "metric": "open_interest", "start_utc_ns": "1577836800000000000", "end_utc_ns": "1577836860000000000"},
+		{"market": "usdm", "symbol": "BTCUSDT", "source": "rest", "metric": "mark_price_funding", "start_utc_ns": "1577836800000000000", "end_utc_ns": "1577836860000000000"},
+		{"market": "options", "symbol": "BTC-261225-100000-C", "source": "rest", "metric": "options_mark", "start_utc_ns": "1577836800000000000", "end_utc_ns": "1577836860000000000"},
+	} {
+		if _, errRes := callToolMap(t, session, "query_derivatives_metrics", tc); !errRes.IsError {
+			t.Fatalf("expected historical current-only REST metric %v to fail loudly", tc)
+		}
+	}
+
+	// 5. M6-R5-e: Explicit Vision kline_type="mark" routes to markPriceKlines (not klines), and unsupported type fails explicitly.
+	seenPaths = nil
+	vMarkOut, vMarkRes := callToolMap(t, session, "query_klines", map[string]any{
+		"market":       "usdm",
+		"symbol":       "BTCUSDT",
+		"source":       "vision",
+		"kline_type":   "mark",
+		"interval":     "1m",
+		"start_utc_ns": "1794700800000000000",
+		"end_utc_ns":   "1794700860000000000",
+		"limit":        1,
+	})
+	if vMarkRes.IsError || vMarkOut["kline_type"] != "mark" || vMarkOut["qty_unit"] != "price_only" {
+		t.Fatalf("unexpected explicit Vision mark response: isErr=%v out=%v", vMarkRes.IsError, vMarkOut)
+	}
+	if len(seenPaths) == 0 || !strings.Contains(seenPaths[0], "/daily/markPriceKlines/") || strings.Contains(seenPaths[0], "/daily/klines/") {
+		t.Fatalf("expected Vision mark request to hit /daily/markPriceKlines/, got %v", seenPaths)
+	}
+	if _, vContRes := callToolMap(t, session, "query_klines", map[string]any{
+		"market":       "usdm",
+		"symbol":       "BTCUSDT",
+		"source":       "vision",
+		"kline_type":   "continuous",
+		"interval":     "1m",
+		"start_utc_ns": "1794700800000000000",
+		"end_utc_ns":   "1794700860000000000",
+	}); !vContRes.IsError {
+		t.Fatal("expected unsupported Vision kline_type=continuous to return explicit error")
+	}
+
+	// 6. M6-R4: Mixed-symbol partial orderbook and legacy unknown metadata must NEVER report complete.
+	mixedPlan := &recorder.QueryPlan{
+		ReadyChunksMatched: 3,
+		RecordedSymbols:    []string{"BTCUSDT", "ETHUSDT"},
+		RequestedSymbols:   []string{"BTCUSDT", "ETHUSDT"},
+		HasSymbolMetadata:  true,
+	}
+	mixedCov := buildRecorderCoverage(mixedPlan, mixedPlan.RequestedSymbols, map[string]any{
+		"reliable_emissions":  2,
+		"window_resync_count": 0,
+		"snapshots_seen":      1,
+		"symbol_coverage": map[string]any{
+			"BTCUSDT": map[string]any{"status": "complete"},
+			"ETHUSDT": map[string]any{"status": "unavailable", "reason": "no_depth_snapshots_for_symbol"},
+		},
+	}, true, "")
+	if mixedCov["status"] != "partial" {
+		t.Fatalf("expected partial coverage when ETHUSDT lacks snapshot, got %v", mixedCov)
+	}
+	unknownCov := buildRecorderCoverage(&recorder.QueryPlan{
+		ReadyChunksMatched: 1,
+		RequestedSymbols:   []string{"BTCUSDT"},
+	}, []string{"BTCUSDT"}, nil, false, "")
+	if unknownCov["status"] != "unknown" {
+		t.Fatalf("expected unknown status when legacy metadata lacks recorded symbols, got %v", unknownCov)
+	}
+
+	// 7. M6-R1 end-to-end Stage 1 inspect_orderbook_snapshots map parsing + >6h partition walkback + error propagation.
+	recSession, recCfg := setupTestMCPClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	}))
+	mockWorkerPath := filepath.Join(t.TempDir(), "mock_worker.py")
+	mockWorkerPy := `import json, sys
+req = json.load(sys.stdin)
+op = req.get("operation")
+cids = [c["chunk_id"] for c in req.get("chunks", [])]
+if op == "inspect_orderbook_snapshots":
+    if "FAIL_INSPECT" in req.get("symbols", []):
+        print(json.dumps({"error": "injected inspect failure"}))
+        sys.exit(1)
+    before = {}
+    if "snap-old-10h" in cids:
+        before["BTCUSDT"] = "1000000000000"
+    print(json.dumps({"operation": op, "snapshots_found": len(before), "latest_before_start_ns": before}))
+elif op == "query_orderbook":
+    print(json.dumps({
+        "operation": op,
+        "stats": {
+            "snapshots_seen": 1, "depth_updates_seen": len(cids), "resync_count": 0,
+            "warmup_resync_count": 0, "window_resync_count": 0, "recovery_count": 1,
+            "reliable_emissions": 1,
+            "symbol_coverage": {"BTCUSDT": {"status": "complete", "reason": None}},
+        },
+        "total_rows": 1,
+        "rows": [{"symbol": "BTCUSDT", "chunks_seen": cids}],
+    }))
+`
+	if err := os.WriteFile(mockWorkerPath, []byte(mockWorkerPy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	recCfg.PythonBin = "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python"
+	recCfg.WorkerScript = mockWorkerPath
+
+	revID := "rev-m6r1-e2e"
+	recBase := filepath.Join(recCfg.DataDir, "recorder")
+	stageChunk := func(id, sym, stream string, lo, hi int64, hasSnap bool) map[string]any {
+		rawAbs := filepath.Join(recBase, "storage", "s1", "raw", id+".bmdr.zst")
+		manAbs := filepath.Join(recBase, "storage", "s1", "manifests", id+".json")
+		_ = os.MkdirAll(filepath.Dir(rawAbs), 0o755)
+		_ = os.MkdirAll(filepath.Dir(manAbs), 0o755)
+		_ = os.WriteFile(rawAbs, []byte(id), 0o644)
+		_ = os.WriteFile(manAbs, []byte(`{"raw_manifest":{"symbol":"`+sym+`"}}`), 0o644)
+		sum := sha256.Sum256([]byte(id))
+		shaHex := fmt.Sprintf("%x", sum)
+		_ = cache.WriteReceipt(rawAbs, cache.Receipt{SHA256: shaHex, SizeBytes: int64(len(id)), OfflineOK: true})
+		_ = cache.WriteReceipt(manAbs, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256([]byte(`{"raw_manifest":{"symbol":"`+sym+`"}}`))), SizeBytes: int64(len(`{"raw_manifest":{"symbol":"`+sym+`"}}`)), OfflineOK: true})
+		obj := map[string]any{
+			"chunk_id": id, "market": "um_perpetual", "symbol": sym, "stream": stream,
+			"state": "ARCHIVED_VERIFIED", "ready": true, "storage_id": "s1",
+			"target_relative_path": "raw/" + id + ".bmdr.zst",
+			"external_manifest_relative_path": "manifests/" + id + ".json",
+			"archive_url_path": "raw/" + id, "manifest_url_path": "man/" + id,
+			"stored_bytes": len(id), "stored_sha256": shaHex, "uncompressed_bytes": len(id),
+			"created_at_utc_ns": lo, "updated_at_utc_ns": hi,
+			"receive_time_utc_range_ns": map[string]any{"min": lo, "max": hi},
+		}
+		if hasSnap {
+			obj["sequence_ranges"] = map[string]any{"lastUpdateId": map[string]any{"min": 100, "max": 100}}
+		}
+		return obj
+	}
+	// p0 is >10h before startNS (37_000_000_000_000 ns = 37000s vs start = 37000s, p0 at 1000s = 1_000_000_000_000 ns -> 36000s = 10h gap!).
+	const start10h int64 = 37_000_000_000_000
+	const end10h int64 = 37_100_000_000_000
+	writePartSnapshot := func(pid, state string, lo, hi int64, chunks []map[string]any) map[string]any {
+		writeArtifact := func(fname string, content []byte) map[string]any {
+			sum := fmt.Sprintf("%x", sha256.Sum256(content))
+			short := sum[:16]
+			dst := filepath.Join(recBase, "snapshots", "usdm", pid, short, fname)
+			_ = os.MkdirAll(filepath.Dir(dst), 0o755)
+			_ = os.WriteFile(dst, content, 0o644)
+			_ = cache.WriteReceipt(dst, cache.Receipt{SHA256: sum, SizeBytes: int64(len(content)), OfflineOK: true})
+			return map[string]any{"bytes": int64(len(content)), "sha256": sum, "url_path": "snapshots/usdm/" + pid + "/" + short + "/" + fname}
+		}
+		pDoc, _ := json.Marshal(map[string]any{"schema_version": "1", "market": "usdm", "partition_id": pid, "state": state, "receive_time_utc_range_ns": map[string]any{"min": lo, "max": hi}})
+		aDoc, _ := json.Marshal(map[string]any{"market": "usdm", "partition_id": pid, "recorded_symbols": []string{"BTCUSDT", "FAIL_INSPECT"}, "gaps": []any{}, "discontinuity_events": []any{}, "quarantined_artifacts": []any{}})
+		var lines []string
+		for _, ch := range chunks {
+			b, _ := json.Marshal(ch)
+			lines = append(lines, string(b))
+		}
+		cDoc := []byte(strings.Join(lines, "\n") + "\n")
+		return map[string]any{
+			"market": "usdm", "partition_id": pid,
+			"files": map[string]any{
+				"partition_json":    writeArtifact("partition.json", pDoc),
+				"availability_json": writeArtifact("availability.json", aDoc),
+				"chunks_jsonl":      writeArtifact("chunks.jsonl", cDoc),
+				"catalog_sqlite":    writeArtifact("catalog.sqlite", []byte("sqlite")),
+			},
+		}
+	}
+	p0Ref := writePartSnapshot("p0", "closed", 900_000_000_000, 2_000_000_000_000, []map[string]any{
+		stageChunk("snap-old-10h", "BTCUSDT", "rest_observations", 950_000_000_000, 1_100_000_000_000, true),
+		stageChunk("bridge-old-10h", "BTCUSDT", "diff_depth", 950_000_000_000, 2_000_000_000_000, false),
+	})
+	p1Ref := writePartSnapshot("p1", "closed", 10_000_000_000_000, 36_000_000_000_000, []map[string]any{
+		stageChunk("bridge-mid-only", "BTCUSDT", "diff_depth", 10_000_000_000_000, 36_000_000_000_000, false),
+	})
+	p2Ref := writePartSnapshot("p2", "open", 36_500_000_000_000, 38_000_000_000_000, []map[string]any{
+		stageChunk("win-depth", "BTCUSDT", "diff_depth", 36_500_000_000_000, 37_200_000_000_000, false),
+	})
+	manPath := filepath.Join(recBase, "revisions", revID, "manifest.json")
+	_ = os.MkdirAll(filepath.Dir(manPath), 0o755)
+	manBytes, _ := json.Marshal(map[string]any{
+		"schema_version": "mcp-export.v1",
+		"revision_id":    revID,
+		"partitions":     []any{p0Ref, p1Ref, p2Ref},
+	})
+	_ = os.WriteFile(manPath, manBytes, 0o644)
+	_ = cache.WriteReceipt(manPath, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256(manBytes)), SizeBytes: int64(len(manBytes)), OfflineOK: true})
+
+	ob10hOut, ob10hRes := callToolMap(t, recSession, "query_orderbook", map[string]any{
+		"market":       "usdm",
+		"symbol":       "BTCUSDT",
+		"revision_id":  revID,
+		"offline":      true,
+		"start_utc_ns": strconv.FormatInt(start10h, 10),
+		"end_utc_ns":   strconv.FormatInt(end10h, 10),
+	})
+	if ob10hRes.IsError {
+		t.Fatalf("expected 10h multi-partition offline query_orderbook to succeed, got %v", ob10hRes)
+	}
+	rowsAny, _ := ob10hOut["rows"].([]any)
+	chunksSeenStr := fmt.Sprint(rowsAny[0])
+	for _, need := range []string{"snap-old-10h", "bridge-old-10h", "bridge-mid-only", "win-depth"} {
+		if !strings.Contains(chunksSeenStr, need) {
+			t.Fatalf("expected Stage 2 chunks to contain %q across >6h two-partition bridge, got %s", need, chunksSeenStr)
+		}
+	}
+	if _, inspErrRes := callToolMap(t, recSession, "query_orderbook", map[string]any{
+		"market":       "usdm",
+		"symbol":       "FAIL_INSPECT",
+		"revision_id":  revID,
+		"offline":      true,
+		"start_utc_ns": strconv.FormatInt(start10h, 10),
+		"end_utc_ns":   strconv.FormatInt(end10h, 10),
+	}); !inspErrRes.IsError {
+		t.Fatal("expected inspect_orderbook_snapshots failure to propagate loudly instead of silently being ignored")
+	}
+}
+
+func mustReadString(t *testing.T, path string) string {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
