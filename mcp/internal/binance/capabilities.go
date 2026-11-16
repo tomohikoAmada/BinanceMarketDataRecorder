@@ -56,11 +56,19 @@ const (
 	OptionsBaseURL = "https://eapi.binance.com"
 	VisionBaseURL  = "https://data.binance.vision"
 
-	SpotDocURL    = "https://developers.binance.com/en/docs/products/spot/rest-api"
-	USDMDocURL    = "https://developers.binance.com/en/docs/derivatives/usds-margined-futures/market-data/rest-api"
-	COINMDocURL   = "https://developers.binance.com/docs/derivatives/coin-margined-futures/market-data/rest-api/Get-Funding-Info"
-	OptionsDocURL = "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-options/api/rest-api/market-data"
-	VisionDocURL  = "https://github.com/binance/binance-public-data/blob/master/README.md"
+	SpotDocURL        = "https://developers.binance.com/en/docs/products/spot/rest-api"
+	SpotWSDocURL      = "https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams"
+	USDMDocURL        = "https://developers.binance.com/en/docs/derivatives/usds-margined-futures/market-data/rest-api"
+	USDMWSBaseURL     = "wss://fstream.binance.com/market/ws"
+	USDMPublicWSURL   = "wss://fstream.binance.com/public/ws"
+	COINMDocURL       = "https://developers.binance.com/docs/derivatives/coin-margined-futures/market-data/rest-api/Get-Funding-Info"
+	COINMWSBaseURL    = "wss://dstream.binance.com/ws"
+	OptionsDocURL       = "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-options/api/rest-api/market-data"
+	OptionsWSBaseURL    = USDMWSBaseURL
+	OptionsPublicWSURL  = USDMPublicWSURL
+	OptionsWSDocURL     = "https://developers.binance.com/docs/derivatives/option/websocket-market-streams"
+	SpotWSBaseURL     = "wss://stream.binance.com:9443/ws"
+	VisionDocURL      = "https://github.com/binance/binance-public-data/blob/master/README.md"
 )
 
 var (
@@ -147,31 +155,108 @@ func buildRegistry() []Capability {
 		},
 		{
 			EndpointID: "spot.ticker.24hr", Market: MarketSpot, Transport: "rest", Method: "GET",
-			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/24hr", OptionalParams: []string{"symbol", "symbols", "type"},
+			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/24hr", OptionalParams: []string{"symbol", "symbols", "type", "symbolStatus"},
 			Weight: "2-80", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
 			RetentionBoundary: "live-rolling-24h", TTLSeconds: 0,
 			DocURL: SpotDocURL, Status: StatusImplemented,
 		},
 		{
+			EndpointID: "spot.ticker", Market: MarketSpot, Transport: "rest", Method: "GET",
+			BaseURL: SpotBaseURL, Path: "/api/v3/ticker", OptionalParams: []string{"symbol", "symbols", "windowSize", "type", "symbolStatus"},
+			Weight: "4-200", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-rolling-window (1m..7d; default 1d)", TTLSeconds: 0,
+			DocURL: SpotDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ticker.tradingDay", Market: MarketSpot, Transport: "rest", Method: "GET",
+			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/tradingDay", OptionalParams: []string{"symbol", "symbols", "timeZone", "type", "symbolStatus"},
+			Weight: "4-200", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-trading-day (requires symbol or symbols)", TTLSeconds: 0,
+			DocURL: SpotDocURL, Status: StatusImplemented,
+		},
+		{
 			EndpointID: "spot.ticker.price", Market: MarketSpot, Transport: "rest", Method: "GET",
-			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/price", OptionalParams: []string{"symbol", "symbols"},
+			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/price", OptionalParams: []string{"symbol", "symbols", "symbolStatus"},
 			Weight: "2-4", Auth: "none", TimeUnit: "live", QtyUnit: "quote_per_base",
 			RetentionBoundary: "live-only", TTLSeconds: 0,
 			DocURL: SpotDocURL, Status: StatusImplemented,
 		},
 		{
 			EndpointID: "spot.ticker.bookTicker", Market: MarketSpot, Transport: "rest", Method: "GET",
-			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/bookTicker", OptionalParams: []string{"symbol", "symbols"},
+			BaseURL: SpotBaseURL, Path: "/api/v3/ticker/bookTicker", OptionalParams: []string{"symbol", "symbols", "symbolStatus"},
 			Weight: "2-4", Auth: "none", TimeUnit: "live", QtyUnit: "base_asset",
 			RetentionBoundary: "live-best-bid-ask", TTLSeconds: 0,
 			DocURL: SpotDocURL, Status: StatusImplemented,
 		},
 		{
 			EndpointID: "spot.ws.bookTicker", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
-			BaseURL: "wss://stream.binance.com:9443/ws", Path: "<symbol>@bookTicker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@bookTicker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
 			Weight: "connection-bounded", Auth: "none", TimeUnit: "live-event", QtyUnit: "base_asset",
 			RetentionBoundary: "live-bounded-sample-only (no historical WS backfill)", TTLSeconds: 0,
-			DocURL: SpotDocURL, Status: StatusImplemented,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.trade", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@trade", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.aggTrade", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@aggTrade", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.kline", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@kline_<interval>", RequiredParams: []string{"symbol", "interval"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote", Intervals: spotRestIntervals,
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.depth", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@depth@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.partialDepth", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@depth<levels>@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"levels", "updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.miniTicker", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@miniTicker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.miniTickerArr", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "!miniTicker@arr", OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.ticker", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "<symbol>@ticker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "spot.ws.tickerArr", Market: MarketSpot, Transport: "ws_bounded", Method: "WS",
+			BaseURL: SpotWSBaseURL, Path: "!ticker@arr", OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: SpotWSDocURL, Status: StatusImplemented,
 		},
 
 		// ===== USD-M FUTURES =====
@@ -363,6 +448,139 @@ func buildRegistry() []Capability {
 			RetentionBoundary: "ws-only-live-bounded (Binance deprecated REST forceOrders; historical only in Recorder)", TTLSeconds: 0,
 			DocURL: USDMDocURL, Status: StatusImplemented,
 		},
+		{
+			EndpointID: "usdm.ticker.price.v2", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v2/ticker/price", OptionalParams: []string{"symbol"},
+			Weight: "1-2", Auth: "none", TimeUnit: "ms", QtyUnit: "quote_per_base",
+			RetentionBoundary: "live-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.indexInfo", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/indexInfo", OptionalParams: []string{"symbol"},
+			Weight: "1", Auth: "none", TimeUnit: "ms", QtyUnit: "index_components",
+			RetentionBoundary: "current-composite-index-constituents", TTLSeconds: 60,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.assetIndex", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/assetIndex", OptionalParams: []string{"symbol"},
+			Weight: "1-10", Auth: "none", TimeUnit: "ms", QtyUnit: "multi_asset_index",
+			RetentionBoundary: "live-multi-asset-index", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.constituents", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/constituents", RequiredParams: []string{"symbol"},
+			Weight: "1", Auth: "none", TimeUnit: "ms", QtyUnit: "constituent_weights",
+			RetentionBoundary: "live-index-price-constituents", TTLSeconds: 60,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.insuranceBalance", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/insuranceBalance", OptionalParams: []string{"symbol"},
+			Weight: "1", Auth: "none", TimeUnit: "ms", QtyUnit: "margin_asset_balance",
+			RetentionBoundary: "live-insurance-fund-snapshot", TTLSeconds: 60,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.symbolAdlRisk", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/symbolAdlRisk", RequiredParams: []string{"symbol"},
+			Weight: "1", Auth: "none", TimeUnit: "ms", QtyUnit: "risk_rating",
+			RetentionBoundary: "live-adl-risk-30m-refresh", TTLSeconds: 60,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.rpiDepth", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/rpiDepth", RequiredParams: []string{"symbol"}, OptionalParams: []string{"limit"},
+			Weight: "2-20", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-orderbook-including-rpi", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.deliveryPrice", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/futures/data/delivery-price", RequiredParams: []string{"pair"},
+			Weight: "0", Auth: "none", TimeUnit: "ms", QtyUnit: "quote_per_base",
+			RetentionBoundary: "quarterly-delivery-settlement-history", TTLSeconds: 300,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.tradingSchedule", Market: MarketUSDM, Transport: "rest", Method: "GET",
+			BaseURL: USDMBaseURL, Path: "/fapi/v1/tradingSchedule",
+			Weight: "5", Auth: "none", TimeUnit: "ms", QtyUnit: "schedule",
+			RetentionBoundary: "1w-backward-1w-forward-trading-sessions", TTLSeconds: 300,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.aggTrade", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMWSBaseURL, Path: "<symbol>@aggTrade", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.markPrice", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMWSBaseURL, Path: "<symbol>@markPrice@1s", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "quote_per_base+rate",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.markPriceArr", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMWSBaseURL, Path: "!markPrice@arr@1s", OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "quote_per_base+rate",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.kline", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMWSBaseURL, Path: "<symbol>@kline_<interval>", RequiredParams: []string{"symbol", "interval"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset", Intervals: futRestIntervals,
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.bookTicker", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMPublicWSURL, Path: "<symbol>@bookTicker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.bookTickerArr", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMPublicWSURL, Path: "!bookTicker", OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.depth", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMPublicWSURL, Path: "<symbol>@depth@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.partialDepth", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMPublicWSURL, Path: "<symbol>@depth<levels>@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"levels", "updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.ticker", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMWSBaseURL, Path: "<symbol>@ticker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "usdm.ws.tickerArr", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: USDMWSBaseURL, Path: "!ticker@arr", OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base/quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: USDMDocURL, Status: StatusImplemented,
+		},
 
 		// ===== COIN-M FUTURES =====
 		{
@@ -537,9 +755,72 @@ func buildRegistry() []Capability {
 		},
 		{
 			EndpointID: "coinm.ws.forceOrder", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
-			BaseURL: "wss://dstream.binance.com/ws", Path: "!forceOrder@arr", OptionalParams: []string{"symbol", "duration_seconds", "max_events"},
+			BaseURL: COINMWSBaseURL, Path: "!forceOrder@arr", OptionalParams: []string{"symbol", "duration_seconds", "max_events"},
 			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
 			RetentionBoundary: "ws-only-live-bounded", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.premiumIndexKlines", Market: MarketCOINM, Transport: "rest", Method: "GET",
+			BaseURL: COINMBaseURL, Path: "/dapi/v1/premiumIndexKlines", RequiredParams: []string{"symbol", "interval"}, OptionalParams: []string{"startTime", "endTime", "limit"},
+			Weight: "1-10", Auth: "none", TimeUnit: "ms", QtyUnit: "rate", Intervals: futRestIntervals,
+			RetentionBoundary: "rest-historical", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.constituents", Market: MarketCOINM, Transport: "rest", Method: "GET",
+			BaseURL: COINMBaseURL, Path: "/dapi/v1/constituents", RequiredParams: []string{"symbol"},
+			Weight: "1", Auth: "none", TimeUnit: "ms", QtyUnit: "constituent_weights",
+			RetentionBoundary: "live-index-price-constituents", TTLSeconds: 60,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.aggTrade", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@aggTrade", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.markPrice", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@markPrice@1s", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "usd_per_coin+rate",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.kline", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@kline_<interval>", RequiredParams: []string{"symbol", "interval"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts", Intervals: futRestIntervals,
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.bookTicker", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@bookTicker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.depth", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@depth@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.partialDepth", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@depth<levels>@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"levels", "updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: COINMDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "coinm.ws.ticker", Market: MarketCOINM, Transport: "ws_bounded", Method: "WS",
+			BaseURL: COINMWSBaseURL, Path: "<symbol>@ticker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts+baseVolume",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
 			DocURL: COINMDocURL, Status: StatusImplemented,
 		},
 
@@ -624,6 +905,48 @@ func buildRegistry() []Capability {
 			Weight: "3", Auth: "none", TimeUnit: "ms", QtyUnit: "strike_price",
 			RetentionBoundary: "recent-settlement-history", TTLSeconds: 300,
 			DocURL: OptionsDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "options.ws.trade", Market: MarketOptions, Transport: "ws_bounded", Method: "WS",
+			BaseURL: OptionsWSBaseURL, Path: "<symbol>@trade", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: OptionsWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "options.ws.kline", Market: MarketOptions, Transport: "ws_bounded", Method: "WS",
+			BaseURL: OptionsWSBaseURL, Path: "<symbol>@kline_<interval>", RequiredParams: []string{"symbol", "interval"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts", Intervals: optRestIntervals,
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: OptionsWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "options.ws.ticker", Market: MarketOptions, Transport: "ws_bounded", Method: "WS",
+			BaseURL: OptionsWSBaseURL, Path: "<symbol>@ticker", RequiredParams: []string{"symbol"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts+quote",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: OptionsWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "options.ws.markPrice", Market: MarketOptions, Transport: "ws_bounded", Method: "WS",
+			BaseURL: OptionsWSBaseURL, Path: "<underlying>@optionMarkPrice", RequiredParams: []string{"underlying"}, OptionalParams: []string{"duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "greeks+iv+markPrice",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: OptionsWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "options.ws.depth", Market: MarketOptions, Transport: "ws_bounded", Method: "WS",
+			BaseURL: OptionsPublicWSURL, Path: "<symbol>@depth@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: OptionsWSDocURL, Status: StatusImplemented,
+		},
+		{
+			EndpointID: "options.ws.partialDepth", Market: MarketOptions, Transport: "ws_bounded", Method: "WS",
+			BaseURL: OptionsPublicWSURL, Path: "<symbol>@depth<levels>@<updateSpeed>", RequiredParams: []string{"symbol"}, OptionalParams: []string{"levels", "updateSpeed", "duration_seconds", "max_events"},
+			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "contracts",
+			RetentionBoundary: "live-bounded-sample-only", TTLSeconds: 0,
+			DocURL: OptionsWSDocURL, Status: StatusImplemented,
 		},
 		{
 			EndpointID: "options.vision.EOHSummary", Market: MarketOptions, Transport: "vision", Method: "GET",

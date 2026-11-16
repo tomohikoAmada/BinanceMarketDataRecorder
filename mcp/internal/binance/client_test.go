@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/cache"
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/config"
 )
@@ -343,5 +345,174 @@ func TestM6E_M6G_M6H_OfflineWS_RetryAfterBackoff_ContentAddressedVision_AndCOINM
 	})
 	if err != nil || !strings.Contains(monthlyRel, "/1mo/BTCUSDT-1mo-2026-10.zip") {
 		t.Fatalf("expected 1M -> 1mo monthly Vision path, got %q err=%v", monthlyRel, err)
+	}
+}
+
+func TestM6D3_PublicCatalog_RESTParams_And_BoundedWSTemplates(t *testing.T) {
+	// 1. Verify all key 4-market public REST & WS additions exist with expected market/transport/auth.
+	requiredCaps := []struct {
+		id        string
+		market    Market
+		transport string
+	}{
+		{"spot.ticker", MarketSpot, "rest"},
+		{"spot.ticker.tradingDay", MarketSpot, "rest"},
+		{"spot.ws.trade", MarketSpot, "ws_bounded"},
+		{"spot.ws.aggTrade", MarketSpot, "ws_bounded"},
+		{"spot.ws.kline", MarketSpot, "ws_bounded"},
+		{"spot.ws.depth", MarketSpot, "ws_bounded"},
+		{"spot.ws.partialDepth", MarketSpot, "ws_bounded"},
+		{"usdm.ticker.price.v2", MarketUSDM, "rest"},
+		{"usdm.indexInfo", MarketUSDM, "rest"},
+		{"usdm.assetIndex", MarketUSDM, "rest"},
+		{"usdm.constituents", MarketUSDM, "rest"},
+		{"usdm.insuranceBalance", MarketUSDM, "rest"},
+		{"usdm.symbolAdlRisk", MarketUSDM, "rest"},
+		{"usdm.rpiDepth", MarketUSDM, "rest"},
+		{"usdm.deliveryPrice", MarketUSDM, "rest"},
+		{"usdm.tradingSchedule", MarketUSDM, "rest"},
+		{"usdm.ws.aggTrade", MarketUSDM, "ws_bounded"},
+		{"usdm.ws.markPrice", MarketUSDM, "ws_bounded"},
+		{"usdm.ws.depth", MarketUSDM, "ws_bounded"},
+		{"coinm.premiumIndexKlines", MarketCOINM, "rest"},
+		{"coinm.constituents", MarketCOINM, "rest"},
+		{"coinm.ws.kline", MarketCOINM, "ws_bounded"},
+		{"options.ws.trade", MarketOptions, "ws_bounded"},
+		{"options.ws.kline", MarketOptions, "ws_bounded"},
+		{"options.ws.ticker", MarketOptions, "ws_bounded"},
+		{"options.ws.markPrice", MarketOptions, "ws_bounded"},
+		{"options.ws.depth", MarketOptions, "ws_bounded"},
+		{"options.ws.partialDepth", MarketOptions, "ws_bounded"},
+	}
+	for _, rc := range requiredCaps {
+		capEntry, ok := LookupCapability(rc.id)
+		if !ok {
+			t.Fatalf("missing capability %q", rc.id)
+		}
+		if capEntry.Market != rc.market || capEntry.Transport != rc.transport || capEntry.Auth != "none" || capEntry.Status != StatusImplemented {
+			t.Fatalf("unexpected capability metadata for %q: %+v", rc.id, capEntry)
+		}
+	}
+
+	// 2. Table-driven GET path & parameter forwarding verification.
+	var seenURIs []string
+	cl, _ := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenURIs = append(seenURIs, r.URL.RequestURI())
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}), "")
+
+	restCases := []struct {
+		id         string
+		params     map[string]string
+		wantPath   string
+		wantQuery  string
+	}{
+		{
+			id:        "spot.ticker",
+			params:    map[string]string{"symbol": "BTCUSDT", "windowSize": "4h", "type": "MINI", "symbolStatus": "TRADING"},
+			wantPath:  "/api/v3/ticker",
+			wantQuery: "windowSize=4h",
+		},
+		{
+			id:        "spot.ticker.tradingDay",
+			params:    map[string]string{"symbol": "BTCUSDT", "timeZone": "+08:00", "symbolStatus": "TRADING"},
+			wantPath:  "/api/v3/ticker/tradingDay",
+			wantQuery: "timeZone=%2B08%3A00",
+		},
+		{
+			id:       "usdm.indexInfo",
+			params:   map[string]string{"symbol": "DEFIUSDT"},
+			wantPath: "/fapi/v1/indexInfo",
+		},
+		{
+			id:       "usdm.assetIndex",
+			params:   map[string]string{"symbol": "BNB"},
+			wantPath: "/fapi/v1/assetIndex",
+		},
+		{
+			id:       "usdm.constituents",
+			params:   map[string]string{"symbol": "BTCUSDT"},
+			wantPath: "/fapi/v1/constituents",
+		},
+		{
+			id:       "usdm.ticker.price.v2",
+			params:   map[string]string{"symbol": "BTCUSDT"},
+			wantPath: "/fapi/v2/ticker/price",
+		},
+		{
+			id:        "coinm.premiumIndexKlines",
+			params:    map[string]string{"symbol": "BTCUSD_PERP", "interval": "15m", "limit": "5"},
+			wantPath:  "/dapi/v1/premiumIndexKlines",
+			wantQuery: "interval=15m",
+		},
+	}
+	for _, tc := range restCases {
+		capEntry, _ := LookupCapability(tc.id)
+		res, err := cl.ExecuteCapability(context.Background(), capEntry, tc.params, false)
+		if err != nil {
+			t.Fatalf("ExecuteCapability(%s) failed: %v", tc.id, err)
+		}
+		if !strings.Contains(res.URL, tc.wantPath) || (tc.wantQuery != "" && !strings.Contains(res.URL, tc.wantQuery)) {
+			t.Fatalf("ExecuteCapability(%s) URL mismatch: got %q, want path %q query %q", tc.id, res.URL, tc.wantPath, tc.wantQuery)
+		}
+	}
+
+	// 3. Local WebSocket template substitution + max_events bounded capture test.
+	var dialedPaths []string
+	wsSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		dialedPaths = append(dialedPaths, r.URL.Path)
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		for i := 0; i < 5; i++ {
+			msg, _ := json.Marshal(map[string]any{"e": "trade", "seq": i, "path": r.URL.Path})
+			if err := conn.Write(r.Context(), websocket.MessageText, msg); err != nil {
+				return
+			}
+		}
+		_ = conn.Close(websocket.StatusNormalClosure, "done")
+	}))
+	defer wsSrv.Close()
+	wsURL := "ws://" + strings.TrimPrefix(wsSrv.URL, "http://")
+
+	wsCap, _ := LookupCapability("options.ws.kline")
+	wsCap.BaseURL = wsURL + "/market/ws"
+	wsRes, err := cl.ExecuteCapability(context.Background(), wsCap, map[string]string{
+		"symbol":           "BTC-261225-100000-C",
+		"interval":         "1m",
+		"duration_seconds": "2",
+		"max_events":       "2",
+	}, false)
+	if err != nil {
+		t.Fatalf("sampleWS options.ws.kline failed: %v", err)
+	}
+	var wsOut map[string]any
+	if err := json.Unmarshal(wsRes.Payload, &wsOut); err != nil || int(wsOut["sampled_count"].(float64)) != 2 {
+		t.Fatalf("expected 2 sampled WS events, got %s err=%v", string(wsRes.Payload), err)
+	}
+	if len(dialedPaths) != 1 || dialedPaths[0] != "/market/ws/btc-261225-100000-c@kline_1m" {
+		t.Fatalf("unexpected dialed WS path: %v", dialedPaths)
+	}
+
+	depthCap, _ := LookupCapability("spot.ws.partialDepth")
+	depthCap.BaseURL = wsURL + "/ws"
+	if _, err := cl.ExecuteCapability(context.Background(), depthCap, map[string]string{
+		"symbol":           "ETHUSDT",
+		"levels":           "10",
+		"updateSpeed":      "100ms",
+		"duration_seconds": "2",
+		"max_events":       "1",
+	}, false); err != nil {
+		t.Fatalf("sampleWS spot.ws.partialDepth failed: %v", err)
+	}
+	if dialedPaths[len(dialedPaths)-1] != "/ws/ethusdt@depth10@100ms" {
+		t.Fatalf("unexpected depth template substitution: %v", dialedPaths)
+	}
+
+	if _, err := resolveWSStreamPath(wsCap, map[string]string{"symbol": "BTC-261225-100000-C"}); err == nil {
+		t.Fatal("expected error when <interval> is missing")
 	}
 }

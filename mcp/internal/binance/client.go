@@ -296,6 +296,62 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 	}
 }
 
+func resolveWSStreamPath(capEntry Capability, params map[string]string) (string, error) {
+	streamPath := capEntry.Path
+	if strings.Contains(streamPath, "<symbol>") {
+		sym := strings.ToLower(strings.TrimSpace(params["symbol"]))
+		if sym == "" {
+			return "", fmt.Errorf("%s requires symbol", capEntry.EndpointID)
+		}
+		streamPath = strings.ReplaceAll(streamPath, "<symbol>", sym)
+	}
+	if strings.Contains(streamPath, "<underlying>") {
+		und := strings.ToLower(strings.TrimSpace(params["underlying"]))
+		if und == "" {
+			und = strings.ToLower(strings.TrimSpace(params["symbol"]))
+		}
+		if und == "" {
+			return "", fmt.Errorf("%s requires underlying", capEntry.EndpointID)
+		}
+		streamPath = strings.ReplaceAll(streamPath, "<underlying>", und)
+	}
+	if strings.Contains(streamPath, "<interval>") {
+		iv := strings.TrimSpace(params["interval"])
+		if iv == "" {
+			return "", fmt.Errorf("%s requires interval", capEntry.EndpointID)
+		}
+		streamPath = strings.ReplaceAll(streamPath, "<interval>", iv)
+	}
+	if strings.Contains(streamPath, "<levels>") {
+		lv := strings.TrimSpace(params["levels"])
+		if lv == "" {
+			lv = "20"
+		}
+		switch lv {
+		case "5", "10", "20":
+		default:
+			return "", fmt.Errorf("%s invalid levels %q; allowed: 5, 10, 20", capEntry.EndpointID, lv)
+		}
+		streamPath = strings.ReplaceAll(streamPath, "<levels>", lv)
+	}
+	if strings.Contains(streamPath, "<updateSpeed>") {
+		spd := strings.TrimSpace(params["updateSpeed"])
+		if spd == "" {
+			spd = "100ms"
+		}
+		switch spd {
+		case "50ms", "100ms", "250ms", "500ms", "1000ms":
+		default:
+			return "", fmt.Errorf("%s invalid updateSpeed %q; allowed: 50ms, 100ms, 250ms, 500ms, 1000ms", capEntry.EndpointID, spd)
+		}
+		streamPath = strings.ReplaceAll(streamPath, "<updateSpeed>", spd)
+	}
+	if strings.Contains(streamPath, "<") || strings.Contains(streamPath, ">") {
+		return "", fmt.Errorf("%s unresolved stream template placeholder in %q", capEntry.EndpointID, streamPath)
+	}
+	return streamPath, nil
+}
+
 func (c *Client) sampleWS(ctx context.Context, capEntry Capability, params map[string]string) (*RESTResponse, error) {
 	durSec := 3
 	if raw := strings.TrimSpace(params["duration_seconds"]); raw != "" {
@@ -314,16 +370,10 @@ func (c *Client) sampleWS(ctx context.Context, capEntry Capability, params map[s
 		maxEvents = n
 	}
 
-	streamPath := capEntry.Path
-	if strings.Contains(streamPath, "<symbol>") {
-		sym := strings.ToLower(strings.TrimSpace(params["symbol"]))
-		if sym == "" {
-			return nil, fmt.Errorf("%s requires symbol", capEntry.EndpointID)
-		}
-		streamPath = strings.ReplaceAll(streamPath, "<symbol>", sym)
+	streamPath, err := resolveWSStreamPath(capEntry, params)
+	if err != nil {
+		return nil, err
 	}
-	wsURL := strings.TrimRight(c.Cfg.RecorderHTTPSURL, "/") // unused
-	_ = wsURL
 	targetWS := strings.TrimRight(capEntry.BaseURL, "/") + "/" + strings.TrimLeft(streamPath, "/")
 
 	sctx, cancel := context.WithTimeout(ctx, time.Duration(durSec)*time.Second)

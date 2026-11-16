@@ -854,3 +854,352 @@ func mustReadString(t *testing.T, path string) string {
 	}
 	return string(b)
 }
+
+func readJSONLRows(t *testing.T, out map[string]any) []map[string]any {
+	t.Helper()
+	var rows []map[string]any
+	if path, _ := out["result_file"].(string); path != "" {
+		raw := mustReadString(t, path)
+		for _, ln := range strings.Split(strings.TrimSpace(raw), "\n") {
+			if ln == "" {
+				continue
+			}
+			var r map[string]any
+			if err := json.Unmarshal([]byte(ln), &r); err != nil {
+				t.Fatal(err)
+			}
+			rows = append(rows, r)
+		}
+		return rows
+	}
+	b, err := json.Marshal(out["rows"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &rows); err != nil {
+		t.Fatal(err)
+	}
+	return rows
+}
+
+func TestM6D1_MultiSymbolPagination_And_MarketWideFunding(t *testing.T) {
+	const baseMS int64 = 1794700800000
+	session, _ := setupTestMCPClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		q := r.URL.Query()
+		n, _ := strconv.Atoi(q.Get("limit"))
+		if n <= 0 {
+			n = 1000
+		}
+		lo, _ := strconv.ParseInt(q.Get("startTime"), 10, 64)
+		hi, _ := strconv.ParseInt(q.Get("endTime"), 10, 64)
+		if hi == 0 {
+			hi = baseMS + 200_000_000
+		}
+		switch r.URL.Path {
+		case "/api/v3/klines":
+			var rows [][]any
+			for i := 0; i < 1500 && len(rows) < n; i++ {
+				ts := baseMS + int64(i)*60000
+				if ts >= lo && ts <= hi {
+					rows = append(rows, []any{ts, "100", "101", "99", "100", "1", ts + 59999, "100", 1, "1", "100", "0"})
+				}
+			}
+			_ = json.NewEncoder(w).Encode(rows)
+		case "/fapi/v1/aggTrades":
+			from, _ := strconv.Atoi(q.Get("fromId"))
+			var rows []map[string]any
+			for i := 1; i <= 1500 && len(rows) < n; i++ {
+				ts := baseMS + int64(i-1)
+				if i >= from && ts >= lo && ts <= hi {
+					rows = append(rows, map[string]any{"a": i, "T": ts, "p": "100", "q": "1", "m": false})
+				}
+			}
+			_ = json.NewEncoder(w).Encode(rows)
+		case "/fapi/v1/fundingRate":
+			symFilter := q.Get("symbol")
+			var all []map[string]any
+			if hi >= baseMS+1500 {
+				// Multi-symbol tied-fundingTime fixture: page 1 has BTCUSDT@baseMS, ETHUSDT@baseMS, SOLUSDT@baseMS, plus BTCUSDT@(baseMS+1000).
+				all = []map[string]any{
+					{"symbol": "BTCUSDT", "fundingTime": baseMS, "fundingRate": "0.001"},
+					{"symbol": "ETHUSDT", "fundingTime": baseMS, "fundingRate": "0.002"},
+					{"symbol": "SOLUSDT", "fundingTime": baseMS, "fundingRate": "0.003"},
+					{"symbol": "BTCUSDT", "fundingTime": baseMS + 1000, "fundingRate": "0.004"},
+				}
+			} else {
+				all = []map[string]any{
+					{"symbol": "BTCUSDT", "fundingTime": baseMS, "fundingRate": "0.001"},
+					{"symbol": "ETHUSDT", "fundingTime": baseMS, "fundingRate": "0.002"},
+				}
+			}
+			var out []map[string]any
+			for _, it := range all {
+				ts := it["fundingTime"].(int64)
+				if ts >= lo && ts <= hi && (symFilter == "" || symFilter == it["symbol"]) && len(out) < n {
+					out = append(out, it)
+				}
+			}
+			_ = json.NewEncoder(w).Encode(out)
+		case "/fapi/v1/exchangeInfo":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"symbols": []map[string]any{
+					{"symbol": "BTCUSDT"}, {"symbol": "ETHUSDT"}, {"symbol": "SOLUSDT"},
+				},
+			})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+
+	// 1. Two-symbol Spot klines: 1500 BTCUSDT + 1500 ETHUSDT across max_fetch_rows=1000 pages.
+	klArgs := map[string]any{
+		"market": "spot", "symbols": []string{"BTCUSDT", "ETHUSDT"}, "source": "rest",
+		"interval": "1m", "start_utc_ns": strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":     strconv.FormatInt((baseMS+1500*60000)*1_000_000, 10),
+		"max_fetch_rows": 1000, "limit": 1, "save_to_file": true,
+	}
+	klSeen := map[string]map[string]bool{"BTCUSDT": {}, "ETHUSDT": {}}
+	for page := 0; page < 5; page++ {
+		out, res := callToolMap(t, session, "query_klines", klArgs)
+		if res.IsError {
+			t.Fatalf("query_klines page %d failed: %v", page, out)
+		}
+		for _, r := range readJSONLRows(t, out) {
+			klSeen[fmt.Sprint(r["symbol"])][fmt.Sprint(r["open_time_utc_ns"])] = true
+		}
+		if more, _ := out["has_more"].(bool); !more {
+			break
+		}
+		klArgs["cursor"] = out["next_cursor"]
+	}
+	if len(klSeen["BTCUSDT"]) != 1500 || len(klSeen["ETHUSDT"]) != 1500 {
+		t.Fatalf("multi-symbol klines mismatch: BTC=%d ETH=%d (want 1500 each)", len(klSeen["BTCUSDT"]), len(klSeen["ETHUSDT"]))
+	}
+
+	// 2. Two-symbol USD-M aggTrade: 1500 BTCUSDT + 1500 ETHUSDT across max_fetch_rows=1000 pages.
+	trArgs := map[string]any{
+		"market": "usdm", "symbols": []string{"BTCUSDT", "ETHUSDT"}, "source": "rest",
+		"record_kind": "trades", "start_utc_ns": strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":     strconv.FormatInt((baseMS+1500)*1_000_000, 10),
+		"max_fetch_rows": 1000, "limit": 1, "save_to_file": true,
+	}
+	trSeen := map[string]map[string]bool{"BTCUSDT": {}, "ETHUSDT": {}}
+	for page := 0; page < 5; page++ {
+		out, res := callToolMap(t, session, "query_trades_and_liquidations", trArgs)
+		if res.IsError {
+			t.Fatalf("query_trades page %d failed: %v", page, out)
+		}
+		for _, r := range readJSONLRows(t, out) {
+			trSeen[fmt.Sprint(r["symbol"])][fmt.Sprint(r["agg_trade_id"])] = true
+		}
+		if more, _ := out["has_more"].(bool); !more {
+			break
+		}
+		trArgs["cursor"] = out["next_cursor"]
+	}
+	if len(trSeen["BTCUSDT"]) != 1500 || len(trSeen["ETHUSDT"]) != 1500 {
+		t.Fatalf("multi-symbol trades mismatch: BTC=%d ETH=%d (want 1500 each)", len(trSeen["BTCUSDT"]), len(trSeen["ETHUSDT"]))
+	}
+
+	// 3. Market-wide funding_history preserves multiple symbols sharing the same fundingTime.
+	fundOut, fundRes := callToolMap(t, session, "query_derivatives_metrics", map[string]any{
+		"market": "usdm", "source": "rest", "metric": "funding_history",
+		"start_utc_ns": strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":   strconv.FormatInt((baseMS+1000)*1_000_000, 10),
+		"limit":        10,
+	})
+	if fundRes.IsError {
+		t.Fatalf("market-wide funding_history failed: %v", fundOut)
+	}
+	fundRows := readJSONLRows(t, fundOut)
+	if len(fundRows) != 2 {
+		t.Fatalf("expected 2 funding rows at same fundingTime across BTCUSDT+ETHUSDT, got %d (%v)", len(fundRows), fundRows)
+	}
+
+	// 4. Tied fundingTime across page boundary (max_fetch_rows=2): never drops SOLUSDT at baseMS.
+	fArgs := map[string]any{
+		"market": "usdm", "source": "rest", "metric": "funding_history",
+		"start_utc_ns":   strconv.FormatInt(baseMS*1_000_000, 10),
+		"end_utc_ns":     strconv.FormatInt((baseMS+2000)*1_000_000, 10),
+		"max_fetch_rows": 2, "limit": 10, "save_to_file": true,
+	}
+	fKeys := map[string]int{}
+	for page := 0; page < 5; page++ {
+		out, res := callToolMap(t, session, "query_derivatives_metrics", fArgs)
+		if res.IsError {
+			t.Fatalf("paginated funding page %d failed: %v", page, out)
+		}
+		for _, r := range readJSONLRows(t, out) {
+			fKeys[fmt.Sprintf("%s:%s", r["symbol"], formatScalar(r["fundingTime"]))]++
+		}
+		if more, _ := out["has_more"].(bool); !more {
+			break
+		}
+		fArgs["cursor"] = out["next_cursor"]
+	}
+	wantFunding := []string{
+		fmt.Sprintf("BTCUSDT:%d", baseMS),
+		fmt.Sprintf("ETHUSDT:%d", baseMS),
+		fmt.Sprintf("SOLUSDT:%d", baseMS),
+		fmt.Sprintf("BTCUSDT:%d", baseMS+1000),
+	}
+	for _, k := range wantFunding {
+		if fKeys[k] != 1 {
+			t.Fatalf("expected funding row %q exactly once, got map=%v", k, fKeys)
+		}
+	}
+}
+
+func TestM6D2_And_M6D3_RecorderMetrics_Overview_And_PublicCatalog(t *testing.T) {
+	session, cfg := setupTestMCPClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"path":"` + r.URL.Path + `","query":"` + r.URL.RawQuery + `"}`))
+	}))
+
+	// 1. M6-D2: offline unknown-exchange omission marks coverage partial.
+	partialCov := buildRecorderCoverage(&recorder.QueryPlan{
+		ReadyChunksMatched:          1,
+		RequestedSymbols:            []string{"BTCUSDT"},
+		RecordedSymbols:             []string{"BTCUSDT"},
+		HasSymbolMetadata:           true,
+		OmittedUnknownOfflineChunks: 2,
+	}, []string{"BTCUSDT"}, nil, false, "")
+	if partialCov["status"] != "partial" || !strings.Contains(fmt.Sprint(partialCov["partial_reasons"]), "unknown_exchange_time_chunks_omitted_offline") {
+		t.Fatalf("expected partial coverage with unknown_exchange_time_chunks_omitted_offline, got %v", partialCov)
+	}
+
+	// 2. M6-D2: All 5m Recorder metrics accepted on source=recorder without rejecting pre-sync.
+	mockWorkerPath := filepath.Join(t.TempDir(), "mock_metrics_worker.py")
+	mockWorkerPy := `import json, sys
+req = json.load(sys.stdin)
+op = req.get("operation")
+metric = req.get("metric")
+if op == "query_derivatives_metrics":
+    print(json.dumps({
+        "operation": op,
+        "total_rows": 1,
+        "observed_symbols": ["BTCUSDT"],
+        "rows": [{"metric_type": metric, "symbol": "BTCUSDT", "event_time_utc_ns": "1000000", "receive_time_utc_ns": "1000000", "values": {"ok": True}, "source": "recorder"}],
+    }))
+else:
+    print(json.dumps({"operation": op, "total_rows": 0, "rows": []}))
+`
+	if err := os.WriteFile(mockWorkerPath, []byte(mockWorkerPy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg.PythonBin = "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python"
+	cfg.WorkerScript = mockWorkerPath
+
+	revID := "rev-m6d2-metrics"
+	recBase := filepath.Join(cfg.DataDir, "recorder")
+	rawBytes := []byte("metric-raw")
+	manBytes := []byte(`{"raw_manifest":{"symbol":"BTCUSDT","exchange_time_ranges":{"exchange_event_time":{"min":1,"max":10}}}}`)
+	rawSHA := fmt.Sprintf("%x", sha256.Sum256(rawBytes))
+	manSHA := fmt.Sprintf("%x", sha256.Sum256(manBytes))
+	rawAbs := filepath.Join(recBase, "storage", "s1", "raw", "m1.bmdr.zst")
+	manAbs := filepath.Join(recBase, "storage", "s1", "manifests", "m1.json")
+	_ = os.MkdirAll(filepath.Dir(rawAbs), 0o755)
+	_ = os.MkdirAll(filepath.Dir(manAbs), 0o755)
+	_ = os.WriteFile(rawAbs, rawBytes, 0o644)
+	_ = os.WriteFile(manAbs, manBytes, 0o644)
+	_ = cache.WriteReceipt(rawAbs, cache.Receipt{SHA256: rawSHA, SizeBytes: int64(len(rawBytes)), OfflineOK: true})
+	_ = cache.WriteReceipt(manAbs, cache.Receipt{SHA256: manSHA, SizeBytes: int64(len(manBytes)), OfflineOK: true})
+
+	writeArtifact := func(fname string, content []byte) map[string]any {
+		sum := fmt.Sprintf("%x", sha256.Sum256(content))
+		short := sum[:16]
+		dst := filepath.Join(recBase, "snapshots", "usdm", "p_m", short, fname)
+		_ = os.MkdirAll(filepath.Dir(dst), 0o755)
+		_ = os.WriteFile(dst, content, 0o644)
+		_ = cache.WriteReceipt(dst, cache.Receipt{SHA256: sum, SizeBytes: int64(len(content)), OfflineOK: true})
+		return map[string]any{"bytes": int64(len(content)), "sha256": sum, "url_path": "snapshots/usdm/p_m/" + short + "/" + fname}
+	}
+	pDoc, _ := json.Marshal(map[string]any{"schema_version": "1", "market": "usdm", "partition_id": "p_m", "state": "open", "receive_time_utc_range_ns": map[string]any{"min": 1000000, "max": 10000000}})
+	aDoc, _ := json.Marshal(map[string]any{"market": "usdm", "partition_id": "p_m", "recorded_symbols": []string{"BTCUSDT"}, "recorded_streams": []string{"rest_observations", "book_ticker"}, "gaps": []any{}, "discontinuity_events": []any{}, "quarantined_artifacts": []any{}})
+	cLine, _ := json.Marshal(map[string]any{
+		"chunk_id": "m1", "market": "um_shared", "symbol": "BTCUSDT", "stream": "rest_observations",
+		"state": "ARCHIVED_VERIFIED", "ready": true, "storage_id": "s1",
+		"target_relative_path": "raw/m1.bmdr.zst", "external_manifest_relative_path": "manifests/m1.json",
+		"archive_url_path": "raw/m1", "manifest_url_path": "man/m1",
+		"stored_bytes": len(rawBytes), "stored_sha256": rawSHA, "uncompressed_bytes": len(rawBytes),
+		"created_at_utc_ns": 1000000, "updated_at_utc_ns": 10000000,
+		"receive_time_utc_range_ns": map[string]any{"min": 1000000, "max": 10000000},
+		"exchange_time_ranges":      map[string]any{"exchange_event_time": map[string]any{"min": 1, "max": 10}},
+	})
+	topManPath := filepath.Join(recBase, "revisions", revID, "manifest.json")
+	_ = os.MkdirAll(filepath.Dir(topManPath), 0o755)
+	topManBytes, _ := json.Marshal(map[string]any{
+		"schema_version": "mcp-export.v1",
+		"revision_id":    revID,
+		"partitions": []any{map[string]any{
+			"market": "usdm", "partition_id": "p_m",
+			"files": map[string]any{
+				"partition_json":    writeArtifact("partition.json", pDoc),
+				"availability_json": writeArtifact("availability.json", aDoc),
+				"chunks_jsonl":      writeArtifact("chunks.jsonl", append(cLine, '\n')),
+				"catalog_sqlite":    writeArtifact("catalog.sqlite", []byte("sqlite")),
+			},
+		}},
+	})
+	_ = os.WriteFile(topManPath, topManBytes, 0o644)
+	_ = cache.WriteReceipt(topManPath, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256(topManBytes)), SizeBytes: int64(len(topManBytes)), OfflineOK: true})
+
+	for _, metric := range []string{"open_interest_hist", "top_long_short_account", "top_long_short_position", "global_long_short", "taker_buy_sell_vol"} {
+		out, res := callToolMap(t, session, "query_derivatives_metrics", map[string]any{
+			"market": "usdm", "symbol": "BTCUSDT", "source": "recorder", "metric": metric,
+			"revision_id": revID, "offline": true, "start_utc_ns": "1000000", "end_utc_ns": "10000000",
+		})
+		if res.IsError || out["data_source"] != "recorder" {
+			t.Fatalf("expected metric %q via source=recorder to succeed, got out=%v res=%v", metric, out, res)
+		}
+	}
+
+	// 3. M6-D2: query_market_overview surfaces recorded_symbols, recorded_streams, and raw_access.
+	ovOut, ovRes := callToolMap(t, session, "query_market_overview", map[string]any{
+		"market": "usdm", "revision_id": revID, "offline": true,
+	})
+	if ovRes.IsError {
+		t.Fatalf("query_market_overview failed: %v", ovOut)
+	}
+	recOv := mapStringAny(ovOut["recorder"])
+	if !strings.Contains(fmt.Sprint(recOv["recorded_streams"]), "book_ticker") || mapStringAny(recOv["raw_access"])["tool"] != "manage_local_cache" {
+		t.Fatalf("expected recorded_streams and raw_access in overview, got %v", recOv)
+	}
+
+	estOut, estRes := callToolMap(t, session, "manage_local_cache", map[string]any{
+		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID, "offline": true,
+	})
+	if estRes.IsError || estOut["selection_time_basis"] != "receive_time_utc" {
+		t.Fatalf("expected selection_time_basis=receive_time_utc on recorder estimate, got %v", estOut)
+	}
+
+	// 4. M6-D3: query_public_endpoint accepts newly registered 4-market public GET & bounded WS endpoints.
+	for _, tc := range []struct {
+		id     string
+		params map[string]string
+		want   string
+	}{
+		{"spot.ticker", map[string]string{"symbol": "BTCUSDT", "windowSize": "1h"}, "/api/v3/ticker"},
+		{"spot.ticker.tradingDay", map[string]string{"symbol": "BTCUSDT", "timeZone": "+08:00"}, "/api/v3/ticker/tradingDay"},
+		{"usdm.indexInfo", map[string]string{"symbol": "DEFIUSDT"}, "/fapi/v1/indexInfo"},
+		{"usdm.assetIndex", map[string]string{"symbol": "BNB"}, "/fapi/v1/assetIndex"},
+		{"coinm.constituents", map[string]string{"symbol": "BTCUSD"}, "/dapi/v1/constituents"},
+	} {
+		epOut, epRes := callToolMap(t, session, "query_public_endpoint", map[string]any{
+			"endpoint_id": tc.id,
+			"params":      tc.params,
+		})
+		if epRes.IsError || !strings.Contains(fmt.Sprint(epOut["url"]), tc.want) {
+			t.Fatalf("query_public_endpoint(%s) failed: out=%v res=%v", tc.id, epOut, epRes)
+		}
+	}
+	wsOfflineOut, wsOfflineRes := callToolMap(t, session, "query_public_endpoint", map[string]any{
+		"endpoint_id": "options.ws.trade",
+		"params":      map[string]string{"symbol": "BTC-261225-100000-C"},
+		"offline":     true,
+	})
+	if !wsOfflineRes.IsError || strings.Contains(fmt.Sprint(wsOfflineRes.Content), "not in the allowlisted") {
+		t.Fatalf("expected options.ws.trade offline to be recognized and rejected only for offline=true, got out=%v res=%v", wsOfflineOut, wsOfflineRes)
+	}
+}

@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/cache"
 	"github.com/tomohikoAmada/BinanceMarketDataMCP/internal/config"
@@ -98,34 +97,55 @@ type ChunkEntry struct {
 	ConnectionIDs              []string               `json:"connection_ids,omitempty"`
 }
 
-// EffectiveTimeRangeNS returns the chunk's data time range in UTC nanoseconds when available.
-// When preferExchange is true, it builds the hull over receive_time_utc_range_ns and exchange_time_ranges (* 1e6).
-func (ch ChunkEntry) EffectiveTimeRangeNS(preferExchange bool) (int64, int64, bool) {
+// ReceiveTimeRangeNS returns the chunk's receive_time_utc_range_ns bounds in UTC nanoseconds.
+func (ch ChunkEntry) ReceiveTimeRangeNS() (int64, int64, bool) {
+	if ch.ReceiveTimeUTCRangeNS != nil && ch.ReceiveTimeUTCRangeNS.Max > 0 {
+		return ch.ReceiveTimeUTCRangeNS.Min, ch.ReceiveTimeUTCRangeNS.Max, true
+	}
+	return 0, 0, false
+}
+
+// ExchangeTimeRangeNS returns the chunk's exchange_time_ranges bounds scaled to UTC nanoseconds.
+func (ch ChunkEntry) ExchangeTimeRangeNS() (int64, int64, bool) {
 	var have bool
 	var minNS, maxNS int64
-	if ch.ReceiveTimeUTCRangeNS != nil && ch.ReceiveTimeUTCRangeNS.Max > 0 {
-		minNS = ch.ReceiveTimeUTCRangeNS.Min
-		maxNS = ch.ReceiveTimeUTCRangeNS.Max
-		have = true
-	}
-	if preferExchange && len(ch.ExchangeTimeRanges) > 0 {
-		for _, r := range ch.ExchangeTimeRanges {
-			if r.Max <= 0 {
-				continue
-			}
-			rMin := r.Min * 1_000_000
-			rMax := r.Max * 1_000_000
-			if !have {
+	for _, r := range ch.ExchangeTimeRanges {
+		if r.Max <= 0 {
+			continue
+		}
+		rMin := r.Min * 1_000_000
+		rMax := r.Max * 1_000_000
+		if !have {
+			minNS = rMin
+			maxNS = rMax
+			have = true
+		} else {
+			if rMin > 0 && (minNS == 0 || rMin < minNS) {
 				minNS = rMin
+			}
+			if rMax > maxNS {
 				maxNS = rMax
-				have = true
-			} else {
-				if rMin > 0 && (minNS == 0 || rMin < minNS) {
-					minNS = rMin
-				}
-				if rMax > maxNS {
-					maxNS = rMax
-				}
+			}
+		}
+	}
+	return minNS, maxNS, have
+}
+
+// EffectiveTimeRangeNS returns the chunk's data time range in UTC nanoseconds when available.
+// When preferExchange is true and exchange bounds exist, it builds the hull over receive and exchange bounds.
+func (ch ChunkEntry) EffectiveTimeRangeNS(preferExchange bool) (int64, int64, bool) {
+	minNS, maxNS, have := ch.ReceiveTimeRangeNS()
+	if preferExchange {
+		exMin, exMax, hasEx := ch.ExchangeTimeRangeNS()
+		if hasEx {
+			if !have {
+				return exMin, exMax, true
+			}
+			if exMin > 0 && (minNS == 0 || exMin < minNS) {
+				minNS = exMin
+			}
+			if exMax > maxNS {
+				maxNS = exMax
 			}
 		}
 	}
@@ -239,25 +259,30 @@ type QueryPlan struct {
 	PendingOmittedCount        int                `json:"pending_omitted_count"`
 	PendingUnknownStreamCount  int                `json:"pending_unknown_stream_count,omitempty"`
 	PendingReasons             map[string]int     `json:"pending_reasons,omitempty"`
-	GapCount                   int                `json:"gap_count"`
-	QuarantinedCount           int                `json:"quarantined_count"`
-	DiscontinuityCount         int                `json:"discontinuity_count"`
-	HasSymbolMetadata          bool               `json:"has_symbol_metadata,omitempty"`
-	HasTimeRangeMetadata       bool               `json:"has_time_range_metadata,omitempty"`
-	PlannedChunks              []PlannedChunk     `json:"-"`
-	SelectedPartitions         []LoadedPartition  `json:"-"`
+	GapCount                    int               `json:"gap_count"`
+	QuarantinedCount            int               `json:"quarantined_count"`
+	DiscontinuityCount          int               `json:"discontinuity_count"`
+	HasSymbolMetadata           bool              `json:"has_symbol_metadata,omitempty"`
+	HasTimeRangeMetadata        bool              `json:"has_time_range_metadata,omitempty"`
+	SelectionTimeBasis          string            `json:"selection_time_basis,omitempty"`
+	HasExchangeTimeMetadata     bool              `json:"has_exchange_time_metadata,omitempty"`
+	UnknownExchangeRangeChunks  int               `json:"unknown_exchange_range_chunks,omitempty"`
+	OmittedUnknownOfflineChunks int               `json:"omitted_unknown_offline_chunks,omitempty"`
+	PlannedChunks               []PlannedChunk    `json:"-"`
+	SelectedPartitions          []LoadedPartition `json:"-"`
 }
 
 // PlannedChunk pairs a matched ready chunk with its partition catalog and local paths.
 type PlannedChunk struct {
-	PartitionID        string
-	CatalogPath        string
-	StorageID          string
-	Chunk              ChunkEntry
-	LocalRawPath       string
-	LocalManifestPath  string
-	RawCached          bool
-	ManifestCached     bool
+	PartitionID         string
+	CatalogPath         string
+	StorageID           string
+	Chunk               ChunkEntry
+	LocalRawPath        string
+	LocalManifestPath   string
+	RawCached           bool
+	ManifestCached      bool
+	ConservativeUnknown bool
 }
 
 // Client syncs Recorder index metadata, plans chunk downloads, and materializes local storage roots.
@@ -540,12 +565,17 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 	}
 	sort.Strings(normalizedSyms)
 
+	selectionBasis := "receive_time_utc"
+	if opts.PreferExchangeTime {
+		selectionBasis = "exchange_time"
+	}
 	plan := &QueryPlan{
-		RevisionID:       snap.RevisionID,
-		Market:           opts.Market,
-		Streams:          append([]string(nil), opts.Streams...),
-		RequestedSymbols: normalizedSyms,
-		PendingReasons:   make(map[string]int),
+		RevisionID:         snap.RevisionID,
+		Market:             opts.Market,
+		Streams:            append([]string(nil), opts.Streams...),
+		RequestedSymbols:   normalizedSyms,
+		PendingReasons:     make(map[string]int),
+		SelectionTimeBasis: selectionBasis,
 	}
 
 	type candPart struct {
@@ -568,26 +598,24 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		return marketParts[i].Manifest.PartitionID < marketParts[j].Manifest.PartitionID
 	})
 
-	const exchangeUpperLeewayNS = int64(24 * time.Hour)
-	const exchangeLowerLeewayNS = int64(5 * time.Minute)
 	var selected []candPart
 	var precedingClosedIdxs []int
 	for i, part := range marketParts {
 		pMin := part.Metadata.ReceiveTimeUTCRangeNS.Min
 		pMax := part.Metadata.ReceiveTimeUTCRangeNS.Max
 		if opts.EndUTCNS > 0 && pMin > 0 && pMin >= opts.EndUTCNS {
-			if !opts.PreferExchangeTime || (pMin-opts.EndUTCNS) > exchangeUpperLeewayNS {
+			if !opts.PreferExchangeTime {
 				continue
 			}
+			// Never drop based on fixed receive tolerance when PreferExchangeTime is active; inspect chunks safely.
 			selected = append(selected, candPart{part: part, exchangeBoundaryOnly: true})
 			continue
 		}
-		lowerSkew := int64(0)
-		if opts.PreferExchangeTime {
-			lowerSkew = exchangeLowerLeewayNS
-		}
-		if opts.StartUTCNS > 0 && part.Metadata.State == "closed" && pMax > pMin && (pMax+lowerSkew) < opts.StartUTCNS {
+		if opts.StartUTCNS > 0 && part.Metadata.State == "closed" && pMax > pMin && pMax < opts.StartUTCNS {
 			precedingClosedIdxs = append(precedingClosedIdxs, i)
+			if opts.PreferExchangeTime && !opts.IncludePrecedingBaseline {
+				selected = append(selected, candPart{part: part, exchangeBoundaryOnly: true})
+			}
 			continue
 		}
 		selected = append(selected, candPart{part: part, baselineOnly: false})
@@ -679,6 +707,8 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		minNS                int64
 		maxNS                int64
 		hasDataRange         bool
+		hasSourceRange       bool
+		conservativeUnknown  bool
 		baselineOnly         bool
 		exchangeBoundaryOnly bool
 	}
@@ -717,7 +747,13 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				if len(streamSet) > 0 && ch.Stream != "" && !streamSet[ch.Stream] {
 					continue
 				}
-				cMin, cMax, hasRange := ch.EffectiveTimeRangeNS(opts.PreferExchangeTime)
+				var cMin, cMax int64
+				var hasRange bool
+				if opts.PreferExchangeTime {
+					cMin, cMax, hasRange = ch.ExchangeTimeRangeNS()
+				} else {
+					cMin, cMax, hasRange = ch.ReceiveTimeRangeNS()
+				}
 				if hasRange {
 					if opts.EndUTCNS > 0 && cMin >= opts.EndUTCNS {
 						continue
@@ -725,7 +761,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 					if opts.StartUTCNS > 0 && cMax > 0 && cMax < opts.StartUTCNS {
 						continue
 					}
-				} else if sp.baselineOnly || sp.exchangeBoundaryOnly {
+				} else if sp.baselineOnly || (sp.exchangeBoundaryOnly && !opts.PreferExchangeTime) {
 					continue
 				}
 				plan.PendingOmittedCount++
@@ -762,7 +798,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				return nil, err
 			}
 
-			if ch.ReceiveTimeUTCRangeNS == nil || ch.Symbol == nil {
+			if ch.ReceiveTimeUTCRangeNS == nil || ch.Symbol == nil || (opts.PreferExchangeTime && len(ch.ExchangeTimeRanges) == 0) {
 				hydrateChunkMetadataFromLocalManifest(&ch, localMan)
 			}
 			if sym := ch.SymbolName(); sym != "" && sym != "__GLOBAL__" {
@@ -775,7 +811,20 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				}
 			}
 
-			minNS, maxNS, hasDataRange := ch.EffectiveTimeRangeNS(opts.PreferExchangeTime)
+			recvMin, recvMax, hasRecv := ch.ReceiveTimeRangeNS()
+			exMin, exMax, hasEx := ch.ExchangeTimeRangeNS()
+			minNS, maxNS, hasDataRange := recvMin, recvMax, hasRecv
+			hasSourceRange := hasRecv
+			conservativeUnknown := false
+			if opts.PreferExchangeTime {
+				if hasEx {
+					minNS, maxNS, hasDataRange, hasSourceRange = exMin, exMax, true, true
+				} else {
+					hasDataRange = false
+					hasSourceRange = false
+					conservativeUnknown = true
+				}
+			}
 			allCandidates = append(allCandidates, chunkCand{
 				partID:               part.Manifest.PartitionID,
 				catalogPath:          part.CatalogPath,
@@ -787,6 +836,8 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				minNS:                minNS,
 				maxNS:                maxNS,
 				hasDataRange:         hasDataRange,
+				hasSourceRange:       hasSourceRange,
+				conservativeUnknown:  conservativeUnknown,
 				baselineOnly:         sp.baselineOnly,
 				exchangeBoundaryOnly: sp.exchangeBoundaryOnly,
 			})
@@ -863,6 +914,14 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				} else {
 					latestPreStreamChunk[bk] = idx
 				}
+			}
+			continue
+		}
+
+		if cand.conservativeUnknown {
+			// Requested exchange_time bounds are absent: retain candidate for local payload filtering instead of pruning on proxy/receive time.
+			if !cand.baselineOnly || opts.IncludePrecedingBaseline {
+				chosen[ch.ChunkID] = true
 			}
 			continue
 		}
@@ -955,6 +1014,8 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 	}
 
 	allChosenHaveTime := true
+	allChosenHaveEx := true
+	unknownExCount := 0
 	for _, cand := range allCandidates {
 		if !chosen[cand.ch.ChunkID] {
 			continue
@@ -972,6 +1033,10 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 		if !cand.hasDataRange {
 			allChosenHaveTime = false
 		}
+		if cand.conservativeUnknown {
+			allChosenHaveEx = false
+			unknownExCount++
+		}
 		ch := cand.ch
 		plan.ReadyChunksMatched++
 		if ch.UncompressedBytes != nil {
@@ -986,14 +1051,15 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			}
 		}
 		plan.PlannedChunks = append(plan.PlannedChunks, PlannedChunk{
-			PartitionID:       cand.partID,
-			CatalogPath:       cand.catalogPath,
-			StorageID:         *ch.StorageID,
-			Chunk:             ch,
-			LocalRawPath:      cand.localRaw,
-			LocalManifestPath: cand.localMan,
-			RawCached:         cand.rawCached,
-			ManifestCached:    cand.manCached,
+			PartitionID:         cand.partID,
+			CatalogPath:         cand.catalogPath,
+			StorageID:           *ch.StorageID,
+			Chunk:               ch,
+			LocalRawPath:        cand.localRaw,
+			LocalManifestPath:   cand.localMan,
+			RawCached:           cand.rawCached,
+			ManifestCached:      cand.manCached,
+			ConservativeUnknown: cand.conservativeUnknown,
 		})
 	}
 
@@ -1003,6 +1069,10 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 	sort.Strings(plan.RecordedSymbols)
 	plan.HasSymbolMetadata = len(plan.RecordedSymbols) > 0
 	plan.HasTimeRangeMetadata = plan.ReadyChunksMatched > 0 && allChosenHaveTime
+	if opts.PreferExchangeTime {
+		plan.HasExchangeTimeMetadata = plan.ReadyChunksMatched > 0 && allChosenHaveEx
+		plan.UnknownExchangeRangeChunks = unknownExCount
+	}
 	if len(normalizedSyms) > 0 && len(recordedSymSet) > 0 {
 		for _, sym := range normalizedSyms {
 			if !recordedSymSet[sym] {
@@ -1054,6 +1124,42 @@ func hydrateChunkMetadataFromLocalManifest(ch *ChunkEntry, localMan string) {
 	}
 }
 
+// HydrateMissingManifests downloads small archive manifests for candidate chunks whose requested source
+// time range is absent in partition metadata so a follow-up PlanQueryWithOptions can filter without downloading raw chunks.
+func (c *Client) HydrateMissingManifests(ctx context.Context, plan *QueryPlan, offline bool) (int, error) {
+	if plan == nil || offline || plan.UnknownExchangeRangeChunks == 0 {
+		return 0, nil
+	}
+	fetched := 0
+	for _, pc := range plan.PlannedChunks {
+		if !pc.ConservativeUnknown || pc.ManifestCached || pc.Chunk.ManifestURLPath == nil || pc.Chunk.ExternalManifestRelPath == nil {
+			continue
+		}
+		ch := pc.Chunk
+		manRel := filepath.Join("recorder", "storage", pc.StorageID, filepath.FromSlash(*ch.ExternalManifestRelPath))
+		priMan, secMan := c.urlsFor(*ch.ManifestURLPath)
+		res, err := c.CacheMgr.EnsureFile(ctx, cache.EnsureOptions{
+			DestRelPath: manRel,
+			Key: cache.CacheKey{
+				Source:         "recorder_archive_manifest",
+				Market:         ch.Market,
+				Dataset:        ch.ChunkID,
+				RevisionOrHash: *ch.StoredSHA256,
+			},
+			SourceURL:   priMan,
+			FallbackURL: secMan,
+			Offline:     false,
+		})
+		if err != nil {
+			continue
+		}
+		if !res.CacheHit {
+			fetched++
+		}
+	}
+	return fetched, nil
+}
+
 // MaterializePlan downloads (or verifies offline) every planned raw chunk & archive manifest into
 // BINANCE_MCP_DATA_DIR/recorder/storage/<storage_id>/..., enforcing maxDownloadBytes unless already cached.
 func (c *Client) MaterializePlan(ctx context.Context, plan *QueryPlan, offline bool, maxDownloadBytes int64) error {
@@ -1073,6 +1179,8 @@ func (c *Client) MaterializePlan(ctx context.Context, plan *QueryPlan, offline b
 		)
 	}
 
+	var kept []PlannedChunk
+	var firstOfflineOmitErr error
 	for _, pc := range plan.PlannedChunks {
 		ch := pc.Chunk
 		rawRel := filepath.Join("recorder", "storage", pc.StorageID, filepath.FromSlash(*ch.TargetRelativePath))
@@ -1093,6 +1201,13 @@ func (c *Client) MaterializePlan(ctx context.Context, plan *QueryPlan, offline b
 			FallbackURL: secRaw,
 			Offline:     offline,
 		}); err != nil {
+			if offline && pc.ConservativeUnknown {
+				if firstOfflineOmitErr == nil {
+					firstOfflineOmitErr = fmt.Errorf("ensure raw chunk %s (%s): %w", ch.ChunkID, ch.Stream, err)
+				}
+				plan.OmittedUnknownOfflineChunks++
+				continue
+			}
 			return fmt.Errorf("ensure raw chunk %s (%s): %w", ch.ChunkID, ch.Stream, err)
 		}
 
@@ -1109,8 +1224,22 @@ func (c *Client) MaterializePlan(ctx context.Context, plan *QueryPlan, offline b
 			FallbackURL: secMan,
 			Offline:     offline,
 		}); err != nil {
+			if offline && pc.ConservativeUnknown {
+				if firstOfflineOmitErr == nil {
+					firstOfflineOmitErr = fmt.Errorf("ensure archive manifest %s: %w", ch.ChunkID, err)
+				}
+				plan.OmittedUnknownOfflineChunks++
+				continue
+			}
 			return fmt.Errorf("ensure archive manifest %s: %w", ch.ChunkID, err)
 		}
+		kept = append(kept, pc)
+	}
+	if offline && len(plan.PlannedChunks) > 0 && len(kept) == 0 && firstOfflineOmitErr != nil {
+		return firstOfflineOmitErr
+	}
+	if plan.OmittedUnknownOfflineChunks > 0 {
+		plan.PlannedChunks = kept
 	}
 	return nil
 }

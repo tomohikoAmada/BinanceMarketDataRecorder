@@ -609,4 +609,31 @@ def test_m6r2_r3_r4_r6_lookahead_mixed_export_coverage_and_bounded_streaming(tmp
         peaks_mem[count] = peak_b
     assert peaks_mem[4000] < peaks_mem[1000] * 2
 
+    # 5. M6-D2: query_derivatives_metrics supports all 5m rest_observations metrics via MCP aliases.
+    metric_events = [
+        _rest_env("um_shared", "BTCUSDT", "open_interest_statistics_5m", base_ms + 100, [{"timestamp": base_ms + 100, "sumOpenInterest": "1234", "sumOpenInterestValue": "56789"}]),
+        _rest_env("um_shared", "BTCUSDT", "top_long_short_account_ratio_5m", base_ms + 100, [{"timestamp": base_ms + 100, "longShortRatio": "1.25", "longAccount": "0.55", "shortAccount": "0.45"}]),
+        _rest_env("um_shared", "BTCUSDT", "top_long_short_position_ratio_5m", base_ms + 100, [{"timestamp": base_ms + 100, "longShortRatio": "1.40", "longAccount": "0.58", "shortAccount": "0.42"}]),
+        _rest_env("um_shared", "BTCUSDT", "global_long_short_ratio_5m", base_ms + 100, [{"timestamp": base_ms + 100, "longShortRatio": "1.10", "longAccount": "0.52", "shortAccount": "0.48"}]),
+        _rest_env("um_shared", "BTCUSDT", "taker_buy_sell_volume_5m", base_ms + 100, [{"timestamp": base_ms + 100, "buySellRatio": "0.95", "buyVol": "100", "sellVol": "105"}]),
+    ]
+    _mock_events(metric_events)
+    expected_types = {
+        "open_interest_hist": "open_interest_statistics_5m",
+        "top_long_short_account": "top_long_short_account_ratio_5m",
+        "top_long_short_position": "top_long_short_position_ratio_5m",
+        "global_long_short": "global_long_short_ratio_5m",
+        "taker_buy_sell_vol": "taker_buy_sell_volume_5m",
+    }
+    for mcp_metric, want_type in expected_types.items():
+        m_res = worker.dispatch({
+            "operation": "query_derivatives_metrics",
+            "market": "usdm",
+            "symbols": ["BTCUSDT"],
+            "metric": mcp_metric,
+            "limit": 10,
+        })
+        assert m_res["total_rows"] == 1 and m_res["rows"][0]["metric_type"] == want_type
+        assert m_res["rows"][0]["symbol"] == "BTCUSDT" and m_res["rows"][0]["values"]
+
 

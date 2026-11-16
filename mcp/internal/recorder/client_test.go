@@ -432,3 +432,146 @@ func TestM6R1PlanOverlappingSnapshotTwoPartitionWalkbackAndExchangeTime(t *testi
 		t.Fatalf("multi-partition baseline walkback mismatch:\n got=%v\nwant=%v", got, wantWalk)
 	}
 }
+
+func ptr[T any](v T) *T { return &v }
+
+func TestM6D2_PreferExchangeTime_UnknownRetention_Hydration_And_OfflineOmit(t *testing.T) {
+	dir := t.TempDir()
+	var manServer *httptest.Server
+	remoteManBytes := []byte(`{"raw_manifest":{"symbol":"BTCUSDT","exchange_time_ranges":{"exchange_trade_time":{"min":160,"max":170}}}}`)
+	remoteRawBytes := []byte("remote-raw-payload")
+	var hits atomic.Int32
+	manServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		switch r.URL.Path {
+		case "/man/remote_disjoint.json":
+			_, _ = w.Write(remoteManBytes)
+		case "/raw/remote_disjoint.raw":
+			_, _ = w.Write(remoteRawBytes)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer manServer.Close()
+
+	cfg := &config.Config{DataDir: dir, RecorderHTTPSURL: manServer.URL}
+	cl := NewClient(cfg, cache.NewManager(dir, manServer.Client(), 1, 0, nil))
+
+	makeChunkAt := func(id string, recvLo, recvHi int64) ChunkEntry {
+		return ChunkEntry{
+			ChunkID:                 id,
+			Market:                  "um_perpetual",
+			Symbol:                  ptr("BTCUSDT"),
+			Stream:                  "agg_trade",
+			Ready:                   true,
+			StorageID:               ptr("store"),
+			TargetRelativePath:      ptr(id + ".raw"),
+			ExternalManifestRelPath: ptr(id + ".json"),
+			ArchiveURLPath:          ptr("/raw/" + id + ".raw"),
+			ManifestURLPath:         ptr("/man/" + id + ".json"),
+			StoredSHA256:            ptr(fmt.Sprintf("%x", sha256.Sum256([]byte(id)))),
+			StoredBytes:             ptr(int64(len(id))),
+			CreatedAtUTCNS:          recvLo,
+			UpdatedAtUTCNS:          recvHi,
+			ReceiveTimeUTCRangeNS:   &TimeRangeNS{Min: recvLo, Max: recvHi},
+		}
+	}
+	makePartAt := func(pid, state string, lo, hi int64, chunks []ChunkEntry) LoadedPartition {
+		p := filepath.Join(dir, pid+".chunks.jsonl")
+		f, err := os.Create(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		enc := json.NewEncoder(f)
+		for _, ch := range chunks {
+			if err := enc.Encode(ch); err != nil {
+				t.Fatal(err)
+			}
+		}
+		_ = f.Close()
+		return LoadedPartition{
+			Manifest:     PartitionManifest{Market: "usdm", PartitionID: pid},
+			Metadata:     PartitionMetadata{State: state, ReceiveTimeUTCRangeNS: TimeRangeNS{Min: lo, Max: hi}},
+			ChunksPath:   p,
+			Availability: AvailabilityMetadata{RecordedSymbols: []string{"BTCUSDT"}},
+		}
+	}
+
+	// 1. Unknown exchange_time_ranges on receive-only chunk MUST be retained, not pruned by ReceiveTimeUTCRangeNS.
+	unknownLate := makeChunkAt("unknown_late", 151_000_000, 160_000_000)
+
+	// 2. Chunk with missing chunks.jsonl ExchangeTimeRanges, but cached local .archive-manifest.json has disjoint exchange time [155, 160].
+	hydratedDisjoint := makeChunkAt("hydrated_disjoint", 151_000_000, 160_000_000)
+	localManPath, _ := cl.CacheMgr.PathFor("recorder", "storage", "store", "hydrated_disjoint.json")
+	_ = os.MkdirAll(filepath.Dir(localManPath), 0o755)
+	_ = os.WriteFile(localManPath, []byte(`{"raw_manifest":{"symbol":"BTCUSDT","exchange_time_ranges":{"exchange_trade_time":{"min":155,"max":160}}}}`), 0o644)
+
+	// 3. Delayed 48h receive chunk whose exchange time overlaps [100ms, 150ms) MUST NOT be skipped by 24h receive tolerance.
+	const hourNS = int64(time.Hour)
+	delayed48h := makeChunkAt("delayed_48h", 48*hourNS, 49*hourNS)
+	delayed48h.ExchangeTimeRanges = map[string]TimeRangeNS{"exchange_trade_time": {Min: 149, Max: 149}}
+
+	// 4. Known disjoint exchange time chunk [155, 160] is pruned deterministically.
+	knownDisjoint := makeChunkAt("known_disjoint", 120_000_000, 160_000_000)
+	knownDisjoint.ExchangeTimeRanges = map[string]TimeRangeNS{"exchange_trade_time": {Min: 155, Max: 160}}
+
+	part1 := makePartAt("p_late", "open", 151_000_000, 160_000_000, []ChunkEntry{unknownLate, hydratedDisjoint, knownDisjoint})
+	part2 := makePartAt("p_48h", "closed", 48*hourNS, 49*hourNS, []ChunkEntry{delayed48h})
+
+	opts := PlanOptions{
+		Market:             "usdm",
+		Streams:            []string{"agg_trade"},
+		Symbols:            []string{"BTCUSDT"},
+		StartUTCNS:         100_000_000,
+		EndUTCNS:           150_000_000,
+		PreferExchangeTime: true,
+	}
+	plan, err := cl.PlanQueryWithOptions(&SyncedSnapshot{Partitions: []LoadedPartition{part1, part2}}, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotIDs := make([]string, 0, len(plan.PlannedChunks))
+	for _, pc := range plan.PlannedChunks {
+		gotIDs = append(gotIDs, pc.Chunk.ChunkID)
+	}
+	wantIDs := []string{"delayed_48h", "unknown_late"}
+	if !reflect.DeepEqual(gotIDs, wantIDs) {
+		t.Fatalf("PreferExchangeTime unknown/delayed retention mismatch: got=%v want=%v", gotIDs, wantIDs)
+	}
+	if plan.SelectionTimeBasis != "exchange_time" || plan.UnknownExchangeRangeChunks != 1 || plan.HasExchangeTimeMetadata {
+		t.Fatalf("unexpected plan metadata: basis=%q unknown=%d hasEx=%v", plan.SelectionTimeBasis, plan.UnknownExchangeRangeChunks, plan.HasExchangeTimeMetadata)
+	}
+
+	// 5. HydrateMissingManifests downloads small .archive-manifest.json and re-plan prunes remote_disjoint cleanly.
+	remoteDisjoint := makeChunkAt("remote_disjoint", 151_000_000, 160_000_000)
+	partRemote := makePartAt("p_remote", "open", 151_000_000, 160_000_000, []ChunkEntry{remoteDisjoint})
+	planBefore, err := cl.PlanQueryWithOptions(&SyncedSnapshot{Partitions: []LoadedPartition{partRemote}}, opts)
+	if err != nil || len(planBefore.PlannedChunks) != 1 {
+		t.Fatalf("expected remote_disjoint conservatively retained before manifest hydration: err=%v len=%d", err, len(planBefore.PlannedChunks))
+	}
+	fetched, err := cl.HydrateMissingManifests(context.Background(), planBefore, false)
+	if err != nil || fetched != 1 {
+		t.Fatalf("expected HydrateMissingManifests to fetch 1 manifest, got fetched=%d err=%v", fetched, err)
+	}
+	planAfter, err := cl.PlanQueryWithOptions(&SyncedSnapshot{Partitions: []LoadedPartition{partRemote}}, opts)
+	if err != nil || len(planAfter.PlannedChunks) != 0 {
+		t.Fatalf("expected re-plan after manifest hydration to prune remote_disjoint, got len=%d err=%v", len(planAfter.PlannedChunks), err)
+	}
+
+	// 6. MaterializePlan in offline mode omits uncached ConservativeUnknown chunks when cached chunk is present.
+	cachedRawPath, _ := cl.CacheMgr.PathFor("recorder", "storage", "store", "delayed_48h.raw")
+	cachedManPath, _ := cl.CacheMgr.PathFor("recorder", "storage", "store", "delayed_48h.json")
+	_ = os.MkdirAll(filepath.Dir(cachedRawPath), 0o755)
+	_ = os.WriteFile(cachedRawPath, []byte("delayed_48h"), 0o644)
+	_ = os.WriteFile(cachedManPath, []byte(`{}`), 0o644)
+	_ = cache.WriteReceipt(cachedRawPath, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256([]byte("delayed_48h"))), SizeBytes: int64(len("delayed_48h")), OfflineOK: true})
+	_ = cache.WriteReceipt(cachedManPath, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256([]byte("{}"))), SizeBytes: 2, OfflineOK: true})
+
+	hitsBefore := hits.Load()
+	if err := cl.MaterializePlan(context.Background(), plan, true, DefaultAutoDownloadCapBytes); err != nil {
+		t.Fatalf("MaterializePlan offline with partial cached chunks failed: %v", err)
+	}
+	if hits.Load() != hitsBefore || plan.OmittedUnknownOfflineChunks != 1 || len(plan.PlannedChunks) != 1 || plan.PlannedChunks[0].Chunk.ChunkID != "delayed_48h" {
+		t.Fatalf("unexpected offline materialization result: omitted=%d planned=%d hits=%d->%d", plan.OmittedUnknownOfflineChunks, len(plan.PlannedChunks), hitsBefore, hits.Load())
+	}
+}

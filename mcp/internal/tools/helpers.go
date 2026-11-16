@@ -386,21 +386,26 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 		plan.GapCount > 0 ||
 		plan.QuarantinedCount > 0 ||
 		plan.DiscontinuityCount > 0 ||
+		plan.OmittedUnknownOfflineChunks > 0 ||
 		len(plan.UnrecordedSymbols) > 0
 	m := map[string]any{
-		"revision_id":                  plan.RevisionID,
-		"partitions_matched":           plan.PartitionsMatched,
-		"ready_chunks_matched":         plan.ReadyChunksMatched,
-		"already_cached_chunks":        plan.AlreadyCachedChunks,
-		"download_chunks":              plan.DownloadChunks,
-		"estimated_download_bytes":     plan.EstimatedDownloadBytes,
-		"estimated_uncompressed_bytes": plan.EstimatedUncompressedBytes,
-		"pending_omitted_count":        plan.PendingOmittedCount,
-		"pending_unknown_stream_count": plan.PendingUnknownStreamCount,
-		"gap_count":                    plan.GapCount,
-		"quarantined_count":            plan.QuarantinedCount,
-		"discontinuity_count":          plan.DiscontinuityCount,
-		"partial_coverage":             partial,
+		"revision_id":                    plan.RevisionID,
+		"selection_time_basis":           plan.SelectionTimeBasis,
+		"has_exchange_time_metadata":     plan.HasExchangeTimeMetadata,
+		"unknown_exchange_range_chunks":  plan.UnknownExchangeRangeChunks,
+		"omitted_unknown_offline_chunks": plan.OmittedUnknownOfflineChunks,
+		"partitions_matched":             plan.PartitionsMatched,
+		"ready_chunks_matched":           plan.ReadyChunksMatched,
+		"already_cached_chunks":          plan.AlreadyCachedChunks,
+		"download_chunks":                plan.DownloadChunks,
+		"estimated_download_bytes":       plan.EstimatedDownloadBytes,
+		"estimated_uncompressed_bytes":   plan.EstimatedUncompressedBytes,
+		"pending_omitted_count":          plan.PendingOmittedCount,
+		"pending_unknown_stream_count":   plan.PendingUnknownStreamCount,
+		"gap_count":                      plan.GapCount,
+		"quarantined_count":              plan.QuarantinedCount,
+		"discontinuity_count":            plan.DiscontinuityCount,
+		"partial_coverage":               partial,
 	}
 	if len(plan.RequestedSymbols) > 0 {
 		m["requested_symbols"] = plan.RequestedSymbols
@@ -418,11 +423,13 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 }
 
 type restPaginationCursor struct {
-	SymbolIndex int    `json:"si,omitempty"`
-	Symbol      string `json:"sym,omitempty"`
-	FromID      int64  `json:"fid,omitempty"`
-	StartNS     int64  `json:"sns,omitempty"`
-	EndNS       int64  `json:"ens,omitempty"`
+	SymbolIndex  int      `json:"si,omitempty"`
+	Symbol       string   `json:"sym,omitempty"`
+	FromID       int64    `json:"fid,omitempty"`
+	StartNS      int64    `json:"sns,omitempty"`
+	EndNS        int64    `json:"ens,omitempty"`
+	SeenAtStart  []string `json:"sas,omitempty"`
+	IsStructured bool     `json:"-"`
 }
 
 func encodeRESTCursor(cur restPaginationCursor) string {
@@ -444,13 +451,14 @@ func decodeRESTCursor(raw string) (restPaginationCursor, error) {
 		if err := json.Unmarshal(decoded, &cur); err != nil {
 			return restPaginationCursor{}, fmt.Errorf("invalid v1 cursor payload: %w", err)
 		}
+		cur.IsStructured = true
 		return cur, nil
 	}
 	ns, err := recorder.ParseNSString(trimmed)
 	if err != nil {
 		return restPaginationCursor{}, err
 	}
-	return restPaginationCursor{StartNS: ns}, nil
+	return restPaginationCursor{StartNS: ns, IsStructured: false}, nil
 }
 
 func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, workerStats map[string]any, orderbookMode bool, unsyncReason string) map[string]any {
@@ -479,6 +487,9 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 	}
 	if plan.PendingUnknownStreamCount > 0 {
 		reasons = append(reasons, "pending_unknown_stream")
+	}
+	if plan.OmittedUnknownOfflineChunks > 0 {
+		reasons = append(reasons, "unknown_exchange_time_chunks_omitted_offline")
 	}
 
 	unknownMetadata := plan.ReadyChunksMatched > 0 && len(plan.RecordedSymbols) == 0 && !plan.HasSymbolMetadata
@@ -601,21 +612,26 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 	if plan.PendingUnknownStreamCount > 0 {
 		notes = append(notes, fmt.Sprintf("%d pending chunks have stream=null and could not be cleanly excluded from stream coverage", plan.PendingUnknownStreamCount))
 	}
+	if plan.OmittedUnknownOfflineChunks > 0 {
+		notes = append(notes, fmt.Sprintf("%d candidate chunks lacked exchange_time_ranges metadata and were omitted offline without network verification", plan.OmittedUnknownOfflineChunks))
+	}
 	if unsyncReason != "" {
 		notes = append(notes, "Orderbook reconstruction unsynchronized: "+unsyncReason)
 	}
 
 	out := map[string]any{
-		"status":                       status,
-		"requested_symbols":            requestedSymbols,
-		"recorded_symbols":             plan.RecordedSymbols,
-		"unrecorded_symbols":           plan.UnrecordedSymbols,
-		"missing_symbols_count":        len(plan.UnrecordedSymbols),
-		"gaps_count":                   plan.GapCount,
-		"quarantined_count":            plan.QuarantinedCount,
-		"discontinuity_count":          plan.DiscontinuityCount,
-		"pending_omitted_count":        plan.PendingOmittedCount,
-		"pending_unknown_stream_count": plan.PendingUnknownStreamCount,
+		"status":                         status,
+		"requested_symbols":              requestedSymbols,
+		"recorded_symbols":               plan.RecordedSymbols,
+		"unrecorded_symbols":             plan.UnrecordedSymbols,
+		"missing_symbols_count":          len(plan.UnrecordedSymbols),
+		"gaps_count":                     plan.GapCount,
+		"quarantined_count":              plan.QuarantinedCount,
+		"discontinuity_count":            plan.DiscontinuityCount,
+		"pending_omitted_count":          plan.PendingOmittedCount,
+		"pending_unknown_stream_count":   plan.PendingUnknownStreamCount,
+		"unknown_exchange_range_chunks":  plan.UnknownExchangeRangeChunks,
+		"omitted_unknown_offline_chunks": plan.OmittedUnknownOfflineChunks,
 	}
 	if len(symCoverage) > 0 {
 		out["symbol_coverage"] = symCoverage

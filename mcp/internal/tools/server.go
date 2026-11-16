@@ -122,7 +122,7 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	if curErr != nil {
 		return nil, nil, fmt.Errorf("invalid cursor: %w", curErr)
 	}
-	if restCur.EndNS == 0 && restCur.StartNS > startNS {
+	if !restCur.IsStructured && restCur.EndNS == 0 && restCur.StartNS > startNS {
 		startNS = restCur.StartNS
 	}
 	if startNS > 0 && endNS > 0 && startNS >= endNS {
@@ -167,14 +167,14 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	if canTryRecorder && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
 		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if sErr == nil {
-			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			plan, pErr := s.planAndHydrateRecorder(ctx, snap, recorder.PlanOptions{
 				Market:             string(m),
 				Streams:            []string{"agg_trade"},
 				Symbols:            symbols,
 				StartUTCNS:         startNS,
 				EndUTCNS:           endNS,
 				PreferExchangeTime: true,
-			})
+			}, in.Offline)
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
 					if sourcePref == "recorder" {
@@ -1016,7 +1016,7 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 	if curErr != nil {
 		return nil, nil, fmt.Errorf("invalid cursor: %w", curErr)
 	}
-	if restCur.EndNS == 0 && restCur.StartNS > startNS {
+	if !restCur.IsStructured && restCur.EndNS == 0 && restCur.StartNS > startNS {
 		startNS = restCur.StartNS
 	}
 	if startNS > 0 && endNS > 0 && startNS >= endNS {
@@ -1070,14 +1070,14 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 			} else if kind == "all" && m == binance.MarketUSDM {
 				streams = []string{"agg_trade", "liquidation"}
 			}
-			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			plan, pErr := s.planAndHydrateRecorder(ctx, snap, recorder.PlanOptions{
 				Market:             string(m),
 				Streams:            streams,
 				Symbols:            symbols,
 				StartUTCNS:         startNS,
 				EndUTCNS:           endNS,
 				PreferExchangeTime: true,
-			})
+			}, in.Offline)
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
 					if sourcePref == "recorder" {
@@ -1341,7 +1341,7 @@ type QueryDerivativesInput struct {
 	Market           string   `json:"market" jsonschema:"Derivatives market: usdm, coinm, or options"`
 	Symbols          []string `json:"symbols,omitempty" jsonschema:"Symbols list"`
 	Symbol           string   `json:"symbol,omitempty" jsonschema:"Single symbol convenience alias"`
-	Metric           string   `json:"metric,omitempty" jsonschema:"all, mark_price_funding, open_interest, open_interest_hist, top_long_short_account, top_long_short_position, global_long_short, taker_buy_sell_vol, basis, funding_history, options_mark, options_open_interest"`
+	Metric           string   `json:"metric,omitempty" jsonschema:"all, mark_price_funding, open_interest, open_interest_hist, top_long_short_account, top_long_short_position, global_long_short, taker_buy_sell_vol, contract_specs, basis, funding_history, options_mark, options_open_interest"`
 	Period           string   `json:"period,omitempty" jsonschema:"Period for statistics: 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d (default 5m)"`
 	Pair             string   `json:"pair,omitempty" jsonschema:"Pair (e.g. BTCUSD for COIN-M statistics/basis)"`
 	ContractType     string   `json:"contract_type,omitempty" jsonschema:"PERPETUAL, CURRENT_QUARTER, NEXT_QUARTER"`
@@ -1374,7 +1374,7 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	if curErr != nil {
 		return nil, nil, fmt.Errorf("invalid cursor: %w", curErr)
 	}
-	if restCur.EndNS == 0 && restCur.StartNS > startNS {
+	if !restCur.IsStructured && restCur.EndNS == 0 && restCur.StartNS > startNS {
 		startNS = restCur.StartNS
 	}
 	if startNS > 0 && endNS > 0 && startNS >= endNS {
@@ -1408,15 +1408,15 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		return nil, nil, fmt.Errorf("invalid source %q; expected auto, recorder, or rest", in.Source)
 	}
 
-	recorderSupportedMetric := metric == "all" || metric == "mark_price_funding" || metric == "open_interest"
+	recorderSupportedMetric := isRecorderSupportedMetric(metric)
 	if sourcePref == "recorder" {
 		if m != binance.MarketUSDM {
 			return nil, nil, fmt.Errorf("Recorder derivatives metrics only support market=usdm (got %s)", m)
 		}
 		if !recorderSupportedMetric {
-			return nil, nil, fmt.Errorf("Recorder only stores usdm mark_price and rest_observations (mark_price_funding, open_interest); metric %q requires source='rest' or 'auto'", metric)
+			return nil, nil, fmt.Errorf("Recorder only stores usdm mark_price and rest_observations (mark_price_funding, open_interest, open_interest_hist, top_long_short_account, top_long_short_position, global_long_short, taker_buy_sell_vol, contract_specs); metric %q requires source='rest' or 'auto'", metric)
 		}
-		if strings.TrimSpace(in.Period) != "" && period != "5m" && metric != "mark_price_funding" {
+		if strings.TrimSpace(in.Period) != "" && period != "5m" && metric != "mark_price_funding" && metric != "contract_specs" {
 			return nil, nil, fmt.Errorf("Recorder derivatives metrics do not resample custom period=%q; omit period or use source='rest'", period)
 		}
 	}
@@ -1425,14 +1425,14 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	if (sourcePref == "recorder" || (sourcePref == "auto" && m == binance.MarketUSDM && recorderSupportedMetric)) && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
 		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
 		if sErr == nil {
-			plan, pErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			plan, pErr := s.planAndHydrateRecorder(ctx, snap, recorder.PlanOptions{
 				Market:             "usdm",
 				Streams:            []string{"mark_price", "rest_observations"},
 				Symbols:            symbols,
 				StartUTCNS:         startNS,
 				EndUTCNS:           endNS,
 				PreferExchangeTime: true,
-			})
+			}, in.Offline)
 			if pErr == nil && plan.ReadyChunksMatched > 0 {
 				if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err == nil {
 					wReq := s.Recorder.BuildWorkerRequest("query_derivatives_metrics", plan)
@@ -1446,7 +1446,7 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 					wRes, wErr := s.Recorder.RunWorker(ctx, wReq)
 					if wErr == nil {
 						tr, _ := wRes["total_rows"].(float64)
-						if int(tr) > 0 || sourcePref == "recorder" {
+						if int(tr) > 0 || (metric == "contract_specs" && len(mapStringAny(wRes["contract_specs"])) > 0) || sourcePref == "recorder" {
 							wRes["market"] = string(m)
 							wRes["metric"] = metric
 							wRes["data_source"] = "recorder"
@@ -1485,7 +1485,28 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 
 	targets := symbols
 	if len(targets) == 0 {
-		targets = []string{""}
+		if restCur.IsStructured && restCur.SymbolIndex > 0 && restCur.Symbol != "" && !in.Offline {
+			if exCap, ok := binance.LookupCapability(string(m) + ".exchangeInfo"); ok {
+				if exRes, exErr := s.Binance.ExecuteCapability(ctx, exCap, map[string]string{}, false); exErr == nil {
+					var exDoc struct {
+						Symbols []struct {
+							Symbol string `json:"symbol"`
+						} `json:"symbols"`
+					}
+					if json.Unmarshal(exRes.Payload, &exDoc) == nil && len(exDoc.Symbols) > 0 {
+						targets = append(targets, "")
+						for _, sInfo := range exDoc.Symbols {
+							if uSym := strings.ToUpper(strings.TrimSpace(sInfo.Symbol)); uSym != "" {
+								targets = append(targets, uSym)
+							}
+						}
+					}
+				}
+			}
+		}
+		if len(targets) == 0 {
+			targets = []string{""}
+		}
 	}
 	resumeSymIdx := 0
 	if restCur.SymbolIndex > 0 && restCur.SymbolIndex < len(targets) {
@@ -1503,6 +1524,22 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 	hasMore := false
 	var nextCursorStr string
 	var nextCursorNS int64
+	var truncatedReason string
+
+	seenGlobal := make(map[string]bool)
+	seenSymsByMS := make(map[int64][]string)
+	if restCur.StartNS > 0 && len(restCur.SeenAtStart) > 0 {
+		curSeedMS := restCur.StartNS / 1_000_000
+		for _, sName := range restCur.SeenAtStart {
+			u := strings.ToUpper(strings.TrimSpace(sName))
+			if u != "" {
+				seenGlobal[u+":"+strconv.FormatInt(curSeedMS, 10)] = true
+				seenSymsByMS[curSeedMS] = append(seenSymsByMS[curSeedMS], u)
+			}
+		}
+	}
+	symbolStartOverrideMS := make(map[string]int64)
+	expandedAllSymbols := len(targets) > 1 && len(symbols) == 0
 
 	for si := resumeSymIdx; si < len(targets); si++ {
 		sym := targets[si]
@@ -1530,10 +1567,12 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 			continue
 		}
 
-		seenSym := make(map[string]bool)
 		curStartMS := int64(0)
 		if startNS > 0 {
 			curStartMS = startNS / 1_000_000
+		}
+		if ovMS, ok := symbolStartOverrideMS[sym]; ok && ovMS > curStartMS {
+			curStartMS = ovMS
 		}
 		if si == resumeSymIdx && restCur.StartNS > 0 && restCur.StartNS/1_000_000 > curStartMS {
 			curStartMS = restCur.StartNS / 1_000_000
@@ -1555,6 +1594,7 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 					SymbolIndex: si,
 					Symbol:      sym,
 					StartNS:     nextCursorNS,
+					SeenAtStart: seenSymsByMS[curStartMS],
 				})
 				budgetHit = true
 				break
@@ -1606,11 +1646,19 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 					if tsMS > lastMS {
 						lastMS = tsMS
 					}
-					dedupKey := sym + ":" + strconv.FormatInt(tsMS, 10)
-					if seenSym[dedupKey] {
+					respSym := strings.ToUpper(strings.TrimSpace(formatScalar(item["symbol"])))
+					if respSym == "" {
+						respSym = strings.ToUpper(strings.TrimSpace(formatScalar(item["pair"])))
+					}
+					if respSym == "" {
+						respSym = sym
+					}
+					dedupKey := respSym + ":" + strconv.FormatInt(tsMS, 10)
+					if seenGlobal[dedupKey] {
 						continue
 					}
-					seenSym[dedupKey] = true
+					seenGlobal[dedupKey] = true
+					seenSymsByMS[tsMS] = append(seenSymsByMS[tsMS], respSym)
 				}
 				item["_query_symbol"] = sym
 				item["source"] = "binance_rest"
@@ -1618,7 +1666,43 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 				addedInPage++
 			}
 
-			if len(arr) < pageLimit || addedInPage == 0 || hitWindowEnd || lastMS == 0 || (endMS > 0 && lastMS >= endMS) {
+			if len(arr) < pageLimit || hitWindowEnd || lastMS == 0 || (endMS > 0 && lastMS >= endMS) {
+				break
+			}
+			isMarketWideFunding := sym == "" && derivSpec.endpointID == string(m)+".fundingRate"
+			if isMarketWideFunding {
+				if lastMS > curStartMS {
+					curStartMS = lastMS
+					continue
+				}
+				if !expandedAllSymbols && !in.Offline {
+					expandedAllSymbols = true
+					if exCap, ok := binance.LookupCapability(string(m) + ".exchangeInfo"); ok {
+						if exRes, exErr := s.Binance.ExecuteCapability(ctx, exCap, map[string]string{}, false); exErr == nil {
+							var exDoc struct {
+								Symbols []struct {
+									Symbol string `json:"symbol"`
+								} `json:"symbols"`
+							}
+							if json.Unmarshal(exRes.Payload, &exDoc) == nil && len(exDoc.Symbols) > 0 {
+								for _, sInfo := range exDoc.Symbols {
+									uSym := strings.ToUpper(strings.TrimSpace(sInfo.Symbol))
+									if uSym != "" {
+										symbolStartOverrideMS[uSym] = curStartMS
+										targets = append(targets, uSym)
+									}
+								}
+								break
+							}
+						}
+					}
+				}
+				if addedInPage == 0 {
+					hasMore = true
+					truncatedReason = "same_timestamp_page_saturated"
+					break
+				}
+			} else if addedInPage == 0 {
 				break
 			}
 			curStartMS = lastMS + 1
@@ -1635,6 +1719,9 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		"data_source": "binance_rest",
 		"qty_unit":    capEntry.QtyUnit,
 		"has_more":    hasMore,
+	}
+	if truncatedReason != "" {
+		payload["truncated_reason"] = truncatedReason
 	}
 	if hasMore {
 		if nextCursorStr != "" {
@@ -1976,26 +2063,90 @@ func (s *Server) handleQueryMarketOverview(ctx context.Context, _ *mcp.CallToolR
 	if in.RevisionID != "" || m == binance.MarketSpot || m == binance.MarketUSDM || strings.ToLower(strings.TrimSpace(in.Market)) == "all" {
 		if snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline); sErr == nil {
 			var partsSummary []map[string]any
+			recSymSet := make(map[string]bool)
+			recStreamSet := make(map[string]bool)
 			for _, p := range snap.Partitions {
 				if m != "" && string(m) != p.Manifest.Market {
 					continue
 				}
+				pSymSet := make(map[string]bool)
+				pStreamSet := make(map[string]bool)
+				for _, sName := range p.Availability.RecordedSymbols {
+					if u := strings.ToUpper(strings.TrimSpace(sName)); u != "" && u != "__GLOBAL__" {
+						pSymSet[u] = true
+						recSymSet[u] = true
+					}
+				}
+				for _, st := range p.Availability.RecordedStreams {
+					if trimmed := strings.TrimSpace(st); trimmed != "" {
+						pStreamSet[trimmed] = true
+						recStreamSet[trimmed] = true
+					}
+				}
+				if len(pSymSet) == 0 || len(pStreamSet) == 0 {
+					if chunks, cErr := recorder.ReadChunksJSONL(p.ChunksPath); cErr == nil {
+						for _, ch := range chunks {
+							if sName := ch.SymbolName(); sName != "" && sName != "__GLOBAL__" {
+								pSymSet[sName] = true
+								recSymSet[sName] = true
+							}
+							if ch.Stream != "" {
+								pStreamSet[ch.Stream] = true
+								recStreamSet[ch.Stream] = true
+							}
+						}
+					}
+				}
+				var pSyms, pStreams []string
+				for k := range pSymSet {
+					pSyms = append(pSyms, k)
+				}
+				for k := range pStreamSet {
+					pStreams = append(pStreams, k)
+				}
+				sort.Strings(pSyms)
+				sort.Strings(pStreams)
 				partsSummary = append(partsSummary, map[string]any{
-					"market":          p.Manifest.Market,
-					"partition_id":    p.Manifest.PartitionID,
-					"state":           p.Metadata.State,
-					"is_cold":         p.Metadata.IsCold,
-					"min_utc_ns":      strconv.FormatInt(p.Metadata.ReceiveTimeUTCRangeNS.Min, 10),
-					"max_utc_ns":      strconv.FormatInt(p.Metadata.ReceiveTimeUTCRangeNS.Max, 10),
-					"counts":          p.Manifest.Counts,
-					"gaps_count":      len(p.Availability.Gaps),
-					"discontinuities": len(p.Availability.DiscontinuityEvents),
+					"market":           p.Manifest.Market,
+					"partition_id":     p.Manifest.PartitionID,
+					"state":            p.Metadata.State,
+					"is_cold":          p.Metadata.IsCold,
+					"min_utc_ns":       strconv.FormatInt(p.Metadata.ReceiveTimeUTCRangeNS.Min, 10),
+					"max_utc_ns":       strconv.FormatInt(p.Metadata.ReceiveTimeUTCRangeNS.Max, 10),
+					"recorded_symbols": pSyms,
+					"recorded_streams": pStreams,
+					"counts":           p.Manifest.Counts,
+					"gaps_count":       len(p.Availability.Gaps),
+					"discontinuities":  len(p.Availability.DiscontinuityEvents),
 				})
 			}
+			var recordedSymbols, recordedStreams []string
+			for k := range recSymSet {
+				recordedSymbols = append(recordedSymbols, k)
+			}
+			for k := range recStreamSet {
+				recordedStreams = append(recordedStreams, k)
+			}
+			if len(recordedSymbols) == 0 {
+				if symPlan, spErr := s.Recorder.PlanQuery(snap, string(m), nil, 0, 0, false); spErr == nil && len(symPlan.RecordedSymbols) > 0 {
+					recordedSymbols = symPlan.RecordedSymbols
+				}
+			}
+			sort.Strings(recordedSymbols)
+			sort.Strings(recordedStreams)
 			recOverview := map[string]any{
 				"revision_id":      snap.RevisionID,
 				"generated_at_utc": snap.GeneratedAtUTC,
+				"recorded_symbols": recordedSymbols,
+				"recorded_streams": recordedStreams,
 				"partitions":       partsSummary,
+				"raw_access": map[string]any{
+					"tool":                 "manage_local_cache",
+					"actions":              []string{"estimate", "prefetch", "jobs"},
+					"source":               "recorder",
+					"selection_time_basis": "receive_time_utc",
+					"note":                 "Use manage_local_cache(action='estimate'/'prefetch', source='recorder', market=...) to download full raw chunks (.raw.bmdr.zst) and archive manifests with SHA-256 verification (including book_ticker, full rest_observations fields, and exited symbol history). Omit streams/symbols to match all published ready chunks in that market/window.",
+				},
 			}
 
 			// Inspect local/lightweight rest_observations chunks if already cached OR bounded (<= 64 MiB) to surface historical/exited symbols!
@@ -2370,9 +2521,11 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 		}
 		if action == "estimate" {
 			return nil, map[string]any{
-				"action":   "estimate",
-				"source":   "recorder",
-				"estimate": planSummaryMap(plan),
+				"action":               "estimate",
+				"source":               "recorder",
+				"selection_time_basis": plan.SelectionTimeBasis,
+				"note":                 "Recorder raw chunk estimate/prefetch selects chunks by receive_time_utc metadata; omitting streams/symbols includes all ready streams/symbols in the partition.",
+				"estimate":             planSummaryMap(plan),
 			}, nil
 		}
 		if in.Offline {
@@ -2388,10 +2541,12 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 			return nil, nil, err
 		}
 		return nil, map[string]any{
-			"action":   "prefetch",
-			"source":   "recorder",
-			"estimate": planSummaryMap(plan),
-			"job":      job,
+			"action":               "prefetch",
+			"source":               "recorder",
+			"selection_time_basis": plan.SelectionTimeBasis,
+			"note":                 "Recorder raw chunk estimate/prefetch selects chunks by receive_time_utc metadata.",
+			"estimate":             planSummaryMap(plan),
+			"job":                  job,
 		}, nil
 
 	default:
@@ -2500,4 +2655,30 @@ func (s *Server) handleQueryPublicEndpoint(ctx context.Context, _ *mcp.CallToolR
 		}
 	}
 	return nil, out, nil
+}
+
+func (s *Server) planAndHydrateRecorder(ctx context.Context, snap *recorder.SyncedSnapshot, opts recorder.PlanOptions, offline bool) (*recorder.QueryPlan, error) {
+	plan, err := s.Recorder.PlanQueryWithOptions(snap, opts)
+	if err != nil || offline || plan.UnknownExchangeRangeChunks == 0 {
+		return plan, err
+	}
+	if fetched, hErr := s.Recorder.HydrateMissingManifests(ctx, plan, false); hErr == nil && fetched > 0 {
+		return s.Recorder.PlanQueryWithOptions(snap, opts)
+	}
+	return plan, nil
+}
+
+func isRecorderSupportedMetric(metric string) bool {
+	switch metric {
+	case "", "all", "mark_price_funding", "open_interest",
+		"open_interest_hist", "open_interest_statistics_5m",
+		"top_long_short_account", "top_long_short_account_ratio", "top_long_short_account_ratio_5m",
+		"top_long_short_position", "top_long_short_position_ratio", "top_long_short_position_ratio_5m",
+		"global_long_short", "global_long_short_ratio", "global_long_short_account_ratio", "global_long_short_ratio_5m",
+		"taker_buy_sell_vol", "taker_buy_sell_volume", "taker_buy_sell_ratio", "taker_buy_sell_volume_5m",
+		"contract_specs":
+		return true
+	default:
+		return false
+	}
 }
