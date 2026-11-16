@@ -44,11 +44,14 @@ Environment variables:
 - `SBMDR_REPO_DIR` / `SBMDR_PYTHON_BIN` (auto-detected from `mcp/bin/binance-data-mcp` layout or overridden explicitly)
 - `BINANCE_API_KEY` (optional, only for endpoints marked `api_key_required`)
 
-## Tools
-1. `query_klines`
-2. `query_orderbook`
-3. `query_trades_and_liquidations`
-4. `query_derivatives_metrics`
-5. `query_market_overview` (`overview` + `capabilities`)
-6. `manage_local_cache` (`inspect`, `estimate`, `prefetch`, `jobs`, `cancel`, `resume`)
-7. `query_public_endpoint`
+## Tools & Capabilities (124 Registered)
+
+1. `query_klines` — Recorder `agg_trade` aggregation, Binance Vision daily/monthly ZIPs (Spot 16-digit microsecond normalized), and REST klines (`v1:` per-symbol cursor pagination).
+2. `query_orderbook` — Historical depth reconstruction via Recorder snapshots + `diff_depth` (warm-up/window resync stats & per-symbol coverage) or live REST `/depth`.
+3. `query_trades_and_liquidations` — `trade` / `aggTrade` / sampled `forceOrder` liquidations across Recorder, Vision, and REST (`v1:` per-symbol cursor pagination).
+4. `query_derivatives_metrics` — Recorder USD-M historical `mark_price_funding`, `open_interest`, `open_interest_hist`, `top_long_short_account`, `top_long_short_position`, `global_long_short`, `taker_buy_sell_vol`, `contract_specs`; plus 4-market REST (`funding_history` with market-wide multi-symbol continuation, `basis`, Options mark/OI live snapshots).
+5. `query_market_overview` — `overview` (including `recorded_symbols`, `recorded_streams`, and `raw_access` instructions) + `capabilities` discovery across **124** static entries (`spot`: 15 REST + 10 WS, `usdm`: 34 REST + 11 WS + 1 Vision, `coinm`: 26 REST + 8 WS, `options`: 12 REST + 6 WS + 1 Vision).
+6. `manage_local_cache` — `inspect`, `estimate`, `prefetch`, `jobs`, `cancel`, `resume` for Recorder raw `.raw.bmdr.zst` + `.archive-manifest.json` (`selection_time_basis="receive_time_utc"`; omit `streams`/`symbols` to select all ready chunks in a partition/window) and Binance Vision archives.
+7. `query_public_endpoint` — Allowlisted public REST GET (including `/api/v3/ticker`, `/api/v3/ticker/tradingDay`, `/fapi/v1/{indexInfo,assetIndex,constituents,insuranceBalance,symbolAdlRisk,rpiDepth,tradingSchedule}`, `/fapi/v2/ticker/price`, `/futures/data/delivery-price`, `/dapi/v1/{premiumIndexKlines,constituents}`) and bounded live WebSocket sampling (`<symbol>`, `<underlying>`, `<interval>`, `<levels>`, `<updateSpeed>`).
+
+> After rebuilding `bin/binance-data-mcp`, restart/reload Codex or OpenCode MCP client sessions so the updated binary takes effect.
