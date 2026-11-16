@@ -1049,6 +1049,80 @@ func TestM6D1_MultiSymbolPagination_And_MarketWideFunding(t *testing.T) {
 			t.Fatalf("expected funding row %q exactly once, got map=%v", k, fKeys)
 		}
 	}
+
+	// 5. CB9 exact regression: 3 symbols x 2 timestamps (6 rows) and 3 symbols x 3 timestamps (9 rows) at 8h spacing with max_fetch_rows=2.
+	for _, numTimes := range []int{2, 3} {
+		syms3 := []string{"BTCUSDT", "ETHUSDT", "SOLUSDT"}
+		var times []int64
+		for ti := 0; ti < numTimes; ti++ {
+			times = append(times, baseMS+int64(ti)*28800000)
+		}
+		s3, _ := setupTestMCPClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			if r.URL.Path == "/fapi/v1/exchangeInfo" {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"symbols": []map[string]any{
+						{"symbol": syms3[0]}, {"symbol": syms3[1]}, {"symbol": syms3[2]},
+					},
+				})
+				return
+			}
+			if r.URL.Path != "/fapi/v1/fundingRate" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			q := r.URL.Query()
+			n, _ := strconv.Atoi(q.Get("limit"))
+			lo, _ := strconv.ParseInt(q.Get("startTime"), 10, 64)
+			hi, _ := strconv.ParseInt(q.Get("endTime"), 10, 64)
+			var out []map[string]any
+			for _, ts := range times {
+				for _, sym := range syms3 {
+					if ts >= lo && ts <= hi && (q.Get("symbol") == "" || q.Get("symbol") == sym) && len(out) < n {
+						out = append(out, map[string]any{"symbol": sym, "fundingTime": ts, "fundingRate": "0.001"})
+					}
+				}
+			}
+			_ = json.NewEncoder(w).Encode(out)
+		}))
+		args := map[string]any{
+			"market": "usdm", "source": "rest", "metric": "funding_history",
+			"start_utc_ns":   strconv.FormatInt(baseMS*1_000_000, 10),
+			"end_utc_ns":     strconv.FormatInt((times[len(times)-1]+1000)*1_000_000, 10),
+			"max_fetch_rows": 2, "limit": 10, "save_to_file": true,
+		}
+		counts := map[string]int{}
+		totalEmitted := 0
+		ended := false
+		for page := 0; page < 12; page++ {
+			out, res := callToolMap(t, s3, "query_derivatives_metrics", args)
+			if res.IsError {
+				t.Fatalf("cb9 funding (%d times) page %d failed: %v", numTimes, page, out)
+			}
+			pageRows := readJSONLRows(t, out)
+			totalEmitted += len(pageRows)
+			for _, r := range pageRows {
+				counts[fmt.Sprintf("%s:%s", r["symbol"], formatScalar(r["fundingTime"]))]++
+			}
+			if more, _ := out["has_more"].(bool); !more {
+				ended = true
+				break
+			}
+			args["cursor"] = out["next_cursor"]
+		}
+		wantTotal := 3 * numTimes
+		if !ended || totalEmitted != wantTotal || len(counts) != wantTotal {
+			t.Fatalf("cb9 funding (%d times) count mismatch: ended=%v emitted=%d unique=%d want=%d counts=%v", numTimes, ended, totalEmitted, len(counts), wantTotal, counts)
+		}
+		for _, ts := range times {
+			for _, sym := range syms3 {
+				key := fmt.Sprintf("%s:%d", sym, ts)
+				if counts[key] != 1 {
+					t.Fatalf("cb9 funding (%d times) missing/duplicated key %s: counts=%v", numTimes, key, counts)
+				}
+			}
+		}
+	}
 }
 
 func TestM6D2_And_M6D3_RecorderMetrics_Overview_And_PublicCatalog(t *testing.T) {

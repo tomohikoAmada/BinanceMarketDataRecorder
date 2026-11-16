@@ -423,13 +423,15 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 }
 
 type restPaginationCursor struct {
-	SymbolIndex  int      `json:"si,omitempty"`
-	Symbol       string   `json:"sym,omitempty"`
-	FromID       int64    `json:"fid,omitempty"`
-	StartNS      int64    `json:"sns,omitempty"`
-	EndNS        int64    `json:"ens,omitempty"`
-	SeenAtStart  []string `json:"sas,omitempty"`
-	IsStructured bool     `json:"-"`
+	SymbolIndex    int      `json:"si,omitempty"`
+	Symbol         string   `json:"sym,omitempty"`
+	FromID         int64    `json:"fid,omitempty"`
+	StartNS        int64    `json:"sns,omitempty"`
+	EndNS          int64    `json:"ens,omitempty"`
+	SeenAtStart    []string `json:"sas,omitempty"`
+	ExpandedFromMS int64    `json:"efms,omitempty"`
+	SeenAtSwitch   []string `json:"sasw,omitempty"`
+	IsStructured   bool     `json:"-"`
 }
 
 func encodeRESTCursor(cur restPaginationCursor) string {

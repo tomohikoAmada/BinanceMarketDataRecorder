@@ -1528,17 +1528,29 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 
 	seenGlobal := make(map[string]bool)
 	seenSymsByMS := make(map[int64][]string)
-	if restCur.StartNS > 0 && len(restCur.SeenAtStart) > 0 {
-		curSeedMS := restCur.StartNS / 1_000_000
-		for _, sName := range restCur.SeenAtStart {
+	seedSeenAtMS := func(ms int64, syms []string) {
+		if ms <= 0 {
+			return
+		}
+		for _, sName := range syms {
 			u := strings.ToUpper(strings.TrimSpace(sName))
 			if u != "" {
-				seenGlobal[u+":"+strconv.FormatInt(curSeedMS, 10)] = true
-				seenSymsByMS[curSeedMS] = append(seenSymsByMS[curSeedMS], u)
+				key := u + ":" + strconv.FormatInt(ms, 10)
+				if !seenGlobal[key] {
+					seenGlobal[key] = true
+					seenSymsByMS[ms] = append(seenSymsByMS[ms], u)
+				}
 			}
 		}
 	}
-	symbolStartOverrideMS := make(map[string]int64)
+	if restCur.StartNS > 0 && len(restCur.SeenAtStart) > 0 {
+		seedSeenAtMS(restCur.StartNS/1_000_000, restCur.SeenAtStart)
+	}
+	expandedFromMS := restCur.ExpandedFromMS
+	seenAtSwitch := append([]string(nil), restCur.SeenAtSwitch...)
+	if expandedFromMS > 0 && len(seenAtSwitch) > 0 {
+		seedSeenAtMS(expandedFromMS, seenAtSwitch)
+	}
 	expandedAllSymbols := len(targets) > 1 && len(symbols) == 0
 
 	for si := resumeSymIdx; si < len(targets); si++ {
@@ -1571,8 +1583,8 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		if startNS > 0 {
 			curStartMS = startNS / 1_000_000
 		}
-		if ovMS, ok := symbolStartOverrideMS[sym]; ok && ovMS > curStartMS {
-			curStartMS = ovMS
+		if expandedAllSymbols && expandedFromMS > curStartMS {
+			curStartMS = expandedFromMS
 		}
 		if si == resumeSymIdx && restCur.StartNS > 0 && restCur.StartNS/1_000_000 > curStartMS {
 			curStartMS = restCur.StartNS / 1_000_000
@@ -1591,10 +1603,12 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 					nextCursorNS = curStartMS * 1_000_000
 				}
 				nextCursorStr = encodeRESTCursor(restPaginationCursor{
-					SymbolIndex: si,
-					Symbol:      sym,
-					StartNS:     nextCursorNS,
-					SeenAtStart: seenSymsByMS[curStartMS],
+					SymbolIndex:    si,
+					Symbol:         sym,
+					StartNS:        nextCursorNS,
+					SeenAtStart:    seenSymsByMS[curStartMS],
+					ExpandedFromMS: expandedFromMS,
+					SeenAtSwitch:   seenAtSwitch,
 				})
 				budgetHit = true
 				break
@@ -1677,6 +1691,8 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 				}
 				if !expandedAllSymbols && !in.Offline {
 					expandedAllSymbols = true
+					expandedFromMS = curStartMS
+					seenAtSwitch = append([]string(nil), seenSymsByMS[curStartMS]...)
 					if exCap, ok := binance.LookupCapability(string(m) + ".exchangeInfo"); ok {
 						if exRes, exErr := s.Binance.ExecuteCapability(ctx, exCap, map[string]string{}, false); exErr == nil {
 							var exDoc struct {
@@ -1688,7 +1704,6 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 								for _, sInfo := range exDoc.Symbols {
 									uSym := strings.ToUpper(strings.TrimSpace(sInfo.Symbol))
 									if uSym != "" {
-										symbolStartOverrideMS[uSym] = curStartMS
 										targets = append(targets, uSym)
 									}
 								}
@@ -1702,7 +1717,7 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 					truncatedReason = "same_timestamp_page_saturated"
 					break
 				}
-			} else if addedInPage == 0 {
+			} else if lastMS < curStartMS && addedInPage == 0 {
 				break
 			}
 			curStartMS = lastMS + 1
@@ -1719,6 +1734,9 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 		"data_source": "binance_rest",
 		"qty_unit":    capEntry.QtyUnit,
 		"has_more":    hasMore,
+	}
+	if expandedAllSymbols {
+		payload["note"] = "Market-wide pagination fallback expanded active symbols from exchangeInfo starting at transition timestamp; delisted/exited symbols are not covered unless queried explicitly via symbol/symbols."
 	}
 	if truncatedReason != "" {
 		payload["truncated_reason"] = truncatedReason
