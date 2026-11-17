@@ -131,6 +131,44 @@ func (ch ChunkEntry) ExchangeTimeRangeNS() (int64, int64, bool) {
 	return minNS, maxNS, have
 }
 
+// SequenceUMax returns the chunk's max diff_depth final update ID (`sequence_ranges.u.max`) if present.
+func (ch ChunkEntry) SequenceUMax() (int64, bool) {
+	if len(ch.SequenceRanges) == 0 {
+		return 0, false
+	}
+	uRaw, ok := ch.SequenceRanges["u"].(map[string]any)
+	if !ok {
+		return 0, false
+	}
+	return parseSequenceAnyInt64(uRaw["max"])
+}
+
+func parseSequenceAnyInt64(v any) (int64, bool) {
+	switch x := v.(type) {
+	case float64:
+		if x >= 0 {
+			return int64(x), true
+		}
+	case int64:
+		if x >= 0 {
+			return x, true
+		}
+	case int:
+		if x >= 0 {
+			return int64(x), true
+		}
+	case json.Number:
+		if n, err := x.Int64(); err == nil && n >= 0 {
+			return n, true
+		}
+	case string:
+		if n, err := strconv.ParseInt(strings.TrimSpace(x), 10, 64); err == nil && n >= 0 {
+			return n, true
+		}
+	}
+	return 0, false
+}
+
 // EffectiveTimeRangeNS returns the chunk's data time range in UTC nanoseconds when available.
 // When preferExchange is true and exchange bounds exist, it builds the hull over receive and exchange bounds.
 func (ch ChunkEntry) EffectiveTimeRangeNS(preferExchange bool) (int64, int64, bool) {
@@ -213,11 +251,27 @@ type AvailabilityMetadata struct {
 
 // LoadedPartition bundles a synced partition snapshot on local disk.
 type LoadedPartition struct {
-	Manifest     PartitionManifest
-	Metadata     PartitionMetadata
-	Availability AvailabilityMetadata
-	CatalogPath  string
-	ChunksPath   string
+	Manifest      PartitionManifest
+	Metadata      PartitionMetadata
+	Availability  AvailabilityMetadata
+	CatalogPath   string
+	ChunksPath    string
+	ChunksLoadErr error
+}
+
+// SyncOptions scopes metadata syncing to the needed market and time window while deferring large catalogs.
+type SyncOptions struct {
+	Market             string
+	StartUTCNS         int64
+	EndUTCNS           int64
+	PreferExchangeTime bool
+}
+
+// OrderbookBaselineHint passes resolved Stage 1 depth_snapshot metadata into Stage 2 diff_depth planning.
+type OrderbookBaselineHint struct {
+	ReceiveTimeUTCNS int64
+	LastUpdateID     int64
+	SourceChunkID    string
 }
 
 // SyncedSnapshot represents a verified local view of a Recorder export revision.
@@ -240,6 +294,7 @@ type PlanOptions struct {
 	IncludePrecedingBaseline bool
 	PreferExchangeTime       bool
 	OrderbookMode            bool
+	BaselineSnapshots        map[string]OrderbookBaselineHint
 }
 
 // QueryPlan estimates chunks, bytes, pending items, and gaps for a Recorder slice.
@@ -250,6 +305,7 @@ type QueryPlan struct {
 	RequestedSymbols           []string           `json:"requested_symbols,omitempty"`
 	RecordedSymbols            []string           `json:"recorded_symbols,omitempty"`
 	UnrecordedSymbols          []string           `json:"unrecorded_symbols,omitempty"`
+	BaselineStartUTCNS         int64              `json:"baseline_start_utc_ns,omitempty"`
 	PartitionsMatched          int                `json:"partitions_matched"`
 	ReadyChunksMatched         int                `json:"ready_chunks_matched"`
 	AlreadyCachedChunks        int                `json:"already_cached_chunks"`
@@ -319,6 +375,11 @@ func (c *Client) urlsFor(relURLPath string) (string, string) {
 
 // SyncSnapshot resolves either the requested pinned revisionID or latest.json (offline/pinned never touch network if local).
 func (c *Client) SyncSnapshot(ctx context.Context, revisionID string, offline bool) (*SyncedSnapshot, error) {
+	return c.SyncSnapshotWithOptions(ctx, revisionID, offline, SyncOptions{})
+}
+
+// SyncSnapshotWithOptions resolves metadata scoped by SyncOptions, deferring large catalog.sqlite downloads to selected partitions.
+func (c *Client) SyncSnapshotWithOptions(ctx context.Context, revisionID string, offline bool, opts SyncOptions) (*SyncedSnapshot, error) {
 	var manifestRelPath string
 	var manifestURLPath string
 	var manifestSHA string
@@ -424,8 +485,12 @@ func (c *Client) SyncSnapshot(ctx context.Context, revisionID string, offline bo
 		Partitions:     make([]LoadedPartition, 0, len(manifest.Partitions)),
 	}
 
+	targetMarket := strings.ToLower(strings.TrimSpace(opts.Market))
 	for _, part := range manifest.Partitions {
-		loaded, err := c.ensurePartitionMetadata(ctx, part, offline)
+		if targetMarket != "" && strings.ToLower(strings.TrimSpace(part.Market)) != targetMarket {
+			continue
+		}
+		loaded, err := c.ensurePartitionMetadata(ctx, part, offline, opts)
 		if err != nil {
 			return nil, fmt.Errorf("partition %s/%s: %w", part.Market, part.PartitionID, err)
 		}
@@ -440,66 +505,85 @@ func (c *Client) SyncSnapshot(ctx context.Context, revisionID string, offline bo
 	return out, nil
 }
 
-func (c *Client) ensurePartitionMetadata(ctx context.Context, part PartitionManifest, offline bool) (LoadedPartition, error) {
-	// Snapshot content-addressed by exact SHA256 hashes in partition directory so revisions share unchanged partition snapshots cleanly!
-	ensureArtifact := func(name string, required bool) (string, error) {
-		ref, ok := part.Files[name]
-		if !ok {
-			if required {
-				return "", fmt.Errorf("missing required partition file %s", name)
-			}
-			return "", nil
-		}
-		shortHash := ref.SHA256
-		if len(shortHash) > 16 {
-			shortHash = shortHash[:16]
-		}
-		fileName := name
-		switch name {
-		case "catalog_sqlite":
-			fileName = "catalog.sqlite"
-		case "chunks_jsonl":
-			fileName = "chunks.jsonl"
-		case "availability_json":
-			fileName = "availability.json"
-		case "partition_json":
-			fileName = "partition.json"
-		}
-		destRel := filepath.Join("recorder", "snapshots", part.Market, part.PartitionID, shortHash, fileName)
-		pri, sec := c.urlsFor(ref.URLPath)
-		res, err := c.CacheMgr.EnsureFile(ctx, cache.EnsureOptions{
-			DestRelPath:    destRel,
-			ExpectedSHA256: ref.SHA256,
-			ExpectedBytes:  ref.Bytes,
-			Key: cache.CacheKey{
-				Source:         "recorder_snapshot_artifact",
-				Market:         part.Market,
-				Dataset:        fileName,
-				RevisionOrHash: ref.SHA256,
-			},
-			SourceURL:   pri,
-			FallbackURL: sec,
-			Offline:     offline,
-		})
-		if err != nil {
-			return "", err
-		}
-		return res.LocalPath, nil
+func (c *Client) partitionArtifactDest(part PartitionManifest, name string) (string, ArtifactRef, bool, error) {
+	ref, ok := part.Files[name]
+	if !ok {
+		return "", ArtifactRef{}, false, nil
 	}
+	shortHash := ref.SHA256
+	if len(shortHash) > 16 {
+		shortHash = shortHash[:16]
+	}
+	fileName := name
+	switch name {
+	case "catalog_sqlite":
+		fileName = "catalog.sqlite"
+	case "chunks_jsonl":
+		fileName = "chunks.jsonl"
+	case "availability_json":
+		fileName = "availability.json"
+	case "partition_json":
+		fileName = "partition.json"
+	}
+	destRel := filepath.Join("recorder", "snapshots", part.Market, part.PartitionID, shortHash, fileName)
+	localPath, err := c.CacheMgr.PathFor(destRel)
+	if err != nil {
+		return "", ArtifactRef{}, false, err
+	}
+	return localPath, ref, true, nil
+}
 
-	partJSONPath, err := ensureArtifact("partition_json", true)
+func (c *Client) ensurePartitionArtifact(ctx context.Context, part PartitionManifest, name string, required bool, offline bool) (string, error) {
+	ref, ok := part.Files[name]
+	if !ok {
+		if required {
+			return "", fmt.Errorf("missing required partition file %s", name)
+		}
+		return "", nil
+	}
+	shortHash := ref.SHA256
+	if len(shortHash) > 16 {
+		shortHash = shortHash[:16]
+	}
+	fileName := name
+	switch name {
+	case "catalog_sqlite":
+		fileName = "catalog.sqlite"
+	case "chunks_jsonl":
+		fileName = "chunks.jsonl"
+	case "availability_json":
+		fileName = "availability.json"
+	case "partition_json":
+		fileName = "partition.json"
+	}
+	destRel := filepath.Join("recorder", "snapshots", part.Market, part.PartitionID, shortHash, fileName)
+	pri, sec := c.urlsFor(ref.URLPath)
+	res, err := c.CacheMgr.EnsureFile(ctx, cache.EnsureOptions{
+		DestRelPath:    destRel,
+		ExpectedSHA256: ref.SHA256,
+		ExpectedBytes:  ref.Bytes,
+		Key: cache.CacheKey{
+			Source:         "recorder_snapshot_artifact",
+			Market:         part.Market,
+			Dataset:        fileName,
+			RevisionOrHash: ref.SHA256,
+		},
+		SourceURL:   pri,
+		FallbackURL: sec,
+		Offline:     offline,
+	})
+	if err != nil {
+		return "", err
+	}
+	return res.LocalPath, nil
+}
+
+func (c *Client) ensurePartitionMetadata(ctx context.Context, part PartitionManifest, offline bool, opts SyncOptions) (LoadedPartition, error) {
+	partJSONPath, err := c.ensurePartitionArtifact(ctx, part, "partition_json", true, offline)
 	if err != nil {
 		return LoadedPartition{}, err
 	}
-	availJSONPath, err := ensureArtifact("availability_json", true)
-	if err != nil {
-		return LoadedPartition{}, err
-	}
-	chunksPath, err := ensureArtifact("chunks_jsonl", true)
-	if err != nil {
-		return LoadedPartition{}, err
-	}
-	catalogPath, err := ensureArtifact("catalog_sqlite", true)
+	availJSONPath, err := c.ensurePartitionArtifact(ctx, part, "availability_json", true, offline)
 	if err != nil {
 		return LoadedPartition{}, err
 	}
@@ -522,12 +606,37 @@ func (c *Client) ensurePartitionMetadata(ctx context.Context, part PartitionMani
 		return LoadedPartition{}, err
 	}
 
+	// Compute deterministic catalog path lazily without downloading large catalog.sqlite during index sync.
+	catalogPath, _, hasCat, pathErr := c.partitionArtifactDest(part, "catalog_sqlite")
+	if pathErr != nil {
+		return LoadedPartition{}, pathErr
+	}
+	if !hasCat {
+		return LoadedPartition{}, fmt.Errorf("missing required partition file catalog_sqlite")
+	}
+
+	var chunksPath string
+	var chunksErr error
+	pMin := partMeta.ReceiveTimeUTCRangeNS.Min
+	skipFutureReceiveChunks := opts.EndUTCNS > 0 && !opts.PreferExchangeTime && pMin > 0 && pMin >= opts.EndUTCNS
+	if !skipFutureReceiveChunks {
+		chunksPath, chunksErr = c.ensurePartitionArtifact(ctx, part, "chunks_jsonl", true, offline)
+		if chunksErr != nil {
+			if cp, _, ok, pErr := c.partitionArtifactDest(part, "chunks_jsonl"); pErr == nil && ok {
+				chunksPath = cp
+			}
+		}
+	} else {
+		chunksErr = fmt.Errorf("chunks.jsonl skipped during sync because partition receive start (%d) >= query end (%d)", pMin, opts.EndUTCNS)
+	}
+
 	return LoadedPartition{
-		Manifest:     part,
-		Metadata:     partMeta,
-		Availability: availMeta,
-		CatalogPath:  catalogPath,
-		ChunksPath:   chunksPath,
+		Manifest:      part,
+		Metadata:      partMeta,
+		Availability:  availMeta,
+		CatalogPath:   catalogPath,
+		ChunksPath:    chunksPath,
+		ChunksLoadErr: chunksErr,
 	}, nil
 }
 
@@ -645,6 +754,9 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				if sp.exchangeBoundaryOnly {
 					continue
 				}
+				if sp.part.ChunksLoadErr != nil {
+					return nil, fmt.Errorf("partition %s/%s: %w", sp.part.Manifest.Market, sp.part.Manifest.PartitionID, sp.part.ChunksLoadErr)
+				}
 				if chunks, cErr := ReadChunksJSONL(sp.part.ChunksPath); cErr == nil {
 					for _, ch := range chunks {
 						if !ch.Ready || ch.Stream != "rest_observations" || !ch.HasDepthSnapshotMetadata() {
@@ -669,6 +781,9 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				for k := len(precedingClosedIdxs) - 1; k >= 0; k-- {
 					p := marketParts[precedingClosedIdxs[k]]
 					prependParts = append(prependParts, candPart{part: p, baselineOnly: true})
+					if p.ChunksLoadErr != nil {
+						return nil, fmt.Errorf("partition %s/%s: %w", p.Manifest.Market, p.Manifest.PartitionID, p.ChunksLoadErr)
+					}
 					if chunks, cErr := ReadChunksJSONL(p.ChunksPath); cErr == nil {
 						for _, ch := range chunks {
 							if !ch.Ready || ch.Stream != "rest_observations" || !ch.HasDepthSnapshotMetadata() {
@@ -737,6 +852,9 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			}
 		}
 
+		if part.ChunksLoadErr != nil {
+			return nil, fmt.Errorf("partition %s/%s: %w", part.Manifest.Market, part.Manifest.PartitionID, part.ChunksLoadErr)
+		}
 		chunks, err := ReadChunksJSONL(part.ChunksPath)
 		if err != nil {
 			return nil, err
@@ -872,7 +990,27 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 	latestPreRestChunk := make(map[baseKey]int)
 	latestPreStreamChunk := make(map[baseKey]int)
 
-	recordRestSnapshotStart := func(symKey string, cMin int64, overlapsWindow bool) {
+	lookupResolvedBaseline := func(sym string) (OrderbookBaselineHint, bool) {
+		if len(opts.BaselineSnapshots) == 0 {
+			return OrderbookBaselineHint{}, false
+		}
+		if sym != "" {
+			if b, ok := opts.BaselineSnapshots[strings.ToUpper(sym)]; ok && b.ReceiveTimeUTCNS > 0 {
+				return b, true
+			}
+		}
+		if b, ok := opts.BaselineSnapshots["*"]; ok && b.ReceiveTimeUTCNS > 0 {
+			return b, true
+		}
+		return OrderbookBaselineHint{}, false
+	}
+
+	recordRestSnapshotStart := func(symKey string, symName string, cMin int64, overlapsWindow bool) {
+		// When Stage 1 already resolved the exact latest pre-start snapshot timestamp for this symbol,
+		// never rewind its baseline back to the earliest timestamp of a spanning REST chunk (M6-Q3).
+		if _, resolved := lookupResolvedBaseline(symName); resolved {
+			return
+		}
 		if overlapsWindow {
 			if prev, ok := overlapPreSnapshotMinNS[symKey]; !ok || cMin < prev {
 				overlapPreSnapshotMinNS[symKey] = cMin
@@ -890,6 +1028,17 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			if opts.EndUTCNS > 0 && cand.minNS >= opts.EndUTCNS {
 				continue
 			}
+			if opts.OrderbookMode && ch.Stream == "rest_observations" {
+				if b, resolved := lookupResolvedBaseline(ch.SymbolName()); resolved {
+					if cand.maxNS < b.ReceiveTimeUTCNS && (b.SourceChunkID == "" || ch.ChunkID != b.SourceChunkID) {
+						continue
+					}
+					if ch.ChunkID == b.SourceChunkID || cand.maxNS >= b.ReceiveTimeUTCNS {
+						chosen[ch.ChunkID] = true
+						continue
+					}
+				}
+			}
 			inOrAfterStart := opts.StartUTCNS <= 0 || cand.maxNS == 0 || cand.maxNS >= opts.StartUTCNS
 			if inOrAfterStart {
 				if !cand.baselineOnly {
@@ -897,7 +1046,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				}
 				if opts.IncludePrecedingBaseline && opts.OrderbookMode && ch.Stream == "rest_observations" && ch.HasDepthSnapshotMetadata() {
 					if opts.StartUTCNS <= 0 || cand.minNS <= opts.StartUTCNS {
-						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), cand.minNS, true)
+						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.SymbolName(), cand.minNS, true)
 					}
 				}
 				continue
@@ -907,7 +1056,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				if ch.Stream == "rest_observations" {
 					if ch.HasDepthSnapshotMetadata() {
 						latestPreRestChunk[bk] = idx
-						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), cand.minNS, false)
+						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.SymbolName(), cand.minNS, false)
 					} else if _, hasSnap := latestPreRestChunk[bk]; !hasSnap {
 						latestPreRestChunk[bk] = idx
 					}
@@ -935,7 +1084,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 				if ch.Stream == "rest_observations" {
 					latestPreRestChunk[bk] = idx
 					if ch.HasDepthSnapshotMetadata() {
-						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.CreatedAtUTCNS, false)
+						recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.SymbolName(), ch.CreatedAtUTCNS, false)
 					}
 				} else {
 					latestPreStreamChunk[bk] = idx
@@ -947,7 +1096,7 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			chosen[ch.ChunkID] = true
 			if opts.IncludePrecedingBaseline && opts.OrderbookMode && ch.Stream == "rest_observations" && ch.HasDepthSnapshotMetadata() {
 				if opts.StartUTCNS <= 0 || ch.CreatedAtUTCNS <= opts.StartUTCNS {
-					recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.CreatedAtUTCNS, true)
+					recordRestSnapshotStart(ch.Market+"|"+ch.SymbolName(), ch.SymbolName(), ch.CreatedAtUTCNS, true)
 				}
 			}
 		}
@@ -955,7 +1104,15 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 
 	if opts.IncludePrecedingBaseline {
 		for _, idx := range latestPreRestChunk {
-			chosen[allCandidates[idx].ch.ChunkID] = true
+			cand := allCandidates[idx]
+			if opts.OrderbookMode {
+				if b, resolved := lookupResolvedBaseline(cand.ch.SymbolName()); resolved {
+					if cand.hasDataRange && cand.maxNS < b.ReceiveTimeUTCNS && (b.SourceChunkID == "" || cand.ch.ChunkID != b.SourceChunkID) {
+						continue
+					}
+				}
+			}
+			chosen[cand.ch.ChunkID] = true
 		}
 		latestPreSnapshotMinNS := make(map[string]int64)
 		for k, v := range strictPreSnapshotMinNS {
@@ -967,6 +1124,9 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			}
 		}
 		lookupSnapStart := func(market, sym string) (int64, bool) {
+			if b, resolved := lookupResolvedBaseline(sym); resolved {
+				return b.ReceiveTimeUTCNS, true
+			}
 			candidates := []string{
 				market + "|" + sym,
 				market + "|__GLOBAL__",
@@ -985,26 +1145,54 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			}
 			return 0, false
 		}
-		if opts.OrderbookMode && len(latestPreSnapshotMinNS) > 0 {
-			for _, cand := range allCandidates {
+		if opts.OrderbookMode && (len(latestPreSnapshotMinNS) > 0 || len(opts.BaselineSnapshots) > 0) {
+			// When a resolved baseline lacks sequence_ranges.u metadata, keep at most the single immediately
+			// preceding diff_depth chunk before baseline.ReceiveTimeUTCNS so pre-snapshot bridge deltas are preserved
+			// without pulling hours of unrelated earlier diff_depth chunks.
+			latestPreBaselineDiff := make(map[baseKey]int)
+			for idx, cand := range allCandidates {
 				if cand.ch.Stream != "diff_depth" {
 					continue
 				}
+				sym := cand.ch.SymbolName()
+				b, resolved := lookupResolvedBaseline(sym)
 				if cand.hasDataRange {
 					if opts.EndUTCNS > 0 && cand.minNS >= opts.EndUTCNS {
 						continue
 					}
-					if snapStart, ok := lookupSnapStart(cand.ch.Market, cand.ch.SymbolName()); ok && cand.maxNS >= snapStart {
+					if resolved {
+						uMax, hasUMax := cand.ch.SequenceUMax()
+						targetUID := b.LastUpdateID
+						if cand.ch.Market == "spot" || opts.Market == "spot" {
+							targetUID++
+						}
+						if b.LastUpdateID > 0 && hasUMax {
+							if uMax >= targetUID {
+								chosen[cand.ch.ChunkID] = true
+							}
+							continue
+						}
+						if cand.maxNS >= b.ReceiveTimeUTCNS {
+							chosen[cand.ch.ChunkID] = true
+						} else {
+							latestPreBaselineDiff[baseKey{market: cand.ch.Market, symbol: sym, stream: cand.ch.Stream}] = idx
+						}
+						continue
+					}
+					if snapStart, ok := lookupSnapStart(cand.ch.Market, sym); ok && cand.maxNS >= snapStart {
 						chosen[cand.ch.ChunkID] = true
 					}
 				} else {
 					if opts.EndUTCNS > 0 && cand.ch.CreatedAtUTCNS >= opts.EndUTCNS {
 						continue
 					}
-					if snapStart, ok := lookupSnapStart(cand.ch.Market, cand.ch.SymbolName()); ok && (cand.ch.UpdatedAtUTCNS == 0 || cand.ch.UpdatedAtUTCNS >= snapStart) {
+					if snapStart, ok := lookupSnapStart(cand.ch.Market, sym); ok && (cand.ch.UpdatedAtUTCNS == 0 || cand.ch.UpdatedAtUTCNS >= snapStart) {
 						chosen[cand.ch.ChunkID] = true
 					}
 				}
+			}
+			for _, idx := range latestPreBaselineDiff {
+				chosen[allCandidates[idx].ch.ChunkID] = true
 			}
 		} else {
 			for _, idx := range latestPreStreamChunk {
@@ -1049,6 +1237,11 @@ func (c *Client) PlanQueryWithOptions(snap *SyncedSnapshot, opts PlanOptions) (*
 			if !cand.rawCached && ch.StoredBytes != nil {
 				plan.EstimatedDownloadBytes += *ch.StoredBytes
 			}
+		}
+		if cand.hasDataRange && cand.minNS > 0 && (plan.BaselineStartUTCNS == 0 || cand.minNS < plan.BaselineStartUTCNS) {
+			plan.BaselineStartUTCNS = cand.minNS
+		} else if ch.CreatedAtUTCNS > 0 && (plan.BaselineStartUTCNS == 0 || ch.CreatedAtUTCNS < plan.BaselineStartUTCNS) {
+			plan.BaselineStartUTCNS = ch.CreatedAtUTCNS
 		}
 		plan.PlannedChunks = append(plan.PlannedChunks, PlannedChunk{
 			PartitionID:         cand.partID,
@@ -1171,12 +1364,36 @@ func (c *Client) MaterializePlan(ctx context.Context, plan *QueryPlan, offline b
 	}
 	if !offline && plan.EstimatedDownloadBytes > maxDownloadBytes {
 		return fmt.Errorf(
-			"query requires downloading %.2f MiB (%d chunks), exceeding interactive limit %.2f MiB; use manage_local_cache(action=prefetch) or narrow the time range (revision=%s)",
+			"query requires downloading %.2f MiB (%d chunks), exceeding interactive limit %.2f MiB; pass higher max_download_bytes on this query or call manage_local_cache(action=prefetch, source=recorder, market=%s, revision_id=%s, include_baseline=true, start_utc_ns=%d)",
 			float64(plan.EstimatedDownloadBytes)/(1024*1024),
 			plan.DownloadChunks,
 			float64(maxDownloadBytes)/(1024*1024),
+			plan.Market,
 			plan.RevisionID,
+			plan.BaselineStartUTCNS,
 		)
+	}
+
+	// M6-Q1: Download/verify catalog.sqlite lazily ONLY for partitions actually referenced by PlannedChunks.
+	if len(plan.PlannedChunks) > 0 {
+		selectedByID := make(map[string]LoadedPartition, len(plan.SelectedPartitions))
+		for _, lp := range plan.SelectedPartitions {
+			selectedByID[lp.Manifest.PartitionID] = lp
+		}
+		seenCat := make(map[string]bool)
+		for _, pc := range plan.PlannedChunks {
+			if seenCat[pc.PartitionID] {
+				continue
+			}
+			seenCat[pc.PartitionID] = true
+			if lp, ok := selectedByID[pc.PartitionID]; ok {
+				if _, hasCat := lp.Manifest.Files["catalog_sqlite"]; hasCat {
+					if _, err := c.ensurePartitionArtifact(ctx, lp.Manifest, "catalog_sqlite", true, offline); err != nil {
+						return fmt.Errorf("partition %s/%s catalog_sqlite: %w", lp.Manifest.Market, lp.Manifest.PartitionID, err)
+					}
+				}
+			}
+		}
 	}
 
 	var kept []PlannedChunk
@@ -1246,8 +1463,41 @@ func (c *Client) MaterializePlan(ctx context.Context, plan *QueryPlan, offline b
 
 // BuildPrefetchJobItems turns a QueryPlan into durable JobItems for manage_local_cache prefetch.
 func (c *Client) BuildPrefetchJobItems(plan *QueryPlan) []cache.JobItem {
-	items := make([]cache.JobItem, 0, len(plan.PlannedChunks)*2)
+	items := make([]cache.JobItem, 0, len(plan.PlannedChunks)*2+len(plan.SelectedPartitions))
+	selectedByID := make(map[string]LoadedPartition, len(plan.SelectedPartitions))
+	for _, lp := range plan.SelectedPartitions {
+		selectedByID[lp.Manifest.PartitionID] = lp
+	}
+	seenCat := make(map[string]bool)
 	for _, pc := range plan.PlannedChunks {
+		if !seenCat[pc.PartitionID] {
+			seenCat[pc.PartitionID] = true
+			if lp, ok := selectedByID[pc.PartitionID]; ok {
+				if catRef, hasCat := lp.Manifest.Files["catalog_sqlite"]; hasCat && catRef.URLPath != "" {
+					shortHash := catRef.SHA256
+					if len(shortHash) > 16 {
+						shortHash = shortHash[:16]
+					}
+					catRel := filepath.Join("recorder", "snapshots", lp.Manifest.Market, lp.Manifest.PartitionID, shortHash, "catalog.sqlite")
+					priCat, secCat := c.urlsFor(catRef.URLPath)
+					items = append(items, cache.JobItem{
+						ItemID:      lp.Manifest.PartitionID + ":catalog",
+						DestRelPath: catRel,
+						SourceURL:   priCat,
+						FallbackURL: secCat,
+						SHA256:      catRef.SHA256,
+						SizeBytes:   catRef.Bytes,
+						Key: cache.CacheKey{
+							Source:         "recorder_snapshot_artifact",
+							Market:         lp.Manifest.Market,
+							Dataset:        "catalog.sqlite",
+							RevisionOrHash: catRef.SHA256,
+						},
+						Completed: isReceiptMatching(lp.CatalogPath, catRef.SHA256),
+					})
+				}
+			}
+		}
 		ch := pc.Chunk
 		rawRel := filepath.Join("recorder", "storage", pc.StorageID, filepath.FromSlash(*ch.TargetRelativePath))
 		manRel := filepath.Join("recorder", "storage", pc.StorageID, filepath.FromSlash(*ch.ExternalManifestRelPath))

@@ -793,11 +793,12 @@ def _run_inspect_orderbook_snapshots(req: dict[str, Any]) -> dict[str, Any]:
     start_ns = int(req.get("start_utc_ns") or 0)
     end_ns = int(req.get("end_utc_ns") or 0)
     latest_before_start: dict[str, int] = {}
+    latest_before_start_meta: dict[str, dict[str, str]] = {}
     latest_in_window: dict[str, int] = {}
     earliest_any: dict[str, int] = {}
     snapshots_found = 0
 
-    for _pid, _chunk, rec in _iter_partition_records(req):
+    for _pid, chunk, rec in _iter_partition_records(req):
         env = rec.envelope
         if env.stream != "rest_observations":
             continue
@@ -814,12 +815,23 @@ def _run_inspect_orderbook_snapshots(req: dict[str, Any]) -> dict[str, Any]:
         ts = env.receive_time_utc_ns
         if end_ns > 0 and ts >= end_ns:
             continue
+        try:
+            uid_val = int(model.get("lastUpdateId") or 0)
+        except Exception:
+            uid_val = 0
         snapshots_found += 1
         if sym not in earliest_any or ts < earliest_any[sym]:
             earliest_any[sym] = ts
         if start_ns <= 0 or ts <= start_ns:
-            if sym not in latest_before_start or ts > latest_before_start[sym]:
+            prev_ts = latest_before_start.get(sym, -1)
+            prev_uid = int(latest_before_start_meta.get(sym, {}).get("last_update_id") or 0)
+            if sym not in latest_before_start or ts > prev_ts or (ts == prev_ts and uid_val > prev_uid):
                 latest_before_start[sym] = ts
+                latest_before_start_meta[sym] = {
+                    "receive_time_utc_ns": str(ts),
+                    "last_update_id": str(uid_val),
+                    "source_chunk_id": str(chunk.chunk_id),
+                }
         elif sym not in latest_in_window or ts > latest_in_window[sym]:
             latest_in_window[sym] = ts
 
@@ -827,6 +839,7 @@ def _run_inspect_orderbook_snapshots(req: dict[str, Any]) -> dict[str, Any]:
         "operation": "inspect_orderbook_snapshots",
         "snapshots_found": snapshots_found,
         "latest_before_start_ns": {k: str(v) for k, v in sorted(latest_before_start.items())},
+        "latest_before_start_snapshots": {k: latest_before_start_meta[k] for k in sorted(latest_before_start_meta)},
         "latest_in_window_ns": {k: str(v) for k, v in sorted(latest_in_window.items())},
         "earliest_snapshot_ns": {k: str(v) for k, v in sorted(earliest_any.items())},
     }

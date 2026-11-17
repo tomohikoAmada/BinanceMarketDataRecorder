@@ -291,3 +291,93 @@ func TestEnsureFile_CrossManagerFlockSerializesAndReuses(t *testing.T) {
 		t.Fatalf("unexpected inspect summary (.locks should be ignored): %+v", sumInspect)
 	}
 }
+
+func TestM6Q2_FallbackPreservesPartialProgress(t *testing.T) {
+	payload := []byte(strings.Repeat("abcde", 64)) // 320 bytes
+	var mu sync.Mutex
+	var reqURLs []string
+	var reqRanges []string
+
+	// Each slow mirror returns at most 64 bytes per chunked transfer before pausing until timeout,
+	// forcing at least two primary/fallback switches while expecting Range progress to advance cleanly.
+	makeSlowMirror := func(label, etag string) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rg := r.Header.Get("Range")
+			mu.Lock()
+			reqURLs = append(reqURLs, label)
+			reqRanges = append(reqRanges, rg)
+			mu.Unlock()
+			w.Header().Set("ETag", etag)
+			start := 0
+			if rg != "" {
+				n, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(rg, "bytes="), "-"))
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				start = n
+			}
+			end := start + 80
+			if end >= len(payload) {
+				if start > 0 {
+					w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, len(payload)-1, len(payload)))
+					w.WriteHeader(http.StatusPartialContent)
+				} else {
+					w.Header().Set("Content-Length", strconv.Itoa(len(payload)))
+				}
+				_, _ = w.Write(payload[start:])
+				return
+			}
+			if start > 0 {
+				w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, len(payload)-1, len(payload)))
+				w.WriteHeader(http.StatusPartialContent)
+			} else {
+				w.Header().Set("Content-Length", strconv.Itoa(len(payload)))
+			}
+			_, _ = w.Write(payload[start:end])
+			if fl, ok := w.(http.Flusher); ok {
+				fl.Flush()
+			}
+			<-r.Context().Done()
+		}))
+	}
+
+	pri := makeSlowMirror("pri", `"pri-etag"`)
+	defer pri.Close()
+	sec := makeSlowMirror("sec", `"sec-etag"`)
+	defer sec.Close()
+
+	mgr := NewManager(t.TempDir(), &http.Client{Timeout: 60 * time.Millisecond}, 1, 0, nil)
+	opts := EnsureOptions{
+		DestRelPath:    "catalog.sqlite",
+		SourceURL:      pri.URL + "/f",
+		FallbackURL:    sec.URL + "/f",
+		ExpectedSHA256: shaHex(payload),
+		ExpectedBytes:  int64(len(payload)),
+	}
+
+	// Attempt 1: pri sends 80 bytes and times out; fallback to sec resumes from 80 and sends +80 (=160) before timing out!
+	if _, err := mgr.EnsureFile(context.Background(), opts); err == nil {
+		t.Fatal("expected first attempt to interrupt after partial progress across both mirrors")
+	}
+	partPath := filepath.Join(mgr.DataDir, "catalog.sqlite.part")
+	st1, err := os.Stat(partPath)
+	if err != nil || st1.Size() != 160 {
+		t.Fatalf("expected .part to advance to 160 bytes across pri->sec switch, got size=%v err=%v", st1, err)
+	}
+
+	// Attempt 2: MUST prefer the last active mirror (sec) first with Range: bytes=160- and advance via Range: bytes=240- to 320!
+	res, err := mgr.EnsureFile(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("expected second EnsureFile attempt to complete via Range resume, got %v", err)
+	}
+	if !res.Resumed || res.Receipt.SizeBytes != int64(len(payload)) || res.Receipt.SHA256 != shaHex(payload) {
+		t.Fatalf("unexpected resumed result: %+v", res)
+	}
+	if len(reqRanges) != 4 || reqRanges[0] != "" || reqRanges[1] != "bytes=80-" || reqRanges[2] != "bytes=160-" || reqRanges[3] != "bytes=240-" {
+		t.Fatalf("expected monotone Range progress across primary/fallback switches, got urls=%v ranges=%v", reqURLs, reqRanges)
+	}
+	if reqURLs[2] != "sec" {
+		t.Fatalf("expected retry to continue directly on recorded fallback source 'sec', got order %v", reqURLs)
+	}
+}

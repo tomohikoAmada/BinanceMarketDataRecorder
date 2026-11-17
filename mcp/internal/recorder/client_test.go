@@ -575,3 +575,249 @@ func TestM6D2_PreferExchangeTime_UnknownRetention_Hydration_And_OfflineOmit(t *t
 		t.Fatalf("unexpected offline materialization result: omitted=%d planned=%d hits=%d->%d", plan.OmittedUnknownOfflineChunks, len(plan.PlannedChunks), hitsBefore, hits.Load())
 	}
 }
+
+func TestM6Q1_ScopedSyncAndDeferredCatalogIsolation(t *testing.T) {
+	rawBytes := []byte("chunk-raw")
+	manBytes := []byte(`{"raw_manifest":{"symbol":"BTCUSDT"}}`)
+	rawSHA := shaHex(rawBytes)
+	routes := map[string][]byte{
+		"/archive/usdm/raw/c1": rawBytes,
+		"/archive/usdm/man/c1": manBytes,
+	}
+	manifest := ExportManifest{RevisionID: "rev-q1", Partitions: []PartitionManifest{}}
+
+	addPart := func(market, pid, state string, lo, hi int64, withChunk bool) {
+		part := PartitionManifest{Market: market, PartitionID: pid, Files: map[string]ArtifactRef{}}
+		meta, _ := json.Marshal(PartitionMetadata{
+			Market: market, PartitionID: pid, State: state,
+			ReceiveTimeUTCRangeNS: TimeRangeNS{Min: lo, Max: hi},
+		})
+		avail, _ := json.Marshal(AvailabilityMetadata{Market: market, PartitionID: pid, RecordedSymbols: []string{"BTCUSDT"}})
+		var chunks []byte
+		if withChunk {
+			sym := "BTCUSDT"
+			sid := "s1"
+			sz := int64(len(rawBytes))
+			rawPath := "raw/c1"
+			manPath := "man/c1"
+			arcURL := "archive/" + market + "/raw/c1"
+			mURL := "archive/" + market + "/man/c1"
+			line, _ := json.Marshal(ChunkEntry{
+				ChunkID:                 pid + "-chunk",
+				Market:                  "um_perpetual",
+				Symbol:                  &sym,
+				Stream:                  "diff_depth",
+				Ready:                   true,
+				StorageID:               &sid,
+				TargetRelativePath:      &rawPath,
+				ExternalManifestRelPath: &manPath,
+				ArchiveURLPath:          &arcURL,
+				ManifestURLPath:         &mURL,
+				StoredBytes:             &sz,
+				StoredSHA256:            &rawSHA,
+				CreatedAtUTCNS:          lo,
+				UpdatedAtUTCNS:          hi,
+				ReceiveTimeUTCRangeNS:   &TimeRangeNS{Min: lo, Max: hi},
+			})
+			chunks = append(line, '\n')
+			routes["/"+arcURL] = rawBytes
+			routes["/"+mURL] = manBytes
+		}
+		for name, body := range map[string][]byte{
+			"partition_json":    meta,
+			"availability_json": avail,
+			"chunks_jsonl":      chunks,
+			"catalog_sqlite":    []byte("sqlite-" + pid),
+		} {
+			uPath := "/export/" + market + "/" + pid + "/" + name
+			routes[uPath] = body
+			part.Files[name] = ArtifactRef{Bytes: int64(len(body)), SHA256: shaHex(body), URLPath: strings.TrimPrefix(uPath, "/")}
+		}
+		manifest.Partitions = append(manifest.Partitions, part)
+	}
+	addPart("spot", "spot-open", "open", 1, 500, true)
+	addPart("usdm", "usdm-old", "closed", 1, 500, true)
+	addPart("usdm", "usdm-today", "open", 1000, 2000, true)
+	routes["/export/revisions/rev-q1/manifest.json"], _ = json.Marshal(manifest)
+
+	var reqPaths []string
+	failOldCatalog := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqPaths = append(reqPaths, r.URL.Path)
+		// Unrelated Spot partition and unrelated today USDM catalog always return 504!
+		if strings.HasPrefix(r.URL.Path, "/export/spot/") ||
+			strings.HasPrefix(r.URL.Path, "/export/usdm/usdm-today/catalog_sqlite") ||
+			strings.HasPrefix(r.URL.Path, "/export/usdm/usdm-today/chunks_jsonl") {
+			w.WriteHeader(http.StatusGatewayTimeout)
+			return
+		}
+		if failOldCatalog && r.URL.Path == "/export/usdm/usdm-old/catalog_sqlite" {
+			w.WriteHeader(http.StatusGatewayTimeout)
+			return
+		}
+		body, ok := routes[r.URL.Path]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_, _ = w.Write(body)
+	}))
+	defer srv.Close()
+
+	cfg := &config.Config{DataDir: t.TempDir(), RecorderHTTPSURL: srv.URL, HTTPTimeout: 5 * time.Second}
+	cl := NewClient(cfg, cache.NewManager(cfg.DataDir, srv.Client(), 1, 0, nil))
+
+	// 1. Scoped USD-M sync for old window [100, 400) ignores Spot 504 AND skips today's future catalog/chunks!
+	snap, err := cl.SyncSnapshotWithOptions(context.Background(), "rev-q1", false, SyncOptions{
+		Market:             "usdm",
+		EndUTCNS:           400,
+		PreferExchangeTime: false,
+	})
+	if err != nil {
+		t.Fatalf("scoped usdm sync should succeed despite broken spot and future today partition: %v", err)
+	}
+	for _, p := range reqPaths {
+		if strings.HasPrefix(p, "/export/spot/") || strings.Contains(p, "catalog_sqlite") {
+			t.Fatalf("unexpected request during scoped metadata sync: %s", p)
+		}
+	}
+	plan, err := cl.PlanQueryWithOptions(snap, PlanOptions{
+		Market: "usdm", Streams: []string{"diff_depth"}, Symbols: []string{"BTCUSDT"}, StartUTCNS: 100, EndUTCNS: 400,
+	})
+	if err != nil || plan.ReadyChunksMatched != 1 || plan.PlannedChunks[0].Chunk.ChunkID != "usdm-old-chunk" {
+		t.Fatalf("expected usdm-old-chunk planned cleanly, got plan=%+v err=%v", plan, err)
+	}
+
+	// 2. Selected partition catalog failure must fail loudly naming the selected partition.
+	failOldCatalog = true
+	if err := cl.MaterializePlan(context.Background(), plan, false, DefaultAutoDownloadCapBytes); err == nil || !strings.Contains(err.Error(), "usdm-old") {
+		t.Fatalf("expected selected partition catalog error naming usdm-old, got %v", err)
+	}
+	failOldCatalog = false
+
+	// 3. Materialize fetches ONLY usdm-old catalog_sqlite (never usdm-today), then offline replay works with 0 network!
+	if err := cl.MaterializePlan(context.Background(), plan, false, DefaultAutoDownloadCapBytes); err != nil {
+		t.Fatalf("expected selected MaterializePlan to succeed, got %v", err)
+	}
+	beforeOffline := len(reqPaths)
+	offSnap, err := cl.SyncSnapshotWithOptions(context.Background(), "rev-q1", true, SyncOptions{
+		Market:   "usdm",
+		EndUTCNS: 400,
+	})
+	if err != nil {
+		t.Fatalf("offline scoped sync with uncached usdm-today should succeed: %v", err)
+	}
+	offPlan, err := cl.PlanQueryWithOptions(offSnap, PlanOptions{
+		Market: "usdm", Streams: []string{"diff_depth"}, Symbols: []string{"BTCUSDT"}, StartUTCNS: 100, EndUTCNS: 400,
+	})
+	if err != nil || offPlan.ReadyChunksMatched != 1 {
+		t.Fatalf("offline plan failed: %+v err=%v", offPlan, err)
+	}
+	if err := cl.MaterializePlan(context.Background(), offPlan, true, DefaultAutoDownloadCapBytes); err != nil {
+		t.Fatalf("offline materialize failed: %v", err)
+	}
+	if len(reqPaths) != beforeOffline {
+		t.Fatalf("offline flow made network requests: %v", reqPaths[beforeOffline:])
+	}
+}
+
+func TestM6Q3_BaselineSnapshotAvoidsRestChunkRewindAndKeepsPreSnapshotBridge(t *testing.T) {
+	dir := t.TempDir()
+	cfg := &config.Config{DataDir: dir}
+	cl := NewClient(cfg, cache.NewManager(dir, nil, 1, 0, nil))
+
+	writePart := func(withSeqRange bool, depth4UMax int64) SyncedSnapshot {
+		var lines []string
+		add := func(id, stream string, lo, hi int64, seq map[string]any) {
+			ch := map[string]any{
+				"chunk_id": id, "market": "um_perpetual", "symbol": "BTCUSDT", "stream": stream,
+				"ready": true, "storage_id": "s1", "target_relative_path": "raw/" + id,
+				"external_manifest_relative_path": "man/" + id, "archive_url_path": "raw/" + id,
+				"manifest_url_path": "man/" + id, "stored_bytes": 100, "stored_sha256": "abc",
+				"created_at_utc_ns": lo, "updated_at_utc_ns": hi,
+				"receive_time_utc_range_ns": map[string]int64{"min": lo, "max": hi},
+			}
+			if seq != nil {
+				ch["sequence_ranges"] = seq
+			}
+			raw, _ := json.Marshal(ch)
+			lines = append(lines, string(raw))
+		}
+		// Large spanning REST chunk [1..600] containing snapshots at t=1 and t=500 (lastUpdateId=500).
+		add("rest-spanning", "rest_observations", 1, 600, map[string]any{"lastUpdateId": map[string]int64{"min": 100, "max": 500}})
+		for i := 0; i < 7; i++ {
+			lo, hi := int64(i*100+10), int64(i*100+99)
+			var seq map[string]any
+			if withSeqRange {
+				uMax := hi
+				if i == 4 {
+					uMax = depth4UMax
+				}
+				seq = map[string]any{"u": map[string]int64{"min": lo, "max": uMax}}
+			}
+			add(fmt.Sprintf("depth-%d", i), "diff_depth", lo, hi, seq)
+		}
+		cp := filepath.Join(dir, fmt.Sprintf("chunks_%v_%d.jsonl", withSeqRange, depth4UMax))
+		_ = os.WriteFile(cp, []byte(strings.Join(lines, "\n")+"\n"), 0o600)
+		return SyncedSnapshot{
+			RevisionID: "q3-rev",
+			Partitions: []LoadedPartition{{
+				Manifest:   PartitionManifest{Market: "usdm", PartitionID: "p"},
+				Metadata:   PartitionMetadata{State: "open", ReceiveTimeUTCRangeNS: TimeRangeNS{Min: 1, Max: 800}},
+				ChunksPath: cp,
+			}},
+		}
+	}
+
+	chunkIDs := func(p *QueryPlan) []string {
+		out := make([]string, 0, len(p.PlannedChunks))
+		for _, pc := range p.PlannedChunks {
+			out = append(out, pc.Chunk.ChunkID)
+		}
+		return out
+	}
+
+	// Case A: Without sequence_ranges metadata, resolved snapshot at t=500 keeps single pre-snapshot chunk depth-4 + depth-5 + depth-6, pruning depth-0..3!
+	snapNoSeq := writePart(false, 0)
+	planNoSeq, err := cl.PlanQueryWithOptions(&snapNoSeq, PlanOptions{
+		Market: "usdm", Symbols: []string{"BTCUSDT"}, Streams: []string{"diff_depth", "rest_observations"},
+		StartUTCNS: 500, EndUTCNS: 650, IncludePrecedingBaseline: true, OrderbookMode: true,
+		BaselineSnapshots: map[string]OrderbookBaselineHint{
+			"BTCUSDT": {ReceiveTimeUTCNS: 500, LastUpdateID: 500, SourceChunkID: "rest-spanning"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantNoSeq := []string{"rest-spanning", "depth-4", "depth-5", "depth-6"}
+	if got := chunkIDs(planNoSeq); !reflect.DeepEqual(got, wantNoSeq) {
+		t.Fatalf("expected Stage 2 unindexed plan to keep single pre-snapshot diff chunk without rewinding to depth-0: got=%v want=%v", got, wantNoSeq)
+	}
+
+	// Case B: With sequence_ranges.u metadata where depth-4 bridges snapshot UID 500 (uMax=500 >= 500) despite receive_time < 500, depth-4 IS retained!
+	snapBridge := writePart(true, 500)
+	planBridge, err := cl.PlanQueryWithOptions(&snapBridge, PlanOptions{
+		Market: "usdm", Symbols: []string{"BTCUSDT"}, Streams: []string{"diff_depth", "rest_observations"},
+		StartUTCNS: 500, EndUTCNS: 650, IncludePrecedingBaseline: true, OrderbookMode: true,
+		BaselineSnapshots: map[string]OrderbookBaselineHint{
+			"BTCUSDT": {ReceiveTimeUTCNS: 500, LastUpdateID: 500, SourceChunkID: "rest-spanning"},
+		},
+	})
+	if err != nil || !reflect.DeepEqual(chunkIDs(planBridge), wantNoSeq) {
+		t.Fatalf("expected bridging pre-snapshot chunk depth-4 retained: got=%v err=%v", chunkIDs(planBridge), err)
+	}
+
+	// Case C: With sequence_ranges.u metadata where depth-4 ended strictly before UID 500 (uMax=490 < 500), even depth-4 is pruned cleanly!
+	snapStale := writePart(true, 490)
+	planStale, err := cl.PlanQueryWithOptions(&snapStale, PlanOptions{
+		Market: "usdm", Symbols: []string{"BTCUSDT"}, Streams: []string{"diff_depth", "rest_observations"},
+		StartUTCNS: 500, EndUTCNS: 650, IncludePrecedingBaseline: true, OrderbookMode: true,
+		BaselineSnapshots: map[string]OrderbookBaselineHint{
+			"BTCUSDT": {ReceiveTimeUTCNS: 500, LastUpdateID: 500, SourceChunkID: "rest-spanning"},
+		},
+	})
+	wantStale := []string{"rest-spanning", "depth-5", "depth-6"}
+	if err != nil || !reflect.DeepEqual(chunkIDs(planStale), wantStale) {
+		t.Fatalf("expected stale pre-snapshot chunk depth-4 pruned via uMax: got=%v want=%v err=%v", chunkIDs(planStale), wantStale, err)
+	}
+}

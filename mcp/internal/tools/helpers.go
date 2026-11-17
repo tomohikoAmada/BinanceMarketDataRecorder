@@ -419,6 +419,9 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 	if len(plan.PendingReasons) > 0 {
 		m["pending_reasons"] = plan.PendingReasons
 	}
+	if plan.BaselineStartUTCNS > 0 {
+		m["baseline_start_utc_ns"] = strconv.FormatInt(plan.BaselineStartUTCNS, 10)
+	}
 	return m
 }
 

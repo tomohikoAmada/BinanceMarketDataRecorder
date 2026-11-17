@@ -1271,9 +1271,17 @@ else:
 
 	estOut, estRes := callToolMap(t, session, "manage_local_cache", map[string]any{
 		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID, "offline": true,
+		"streams": []string{"diff_depth"}, "start_utc_ns": "1000", "end_utc_ns": "2000",
 	})
-	if estRes.IsError || estOut["selection_time_basis"] != "receive_time_utc" {
-		t.Fatalf("expected selection_time_basis=receive_time_utc on recorder estimate, got %v", estOut)
+	if estRes.IsError || estOut["selection_time_basis"] != "receive_time_utc" || estOut["warmup_included"] != false || !strings.Contains(fmt.Sprint(estOut["warmup_note"]), "include_baseline=true") {
+		t.Fatalf("expected selection_time_basis=receive_time_utc and warmup disclosure on target-only diff_depth estimate, got %v", estOut)
+	}
+	estBaseOut, estBaseRes := callToolMap(t, session, "manage_local_cache", map[string]any{
+		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID, "offline": true,
+		"streams": []string{"diff_depth", "rest_observations"}, "start_utc_ns": "1000", "end_utc_ns": "2000", "include_baseline": true,
+	})
+	if estBaseRes.IsError || estBaseOut["warmup_included"] != true {
+		t.Fatalf("expected warmup_included=true with include_baseline=true, got %v", estBaseOut)
 	}
 
 	// 4. M6-D3: query_public_endpoint accepts newly registered 4-market public GET & bounded WS endpoints.
@@ -1303,5 +1311,140 @@ else:
 	})
 	if !wsOfflineRes.IsError || strings.Contains(fmt.Sprint(wsOfflineRes.Content), "not in the allowlisted") {
 		t.Fatalf("expected options.ws.trade offline to be recognized and rejected only for offline=true, got out=%v res=%v", wsOfflineOut, wsOfflineRes)
+	}
+}
+
+func TestM6Q3_EndToEndQueryOrderbookDoesNotPullPreSnapshotDepthFromOverlappingRestChunk(t *testing.T) {
+	session, cfg := setupTestMCPClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	}))
+	mockWorkerPath := filepath.Join(t.TempDir(), "mock_q3_worker.py")
+	mockWorkerPy := `import json, sys
+req = json.load(sys.stdin)
+op = req.get("operation")
+cids = [c["chunk_id"] for c in req.get("chunks", [])]
+if op == "inspect_orderbook_snapshots":
+    print(json.dumps({
+        "operation": op,
+        "snapshots_found": 1,
+        "latest_before_start_ns": {"BTCUSDT": "3500000000000"},
+        "latest_before_start_snapshots": {
+            "BTCUSDT": {
+                "receive_time_utc_ns": "3500000000000",
+                "last_update_id": 500,
+                "source_chunk_id": "rest-overlap",
+            }
+        },
+    }))
+elif op == "query_orderbook":
+    print(json.dumps({
+        "operation": op,
+        "stats": {
+            "snapshots_seen": 1,
+            "depth_updates_seen": len(cids),
+            "resync_count": 0,
+            "warmup_resync_count": 0,
+            "window_resync_count": 0,
+            "recovery_count": 1,
+            "reliable_emissions": 1,
+            "symbol_coverage": {"BTCUSDT": {"status": "complete", "reason": None}},
+        },
+        "total_rows": 1,
+        "rows": [{"symbol": "BTCUSDT", "chunks_seen": cids}],
+    }))
+`
+	if err := os.WriteFile(mockWorkerPath, []byte(mockWorkerPy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg.PythonBin = "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python"
+	cfg.WorkerScript = mockWorkerPath
+
+	revID := "rev-m6q3-e2e"
+	recBase := filepath.Join(cfg.DataDir, "recorder")
+	stageChunk := func(id, stream string, lo, hi int64, seq map[string]any) map[string]any {
+		rawAbs := filepath.Join(recBase, "storage", "s1", "raw", id+".bmdr.zst")
+		manAbs := filepath.Join(recBase, "storage", "s1", "manifests", id+".json")
+		_ = os.MkdirAll(filepath.Dir(rawAbs), 0o755)
+		_ = os.MkdirAll(filepath.Dir(manAbs), 0o755)
+		_ = os.WriteFile(rawAbs, []byte(id), 0o644)
+		_ = os.WriteFile(manAbs, []byte(`{"raw_manifest":{"symbol":"BTCUSDT"}}`), 0o644)
+		shaHex := fmt.Sprintf("%x", sha256.Sum256([]byte(id)))
+		_ = cache.WriteReceipt(rawAbs, cache.Receipt{SHA256: shaHex, SizeBytes: int64(len(id)), OfflineOK: true})
+		_ = cache.WriteReceipt(manAbs, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256([]byte(`{"raw_manifest":{"symbol":"BTCUSDT"}}`))), SizeBytes: int64(len(`{"raw_manifest":{"symbol":"BTCUSDT"}}`)), OfflineOK: true})
+		obj := map[string]any{
+			"chunk_id": id, "market": "spot", "symbol": "BTCUSDT", "stream": stream,
+			"state": "ARCHIVED_VERIFIED", "ready": true, "storage_id": "s1",
+			"target_relative_path": "raw/" + id + ".bmdr.zst",
+			"external_manifest_relative_path": "manifests/" + id + ".json",
+			"archive_url_path": "raw/" + id, "manifest_url_path": "man/" + id,
+			"stored_bytes": len(id), "stored_sha256": shaHex, "uncompressed_bytes": len(id),
+			"created_at_utc_ns": lo, "updated_at_utc_ns": hi,
+			"receive_time_utc_range_ns": map[string]any{"min": lo, "max": hi},
+		}
+		if seq != nil {
+			obj["sequence_ranges"] = seq
+		}
+		return obj
+	}
+	writeArtifact := func(pid, fname string, content []byte) map[string]any {
+		sum := fmt.Sprintf("%x", sha256.Sum256(content))
+		short := sum[:16]
+		dst := filepath.Join(recBase, "snapshots", "spot", pid, short, fname)
+		_ = os.MkdirAll(filepath.Dir(dst), 0o755)
+		_ = os.WriteFile(dst, content, 0o644)
+		_ = cache.WriteReceipt(dst, cache.Receipt{SHA256: sum, SizeBytes: int64(len(content)), OfflineOK: true})
+		return map[string]any{"bytes": int64(len(content)), "sha256": sum, "url_path": "snapshots/spot/" + pid + "/" + short + "/" + fname}
+	}
+	pid := "2026-11-17"
+	pDoc, _ := json.Marshal(map[string]any{"schema_version": "1", "market": "spot", "partition_id": pid, "state": "closed", "receive_time_utc_range_ns": map[string]any{"min": 1_000_000_000_000, "max": 4_200_000_000_000}})
+	aDoc, _ := json.Marshal(map[string]any{"market": "spot", "partition_id": pid, "recorded_symbols": []string{"BTCUSDT"}, "gaps": []any{}, "discontinuity_events": []any{}, "quarantined_artifacts": []any{}})
+	chunks := []map[string]any{
+		stageChunk("rest-overlap", "rest_observations", 1_000_000_000_000, 4_000_000_000_000, map[string]any{"lastUpdateId": map[string]any{"min": 100, "max": 500}}),
+		stageChunk("depth-0", "diff_depth", 1_000_000_000_000, 2_000_000_000_000, map[string]any{"u": map[string]any{"min": 100, "max": 400}}),
+		stageChunk("depth-bridge", "diff_depth", 2_500_000_000_000, 4_100_000_000_000, map[string]any{"u": map[string]any{"min": 450, "max": 600}}),
+	}
+	var lines []string
+	for _, ch := range chunks {
+		b, _ := json.Marshal(ch)
+		lines = append(lines, string(b))
+	}
+	pRef := map[string]any{
+		"market": "spot", "partition_id": pid,
+		"files": map[string]any{
+			"partition_json":    writeArtifact(pid, "partition.json", pDoc),
+			"availability_json": writeArtifact(pid, "availability.json", aDoc),
+			"chunks_jsonl":      writeArtifact(pid, "chunks.jsonl", []byte(strings.Join(lines, "\n")+"\n")),
+			"catalog_sqlite":    writeArtifact(pid, "catalog.sqlite", []byte("sqlite")),
+		},
+	}
+	manPath := filepath.Join(recBase, "revisions", revID, "manifest.json")
+	_ = os.MkdirAll(filepath.Dir(manPath), 0o755)
+	manBytes, _ := json.Marshal(map[string]any{
+		"schema_version": "mcp-export.v1",
+		"revision_id":    revID,
+		"partitions":     []any{pRef},
+	})
+	_ = os.WriteFile(manPath, manBytes, 0o644)
+	_ = cache.WriteReceipt(manPath, cache.Receipt{SHA256: fmt.Sprintf("%x", sha256.Sum256(manBytes)), SizeBytes: int64(len(manBytes)), OfflineOK: true})
+
+	out, res := callToolMap(t, session, "query_orderbook", map[string]any{
+		"market":       "spot",
+		"symbol":       "BTCUSDT",
+		"revision_id":  revID,
+		"offline":      true,
+		"start_utc_ns": "4000000000000",
+		"end_utc_ns":   "4100000000000",
+	})
+	if res.IsError {
+		t.Fatalf("expected query_orderbook Q3 baseline pruning to succeed, got %v", res)
+	}
+	rowsAny, _ := out["rows"].([]any)
+	chunksSeenStr := fmt.Sprint(rowsAny[0])
+	if !strings.Contains(chunksSeenStr, "rest-overlap") || !strings.Contains(chunksSeenStr, "depth-bridge") || strings.Contains(chunksSeenStr, "depth-0") {
+		t.Fatalf("expected Stage 2 to keep rest-overlap + depth-bridge and prune pre-snapshot depth-0, got %s", chunksSeenStr)
+	}
+	provMap := mapStringAny(out["recorder_provenance"])
+	if provMap["baseline_start_utc_ns"] != "1000000000000" {
+		t.Fatalf("expected baseline_start_utc_ns=1000000000000, got %v", provMap["baseline_start_utc_ns"])
 	}
 }

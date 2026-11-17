@@ -165,7 +165,12 @@ func (s *Server) handleQueryKlines(ctx context.Context, _ *mcp.CallToolRequest, 
 	var fallbackNote string
 	canTryRecorder := (sourcePref == "recorder" || (sourcePref == "auto" && (m == binance.MarketSpot || m == binance.MarketUSDM) && klineType == "standard"))
 	if canTryRecorder && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
-		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
+		snap, sErr := s.Recorder.SyncSnapshotWithOptions(ctx, in.RevisionID, in.Offline, recorder.SyncOptions{
+			Market:             string(m),
+			StartUTCNS:         startNS,
+			EndUTCNS:           endNS,
+			PreferExchangeTime: true,
+		})
 		if sErr == nil {
 			plan, pErr := s.planAndHydrateRecorder(ctx, snap, recorder.PlanOptions{
 				Market:             string(m),
@@ -724,144 +729,16 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 		if m != binance.MarketSpot && m != binance.MarketUSDM {
 			return nil, nil, fmt.Errorf("historical orderbook reconstruction is only available on Recorder-backed spot/usdm; refusing to backfill with current live REST depth")
 		}
-		snap, err := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
+		snap, err := s.Recorder.SyncSnapshotWithOptions(ctx, in.RevisionID, in.Offline, recorder.SyncOptions{
+			Market:             string(m),
+			EndUTCNS:           endNS,
+			PreferExchangeTime: false,
+		})
 		if err != nil {
 			return nil, nil, fmt.Errorf("Recorder sync failed for historical orderbook (refusing REST backfill): %w", err)
 		}
 
-		// Two-stage planning (M6-A + M6-R1): inspect rest_observations chunks first to locate actual
-		// pre-start depth_snapshot timestamps for each requested symbol (walking backwards across closed partitions as needed).
-		planStart := startNS
-		foundBeforeBySym := make(map[string]bool, len(symbols))
-		parseInspectBeforeMap := func(inspectRes map[string]any) {
-			applyTS := func(sym string, rawVal any) {
-				rawStr, ok := rawVal.(string)
-				if !ok || strings.TrimSpace(rawStr) == "" {
-					return
-				}
-				if beforeNS, pErr := recorder.ParseNSString(rawStr); pErr == nil && beforeNS > 0 {
-					if sym != "" {
-						foundBeforeBySym[strings.ToUpper(strings.TrimSpace(sym))] = true
-					}
-					if planStart == 0 || beforeNS < planStart {
-						planStart = beforeNS
-					}
-				}
-			}
-			if beforeMap := mapStringAny(inspectRes["latest_before_start_ns"]); len(beforeMap) > 0 {
-				if len(symbols) > 0 {
-					for _, sym := range symbols {
-						if val, exists := beforeMap[sym]; exists {
-							applyTS(sym, val)
-						}
-					}
-				} else {
-					for k, val := range beforeMap {
-						applyTS(k, val)
-					}
-				}
-			} else if rawBefore, ok := inspectRes["latest_before_start_ns"].(string); ok && rawBefore != "" {
-				applyTS("", rawBefore)
-			}
-		}
-
-		missingSnapSymbols := func() []string {
-			if len(symbols) == 0 {
-				return nil
-			}
-			var missing []string
-			for _, sym := range symbols {
-				if !foundBeforeBySym[sym] {
-					missing = append(missing, sym)
-				}
-			}
-			return missing
-		}
-
-		snapPlan, sPlanErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-			Market:                   string(m),
-			Streams:                  []string{"rest_observations"},
-			Symbols:                  symbols,
-			StartUTCNS:               startNS,
-			EndUTCNS:                 endNS,
-			IncludePrecedingBaseline: true,
-			OrderbookMode:            true,
-		})
-		if sPlanErr != nil {
-			return nil, nil, fmt.Errorf("plan orderbook baseline snapshots: %w", sPlanErr)
-		}
-		if snapPlan != nil && snapPlan.ReadyChunksMatched > 0 {
-			if matErr := s.Recorder.MaterializePlan(ctx, snapPlan, in.Offline, in.MaxDownloadBytes); matErr != nil {
-				return nil, nil, matErr
-			}
-			inspectReq := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", snapPlan)
-			inspectReq.Symbols = symbols
-			inspectReq.StartUTCNS = startNS
-			inspectReq.EndUTCNS = endNS
-			inspectRes, iErr := s.Recorder.RunWorker(ctx, inspectReq)
-			if iErr != nil {
-				return nil, nil, fmt.Errorf("inspect orderbook snapshots: %w", iErr)
-			}
-			parseInspectBeforeMap(inspectRes)
-
-			// If any requested symbol had no pre-start depth_snapshot inside the inspected partitions
-			// (for example, when an unindexed rest_observations partition held only exchange_info),
-			// step backwards across earlier partitions bounded by existing MaxDownloadBytes cap.
-			earliestInspectedMin := int64(0)
-			for _, sp := range snapPlan.SelectedPartitions {
-				pMin := sp.Metadata.ReceiveTimeUTCRangeNS.Min
-				if pMin > 0 && (earliestInspectedMin == 0 || pMin < earliestInspectedMin) {
-					earliestInspectedMin = pMin
-				}
-			}
-			for missing := missingSnapSymbols(); len(missing) > 0 && earliestInspectedMin > 0; missing = missingSnapSymbols() {
-				olderPlan, oErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-					Market:                   string(m),
-					Streams:                  []string{"rest_observations"},
-					Symbols:                  missing,
-					StartUTCNS:               earliestInspectedMin,
-					EndUTCNS:                 earliestInspectedMin,
-					IncludePrecedingBaseline: true,
-					OrderbookMode:            true,
-				})
-				if oErr != nil || olderPlan == nil || olderPlan.ReadyChunksMatched == 0 {
-					break
-				}
-				nextEarliestMin := earliestInspectedMin
-				for _, sp := range olderPlan.SelectedPartitions {
-					pMin := sp.Metadata.ReceiveTimeUTCRangeNS.Min
-					if pMin > 0 && pMin < nextEarliestMin {
-						nextEarliestMin = pMin
-					}
-				}
-				if matErr := s.Recorder.MaterializePlan(ctx, olderPlan, in.Offline, in.MaxDownloadBytes); matErr != nil {
-					break
-				}
-				olderInspect := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", olderPlan)
-				olderInspect.Symbols = missing
-				olderInspect.StartUTCNS = startNS
-				olderInspect.EndUTCNS = endNS
-				olderRes, oIErr := s.Recorder.RunWorker(ctx, olderInspect)
-				if oIErr != nil {
-					return nil, nil, fmt.Errorf("inspect earlier orderbook snapshots: %w", oIErr)
-				}
-				parseInspectBeforeMap(olderRes)
-				if nextEarliestMin >= earliestInspectedMin {
-					break
-				}
-				earliestInspectedMin = nextEarliestMin
-			}
-		}
-
-		plan, err := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-			Market:                   string(m),
-			Streams:                  []string{"diff_depth", "rest_observations"},
-			Symbols:                  symbols,
-			StartUTCNS:               planStart,
-			EndUTCNS:                 endNS,
-			IncludePrecedingBaseline: true,
-			OrderbookMode:            true,
-		})
+		plan, _, err := s.planOrderbookWithBaseline(ctx, snap, string(m), symbols, startNS, endNS, in.Offline, in.MaxDownloadBytes)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1062,7 +939,12 @@ func (s *Server) handleQueryTradesAndLiquidations(ctx context.Context, _ *mcp.Ca
 
 	canRecorder := (sourcePref == "recorder" || (sourcePref == "auto" && (m == binance.MarketSpot || m == binance.MarketUSDM)))
 	if canRecorder && (in.RevisionID != "" || startNS > 0 || kind == "liquidations" || sourcePref == "recorder") {
-		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
+		snap, sErr := s.Recorder.SyncSnapshotWithOptions(ctx, in.RevisionID, in.Offline, recorder.SyncOptions{
+			Market:             string(m),
+			StartUTCNS:         startNS,
+			EndUTCNS:           endNS,
+			PreferExchangeTime: true,
+		})
 		if sErr == nil {
 			streams := []string{"agg_trade"}
 			if kind == "liquidations" {
@@ -1423,7 +1305,12 @@ func (s *Server) handleQueryDerivativesMetrics(ctx context.Context, _ *mcp.CallT
 
 	// Route 1: Recorder USD-M historical mark_price & rest_observations metrics.
 	if (sourcePref == "recorder" || (sourcePref == "auto" && m == binance.MarketUSDM && recorderSupportedMetric)) && (in.RevisionID != "" || startNS > 0 || sourcePref == "recorder") {
-		snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
+		snap, sErr := s.Recorder.SyncSnapshotWithOptions(ctx, in.RevisionID, in.Offline, recorder.SyncOptions{
+			Market:             "usdm",
+			StartUTCNS:         startNS,
+			EndUTCNS:           endNS,
+			PreferExchangeTime: true,
+		})
 		if sErr == nil {
 			plan, pErr := s.planAndHydrateRecorder(ctx, snap, recorder.PlanOptions{
 				Market:             "usdm",
@@ -2079,7 +1966,9 @@ func (s *Server) handleQueryMarketOverview(ctx context.Context, _ *mcp.CallToolR
 	// Actually: in MCP JSON schema optional bool omits default false -> we should include both unless Offline disables REST or action explicitly excludes!
 	// Wait: let's treat IncludeRecorder = true whenever (in.RevisionID != "" || m == Spot || m == USDM || m == "") and always check unless caller asks otherwise; wait - if someone passes include_live_rest: true vs omitted, let's check both when market allows unless Offline!
 	if in.RevisionID != "" || m == binance.MarketSpot || m == binance.MarketUSDM || strings.ToLower(strings.TrimSpace(in.Market)) == "all" {
-		if snap, sErr := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline); sErr == nil {
+		if snap, sErr := s.Recorder.SyncSnapshotWithOptions(ctx, in.RevisionID, in.Offline, recorder.SyncOptions{
+			Market: string(m),
+		}); sErr == nil {
 			var partsSummary []map[string]any
 			recSymSet := make(map[string]bool)
 			recStreamSet := make(map[string]bool)
@@ -2299,23 +2188,24 @@ func summarizeExchangeInfo(raw json.RawMessage, m binance.Market, filter []strin
 // ---------- 6. manage_local_cache ----------
 
 type ManageCacheInput struct {
-	Action      string   `json:"action" jsonschema:"inspect (default), estimate, prefetch, jobs, cancel, or resume"`
-	Verify      bool     `json:"verify,omitempty" jsonschema:"When action='inspect', verify SHA-256 checksums of cached files"`
-	Source      string   `json:"source,omitempty" jsonschema:"Cache source for estimate/prefetch: recorder (default) or binance_vision"`
-	Market      string   `json:"market,omitempty" jsonschema:"spot, usdm (for recorder); spot, usdm, coinm, or options (for binance_vision)"`
-	Streams     []string `json:"streams,omitempty" jsonschema:"Recorder stream names, e.g. [\"agg_trade\", \"diff_depth\", \"rest_observations\"]"`
-	Symbols     []string `json:"symbols,omitempty" jsonschema:"Symbols list for Recorder filtering or Binance Vision archives"`
-	Symbol      string   `json:"symbol,omitempty" jsonschema:"Single symbol convenience alias"`
-	Dataset     string   `json:"dataset,omitempty" jsonschema:"Binance Vision dataset name (e.g. klines, aggTrades, trades, bookDepth, metrics, BVOLIndex)"`
-	Cadence     string   `json:"cadence,omitempty" jsonschema:"Binance Vision cadence: daily (default) or monthly"`
-	Interval    string   `json:"interval,omitempty" jsonschema:"Binance Vision kline interval (e.g. 1m, 1h)"`
-	Period      string   `json:"period,omitempty" jsonschema:"Single Binance Vision period YYYY-MM-DD (daily) or YYYY-MM (monthly)"`
-	StartUTCNS  string   `json:"start_utc_ns,omitempty" jsonschema:"Window start in UTC nanoseconds"`
-	EndUTCNS    string   `json:"end_utc_ns,omitempty" jsonschema:"Window end in UTC nanoseconds"`
-	RevisionID  string   `json:"revision_id,omitempty" jsonschema:"Pinned Recorder revision ID"`
-	Offline     bool     `json:"offline,omitempty" jsonschema:"Offline zero-network mode"`
-	JobID       string   `json:"job_id,omitempty" jsonschema:"Prefetch job_id for jobs/cancel/resume"`
-	Description string   `json:"description,omitempty" jsonschema:"Human label for prefetch job"`
+	Action          string   `json:"action" jsonschema:"inspect (default), estimate, prefetch, jobs, cancel, or resume"`
+	Verify          bool     `json:"verify,omitempty" jsonschema:"When action='inspect', verify SHA-256 checksums of cached files"`
+	Source          string   `json:"source,omitempty" jsonschema:"Cache source for estimate/prefetch: recorder (default) or binance_vision"`
+	Market          string   `json:"market,omitempty" jsonschema:"spot, usdm (for recorder); spot, usdm, coinm, or options (for binance_vision)"`
+	Streams         []string `json:"streams,omitempty" jsonschema:"Recorder stream names, e.g. [\"agg_trade\", \"diff_depth\", \"rest_observations\"]"`
+	Symbols         []string `json:"symbols,omitempty" jsonschema:"Symbols list for Recorder filtering or Binance Vision archives"`
+	Symbol          string   `json:"symbol,omitempty" jsonschema:"Single symbol convenience alias"`
+	Dataset         string   `json:"dataset,omitempty" jsonschema:"Binance Vision dataset name (e.g. klines, aggTrades, trades, bookDepth, metrics, BVOLIndex)"`
+	Cadence         string   `json:"cadence,omitempty" jsonschema:"Binance Vision cadence: daily (default) or monthly"`
+	Interval        string   `json:"interval,omitempty" jsonschema:"Binance Vision kline interval (e.g. 1m, 1h)"`
+	Period          string   `json:"period,omitempty" jsonschema:"Single Binance Vision period YYYY-MM-DD (daily) or YYYY-MM (monthly)"`
+	StartUTCNS      string   `json:"start_utc_ns,omitempty" jsonschema:"Window start in UTC nanoseconds"`
+	EndUTCNS        string   `json:"end_utc_ns,omitempty" jsonschema:"Window end in UTC nanoseconds"`
+	IncludeBaseline bool     `json:"include_baseline,omitempty" jsonschema:"When true for Recorder estimate/prefetch, include preceding baseline snapshots/diff chain before start_utc_ns"`
+	RevisionID      string   `json:"revision_id,omitempty" jsonschema:"Pinned Recorder revision ID"`
+	Offline         bool     `json:"offline,omitempty" jsonschema:"Offline zero-network mode"`
+	JobID           string   `json:"job_id,omitempty" jsonschema:"Prefetch job_id for jobs/cancel/resume"`
+	Description     string   `json:"description,omitempty" jsonschema:"Human label for prefetch job"`
 }
 
 func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequest, in ManageCacheInput) (*mcp.CallToolResult, map[string]any, error) {
@@ -2523,28 +2413,68 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 		if m != binance.MarketSpot && m != binance.MarketUSDM {
 			return nil, nil, fmt.Errorf("Recorder estimate/prefetch requires market=spot or market=usdm (got %q)", in.Market)
 		}
-		snap, err := s.Recorder.SyncSnapshot(ctx, in.RevisionID, in.Offline)
-		if err != nil {
-			return nil, nil, err
-		}
-		plan, err := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
-			Market:     string(m),
-			Streams:    in.Streams,
-			Symbols:    symbols,
-			StartUTCNS: startNS,
-			EndUTCNS:   endNS,
+		snap, err := s.Recorder.SyncSnapshotWithOptions(ctx, in.RevisionID, in.Offline, recorder.SyncOptions{
+			Market:             string(m),
+			StartUTCNS:         startNS,
+			EndUTCNS:           endNS,
+			PreferExchangeTime: false,
 		})
 		if err != nil {
 			return nil, nil, err
 		}
+		hasDiffDepth := len(in.Streams) == 0
+		for _, st := range in.Streams {
+			if strings.TrimSpace(st) == "diff_depth" {
+				hasDiffDepth = true
+				break
+			}
+		}
+		var plan *recorder.QueryPlan
+		if in.IncludeBaseline && hasDiffDepth {
+			if action == "prefetch" {
+				plan, _, err = s.planOrderbookWithBaseline(ctx, snap, string(m), symbols, startNS, endNS, in.Offline, 0)
+			} else {
+				plan, err = s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+					Market:                   string(m),
+					Streams:                  in.Streams,
+					Symbols:                  symbols,
+					StartUTCNS:               startNS,
+					EndUTCNS:                 endNS,
+					IncludePrecedingBaseline: true,
+					OrderbookMode:            true,
+				})
+			}
+		} else {
+			plan, err = s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+				Market:                   string(m),
+				Streams:                  in.Streams,
+				Symbols:                  symbols,
+				StartUTCNS:               startNS,
+				EndUTCNS:                 endNS,
+				IncludePrecedingBaseline: in.IncludeBaseline,
+			})
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		warmupIncluded := in.IncludeBaseline
+		var warmupNote string
+		if hasDiffDepth && startNS > 0 && !in.IncludeBaseline {
+			warmupNote = "Target window raw chunks only; offline query_orderbook over this window also requires preceding rest_observations depth_snapshot and diff_depth bridge chain (set include_baseline=true with streams=['diff_depth','rest_observations'], or raise max_download_bytes on query_orderbook)."
+		}
 		if action == "estimate" {
-			return nil, map[string]any{
+			out := map[string]any{
 				"action":               "estimate",
 				"source":               "recorder",
 				"selection_time_basis": plan.SelectionTimeBasis,
+				"warmup_included":      warmupIncluded,
 				"note":                 "Recorder raw chunk estimate/prefetch selects chunks by receive_time_utc metadata; omitting streams/symbols includes all ready streams/symbols in the partition.",
 				"estimate":             planSummaryMap(plan),
-			}, nil
+			}
+			if warmupNote != "" {
+				out["warmup_note"] = warmupNote
+			}
+			return nil, out, nil
 		}
 		if in.Offline {
 			return nil, nil, fmt.Errorf("cannot start network prefetch when offline=true")
@@ -2558,14 +2488,19 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 		if err != nil {
 			return nil, nil, err
 		}
-		return nil, map[string]any{
+		out := map[string]any{
 			"action":               "prefetch",
 			"source":               "recorder",
 			"selection_time_basis": plan.SelectionTimeBasis,
+			"warmup_included":      warmupIncluded,
 			"note":                 "Recorder raw chunk estimate/prefetch selects chunks by receive_time_utc metadata.",
 			"estimate":             planSummaryMap(plan),
 			"job":                  job,
-		}, nil
+		}
+		if warmupNote != "" {
+			out["warmup_note"] = warmupNote
+		}
+		return nil, out, nil
 
 	default:
 		return nil, nil, fmt.Errorf("unknown manage_local_cache action %q", in.Action)
@@ -2673,6 +2608,211 @@ func (s *Server) handleQueryPublicEndpoint(ctx context.Context, _ *mcp.CallToolR
 		}
 	}
 	return nil, out, nil
+}
+
+func (s *Server) planOrderbookWithBaseline(
+	ctx context.Context,
+	snap *recorder.SyncedSnapshot,
+	market string,
+	symbols []string,
+	startNS int64,
+	endNS int64,
+	offline bool,
+	maxDownloadBytes int64,
+) (*recorder.QueryPlan, int64, error) {
+	planStart := startNS
+	foundBeforeBySym := make(map[string]bool, len(symbols))
+	baselineHints := make(map[string]recorder.OrderbookBaselineHint, len(symbols))
+
+	parseInspectBeforeMap := func(inspectRes map[string]any) {
+		recordHint := func(symKey string, ts int64, uid int64, chunkID string) {
+			if ts <= 0 {
+				return
+			}
+			norm := strings.ToUpper(strings.TrimSpace(symKey))
+			if norm == "" {
+				norm = "*"
+			} else {
+				foundBeforeBySym[norm] = true
+			}
+			prev, exists := baselineHints[norm]
+			if !exists || ts > prev.ReceiveTimeUTCNS || (ts == prev.ReceiveTimeUTCNS && uid > prev.LastUpdateID) {
+				baselineHints[norm] = recorder.OrderbookBaselineHint{
+					ReceiveTimeUTCNS: ts,
+					LastUpdateID:     uid,
+					SourceChunkID:    chunkID,
+				}
+			}
+			if planStart == 0 || ts < planStart {
+				planStart = ts
+			}
+		}
+
+		if richMap := mapStringAny(inspectRes["latest_before_start_snapshots"]); len(richMap) > 0 {
+			wanted := symbols
+			if len(wanted) == 0 {
+				for k := range richMap {
+					wanted = append(wanted, k)
+				}
+			}
+			for _, sym := range wanted {
+				entry := mapStringAny(richMap[sym])
+				if len(entry) == 0 {
+					continue
+				}
+				rawTS, _ := entry["receive_time_utc_ns"].(string)
+				ts, err := recorder.ParseNSString(rawTS)
+				if err != nil || ts <= 0 {
+					continue
+				}
+				var uid int64
+				switch v := entry["last_update_id"].(type) {
+				case string:
+					uid, _ = recorder.ParseNSString(v)
+				case json.Number:
+					uid, _ = v.Int64()
+				case float64:
+					uid = int64(v)
+				case int64:
+					uid = v
+				case int:
+					uid = int64(v)
+				}
+				cid, _ := entry["source_chunk_id"].(string)
+				recordHint(sym, ts, uid, cid)
+			}
+		}
+
+		applyTS := func(sym string, rawVal any) {
+			rawStr, ok := rawVal.(string)
+			if !ok || strings.TrimSpace(rawStr) == "" {
+				return
+			}
+			if beforeNS, pErr := recorder.ParseNSString(rawStr); pErr == nil && beforeNS > 0 {
+				norm := strings.ToUpper(strings.TrimSpace(sym))
+				if norm == "" {
+					norm = "*"
+				}
+				if _, exists := baselineHints[norm]; !exists {
+					recordHint(sym, beforeNS, 0, "")
+				} else if norm != "*" {
+					foundBeforeBySym[norm] = true
+				}
+			}
+		}
+		if beforeMap := mapStringAny(inspectRes["latest_before_start_ns"]); len(beforeMap) > 0 {
+			if len(symbols) > 0 {
+				for _, sym := range symbols {
+					if val, exists := beforeMap[sym]; exists {
+						applyTS(sym, val)
+					}
+				}
+			} else {
+				for k, val := range beforeMap {
+					applyTS(k, val)
+				}
+			}
+		} else if rawBefore, ok := inspectRes["latest_before_start_ns"].(string); ok && rawBefore != "" {
+			applyTS("", rawBefore)
+		}
+	}
+
+	missingSnapSymbols := func() []string {
+		if len(symbols) == 0 {
+			return nil
+		}
+		var missing []string
+		for _, sym := range symbols {
+			if !foundBeforeBySym[sym] {
+				missing = append(missing, sym)
+			}
+		}
+		return missing
+	}
+
+	snapPlan, sPlanErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+		Market:                   market,
+		Streams:                  []string{"rest_observations"},
+		Symbols:                  symbols,
+		StartUTCNS:               startNS,
+		EndUTCNS:                 endNS,
+		IncludePrecedingBaseline: true,
+		OrderbookMode:            true,
+	})
+	if sPlanErr != nil {
+		return nil, planStart, fmt.Errorf("plan orderbook baseline snapshots: %w", sPlanErr)
+	}
+	if snapPlan != nil && snapPlan.ReadyChunksMatched > 0 {
+		if matErr := s.Recorder.MaterializePlan(ctx, snapPlan, offline, maxDownloadBytes); matErr != nil {
+			return nil, planStart, matErr
+		}
+		inspectReq := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", snapPlan)
+		inspectReq.Symbols = symbols
+		inspectReq.StartUTCNS = startNS
+		inspectReq.EndUTCNS = endNS
+		inspectRes, iErr := s.Recorder.RunWorker(ctx, inspectReq)
+		if iErr != nil {
+			return nil, planStart, fmt.Errorf("inspect orderbook snapshots: %w", iErr)
+		}
+		parseInspectBeforeMap(inspectRes)
+
+		earliestInspectedMin := int64(0)
+		for _, sp := range snapPlan.SelectedPartitions {
+			pMin := sp.Metadata.ReceiveTimeUTCRangeNS.Min
+			if pMin > 0 && (earliestInspectedMin == 0 || pMin < earliestInspectedMin) {
+				earliestInspectedMin = pMin
+			}
+		}
+		for missing := missingSnapSymbols(); len(missing) > 0 && earliestInspectedMin > 0; missing = missingSnapSymbols() {
+			olderPlan, oErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+				Market:                   market,
+				Streams:                  []string{"rest_observations"},
+				Symbols:                  missing,
+				StartUTCNS:               earliestInspectedMin,
+				EndUTCNS:                 earliestInspectedMin,
+				IncludePrecedingBaseline: true,
+				OrderbookMode:            true,
+			})
+			if oErr != nil || olderPlan == nil || olderPlan.ReadyChunksMatched == 0 {
+				break
+			}
+			nextEarliestMin := earliestInspectedMin
+			for _, sp := range olderPlan.SelectedPartitions {
+				pMin := sp.Metadata.ReceiveTimeUTCRangeNS.Min
+				if pMin > 0 && pMin < nextEarliestMin {
+					nextEarliestMin = pMin
+				}
+			}
+			if matErr := s.Recorder.MaterializePlan(ctx, olderPlan, offline, maxDownloadBytes); matErr != nil {
+				break
+			}
+			olderInspect := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", olderPlan)
+			olderInspect.Symbols = missing
+			olderInspect.StartUTCNS = startNS
+			olderInspect.EndUTCNS = endNS
+			olderRes, oIErr := s.Recorder.RunWorker(ctx, olderInspect)
+			if oIErr != nil {
+				return nil, planStart, fmt.Errorf("inspect earlier orderbook snapshots: %w", oIErr)
+			}
+			parseInspectBeforeMap(olderRes)
+			if nextEarliestMin >= earliestInspectedMin {
+				break
+			}
+			earliestInspectedMin = nextEarliestMin
+		}
+	}
+
+	plan, err := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+		Market:                   market,
+		Streams:                  []string{"diff_depth", "rest_observations"},
+		Symbols:                  symbols,
+		StartUTCNS:               planStart,
+		EndUTCNS:                 endNS,
+		IncludePrecedingBaseline: true,
+		OrderbookMode:            true,
+		BaselineSnapshots:        baselineHints,
+	})
+	return plan, planStart, err
 }
 
 func (s *Server) planAndHydrateRecorder(ctx context.Context, snap *recorder.SyncedSnapshot, opts recorder.PlanOptions, offline bool) (*recorder.QueryPlan, error) {

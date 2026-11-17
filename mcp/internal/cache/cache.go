@@ -382,12 +382,25 @@ func (m *Manager) EnsureFile(ctx context.Context, opts EnsureOptions) (*EnsureRe
 		return nil, call.err
 	}
 
-	res, dlErr := m.downloadAndFinalize(ctx, destPath, opts)
-	if dlErr != nil && opts.FallbackURL != "" && opts.FallbackURL != opts.SourceURL && ctx.Err() == nil {
-		fallbackOpts := opts
-		fallbackOpts.SourceURL = opts.FallbackURL
-		fallbackOpts.FallbackURL = ""
-		res, dlErr = m.downloadAndFinalize(ctx, destPath, fallbackOpts)
+	firstOpts := opts
+	secondOpts := opts
+	secondOpts.SourceURL = opts.FallbackURL
+	secondOpts.FallbackURL = ""
+	if opts.FallbackURL != "" && opts.FallbackURL != opts.SourceURL {
+		if savedMeta, ok := m.matchingPartMeta(destPath, opts); ok && savedMeta.SourceURL == opts.FallbackURL {
+			// Prefer resuming directly from the mirror that already holds the .part bytes before failing back.
+			firstOpts.SourceURL = opts.FallbackURL
+			firstOpts.FallbackURL = opts.SourceURL
+			secondOpts.SourceURL = opts.SourceURL
+			secondOpts.FallbackURL = ""
+		}
+	}
+
+	res, dlErr := m.downloadAndFinalize(ctx, destPath, firstOpts)
+	if dlErr != nil && secondOpts.SourceURL != "" && secondOpts.SourceURL != firstOpts.SourceURL && ctx.Err() == nil {
+		// Preserve ExpectedSHA256 / alternate mirror context so fallback resumes the same verified object's .part.
+		secondOpts.FallbackURL = firstOpts.SourceURL
+		res, dlErr = m.downloadAndFinalize(ctx, destPath, secondOpts)
 	}
 	if dlErr != nil {
 		call.err = dlErr
@@ -396,6 +409,36 @@ func (m *Manager) EnsureFile(ctx context.Context, opts EnsureOptions) (*EnsureRe
 	call.path = res.LocalPath
 	call.rec = res.Receipt
 	return res, nil
+}
+
+func (m *Manager) matchingPartMeta(destPath string, opts EnsureOptions) (partMeta, bool) {
+	partPath := destPath + ".part"
+	metaPath := destPath + ".part.json"
+	pst, err := os.Stat(partPath)
+	if err != nil || pst.IsDir() || pst.Size() <= 0 {
+		return partMeta{}, false
+	}
+	rawMeta, mErr := os.ReadFile(metaPath)
+	if mErr != nil {
+		return partMeta{}, false
+	}
+	var savedMeta partMeta
+	if json.Unmarshal(rawMeta, &savedMeta) != nil {
+		return partMeta{}, false
+	}
+	if opts.ExpectedSHA256 != "" {
+		if savedMeta.SHA256 == "" || !strings.EqualFold(savedMeta.SHA256, opts.ExpectedSHA256) {
+			return partMeta{}, false
+		}
+		if savedMeta.SourceURL == opts.SourceURL || (opts.FallbackURL != "" && savedMeta.SourceURL == opts.FallbackURL) {
+			return savedMeta, true
+		}
+		return partMeta{}, false
+	}
+	if savedMeta.SourceURL == opts.SourceURL {
+		return savedMeta, true
+	}
+	return partMeta{}, false
 }
 
 func (m *Manager) downloadAndFinalize(ctx context.Context, destPath string, opts EnsureOptions) (*EnsureResult, error) {
@@ -411,20 +454,13 @@ func (m *Manager) downloadAndFinalize(ctx context.Context, destPath string, opts
 		if pst.IsDir() {
 			// Clear an accidental empty directory at .part so OpenFile/Rename cannot fail.
 			_ = os.Remove(partPath)
-		} else if pst.Size() > 0 {
-			if rawMeta, mErr := os.ReadFile(metaPath); mErr == nil {
-				if jsonErr := json.Unmarshal(rawMeta, &savedMeta); jsonErr == nil {
-					// Only reuse .part if target SHA/URL matches this exact object identity.
-					shaMatch := opts.ExpectedSHA256 == "" || savedMeta.SHA256 == "" || strings.EqualFold(savedMeta.SHA256, opts.ExpectedSHA256)
-					urlMatch := savedMeta.SourceURL == opts.SourceURL
-					if shaMatch && urlMatch {
-						existingOffset = pst.Size()
-					}
-				}
-			}
+		} else if meta, ok := m.matchingPartMeta(destPath, opts); ok {
+			savedMeta = meta
+			existingOffset = pst.Size()
 		}
 	}
 
+	sameOrigin := savedMeta.SourceURL == opts.SourceURL
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, opts.SourceURL, nil)
 	if err != nil {
 		return nil, err
@@ -437,7 +473,7 @@ func (m *Manager) downloadAndFinalize(ctx context.Context, destPath string, opts
 	}
 	if existingOffset > 0 {
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", existingOffset))
-		if savedMeta.ETag != "" {
+		if sameOrigin && savedMeta.ETag != "" {
 			req.Header.Set("If-Range", savedMeta.ETag)
 		}
 	}
@@ -456,7 +492,8 @@ func (m *Manager) downloadAndFinalize(ctx context.Context, destPath string, opts
 		}
 		okRange, totalSize := validContentRange(resp.Header.Get("Content-Range"), existingOffset)
 		etag := strings.TrimSpace(resp.Header.Get("ETag"))
-		if !okRange || (savedMeta.ETag != "" && etag != "" && etag != savedMeta.ETag) ||
+		etagConflict := sameOrigin && savedMeta.ETag != "" && etag != "" && etag != savedMeta.ETag
+		if !okRange || etagConflict ||
 			(opts.ExpectedBytes > 0 && totalSize > 0 && totalSize != opts.ExpectedBytes) {
 			// Entity mismatch: truncate and retry cleanly from 0 instead of splicing corrupt bytes.
 			_ = os.Remove(partPath)
@@ -567,6 +604,13 @@ func (m *Manager) freshDownload(ctx context.Context, destPath, partPath, metaPat
 		return nil, &HTTPError{StatusCode: resp.StatusCode, URL: opts.SourceURL, BodySnippet: string(snippet)}
 	}
 	etag := strings.TrimSpace(resp.Header.Get("ETag"))
+	metaPayload, _ := json.Marshal(partMeta{
+		SourceURL: opts.SourceURL,
+		ETag:      etag,
+		TotalSize: opts.ExpectedBytes,
+		SHA256:    opts.ExpectedSHA256,
+	})
+	_ = atomicWriteFile(metaPath, metaPayload)
 	f, err := os.OpenFile(partPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
 		return nil, err
