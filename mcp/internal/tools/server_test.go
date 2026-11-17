@@ -693,6 +693,34 @@ func TestM6R1_M6R4_M6R5_OrderbookInspect_Coverage_Pagination_And_VisionRouting(t
 	if mixedCov["status"] != "partial" {
 		t.Fatalf("expected partial coverage when ETHUSDT lacks snapshot, got %v", mixedCov)
 	}
+	quietCov := buildRecorderCoverage(&recorder.QueryPlan{
+		ReadyChunksMatched: 2,
+		RecordedSymbols:    []string{"BTCUSDT"},
+		RequestedSymbols:   []string{"BTCUSDT"},
+		HasSymbolMetadata:  true,
+	}, []string{"BTCUSDT"}, map[string]any{
+		"reliable_emissions":  0,
+		"window_resync_count": 0,
+		"snapshots_seen":      1,
+		"symbol_coverage": map[string]any{
+			"BTCUSDT": map[string]any{"status": "complete", "reason": "synchronized_quiet_window_no_updates"},
+		},
+	}, true, "")
+	if quietCov["status"] != "complete" {
+		t.Fatalf("expected complete coverage for quiet synchronized window, got %v", quietCov)
+	}
+	mixedQuietCov := buildRecorderCoverage(mixedPlan, mixedPlan.RequestedSymbols, map[string]any{
+		"reliable_emissions":  0,
+		"window_resync_count": 0,
+		"snapshots_seen":      1,
+		"symbol_coverage": map[string]any{
+			"BTCUSDT": map[string]any{"status": "complete", "reason": "synchronized_quiet_window_no_updates"},
+			"ETHUSDT": map[string]any{"status": "unavailable", "reason": "resync_required_after_gap_or_reconnect"},
+		},
+	}, true, "")
+	if mixedQuietCov["status"] != "partial" {
+		t.Fatalf("expected partial coverage when BTCUSDT is quiet complete and ETHUSDT unavailable, got %v", mixedQuietCov)
+	}
 	unknownCov := buildRecorderCoverage(&recorder.QueryPlan{
 		ReadyChunksMatched: 1,
 		RequestedSymbols:   []string{"BTCUSDT"},

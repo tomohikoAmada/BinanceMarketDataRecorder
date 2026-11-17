@@ -541,6 +541,9 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 				switch symStat {
 				case "complete":
 					nComplete++
+					if symReason == "synchronized_quiet_window_no_updates" {
+						notes = append(notes, fmt.Sprintf("%s orderbook remained synchronized during requested window with 0 diff_depth updates (quiet window)", uSym))
+					}
 				case "partial":
 					nPartial++
 					if symReason != "" {
@@ -588,7 +591,7 @@ func buildRecorderCoverage(plan *recorder.QueryPlan, requestedSymbols []string, 
 				notes = append(notes, fmt.Sprintf("Per-symbol orderbook coverage was not verified across all %d requested symbols (%s)", len(requestedSymbols), strings.Join(requestedSymbols, ",")))
 			}
 		}
-		if relEmissions == 0 && status != "unavailable" {
+		if relEmissions == 0 && status != "unavailable" && (len(symCoverage) == 0 || unsyncReason != "") {
 			status = "unavailable"
 			if unsyncReason != "" {
 				reasons = append(reasons, unsyncReason)

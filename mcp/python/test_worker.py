@@ -637,3 +637,157 @@ def test_m6r2_r3_r4_r6_lookahead_mixed_export_coverage_and_bounded_streaming(tmp
         assert m_res["rows"][0]["symbol"] == "BTCUSDT" and m_res["rows"][0]["values"]
 
 
+def test_m6l1_l2_l3_orderbook_recovery_boundaries_and_window_coverage(tmp_path: Path, monkeypatch) -> None:
+    """Positive regressions for M6-L1 (flagged/unflagged/Spot/consecutive markers), M6-L2 (malformed invalidation), and M6-L3 (window-scoped coverage)."""
+    from types import SimpleNamespace
+
+    base_ms = 1_794_873_600_000
+    snap = lambda sym, t, uid: _rest_env("um_perpetual", sym, "depth_snapshot", base_ms + t, {"lastUpdateId": uid, "bids": [["100", "1"]], "asks": [["101", "1"]]})
+    delta = lambda sym, t, f, l, prev, flags=(), conn="c1": _env(
+        "um_perpetual", sym, "diff_depth", base_ms + t,
+        {"U": f, "u": l, "pu": prev, "b": [["100", "2"]], "a": []}, conn=conn, flags=flags,
+    )
+
+    def _run(events, symbols=None, market="usdm", start=150, end=400):
+        def _it(req):
+            wanted = {x["stream"] for x in req.get("chunks", [])}
+            for env in sorted(events, key=lambda e: e.receive_time_utc_ns):
+                if not wanted or env.stream in wanted:
+                    yield "p-m6l", SimpleNamespace(chunk_id="chunk-" + env.stream), SimpleNamespace(envelope=env)
+
+        monkeypatch.setattr(worker, "_iter_partition_records", _it)
+        return worker.dispatch({
+            "operation": "query_orderbook",
+            "market": market,
+            "symbols": symbols or ["BTCUSDT"],
+            "start_utc_ns": (base_ms + start) * 1_000_000,
+            "end_utc_ns": (base_ms + end) * 1_000_000,
+            "sample_step_ms": 1,
+            "limit": 20,
+            "chunks": [{"stream": "rest_observations"}, {"stream": "diff_depth"}],
+        })
+
+    # 1. Real sealed Raw + Catalog fixture: flagged unique USDM bridge payload (U < lastUpdateId == u) on reconnect.
+    storage_root = tmp_path / "l1_layout"
+    layout = ensure_storage_layout(storage_root)
+    catalog = Catalog(layout.catalog)
+    ext_root = tmp_path / "l1_ext"
+    sid = "storage-m6l-real"
+    ch_snaps = _make_archived_chunk(
+        layout, catalog, ext_root, sid, market="um_perpetual", symbol="BTCUSDT", stream="rest_observations",
+        envelopes=[snap("BTCUSDT", 0, 100), snap("BTCUSDT", 110, 200)],
+    )
+    ch_dd = _make_archived_chunk(
+        layout, catalog, ext_root, sid, market="um_perpetual", symbol="BTCUSDT", stream="diff_depth",
+        envelopes=[
+            delta("BTCUSDT", 10, 100, 101, 99, conn="c1"),
+            delta("BTCUSDT", 100, 195, 200, 194, flags=("sequence_gap", "depth_snapshot_pending"), conn="c2"),
+            delta("BTCUSDT", 200, 201, 201, 200, conn="c2"),
+        ],
+    )
+    catalog.close()
+    real_res = worker.dispatch({
+        "operation": "query_orderbook",
+        "market": "usdm",
+        "symbols": ["BTCUSDT"],
+        "start_utc_ns": (base_ms + 150) * 1_000_000,
+        "end_utc_ns": (base_ms + 400) * 1_000_000,
+        "sample_step_ms": 1,
+        "limit": 20,
+        "partitions": [{"partition_id": "p-test", "catalog_path": str(layout.catalog)}],
+        "external_roots": {sid: str(ext_root)},
+        "chunks": [ch_snaps, ch_dd],
+    })
+    assert real_res["total_rows"] == 1
+    assert real_res["stats"]["warmup_resync_count"] == 1
+    assert real_res["stats"]["recovery_count"] == 2
+    assert real_res["symbol_coverage"]["BTCUSDT"]["status"] == "complete"
+    assert real_res["symbol_coverage"]["BTCUSDT"]["synchronized_at_window_start"] is True
+
+    # 2. M6-L1 variants: strict U < lastUpdateId < u flagged, ingress_drop valid payload, unflagged pu break, consecutive reconnect_gap, and Spot +1 bridge.
+    base_sync = [snap("BTCUSDT", 0, 100), delta("BTCUSDT", 10, 100, 101, 99)]
+    for evs in (
+        base_sync + [delta("BTCUSDT", 100, 199, 201, 198, ("sequence_gap",), "c2"), snap("BTCUSDT", 110, 200), delta("BTCUSDT", 200, 202, 202, 201, conn="c2")],
+        base_sync + [delta("BTCUSDT", 100, 200, 200, 199, ("ingress_drop", "depth_snapshot_pending")), snap("BTCUSDT", 110, 200), delta("BTCUSDT", 200, 201, 201, 200)],
+        base_sync + [delta("BTCUSDT", 100, 200, 200, 199), snap("BTCUSDT", 110, 200), delta("BTCUSDT", 200, 201, 201, 200)],
+        base_sync + [
+            delta("BTCUSDT", 100, 200, 200, 199, ("reconnect_gap",), "c2"),
+            delta("BTCUSDT", 101, 201, 201, 200, ("reconnect_gap",), "c2"),
+            snap("BTCUSDT", 110, 200),
+            delta("BTCUSDT", 200, 202, 202, 201, conn="c2"),
+        ],
+    ):
+        r = _run(evs)
+        assert r["total_rows"] == 1 and r["rows"][0]["state"] == "SYNCHRONIZED"
+        assert r["stats"]["resync_count"] == 1 and r["stats"]["recovery_count"] == 2
+        assert r["symbol_coverage"]["BTCUSDT"]["status"] == "complete"
+
+    spot_res = _run([
+        _rest_env("spot", "BTCUSDT", "depth_snapshot", base_ms, {"lastUpdateId": 100, "bids": [["100", "1"]], "asks": [["101", "1"]]}),
+        _env("spot", "BTCUSDT", "diff_depth", base_ms + 10, {"U": 101, "u": 101, "b": [], "a": []}),
+        _env("spot", "BTCUSDT", "diff_depth", base_ms + 100, {"U": 201, "u": 201, "b": [], "a": []}, flags=("sequence_gap",)),
+        _rest_env("spot", "BTCUSDT", "depth_snapshot", base_ms + 110, {"lastUpdateId": 200, "bids": [["100", "1"]], "asks": [["101", "1"]]}),
+        _env("spot", "BTCUSDT", "diff_depth", base_ms + 200, {"U": 202, "u": 202, "b": [], "a": []}),
+    ], market="spot")
+    assert spot_res["total_rows"] == 1 and spot_res["stats"]["recovery_count"] == 2
+    assert spot_res["symbol_coverage"]["BTCUSDT"]["status"] == "complete"
+
+    # 3. M6-L2: malformed boundary (with/without conn switch) invalidates prior book and prevents emitting stale SYNCHRONIZED frames until re-bridged.
+    for conn2 in ("c1", "c2"):
+        mal_no_snap = _run(base_sync + [
+            _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 100, {}, conn=conn2, flags=("malformed", "sequence_gap", "ingress_drop")),
+            delta("BTCUSDT", 200, 102, 102, 101, conn=conn2),
+        ])
+        assert mal_no_snap["total_rows"] == 0
+        assert mal_no_snap["stats"]["resync_count"] == 1
+        assert mal_no_snap["symbol_coverage"]["BTCUSDT"]["status"] == "unavailable"
+        assert mal_no_snap["symbol_coverage"]["BTCUSDT"]["reason"] == "resync_required_after_gap_or_reconnect"
+        assert mal_no_snap["unsynchronized_reason"] == "resync_required_after_gap_or_reconnect"
+        assert "no_subsequent_snapshot" not in str(mal_no_snap)
+
+    mal_recovered = _run(base_sync + [
+        _env("um_perpetual", "BTCUSDT", "diff_depth", base_ms + 90, {}, flags=("malformed", "sequence_gap", "ingress_drop")),
+        delta("BTCUSDT", 100, 200, 200, 199),
+        snap("BTCUSDT", 110, 200),
+        delta("BTCUSDT", 200, 201, 201, 200),
+    ])
+    assert mal_recovered["total_rows"] == 1 and mal_recovered["stats"]["resync_count"] == 1
+
+    # 4. M6-L3: Warmup sync + warmup unbridged failure despite post-gap snapshot -> unavailable with updates_did_not_bridge_snapshot (NEVER complete!).
+    warmup_fail = _run(base_sync + [
+        delta("BTCUSDT", 90, 199, 199, 198, ("sequence_gap",), "c2"),
+        snap("BTCUSDT", 110, 250),
+        delta("BTCUSDT", 200, 260, 260, 259, conn="c2"),
+    ])
+    assert warmup_fail["total_rows"] == 0
+    assert warmup_fail["symbol_coverage"]["BTCUSDT"]["status"] == "unavailable"
+    assert warmup_fail["symbol_coverage"]["BTCUSDT"]["reason"] == "updates_did_not_bridge_snapshot"
+    assert warmup_fail["unsynchronized_reason"] == "updates_did_not_bridge_snapshot"
+
+    # Quiet synchronized window (0 in-window updates) -> complete without falsely claiming unsynchronized.
+    quiet = _run(base_sync)
+    assert quiet["total_rows"] == 0
+    assert quiet["unsynchronized_reason"] is None
+    assert quiet["symbol_coverage"]["BTCUSDT"]["status"] == "complete"
+    assert quiet["symbol_coverage"]["BTCUSDT"]["reason"] == "synchronized_quiet_window_no_updates"
+    assert quiet["actual_time_range"]["sync_timestamp_scope"]
+
+    # Mixed request: BTCUSDT succeeds cleanly while ETHUSDT loses warmup sync -> BTC complete, ETH unavailable.
+    mixed = _run(
+        base_sync
+        + [delta("BTCUSDT", 200, 102, 102, 101)]
+        + [
+            snap("ETHUSDT", 0, 100),
+            delta("ETHUSDT", 10, 100, 101, 99),
+            delta("ETHUSDT", 100, 205, 205, 204, ("sequence_gap",), "c2"),
+            snap("ETHUSDT", 110, 200),
+            delta("ETHUSDT", 200, 206, 206, 205, conn="c2"),
+        ],
+        symbols=["BTCUSDT", "ETHUSDT"],
+    )
+    assert mixed["symbol_coverage"]["BTCUSDT"]["status"] == "complete"
+    assert mixed["symbol_coverage"]["ETHUSDT"]["status"] == "unavailable"
+    assert mixed["symbol_coverage"]["ETHUSDT"]["reason"] == "updates_did_not_bridge_snapshot"
+
+
+

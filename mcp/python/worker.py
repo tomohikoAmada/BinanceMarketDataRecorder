@@ -855,6 +855,7 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
     # Per-symbol tracking for M6-R4 coverage.
     sym_snapshots_seen: dict[str, int] = {}
     sym_depth_updates_seen: dict[str, int] = {}
+    sym_in_window_depth_seen: dict[str, int] = {}
     sym_emissions: dict[str, int] = {}
     sym_warmup_resyncs: dict[str, int] = {}
     sym_window_resyncs: dict[str, int] = {}
@@ -1059,13 +1060,11 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
             env = rec.envelope
             if end_ns > 0 and env.receive_time_utc_ns >= end_ns and env.stream == "diff_depth":
                 continue
-            if env.stream != "diff_depth" or "malformed" in env.capture_flags:
+            if env.stream != "diff_depth":
                 continue
             sym = env.symbol.upper()
             if symbols and sym not in symbols:
                 continue
-            if _in_window(env.receive_time_utc_ns, start_ns, end_ns):
-                in_window_depth_seen[sym] = in_window_depth_seen.get(sym, 0) + 1
             mkt = "spot" if env.market == "spot" else env.market
             key = (mkt, sym)
             recon = get_recon(mkt, sym)
@@ -1076,12 +1075,13 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
                 drain_due_snapshots(writer, key, last_event_ts[key])
             last_event_ts[key] = env.receive_time_utc_ns
 
-            gap_flag = any(f in env.capture_flags for f in ("sequence_gap", "reconnect_gap", "ingress_drop"))
+            is_malformed = "malformed" in env.capture_flags
+            gap_flag = is_malformed or any(f in env.capture_flags for f in ("sequence_gap", "reconnect_gap", "ingress_drop"))
             prev_conn = last_conn.get(key)
             conn_changed = prev_conn is not None and prev_conn != env.connection_id
+            last_conn[key] = env.connection_id
 
             if gap_flag:
-                last_conn[key] = env.connection_id
                 q = snapshot_queues.get(key)
                 if q:
                     snapshot_queues[key] = [item for item in q if item[0] > env.receive_time_utc_ns]
@@ -1091,15 +1091,19 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
                     buffered_upds[key] = []
                     record_resync(sym, env.receive_time_utc_ns, "capture_flag_gap")
                     gap_episode_open[key] = True
-                continue
-
-            last_conn[key] = env.connection_id
-            if conn_changed:
+            elif conn_changed:
                 recon.restart_bootstrap()
                 pending_snaps[key] = None
                 buffered_upds[key] = []
                 record_resync(sym, env.receive_time_utc_ns, "connection_reset")
-                gap_episode_open[key] = False
+                gap_episode_open[key] = True
+
+            if is_malformed:
+                continue
+
+            if _in_window(env.receive_time_utc_ns, start_ns, end_ns):
+                in_window_depth_seen[sym] = in_window_depth_seen.get(sym, 0) + 1
+                sym_in_window_depth_seen[sym] = sym_in_window_depth_seen.get(sym, 0) + 1
 
             # Drain snapshots arriving up to this event BEFORE offering upd so an already-due
             # snapshot synchronizes prior buffered deltas at its true arrival time without peeking at upd.
@@ -1121,7 +1125,6 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
             except (KeyError, ValueError, TypeError, json.JSONDecodeError):
                 continue
 
-            gap_episode_open[key] = False
             stats["depth_updates_seen"] += 1
             sym_depth_updates_seen[sym] = sym_depth_updates_seen.get(sym, 0) + 1
             was_reliable = recon.is_reliable
@@ -1132,7 +1135,8 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
                 buffered_upds[key] = []
                 record_resync(sym, env.receive_time_utc_ns, "sequence_gap")
                 gap_episode_open[key] = True
-                continue
+                # Preserve this valid triggering update in the reset bootstrap buffer so the next snapshot can bridge it.
+                applied = recon.offer(upd)
 
             if not recon.is_reliable:
                 buffered_upds.setdefault(key, []).append((upd.final_update_id, env.receive_time_utc_ns, chunk.chunk_id))
@@ -1144,6 +1148,7 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
             pending_snaps[key] = _try_bridge(recon, prev_pending)
             just_bridged = (not was_reliable) and recon.is_reliable
             if just_bridged:
+                gap_episode_open[key] = False
                 pending_snap_ts = prev_pending["ts_ns"] if prev_pending is not None else env.receive_time_utc_ns
                 ready_ts_ns = max(pending_snap_ts, env.receive_time_utc_ns)
                 if buffered_upds.get(key):
@@ -1154,6 +1159,7 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
                 _mark_synchronized(sym, pending_snap_ts, ready_ts_ns)
                 write_frame(writer, mkt, sym, chunk.chunk_id, ready_ts_ns, force=True)
             elif recon.is_reliable and applied:
+                gap_episode_open[key] = False
                 _mark_synchronized(sym, env.receive_time_utc_ns, env.receive_time_utc_ns)
                 write_frame(writer, mkt, sym, chunk.chunk_id, env.receive_time_utc_ns)
 
@@ -1168,43 +1174,49 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
         | set(sym_depth_updates_seen.keys())
         | set(sym_emissions.keys())
     )
+
+    def _evidence_unsync_reason(sym_name: str, sn_cnt: int, du_cnt: int, ev_list: list[dict[str, Any]], snap_ts_list: list[int]) -> str:
+        if sn_cnt == 0:
+            return "no_depth_snapshots_for_symbol"
+        if du_cnt == 0:
+            return "no_diff_depth_events_before_end"
+        if ev_list:
+            last_unsync_ns = max(int(e["receive_time_utc_ns"]) for e in ev_list)
+            if any(ts >= last_unsync_ns for ts in snap_ts_list):
+                return "updates_did_not_bridge_snapshot"
+            return "resync_required_after_gap_or_reconnect"
+        return "updates_did_not_bridge_snapshot"
+
     symbol_coverage: dict[str, dict[str, Any]] = {}
     for sym in eval_syms:
         em = sym_emissions.get(sym, 0)
         sn = sym_snapshots_seen.get(sym, 0)
         du = sym_depth_updates_seen.get(sym, 0)
+        in_win_du = sym_in_window_depth_seen.get(sym, 0)
         wr = sym_window_resyncs.get(sym, 0)
+        reliable_start = sym_reliable_at_start.get(sym, False)
+        mid_partial = sym_mid_window_partial.get(sym, False)
         sym_unsync = [e for e in unsync_events if e.get("symbol") == sym]
-        if em > 0 or sym in sym_first_sync_ns:
-            if wr > 0:
-                s_status = "partial"
-                s_reason: str | None = "window_resync_occurred"
-            elif sym_mid_window_partial.get(sym, False):
-                s_status = "partial"
-                s_reason = "mid_window_baseline_recovery_only"
-            else:
-                s_status = "complete"
-                s_reason = None
+        if reliable_start and wr == 0 and not mid_partial:
+            s_status = "complete"
+            s_reason: str | None = "synchronized_quiet_window_no_updates" if em == 0 else None
+        elif em > 0 or (reliable_start and wr > 0) or mid_partial:
+            s_status = "partial"
+            s_reason = "window_resync_occurred" if wr > 0 else "mid_window_baseline_recovery_only"
         else:
             s_status = "unavailable"
-            if sn == 0:
-                s_reason = "no_depth_snapshots_for_symbol"
-            elif du == 0:
-                s_reason = "no_diff_depth_events_before_end"
-            elif any(e.get("phase") == "window" or e.get("reason") in ("capture_flag_gap", "connection_reset", "sequence_gap") for e in sym_unsync):
-                s_reason = "resync_required_after_gap_or_reconnect_no_subsequent_snapshot"
-            else:
-                s_reason = "updates_did_not_bridge_snapshot"
+            s_reason = _evidence_unsync_reason(sym, sn, du, sym_unsync, snap_timestamps_by_sym.get(sym, []))
         symbol_coverage[sym] = {
             "status": s_status,
             "reason": s_reason,
             "snapshots_seen": sn,
             "depth_updates_seen": du,
+            "in_window_depth_updates": in_win_du,
             "reliable_emissions": em,
             "warmup_resync_count": sym_warmup_resyncs.get(sym, 0),
             "window_resync_count": wr,
             "recovery_count": sym_recoveries.get(sym, 0),
-            "synchronized_at_window_start": sym_reliable_at_start.get(sym, False),
+            "synchronized_at_window_start": reliable_start,
             "first_synchronized_utc_ns": str(sym_first_sync_ns[sym]) if sym in sym_first_sync_ns else None,
             "last_synchronized_utc_ns": str(sym_last_sync_ns[sym]) if sym in sym_last_sync_ns else None,
         }
@@ -1213,15 +1225,23 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
 
     all_snaps = [ts for vals in snap_timestamps_by_sym.values() for ts in vals]
     unsync_reason = None
-    if stats["reliable_emissions"] == 0:
-        if stats["snapshots_seen"] == 0:
-            unsync_reason = "no_depth_snapshots_for_symbol"
-        elif stats["depth_updates_seen"] == 0:
-            unsync_reason = "no_diff_depth_events_before_end"
-        elif any(e.get("phase") == "window" or e.get("reason") in ("capture_flag_gap", "connection_reset", "sequence_gap") for e in unsync_events):
-            unsync_reason = "resync_required_after_gap_or_reconnect_no_subsequent_snapshot"
+    any_sym_synced_in_window = any(entry["status"] in ("complete", "partial") for entry in symbol_coverage.values())
+    if stats["reliable_emissions"] == 0 and not any_sym_synced_in_window:
+        unavail_reasons = {
+            entry["reason"]
+            for entry in symbol_coverage.values()
+            if entry.get("status") == "unavailable" and entry.get("reason")
+        }
+        if len(unavail_reasons) == 1:
+            unsync_reason = next(iter(unavail_reasons))
         else:
-            unsync_reason = "updates_did_not_bridge_snapshot"
+            unsync_reason = _evidence_unsync_reason(
+                "",
+                stats["snapshots_seen"],
+                stats["depth_updates_seen"],
+                unsync_events,
+                all_snaps,
+            )
 
     return {
         "operation": "query_orderbook",
@@ -1234,6 +1254,7 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
             "last_snapshot_utc_ns": str(max(all_snaps)) if all_snaps else None,
             "first_synchronized_utc_ns": str(first_sync_ns) if first_sync_ns is not None else None,
             "last_synchronized_utc_ns": str(last_sync_ns) if last_sync_ns is not None else None,
+            "sync_timestamp_scope": "replay_window_including_warmup_not_recorder_retention_end",
             "first_emitted_utc_ns": preview_rows[0]["receive_time_utc_ns"] if preview_rows else None,
             "in_window_depth_updates": sum(in_window_depth_seen.values()),
         },
