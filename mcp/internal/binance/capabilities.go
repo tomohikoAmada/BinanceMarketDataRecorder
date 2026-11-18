@@ -443,7 +443,7 @@ func buildRegistry() []Capability {
 		},
 		{
 			EndpointID: "usdm.ws.forceOrder", Market: MarketUSDM, Transport: "ws_bounded", Method: "WS",
-			BaseURL: "wss://fstream.binance.com/ws", Path: "!forceOrder@arr", OptionalParams: []string{"symbol", "duration_seconds", "max_events"},
+			BaseURL: USDMWSBaseURL, Path: "!forceOrder@arr", OptionalParams: []string{"symbol", "duration_seconds", "max_events"},
 			Weight: "connection-bounded", Auth: "none", TimeUnit: "ms", QtyUnit: "base_asset",
 			RetentionBoundary: "ws-only-live-bounded (Binance deprecated REST forceOrders; historical only in Recorder)", TTLSeconds: 0,
 			DocURL: USDMDocURL, Status: StatusImplemented,

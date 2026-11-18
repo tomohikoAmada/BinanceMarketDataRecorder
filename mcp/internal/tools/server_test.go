@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -1280,8 +1282,9 @@ else:
 		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID, "offline": true,
 		"streams": []string{"diff_depth", "rest_observations"}, "start_utc_ns": "1000", "end_utc_ns": "2000", "include_baseline": true,
 	})
-	if estBaseRes.IsError || estBaseOut["warmup_included"] != true {
-		t.Fatalf("expected warmup_included=true with include_baseline=true, got %v", estBaseOut)
+	estBaseMap := mapStringAny(estBaseOut["estimate"])
+	if estBaseRes.IsError || estBaseOut["warmup_included"] != false || estBaseOut["warmup_confirmed"] != false || estBaseMap["baseline_status"] != "none" {
+		t.Fatalf("expected honest warmup_confirmed=false & baseline_status=none when no depth_snapshot exists, got %v", estBaseOut)
 	}
 
 	// 4. M6-D3: query_public_endpoint accepts newly registered 4-market public GET & bounded WS endpoints.
@@ -1446,5 +1449,285 @@ elif op == "query_orderbook":
 	provMap := mapStringAny(out["recorder_provenance"])
 	if provMap["baseline_start_utc_ns"] != "1000000000000" {
 		t.Fatalf("expected baseline_start_utc_ns=1000000000000, got %v", provMap["baseline_start_utc_ns"])
+	}
+}
+
+func TestM6P19_UnifiedOrderbookEstimatePrefetchQuery_Budget_And_UnindexedBridge(t *testing.T) {
+	// Serve raw chunks, external archive manifests (with sequence_ranges), catalog, and partition index over HTTP
+	// so we can test cold estimate (0 HTTP raw/catalog), online budget, prefetch -> offline equivalence, and unindexed bridge!
+	revID := "rev-m6p19-unified"
+	pid := "2026-11-18"
+	filesHTTP := make(map[string][]byte)
+	var httpHits atomic.Int32
+	var mu sync.Mutex
+	var rawFetchedPaths []string
+
+	srvHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpHits.Add(1)
+		mu.Lock()
+		rawFetchedPaths = append(rawFetchedPaths, r.URL.Path)
+		mu.Unlock()
+		p := strings.TrimPrefix(r.URL.Path, "/")
+		data, ok := filesHTTP[p]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_, _ = w.Write(data)
+	})
+
+	session, cfg := setupTestMCPClient(t, srvHandler)
+	mockWorkerPath := filepath.Join(t.TempDir(), "mock_p19_worker.py")
+	mockWorkerPy := `import json, sys
+req = json.load(sys.stdin)
+op = req.get("operation")
+cids = sorted(c["chunk_id"] for c in req.get("chunks", []))
+syms = set(s.upper() for s in (req.get("symbols") or []))
+if op == "inspect_orderbook_snapshots":
+    out = {}
+    if "rest-btc-old" in cids and (not syms or "BTCUSDT" in syms):
+        out["BTCUSDT"] = {"receive_time_utc_ns": "1200000000000", "last_update_id": "100", "source_chunk_id": "rest-btc-old"}
+    if "rest-eth-fresh" in cids and (not syms or "ETHUSDT" in syms):
+        out["ETHUSDT"] = {"receive_time_utc_ns": "3500000000000", "last_update_id": "200", "source_chunk_id": "rest-eth-fresh"}
+    print(json.dumps({
+        "operation": op,
+        "snapshots_found": len(out),
+        "latest_before_start_ns": {k: v["receive_time_utc_ns"] for k, v in out.items()},
+        "latest_before_start_snapshots": out,
+    }))
+elif op == "query_orderbook":
+    # Emit verified bridge chunk list & ensure early bridge for L=100 was included!
+    print(json.dumps({
+        "operation": op,
+        "stats": {
+            "snapshots_seen": 2,
+            "depth_updates_seen": len(cids),
+            "resync_count": 0,
+            "warmup_resync_count": 0,
+            "window_resync_count": 0,
+            "recovery_count": 1,
+            "reliable_emissions": 1,
+            "symbol_coverage": {
+                "BTCUSDT": {"status": "complete", "reason": None},
+                "ETHUSDT": {"status": "complete", "reason": None},
+            },
+        },
+        "total_rows": 1,
+        "rows": [{"symbol": "BTCUSDT", "update_id": "102", "chunks_seen": cids}],
+    }))
+`
+	if err := os.WriteFile(mockWorkerPath, []byte(mockWorkerPy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg.PythonBin = "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python"
+	cfg.WorkerScript = mockWorkerPath
+
+	addHTTPChunk := func(id, sym, stream string, lo, hi int64, chunkSeq map[string]any, manSeq map[string]any, connIDs []string, rawSize int) map[string]any {
+		rawBytes := []byte(strings.Repeat(id[:1], rawSize))
+		shaHex := fmt.Sprintf("%x", sha256.Sum256(rawBytes))
+		manObj := map[string]any{"raw_manifest": map[string]any{"symbol": sym}}
+		if manSeq != nil {
+			manObj["raw_manifest"].(map[string]any)["sequence_ranges"] = manSeq
+		}
+		if len(connIDs) > 0 {
+			manObj["raw_manifest"].(map[string]any)["connection_ids"] = connIDs
+		}
+		manBytes, _ := json.Marshal(manObj)
+		filesHTTP["raw/"+id] = rawBytes
+		filesHTTP["man/"+id] = manBytes
+		obj := map[string]any{
+			"chunk_id": id, "market": "um_perpetual", "symbol": sym, "stream": stream,
+			"state": "ARCHIVED_VERIFIED", "ready": true, "storage_id": "s1",
+			"target_relative_path":            "raw/" + id + ".bmdr.zst",
+			"external_manifest_relative_path": "manifests/" + id + ".json",
+			"archive_url_path":                "raw/" + id,
+			"manifest_url_path":               "man/" + id,
+			"stored_bytes":                    len(rawBytes),
+			"stored_sha256":                   shaHex,
+			"uncompressed_bytes":              len(rawBytes),
+			"created_at_utc_ns":               lo,
+			"updated_at_utc_ns":               hi,
+			"receive_time_utc_range_ns":       map[string]any{"min": lo, "max": hi},
+		}
+		if chunkSeq != nil {
+			obj["sequence_ranges"] = chunkSeq
+		}
+		if len(connIDs) > 0 {
+			obj["connection_ids"] = connIDs
+		}
+		return obj
+	}
+	addArt := func(fname string, content []byte) map[string]any {
+		sum := fmt.Sprintf("%x", sha256.Sum256(content))
+		short := sum[:16]
+		up := "snapshots/usdm/" + pid + "/" + short + "/" + fname
+		filesHTTP[up] = content
+		return map[string]any{"bytes": int64(len(content)), "sha256": sum, "url_path": up}
+	}
+
+	// Build unindexed chunks.jsonl for BTC (sequence_ranges only in external manifest!), heterogeneous ETH snapshot,
+	// proven non-depth-snapshot REST chunk, and non-depth target-window agg_trade chunks (plus an early warmup-period agg_trade).
+	chunks := []map[string]any{
+		// Proven non-snapshot REST chunk -> must be EXCLUDED in orderbook planning!
+		addHTTPChunk("rest-funding-non-snap", "__GLOBAL__", "rest_observations", 1_000_000_000_000, 4_100_000_000_000,
+			map[string]any{"sourceStream": map[string]any{"min": "exchange_info", "max": "funding_rate"}}, nil, nil, 1024),
+		// Actual snapshot chunks:
+		addHTTPChunk("rest-btc-old", "BTCUSDT", "rest_observations", 1_200_000_000_000, 1_200_000_000_000,
+			map[string]any{"lastUpdateId": map[string]any{"min": 100, "max": 100}}, nil, []string{"c-btc"}, 512),
+		addHTTPChunk("rest-eth-fresh", "ETHUSDT", "rest_observations", 3_500_000_000_000, 3_500_000_000_000,
+			map[string]any{"lastUpdateId": map[string]any{"min": 200, "max": 200}}, nil, []string{"c-eth"}, 512),
+		// Unindexed old-index fixture for BTC (sequence_ranges omitted in chunks.jsonl, present in manifest / connIDs):
+		// L=100 at 1.2e12; btc-early [1.0e12..1.1e12] U=99,u=100; btc-late [1.11e12..1.15e12] U=101,u=101; btc-win [4.0e12..4.1e12] u=102.
+		addHTTPChunk("btc-too-old", "BTCUSDT", "diff_depth", 500_000_000_000, 900_000_000_000,
+			nil, map[string]any{"u": map[string]any{"min": 10, "max": 80}}, []string{"c-btc-prev"}, 256),
+		addHTTPChunk("btc-early", "BTCUSDT", "diff_depth", 1_000_000_000_000, 1_100_000_000_000,
+			nil, map[string]any{"u": map[string]any{"min": 99, "max": 100}}, []string{"c-btc"}, 256),
+		addHTTPChunk("btc-late", "BTCUSDT", "diff_depth", 1_110_000_000_000, 1_150_000_000_000,
+			nil, map[string]any{"u": map[string]any{"min": 101, "max": 101}}, []string{"c-btc"}, 256),
+		addHTTPChunk("btc-win", "BTCUSDT", "diff_depth", 4_000_000_000_000, 4_100_000_000_000,
+			map[string]any{"u": map[string]any{"min": 102, "max": 105}}, nil, []string{"c-btc"}, 256),
+		// Heterogeneous ETH diff_depth: eth-before-own [1.5e12..2.5e12] (must NOT be pulled by BTC's older baseline!), eth-win [3.4e12..4.1e12] u>=200!
+		addHTTPChunk("eth-before-own", "ETHUSDT", "diff_depth", 1_500_000_000_000, 2_500_000_000_000,
+			map[string]any{"u": map[string]any{"min": 50, "max": 150}}, nil, []string{"c-eth"}, 256),
+		addHTTPChunk("eth-win", "ETHUSDT", "diff_depth", 3_400_000_000_000, 4_100_000_000_000,
+			map[string]any{"u": map[string]any{"min": 195, "max": 250}}, nil, []string{"c-eth"}, 256),
+		// Target-window vs warmup-window agg_trade: mixed/all stream prefetch MUST include agg-win only, NOT agg-early!
+		addHTTPChunk("agg-early", "BTCUSDT", "agg_trade", 1_500_000_000_000, 2_000_000_000_000, nil, nil, nil, 128),
+		addHTTPChunk("agg-win", "BTCUSDT", "agg_trade", 4_000_000_000_000, 4_100_000_000_000, nil, nil, nil, 128),
+	}
+	pDoc, _ := json.Marshal(map[string]any{"schema_version": "1", "market": "usdm", "partition_id": pid, "state": "open", "receive_time_utc_range_ns": map[string]any{"min": 500_000_000_000, "max": 4_200_000_000_000}})
+	aDoc, _ := json.Marshal(map[string]any{"market": "usdm", "partition_id": pid, "recorded_symbols": []string{"BTCUSDT", "ETHUSDT"}, "gaps": []any{}, "discontinuity_events": []any{}, "quarantined_artifacts": []any{}})
+	var lines []string
+	for _, ch := range chunks {
+		b, _ := json.Marshal(ch)
+		lines = append(lines, string(b))
+	}
+	catBytes := []byte(strings.Repeat("SQLITE", 400)) // 2400 bytes
+	manBytes, _ := json.Marshal(map[string]any{
+		"schema_version": "mcp-export.v1",
+		"revision_id":    revID,
+		"partitions": []any{map[string]any{
+			"market": "usdm", "partition_id": pid,
+			"files": map[string]any{
+				"partition_json":    addArt("partition.json", pDoc),
+				"availability_json": addArt("availability.json", aDoc),
+				"chunks_jsonl":      addArt("chunks.jsonl", []byte(strings.Join(lines, "\n")+"\n")),
+				"catalog_sqlite":    addArt("catalog.sqlite", catBytes),
+			},
+		}},
+	})
+	filesHTTP["export/revisions/"+revID+"/manifest.json"] = manBytes
+	filesHTTP["export/latest.json"] = []byte(`{"revision_id":"` + revID + `"}`)
+
+	// 1. Cold estimate(include_baseline=true) MUST NOT fetch raw chunks or catalogs over HTTP, and MUST return needs_inspection + warmup_confirmed=false!
+	coldEstOut, coldEstRes := callToolMap(t, session, "manage_local_cache", map[string]any{
+		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID,
+		"symbols": []string{"BTCUSDT", "ETHUSDT"}, "streams": []string{"diff_depth"},
+		"start_utc_ns": "4000000000000", "end_utc_ns": "4100000000000", "include_baseline": true,
+	})
+	coldEstMap := mapStringAny(coldEstOut["estimate"])
+	if coldEstRes.IsError || coldEstOut["warmup_confirmed"] != false || coldEstMap["baseline_status"] != "needs_inspection" {
+		t.Fatalf("expected cold estimate to return needs_inspection + warmup_confirmed=false, got %v", coldEstOut)
+	}
+	mu.Lock()
+	for _, p := range rawFetchedPaths {
+		if strings.HasPrefix(p, "/raw/") || strings.HasSuffix(p, "catalog.sqlite") {
+			t.Fatalf("cold estimate must not download raw chunk or catalog.sqlite, fetched %s", p)
+		}
+	}
+	mu.Unlock()
+
+	// 2. Budget exceeded error on query_orderbook MUST include catalog bytes, original end_utc_ns, and symbols!
+	budgetOut, budgetRes := callToolMap(t, session, "query_orderbook", map[string]any{
+		"market": "usdm", "symbols": []string{"BTCUSDT", "ETHUSDT"}, "revision_id": revID,
+		"start_utc_ns": "4000000000000", "end_utc_ns": "4100000000000", "max_download_bytes": 100,
+	})
+	var errTxt string
+	if len(budgetRes.Content) > 0 {
+		if tc, ok := budgetRes.Content[0].(*mcp.TextContent); ok {
+			errTxt = tc.Text
+		}
+	}
+	if !budgetRes.IsError || !strings.Contains(errTxt, "end_utc_ns=4100000000000") || !strings.Contains(errTxt, "BTCUSDT,ETHUSDT") {
+		t.Fatalf("expected budget exceeded error disclosing end_utc_ns and symbols, got res=%v errTxt=%q out=%v", budgetRes, errTxt, budgetOut)
+	}
+
+	// 3. Prefetch mixed [diff_depth, agg_trade] with include_baseline=true -> downloads all needed items (including early unindexed bridge!),
+	// excludes agg-early, excludes rest-funding-non-snap, excludes eth-before-own, and exposes zero-HTTP offline equivalence!
+	prefOut, prefRes := callToolMap(t, session, "manage_local_cache", map[string]any{
+		"action": "prefetch", "source": "recorder", "market": "usdm", "revision_id": revID,
+		"symbols": []string{"BTCUSDT", "ETHUSDT"}, "streams": []string{"diff_depth", "agg_trade"},
+		"start_utc_ns": "4000000000000", "end_utc_ns": "4100000000000", "include_baseline": true,
+	})
+	if prefRes.IsError {
+		t.Fatalf("mixed prefetch failed: %v", prefRes)
+	}
+	jobMap := mapStringAny(prefOut["job"])
+	jobID, _ := jobMap["job_id"].(string)
+	deadline := time.Now().Add(5 * time.Second)
+	var jobItemsRaw string
+	for {
+		stOut, stRes := callToolMap(t, session, "manage_local_cache", map[string]any{"action": "jobs", "job_id": jobID})
+		if stRes.IsError {
+			t.Fatalf("prefetch status failed: %v", stRes)
+		}
+		jm := mapStringAny(stOut["job"])
+		if jm["state"] == "completed" {
+			jobItemsRaw = fmt.Sprint(jm["items"])
+			break
+		}
+		if jm["state"] == "failed" || time.Now().After(deadline) {
+			t.Fatalf("prefetch job %s did not complete: %v", jobID, jm)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	for _, want := range []string{"rest-btc-old:raw", "rest-eth-fresh:raw", "btc-early:raw", "btc-late:raw", "btc-win:raw", "eth-win:raw", "agg-win:raw"} {
+		if !strings.Contains(jobItemsRaw, want) {
+			t.Fatalf("expected prefetch job items to contain %q, got items=%s", want, jobItemsRaw)
+		}
+	}
+	for _, unwanted := range []string{"rest-funding-non-snap:raw", "btc-too-old:raw", "eth-before-own:raw", "agg-early:raw"} {
+		if strings.Contains(jobItemsRaw, unwanted) {
+			t.Fatalf("expected prefetch job items NOT to contain %q, estimate=%v items=%s", unwanted, prefOut["estimate"], jobItemsRaw)
+		}
+	}
+
+	// 4. Compare estimate (diff-only vs diff+rest) AND offline query_orderbook AFTER prefetch -> identical orderbook ID set & 0 HTTP!
+	estDiffOnly, _ := callToolMap(t, session, "manage_local_cache", map[string]any{
+		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID, "offline": true,
+		"symbols": []string{"BTCUSDT", "ETHUSDT"}, "streams": []string{"diff_depth"},
+		"start_utc_ns": "4000000000000", "end_utc_ns": "4100000000000", "include_baseline": true,
+	})
+	estDiffRest, _ := callToolMap(t, session, "manage_local_cache", map[string]any{
+		"action": "estimate", "source": "recorder", "market": "usdm", "revision_id": revID, "offline": true,
+		"symbols": []string{"BTCUSDT", "ETHUSDT"}, "streams": []string{"diff_depth", "rest_observations"},
+		"start_utc_ns": "4000000000000", "end_utc_ns": "4100000000000", "include_baseline": true,
+	})
+	m1 := mapStringAny(estDiffOnly["estimate"])
+	m2 := mapStringAny(estDiffRest["estimate"])
+	if estDiffOnly["warmup_confirmed"] != true || estDiffRest["warmup_confirmed"] != true ||
+		m1["ready_chunks_matched"] != m2["ready_chunks_matched"] || m1["download_chunks"] != float64(0) {
+		t.Fatalf("expected identical unified confirmed estimate after prefetch with 0 missing chunks:\ndiff-only=%v\ndiff+rest=%v", estDiffOnly, estDiffRest)
+	}
+
+	hitsBeforeOffline := httpHits.Load()
+	qOffOut, qOffRes := callToolMap(t, session, "query_orderbook", map[string]any{
+		"market": "usdm", "symbols": []string{"BTCUSDT", "ETHUSDT"}, "revision_id": revID, "offline": true,
+		"start_utc_ns": "4000000000000", "end_utc_ns": "4100000000000",
+	})
+	if qOffRes.IsError || httpHits.Load() != hitsBeforeOffline {
+		t.Fatalf("expected offline query_orderbook after prefetch to succeed with 0 HTTP: err=%v hits=%d->%d out=%v", qOffRes, hitsBeforeOffline, httpHits.Load(), qOffOut)
+	}
+	rowsAny, _ := qOffOut["rows"].([]any)
+	chunksStr := fmt.Sprint(rowsAny[0])
+	for _, want := range []string{"rest-btc-old", "rest-eth-fresh", "btc-early", "btc-late", "btc-win", "eth-win"} {
+		if !strings.Contains(chunksStr, want) {
+			t.Fatalf("expected offline query_orderbook chunks_seen to include %q, got %s", want, chunksStr)
+		}
+	}
+	for _, unwanted := range []string{"rest-funding-non-snap", "btc-too-old", "eth-before-own", "agg-win"} {
+		if strings.Contains(chunksStr, unwanted) {
+			t.Fatalf("expected offline query_orderbook chunks_seen NOT to include %q, got %s", unwanted, chunksStr)
+		}
 	}
 }

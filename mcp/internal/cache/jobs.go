@@ -45,18 +45,23 @@ type PrefetchJob struct {
 	LastError      string    `json:"last_error,omitempty"`
 }
 
+type activeJobEntry struct {
+	cancel context.CancelFunc
+	done   chan struct{}
+}
+
 // JobCoordinator runs at most one local sequential download worker and persists job checkpoints to jobs/.
 type JobCoordinator struct {
 	Mgr    *Manager
 	mu     sync.Mutex
-	active map[string]context.CancelFunc
+	active map[string]activeJobEntry
 }
 
 // NewJobCoordinator creates a coordinator bound to a cache Manager.
 func NewJobCoordinator(mgr *Manager) *JobCoordinator {
 	return &JobCoordinator{
 		Mgr:    mgr,
-		active: make(map[string]context.CancelFunc),
+		active: make(map[string]activeJobEntry),
 	}
 }
 
@@ -149,31 +154,50 @@ func (jc *JobCoordinator) StartOrResume(description string, items []JobItem, exi
 	jc.mu.Lock()
 	if _, already := jc.active[job.JobID]; already {
 		jc.mu.Unlock()
-		return job, nil
+		if snap, err := jc.LoadJob(job.JobID); err == nil {
+			return snap, nil
+		}
+		return clonePrefetchJob(job), nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	jc.active[job.JobID] = cancel
+	done := make(chan struct{})
+	jc.active[job.JobID] = activeJobEntry{cancel: cancel, done: done}
 	job.State = "running"
 	job.LastError = ""
 	if err := jc.SaveJob(job); err != nil {
 		delete(jc.active, job.JobID)
 		jc.mu.Unlock()
 		cancel()
+		close(done)
 		return nil, err
 	}
+	snapshot := clonePrefetchJob(job)
 	jc.mu.Unlock()
 
-	go jc.runWorker(ctx, job)
-	return job, nil
+	go jc.runWorker(ctx, job, done)
+	return snapshot, nil
+}
+
+func clonePrefetchJob(job *PrefetchJob) *PrefetchJob {
+	if job == nil {
+		return nil
+	}
+	cp := *job
+	if job.Items != nil {
+		cp.Items = make([]JobItem, len(job.Items))
+		copy(cp.Items, job.Items)
+	}
+	return &cp
 }
 
 // Cancel stops an active download job cleanly while keeping all completed files and .part progress.
 func (jc *JobCoordinator) Cancel(jobID string) (*PrefetchJob, error) {
 	jc.mu.Lock()
-	cancel, ok := jc.active[jobID]
+	entry, ok := jc.active[jobID]
 	jc.mu.Unlock()
 	if ok {
-		cancel()
+		entry.cancel()
+		<-entry.done
 	}
 	job, err := jc.LoadJob(jobID)
 	if err != nil {
@@ -186,11 +210,12 @@ func (jc *JobCoordinator) Cancel(jobID string) (*PrefetchJob, error) {
 	return job, nil
 }
 
-func (jc *JobCoordinator) runWorker(ctx context.Context, job *PrefetchJob) {
+func (jc *JobCoordinator) runWorker(ctx context.Context, job *PrefetchJob, done chan struct{}) {
 	defer func() {
 		jc.mu.Lock()
 		delete(jc.active, job.JobID)
 		jc.mu.Unlock()
+		close(done)
 	}()
 
 	for i := range job.Items {

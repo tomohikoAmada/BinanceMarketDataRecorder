@@ -399,13 +399,25 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 		"already_cached_chunks":          plan.AlreadyCachedChunks,
 		"download_chunks":                plan.DownloadChunks,
 		"estimated_download_bytes":       plan.EstimatedDownloadBytes,
+		"estimated_raw_bytes":            plan.EstimatedRawBytes,
+		"estimated_catalog_bytes":        plan.EstimatedCatalogBytes,
 		"estimated_uncompressed_bytes":   plan.EstimatedUncompressedBytes,
+		"missing_catalog_count":          plan.MissingCatalogCount,
+		"missing_manifest_count":         plan.MissingManifestCount,
+		"unknown_size_manifest_count":    plan.UnknownSizeManifestCount,
+		"total_job_items":                plan.TotalJobItems,
 		"pending_omitted_count":          plan.PendingOmittedCount,
 		"pending_unknown_stream_count":   plan.PendingUnknownStreamCount,
 		"gap_count":                      plan.GapCount,
 		"quarantined_count":              plan.QuarantinedCount,
 		"discontinuity_count":            plan.DiscontinuityCount,
 		"partial_coverage":               partial,
+	}
+	if plan.RequestedStartUTCNS > 0 {
+		m["requested_start_utc_ns"] = strconv.FormatInt(plan.RequestedStartUTCNS, 10)
+	}
+	if plan.RequestedEndUTCNS > 0 {
+		m["requested_end_utc_ns"] = strconv.FormatInt(plan.RequestedEndUTCNS, 10)
 	}
 	if len(plan.RequestedSymbols) > 0 {
 		m["requested_symbols"] = plan.RequestedSymbols
@@ -421,6 +433,32 @@ func planSummaryMap(plan *recorder.QueryPlan) map[string]any {
 	}
 	if plan.BaselineStartUTCNS > 0 {
 		m["baseline_start_utc_ns"] = strconv.FormatInt(plan.BaselineStartUTCNS, 10)
+	}
+	if plan.BaselineStatus != "" {
+		m["baseline_status"] = plan.BaselineStatus
+		m["warmup_confirmed"] = plan.WarmupConfirmed
+	}
+	if len(plan.BaselineSnapshots) > 0 {
+		snapOut := make(map[string]map[string]any, len(plan.BaselineSnapshots))
+		for sym, b := range plan.BaselineSnapshots {
+			snapOut[sym] = map[string]any{
+				"receive_time_utc_ns": strconv.FormatInt(b.ReceiveTimeUTCNS, 10),
+				"last_update_id":      strconv.FormatInt(b.LastUpdateID, 10),
+				"source_chunk_id":     b.SourceChunkID,
+			}
+		}
+		m["baseline_snapshots"] = snapOut
+	}
+	if len(plan.MissingProbeChunks) > 0 {
+		m["missing_probe_chunks"] = plan.MissingProbeChunks
+		m["estimated_probe_download_bytes"] = plan.EstimatedProbeDownloadBytes
+	}
+	if plan.PartialFileCount > 0 {
+		m["partial_file_count"] = plan.PartialFileCount
+		m["partial_bytes"] = plan.PartialBytes
+	}
+	if plan.HTTPBytesDownloaded > 0 {
+		m["http_bytes_downloaded"] = plan.HTTPBytesDownloaded
 	}
 	return m
 }

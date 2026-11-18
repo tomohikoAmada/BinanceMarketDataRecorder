@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -379,5 +380,86 @@ func TestM6Q2_FallbackPreservesPartialProgress(t *testing.T) {
 	}
 	if reqURLs[2] != "sec" {
 		t.Fatalf("expected retry to continue directly on recorded fallback source 'sec', got order %v", reqURLs)
+	}
+}
+
+func TestM6P19_StartOrResumeSnapshotHasNoRaceAndSupportsCancelResume(t *testing.T) {
+	mgr := NewManager(t.TempDir(), nil, 1, 0, nil)
+	jobs := NewJobCoordinator(mgr)
+
+	// 1. 600 pre-completed items serialized immediately while worker mutates items in background (must pass -race).
+	items := make([]JobItem, 600)
+	for i := range items {
+		items[i] = JobItem{
+			ItemID:    fmt.Sprintf("item-%d", i),
+			SizeBytes: 128,
+			Completed: true,
+		}
+	}
+	job, err := jobs.StartOrResume("cached fixture", items, "")
+	if err != nil {
+		t.Fatalf("StartOrResume cached fixture: %v", err)
+	}
+	for i := 0; i < 16; i++ {
+		if _, err := json.Marshal(job); err != nil {
+			t.Fatalf("marshal returned StartOrResume snapshot: %v", err)
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	// Wait until worker finishes and verify LoadJob reaches completed cleanly.
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		loaded, lErr := jobs.LoadJob(job.JobID)
+		if lErr == nil && loaded.State == "completed" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("expected 600-item job %s to complete", job.JobID)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// 2. Cancel & resume flow remains intact.
+	payload := []byte("hello-job-resume")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(150 * time.Millisecond)
+		_, _ = w.Write(payload)
+	}))
+	defer srv.Close()
+	mgr2 := NewManager(t.TempDir(), srv.Client(), 1, 0, nil)
+	jobs2 := NewJobCoordinator(mgr2)
+	job2, err := jobs2.StartOrResume("cancel resume test", []JobItem{{
+		ItemID:      "chunk-1:raw",
+		DestRelPath: "recorder/storage/s1/chunk-1.bmdr.zst",
+		SourceURL:   srv.URL + "/c1",
+		SHA256:      shaHex(payload),
+		SizeBytes:   int64(len(payload)),
+	}}, "")
+	if err != nil {
+		t.Fatalf("StartOrResume slow item: %v", err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	cancelled, err := jobs2.Cancel(job2.JobID)
+	if err != nil || cancelled.State != "cancelled" {
+		t.Fatalf("expected cancelled state, got %+v err=%v", cancelled, err)
+	}
+	resumed, err := jobs2.StartOrResume("", nil, job2.JobID)
+	if err != nil {
+		t.Fatalf("resume job: %v", err)
+	}
+	if _, err := json.Marshal(resumed); err != nil {
+		t.Fatalf("marshal resumed snapshot: %v", err)
+	}
+	deadline = time.Now().Add(3 * time.Second)
+	for {
+		loaded, lErr := jobs2.LoadJob(job2.JobID)
+		if lErr == nil && loaded.State == "completed" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("expected resumed job %s to complete", job2.JobID)
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 }

@@ -9,7 +9,9 @@ materializing large datasets in RAM.
 from __future__ import annotations
 
 import base64
+import contextlib
 import csv
+import ctypes as ct
 import datetime as dt
 import heapq
 import json
@@ -51,8 +53,135 @@ from binance_market_data_recorder.orderbook.reconstructor import (  # noqa: E402
     ReconstructionState,
     SynchronizeResult,
 )
+from binance_market_data_recorder.spool import format as _raw_format  # noqa: E402
 from binance_market_data_recorder.storage.catalog import Catalog  # noqa: E402
 from binance_market_data_recorder.storage.layout import StorageLayout  # noqa: E402
+
+_BMCP_OK = 0
+_BMCP_IGNORED = 1
+_BMCP_GAP = 2
+_BMCP_ERR_ARG = -1
+_BMCP_ERR_WIRE = -2
+_BMCP_ERR_DECIMAL = -3
+_BMCP_ERR_STATE = -4
+
+_NATIVE_LIB_CACHE: tuple[str, Any] | None = None
+
+
+def _native_lib_candidates() -> list[Path]:
+    names = ["bmcp_l2.dll", "libbmcp_l2.dll"] if os.name == "nt" else (["libbmcp_l2.dylib"] if sys.platform == "darwin" else ["libbmcp_l2.so"])
+    here = Path(__file__).resolve().parent
+    roots = [here, _RECORDER_REPO / "mcp" / "bin", _RECORDER_REPO / "mcp" / "native" / "build"]
+    out: list[Path] = []
+    for root in roots:
+        for name in names:
+            out.append(root / name)
+    return out
+
+
+class _NativeL2Lib:
+    """Thin ctypes binding around bmcp_l2 (Projection Core + simdjson + fast canonical CBOR)."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        if os.name == "nt" and hasattr(os, "add_dll_directory"):
+            os.add_dll_directory(str(path.parent))
+        lib = ct.CDLL(str(path))
+        ptr = ct.c_void_p
+        c_char_p = ct.c_char_p
+        u64 = ct.c_uint64
+        i64 = ct.c_int64
+        uint = ct.c_uint
+        size_t = ct.c_size_t
+        c_int = ct.c_int
+
+        lib.bmcp_simdjson_impl.argtypes = []
+        lib.bmcp_simdjson_impl.restype = c_char_p
+        lib.bmcp_last_error.argtypes = []
+        lib.bmcp_last_error.restype = c_char_p
+        lib.bmcp_canonical_cbor_fast.argtypes = [ct.c_char_p, size_t]
+        lib.bmcp_canonical_cbor_fast.restype = c_int
+        lib.bmcp_book_create.argtypes = [c_int, uint, uint]
+        lib.bmcp_book_create.restype = ptr
+        lib.bmcp_book_free.argtypes = [ptr]
+        lib.bmcp_book_free.restype = None
+        lib.bmcp_book_reset.argtypes = [ptr]
+        lib.bmcp_book_reset.restype = None
+        lib.bmcp_book_status.argtypes = [ptr]
+        lib.bmcp_book_status.restype = c_int
+        lib.bmcp_book_last_update_id.argtypes = [ptr, ct.POINTER(u64)]
+        lib.bmcp_book_last_update_id.restype = c_int
+        lib.bmcp_book_install_baseline_json.argtypes = [ptr, c_char_p, size_t]
+        lib.bmcp_book_install_baseline_json.restype = c_int
+        lib.bmcp_book_apply_json.argtypes = [ptr, c_char_p, size_t, ct.POINTER(u64), ct.POINTER(u64)]
+        lib.bmcp_book_apply_json.restype = c_int
+        lib.bmcp_book_top_levels.argtypes = [ptr, uint, ct.POINTER(u64), ct.POINTER(i64), ct.POINTER(uint)]
+        lib.bmcp_book_top_levels.restype = c_int
+
+        self.lib = lib
+        self.simdjson_impl = lib.bmcp_simdjson_impl().decode("utf-8", errors="replace")
+
+    def last_error(self) -> str:
+        raw = self.lib.bmcp_last_error()
+        return raw.decode("utf-8", errors="replace") if raw else "native L2 error"
+
+
+def _get_native_l2_lib(req: dict[str, Any] | None = None) -> _NativeL2Lib | None:
+    global _NATIVE_LIB_CACHE
+    req_engine = str((req or {}).get("orderbook_engine") or "").strip().lower()
+    env_override = os.environ.get("SBMDR_L2_NATIVE_LIB", "").strip()
+    if req_engine == "python" or env_override.lower() in {"off", "0", "false", "no", "python"}:
+        return None
+    if env_override:
+        p = Path(env_override).expanduser().resolve()
+        if not p.is_file():
+            raise FileNotFoundError(f"SBMDR_L2_NATIVE_LIB path not found: {p}")
+        key = str(p)
+        if _NATIVE_LIB_CACHE is None or _NATIVE_LIB_CACHE[0] != key:
+            _NATIVE_LIB_CACHE = (key, _NativeL2Lib(p))
+        return _NATIVE_LIB_CACHE[1]
+    for cand in _native_lib_candidates():
+        if cand.is_file():
+            key = str(cand.resolve())
+            if _NATIVE_LIB_CACHE is None or _NATIVE_LIB_CACHE[0] != key:
+                _NATIVE_LIB_CACHE = (key, _NativeL2Lib(cand.resolve()))
+            return _NATIVE_LIB_CACHE[1]
+    if req_engine in {"cpp", "native"}:
+        raise RuntimeError("native L2 library requested explicitly but bmcp_l2 shared library was not built")
+    return None
+
+
+@contextlib.contextmanager
+def _fast_canonical_cbor_context(native_lib: _NativeL2Lib | None) -> Iterator[None]:
+    if native_lib is None:
+        yield
+        return
+    orig_decode = _raw_format._decode_one_cbor
+    fast_fn = native_lib.lib.bmcp_canonical_cbor_fast
+
+    def _fast_decode_one_cbor(body: bytes, *, canonical: bool = True) -> object:
+        if canonical and fast_fn(body, len(body)):
+            return orig_decode(body, canonical=False)
+        return orig_decode(body, canonical=canonical)
+
+    _raw_format._decode_one_cbor = _fast_decode_one_cbor
+    try:
+        yield
+    finally:
+        _raw_format._decode_one_cbor = orig_decode
+
+
+def _scale_from_quantum(quantum: str) -> int | None:
+    q = str(quantum).strip()
+    if not q or q[0] in "+-":
+        return None
+    if "." not in q:
+        return 0
+    whole, frac = q.split(".", 1)
+    if not whole.isdigit() or not frac.isdigit():
+        return None
+    stripped = frac.rstrip("0")
+    return len(stripped)
 
 INTERVAL_MS_MAP: dict[str, int] = {
     "1s": 1_000,
@@ -422,7 +551,7 @@ class _RowStreamWriter:
                     self._csv_writer = csv.DictWriter(self._fh, fieldnames=self.fieldnames, restval="")
                     self._csv_writer.writeheader()
             else:
-                self._fh = self.part_path.open("w", encoding="utf-8")
+                self._fh = self.part_path.open("w", encoding="utf-8", newline="\n")
         return self
 
     def write(self, row: dict[str, Any]) -> None:
@@ -773,14 +902,292 @@ def _run_query_klines(req: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+class _NativeDecimalError(RuntimeError):
+    """Raised when an archive price/quantity exceeds Projection NumericSpec range or precision."""
+
+
+def _is_valid_depth_snapshot(
+    envelope: EventEnvelope,
+    src_stream: str,
+    model: Any,
+    ok: bool,
+) -> tuple[int, int | None] | None:
+    """Shared M6-P19 snapshot acceptance predicate for Stage 1 inspect and Stage 2 replay."""
+    if not ok or src_stream != "depth_snapshot" or not isinstance(model, dict):
+        return None
+    if any(flag in envelope.capture_flags for flag in ("malformed", "depth_snapshot_superseded")):
+        return None
+    try:
+        uid_val = int(model["lastUpdateId"])
+    except Exception:
+        return None
+    bids = model.get("bids")
+    asks = model.get("asks")
+    if (bids is not None and not isinstance(bids, list)) or (asks is not None and not isinstance(asks, list)):
+        return None
+    raw_epoch = (
+        envelope.source_sequence.get("depthSnapshotEpoch")
+        if isinstance(envelope.source_sequence, dict)
+        else None
+    )
+    snap_epoch: int | None = None
+    if raw_epoch is not None:
+        try:
+            snap_epoch = int(raw_epoch)
+        except Exception:
+            snap_epoch = None
+    return uid_val, snap_epoch
+
+
+def _extract_exchange_scales(model: dict[str, Any]) -> dict[str, tuple[int, int]]:
+    out: dict[str, tuple[int, int]] = {}
+    syms = model.get("symbols")
+    if not isinstance(syms, list):
+        return out
+    for sym_info in syms:
+        if not isinstance(sym_info, dict):
+            continue
+        sym_name = str(sym_info.get("symbol") or "").upper()
+        if not sym_name:
+            continue
+        filters = sym_info.get("filters")
+        if not isinstance(filters, list):
+            continue
+        p_scale: int | None = None
+        q_scale: int | None = None
+        for flt in filters:
+            if not isinstance(flt, dict):
+                continue
+            ftype = flt.get("filterType")
+            if ftype == "PRICE_FILTER" and p_scale is None:
+                p_scale = _scale_from_quantum(flt.get("tickSize", ""))
+            elif ftype == "LOT_SIZE" and q_scale is None:
+                q_scale = _scale_from_quantum(flt.get("stepSize", ""))
+        if p_scale is not None and q_scale is not None and 0 <= p_scale <= 18 and 0 <= q_scale <= 18:
+            out[sym_name] = (p_scale, q_scale)
+    return out
+
+
+class _NativeBookAdapter:
+    """Single-state native Projection + simdjson adapter matching LocalBookReconstructor lifecycle."""
+
+    bootstrap_buffer_capacity: int = 8192
+
+    def __init__(
+        self,
+        native_lib: _NativeL2Lib,
+        market: str,
+        symbol: str,
+        price_scale: int,
+        qty_scale: int,
+    ) -> None:
+        self._lib = native_lib
+        self.market = market
+        self.symbol = symbol
+        self.price_scale = price_scale
+        self.qty_scale = qty_scale
+        is_spot = 1 if market == "spot" else 0
+        handle = native_lib.lib.bmcp_book_create(is_spot, price_scale, qty_scale)
+        if not handle:
+            raise RuntimeError(f"bmcp_book_create failed for {market}/{symbol}: {native_lib.last_error()}")
+        self._handle = handle
+        self._buffer: list[tuple[int, int, bytes]] = []
+        self._reliable = False
+        self._uid: int | None = None
+        self._resync_required = False
+        self._overflowed = False
+        self._u64_first = ct.c_uint64()
+        self._u64_final = ct.c_uint64()
+        self._u64_top_uid = ct.c_uint64()
+        self._counts_buf = (ct.c_uint * 2)()
+        self._pairs_buf: Any = None
+        self._pairs_cap = 0
+
+    def close(self) -> None:
+        if getattr(self, "_handle", None):
+            self._lib.lib.bmcp_book_free(self._handle)
+            self._handle = None
+
+    @property
+    def is_reliable(self) -> bool:
+        return self._reliable
+
+    @property
+    def reliable_update_id(self) -> int | None:
+        return self._uid if self._reliable else None
+
+    @property
+    def bootstrap_buffer_overflowed(self) -> bool:
+        return self._overflowed
+
+    @property
+    def needs_resync(self) -> bool:
+        return self._resync_required
+
+    def restart_bootstrap(self) -> None:
+        self._lib.lib.bmcp_book_reset(self._handle)
+        self._buffer.clear()
+        self._reliable = False
+        self._uid = None
+        self._resync_required = False
+        self._overflowed = False
+
+    def offer_payload(self, raw_payload: bytes) -> tuple[bool, bool]:
+        """Returns (accepted_or_applied, frame_advanced). Raises _NativeDecimalError on NumericSpec violation."""
+        if not self._reliable:
+            if self._overflowed:
+                return False, False
+            raw = json.loads(raw_payload.decode("utf-8"))
+            if isinstance(raw, dict) and isinstance(raw.get("data"), dict) and "stream" in raw:
+                raw = raw["data"]
+            if not isinstance(raw, dict):
+                raise ValueError("WS payload is not a JSON object")
+            first_u = int(raw["U"])
+            final_u = int(raw["u"])
+            if len(self._buffer) >= self.bootstrap_buffer_capacity:
+                self._buffer.clear()
+                self._overflowed = True
+                return False, False
+            self._buffer.append((first_u, final_u, raw_payload))
+            return False, False
+
+        rc = self._lib.lib.bmcp_book_apply_json(
+            self._handle,
+            raw_payload,
+            len(raw_payload),
+            ct.byref(self._u64_first),
+            ct.byref(self._u64_final),
+        )
+        if rc >= 0 and (rc == _BMCP_OK or (rc & (4 | 8)) != 0):
+            # ApplyDisposition::Applied guarantees update_id strictly advanced on live updates.
+            self._uid = int(self._u64_final.value)
+            return True, True
+        if rc == _BMCP_IGNORED:
+            return True, False
+        if rc == _BMCP_GAP:
+            self._reliable = False
+            self._uid = None
+            self._resync_required = True
+            return False, False
+        if rc == _BMCP_ERR_DECIMAL:
+            raise _NativeDecimalError(f"{self.market}/{self.symbol}: {self._lib.last_error()}")
+        if rc == _BMCP_ERR_WIRE:
+            raise ValueError(f"{self.market}/{self.symbol}: {self._lib.last_error()}")
+        raise RuntimeError(f"{self.market}/{self.symbol} bmcp_book_apply_json error ({rc}): {self._lib.last_error()}")
+
+    def synchronize(self, baseline_uid: int, baseline_json: bytes) -> SynchronizeResult:
+        if not self._buffer:
+            return SynchronizeResult.NEED_MORE_EVENTS
+        target_uid = baseline_uid + 1 if self.market == "spot" else baseline_uid
+        candidates = [item for item in self._buffer if item[1] >= target_uid]
+        if not candidates:
+            self._buffer.clear()
+            return SynchronizeResult.NEED_MORE_EVENTS
+        first_u, _first_final_u, _payload = candidates[0]
+        if not (first_u <= target_uid <= candidates[0][1]):
+            return SynchronizeResult.SNAPSHOT_TOO_OLD
+
+        self._lib.lib.bmcp_book_reset(self._handle)
+        rc = self._lib.lib.bmcp_book_install_baseline_json(self._handle, baseline_json, len(baseline_json))
+        if rc == _BMCP_ERR_DECIMAL:
+            raise _NativeDecimalError(f"{self.market}/{self.symbol} baseline: {self._lib.last_error()}")
+        if rc < 0:
+            raise ValueError(f"{self.market}/{self.symbol} baseline: {self._lib.last_error()}")
+
+        self._buffer = []
+        self._overflowed = False
+        self._resync_required = False
+        for idx, (_c_first, c_final, c_payload) in enumerate(candidates):
+            step_rc = self._lib.lib.bmcp_book_apply_json(
+                self._handle,
+                c_payload,
+                len(c_payload),
+                ct.byref(self._u64_first),
+                ct.byref(self._u64_final),
+            )
+            if step_rc == _BMCP_ERR_DECIMAL:
+                self._lib.lib.bmcp_book_reset(self._handle)
+                raise _NativeDecimalError(f"{self.market}/{self.symbol} bridge: {self._lib.last_error()}")
+            if step_rc == _BMCP_GAP:
+                self._lib.lib.bmcp_book_reset(self._handle)
+                self._reliable = False
+                self._uid = None
+                self._resync_required = True
+                self._buffer.extend(candidates[idx + 1 :])
+                return SynchronizeResult.SEQUENCE_GAP
+            if step_rc < 0:
+                self._lib.lib.bmcp_book_reset(self._handle)
+                raise ValueError(f"{self.market}/{self.symbol} bridge: {self._lib.last_error()}")
+
+        uid_out = ct.c_uint64()
+        if self._lib.lib.bmcp_book_last_update_id(self._handle, ct.byref(uid_out)) != 0:
+            raise RuntimeError(f"{self.market}/{self.symbol} synchronized book missing update_id")
+        self._uid = int(uid_out.value)
+        self._reliable = True
+        return SynchronizeResult.SYNCHRONIZED
+
+    def extract_top_k(self, top_k: int) -> tuple[int, list[list[str]], list[list[str]], str | None, str | None, str]:
+        need_pairs = 4 * top_k
+        if self._pairs_cap < need_pairs:
+            self._pairs_buf = (ct.c_int64 * need_pairs)()
+            self._pairs_cap = need_pairs
+        rc = self._lib.lib.bmcp_book_top_levels(
+            self._handle,
+            top_k,
+            ct.byref(self._u64_top_uid),
+            self._pairs_buf,
+            self._counts_buf,
+        )
+        if rc != _BMCP_OK:
+            raise RuntimeError(f"{self.market}/{self.symbol} bmcp_book_top_levels failed: {self._lib.last_error()}")
+        nb = int(self._counts_buf[0])
+        na = int(self._counts_buf[1])
+        ps = -self.price_scale
+        qs = -self.qty_scale
+        bids: list[list[str]] = []
+        asks: list[list[str]] = []
+        bid_sum = Decimal("0")
+        ask_sum = Decimal("0")
+        best_bid_p: Decimal | None = None
+        best_ask_p: Decimal | None = None
+
+        buf = self._pairs_buf
+        idx = 0
+        for b_idx in range(nb):
+            p_dec = Decimal(buf[idx]).scaleb(ps)
+            q_dec = Decimal(buf[idx + 1]).scaleb(qs)
+            idx += 2
+            if b_idx == 0:
+                best_bid_p = p_dec
+            bid_sum += q_dec
+            bids.append([canonical_decimal(p_dec), canonical_decimal(q_dec)])
+        for a_idx in range(na):
+            p_dec = Decimal(buf[idx]).scaleb(ps)
+            q_dec = Decimal(buf[idx + 1]).scaleb(qs)
+            idx += 2
+            if a_idx == 0:
+                best_ask_p = p_dec
+            ask_sum += q_dec
+            asks.append([canonical_decimal(p_dec), canonical_decimal(q_dec)])
+
+        denom = bid_sum + ask_sum
+        imbalance = canonical_decimal((bid_sum - ask_sum) / denom) if denom > 0 else "0"
+        spread = canonical_decimal(best_ask_p - best_bid_p) if (best_bid_p is not None and best_ask_p is not None) else None
+        mid = canonical_decimal((best_bid_p + best_ask_p) / Decimal("2")) if (best_bid_p is not None and best_ask_p is not None) else None
+        return int(self._u64_top_uid.value), bids, asks, mid, spread, imbalance
+
+
 def _try_bridge(
-    recon: LocalBookReconstructor,
+    recon: LocalBookReconstructor | _NativeBookAdapter,
     pending_snapshot: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
     if pending_snapshot is None or recon.is_reliable:
         return pending_snapshot
-    snap = pending_snapshot["snapshot"]
-    res = recon.synchronize(snap)
+    if isinstance(recon, _NativeBookAdapter):
+        res = recon.synchronize(int(pending_snapshot["uid"]), pending_snapshot["baseline_json"])
+    else:
+        snap = pending_snapshot["snapshot"]
+        res = recon.synchronize(snap)
     if res in (SynchronizeResult.SYNCHRONIZED, SynchronizeResult.NEED_MORE_EVENTS):
         return None if res is SynchronizeResult.SYNCHRONIZED else pending_snapshot
     # SNAPSHOT_TOO_OLD / SEQUENCE_GAP -> discard old pending snapshot
@@ -806,8 +1213,10 @@ def _run_inspect_orderbook_snapshots(req: dict[str, Any]) -> dict[str, Any]:
             src_stream, req_meta, model, ok, _err = _decode_rest_observation(env)
         except Exception:
             continue
-        if not ok or src_stream != "depth_snapshot" or not isinstance(model, dict):
+        checked = _is_valid_depth_snapshot(env, src_stream, model, ok)
+        if checked is None:
             continue
+        uid_val, _snap_epoch = checked
         params = req_meta.get("parameters") if isinstance(req_meta.get("parameters"), dict) else {}
         sym = str(params.get("symbol") or env.symbol).upper()
         if sym == "__GLOBAL__" or (symbols and sym not in symbols):
@@ -815,10 +1224,6 @@ def _run_inspect_orderbook_snapshots(req: dict[str, Any]) -> dict[str, Any]:
         ts = env.receive_time_utc_ns
         if end_ns > 0 and ts >= end_ns:
             continue
-        try:
-            uid_val = int(model.get("lastUpdateId") or 0)
-        except Exception:
-            uid_val = 0
         snapshots_found += 1
         if sym not in earliest_any or ts < earliest_any[sym]:
             earliest_any[sym] = ts
@@ -853,9 +1258,13 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
     limit = int(req.get("limit") or 100)
     sample_step_ns = max(0, int(req.get("sample_step_ms") or 1000)) * 1_000_000
 
-    reconstructors: dict[tuple[str, str], LocalBookReconstructor] = {}
+    native_lib = _get_native_l2_lib(req)
+
+    reconstructors: dict[tuple[str, str], LocalBookReconstructor | _NativeBookAdapter] = {}
+    exchange_scales: dict[tuple[str, str], tuple[int, int]] = {}
     last_conn: dict[tuple[str, str], str] = {}
     last_event_ts: dict[tuple[str, str], int] = {}
+    current_diff_epoch: dict[tuple[str, str], int] = {}
     gap_episode_open: dict[tuple[str, str], bool] = {}
     pending_snaps: dict[tuple[str, str], dict[str, Any] | None] = {}
     last_emitted_ns: dict[tuple[str, str], int] = {}
@@ -891,15 +1300,37 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
         "reliable_emissions": 0,
     }
 
-    snapshot_queues: dict[tuple[str, str], list[tuple[int, int, BookSnapshot, str]]] = {}
+    snapshot_queues: dict[tuple[str, str], list[tuple[int, int, int | None, Any, bytes | None, str]]] = {}
 
-    def get_recon(mkt: str, sym: str) -> LocalBookReconstructor:
+    def get_recon(mkt: str, sym: str) -> LocalBookReconstructor | _NativeBookAdapter:
         key = (mkt, sym)
         r = reconstructors.get(key)
         if r is None:
-            r = LocalBookReconstructor(mkt, sym)  # type: ignore[arg-type]
+            if native_lib is not None:
+                ps, qs = exchange_scales.get(key, (8, 8))
+                r = _NativeBookAdapter(native_lib, mkt, sym, ps, qs)
+            else:
+                r = LocalBookReconstructor(mkt, sym)  # type: ignore[arg-type]
             reconstructors[key] = r
         return r
+
+    def _reset_bootstrap_state(
+        key: tuple[str, str],
+        sym: str,
+        ts_ns: int,
+        reason: str | None,
+        *,
+        record_only_if_new_episode: bool = False,
+    ) -> None:
+        recon = reconstructors.get(key)
+        if recon is not None:
+            recon.restart_bootstrap()
+        pending_snaps[key] = None
+        buffered_upds[key] = []
+        if reason is not None:
+            if not record_only_if_new_episode or not gap_episode_open.get(key, False):
+                record_resync(sym, ts_ns, reason)
+            gap_episode_open[key] = True
 
     def record_resync(sym: str, ts_ns: int, reason: str) -> None:
         stats["resync_count"] += 1
@@ -963,25 +1394,30 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
         prev_ns = last_emitted_ns.get(key, -1)
         if not force and sample_step_ns > 0 and prev_ns >= 0 and (ts_ns - prev_ns) < sample_step_ns:
             return
-        book = recon.book
-        bid_prices = sorted(book.bids, reverse=True)[:top_k]
-        ask_prices = sorted(book.asks)[:top_k]
-        bids = [[canonical_decimal(p), canonical_decimal(book.bids[p])] for p in bid_prices]
-        asks = [[canonical_decimal(p), canonical_decimal(book.asks[p])] for p in ask_prices]
-        bid_sum = sum((book.bids[p] for p in bid_prices), Decimal("0"))
-        ask_sum = sum((book.asks[p] for p in ask_prices), Decimal("0"))
-        denom = bid_sum + ask_sum
-        imbalance = canonical_decimal((bid_sum - ask_sum) / denom) if denom > 0 else "0"
-        best_bid = book.best_bid
-        best_ask = book.best_ask
-        spread = canonical_decimal(best_ask[0] - best_bid[0]) if (best_bid and best_ask) else None
-        mid = canonical_decimal((best_bid[0] + best_ask[0]) / Decimal("2")) if (best_bid and best_ask) else None
+        if isinstance(recon, _NativeBookAdapter):
+            uid_val, bids, asks, mid, spread, imbalance = recon.extract_top_k(top_k)
+            uid_str = str(uid_val)
+        else:
+            book = recon.book
+            bid_prices = sorted(book.bids, reverse=True)[:top_k]
+            ask_prices = sorted(book.asks)[:top_k]
+            bids = [[canonical_decimal(p), canonical_decimal(book.bids[p])] for p in bid_prices]
+            asks = [[canonical_decimal(p), canonical_decimal(book.asks[p])] for p in ask_prices]
+            bid_sum = sum((book.bids[p] for p in bid_prices), Decimal("0"))
+            ask_sum = sum((book.asks[p] for p in ask_prices), Decimal("0"))
+            denom = bid_sum + ask_sum
+            imbalance = canonical_decimal((bid_sum - ask_sum) / denom) if denom > 0 else "0"
+            best_bid = book.best_bid
+            best_ask = book.best_ask
+            spread = canonical_decimal(best_ask[0] - best_bid[0]) if (best_bid and best_ask) else None
+            mid = canonical_decimal((best_bid[0] + best_ask[0]) / Decimal("2")) if (best_bid and best_ask) else None
+            uid_str = str(book.update_id)
 
         row = {
             "symbol": sym,
             "market": mkt,
             "receive_time_utc_ns": str(ts_ns),
-            "update_id": str(book.update_id),
+            "update_id": uid_str,
             "mid_price": mid,
             "spread": spread,
             f"top_{top_k}_depth_imbalance": imbalance,
@@ -1004,12 +1440,22 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
         if not q:
             return
         recon = get_recon(*key)
+        diff_epoch = current_diff_epoch.get(key)
         while q and (up_to_ts_ns is None or q[0][0] <= up_to_ts_ns):
             was_reliable = recon.is_reliable
-            snap_ts, snap_uid, snap, snap_chunk_id = q.pop(0)
+            snap_ts, snap_uid, snap_epoch, snap_obj, baseline_json, snap_chunk_id = q.pop(0)
             if was_reliable:
                 continue
-            pending_snaps[key] = {"snapshot": snap, "ts_ns": snap_ts, "uid": snap_uid, "chunk_id": snap_chunk_id}
+            if snap_epoch is not None and diff_epoch is not None and snap_epoch != diff_epoch:
+                continue
+            pending_snaps[key] = {
+                "snapshot": snap_obj,
+                "baseline_json": baseline_json,
+                "ts_ns": snap_ts,
+                "uid": snap_uid,
+                "epoch": snap_epoch,
+                "chunk_id": snap_chunk_id,
+            }
             pending_snaps[key] = _try_bridge(recon, pending_snaps[key])
             if recon.is_reliable:
                 gap_episode_open[key] = False
@@ -1020,166 +1466,258 @@ def _run_query_orderbook(req: dict[str, Any]) -> dict[str, Any]:
                 _mark_synchronized(key[1], snap_ts, ready_ts_ns)
                 write_frame(writer, key[0], key[1], ready_cid, ready_ts_ns, force=True)
 
-    # First pass collects lightweight rest_observations depth_snapshots, sorted chronologically,
-    # then second pass streams diff_depth chronologically.
     rest_req = {**req, "chunks": [c for c in (req.get("chunks") or []) if c.get("stream") == "rest_observations"]}
     diff_req = {**req, "chunks": [c for c in (req.get("chunks") or []) if c.get("stream") != "rest_observations"]}
 
-    for _pid, chunk, rec in _iter_partition_records(rest_req):
-        env = rec.envelope
-        if env.stream != "rest_observations":
-            continue
-        if end_ns > 0 and env.receive_time_utc_ns >= end_ns:
-            continue
-        try:
-            src_stream, req_meta, model, ok, _err = _decode_rest_observation(env)
-        except Exception:
-            continue
-        if not ok or src_stream != "depth_snapshot" or not isinstance(model, dict):
-            continue
-        params = req_meta.get("parameters") if isinstance(req_meta.get("parameters"), dict) else {}
-        sym = str(params.get("symbol") or env.symbol).upper()
-        if sym == "__GLOBAL__" or (symbols and sym not in symbols):
-            continue
-        mkt = "spot" if env.market == "spot" else env.market
-        if mkt not in {"spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"}:
-            mkt = "um_perpetual"
-        try:
-            snap = BookSnapshot(
-                market=mkt,  # type: ignore[arg-type]
-                symbol=sym,
-                last_update_id=int(model["lastUpdateId"]),
-                bids=tuple((str(p), str(q)) for p, q in model.get("bids") or []),
-                asks=tuple((str(p), str(q)) for p, q in model.get("asks") or []),
-            )
-        except Exception:
-            continue
-        stats["snapshots_seen"] += 1
-        sym_snapshots_seen[sym] = sym_snapshots_seen.get(sym, 0) + 1
-        snap_timestamps_by_sym.setdefault(sym, []).append(env.receive_time_utc_ns)
-        snapshot_queues.setdefault((mkt, sym), []).append((env.receive_time_utc_ns, snap.last_update_id, snap, chunk.chunk_id))
-
-    for q in snapshot_queues.values():
-        q.sort(key=lambda item: (item[0], item[1]))
-
-    ob_fields, ob_types = _orderbook_fields(top_k)
-    with _RowStreamWriter(
-        req.get("output_file"),
-        str(req.get("output_format") or "jsonl"),
-        fieldnames=ob_fields,
-        parquet_field_types=ob_types,
-    ) as writer:
-        for _pid, chunk, rec in _iter_partition_records(diff_req):
-            env = rec.envelope
-            if end_ns > 0 and env.receive_time_utc_ns >= end_ns and env.stream == "diff_depth":
-                continue
-            if env.stream != "diff_depth":
-                continue
-            sym = env.symbol.upper()
-            if symbols and sym not in symbols:
-                continue
-            mkt = "spot" if env.market == "spot" else env.market
-            key = (mkt, sym)
-            recon = get_recon(mkt, sym)
-
-            # Drain snapshots up to previous event before processing connection/gap boundary on this event
-            # so a post-disconnect snapshot is never wiped by the new connection's first message.
-            if key in last_event_ts:
-                drain_due_snapshots(writer, key, last_event_ts[key])
-            last_event_ts[key] = env.receive_time_utc_ns
-
-            is_malformed = "malformed" in env.capture_flags
-            gap_flag = is_malformed or any(f in env.capture_flags for f in ("sequence_gap", "reconnect_gap", "ingress_drop"))
-            prev_conn = last_conn.get(key)
-            conn_changed = prev_conn is not None and prev_conn != env.connection_id
-            last_conn[key] = env.connection_id
-
-            if gap_flag:
-                q = snapshot_queues.get(key)
-                if q:
-                    snapshot_queues[key] = [item for item in q if item[0] > env.receive_time_utc_ns]
-                if not gap_episode_open.get(key, False) or recon.is_reliable or pending_snaps.get(key) is not None:
-                    recon.restart_bootstrap()
-                    pending_snaps[key] = None
-                    buffered_upds[key] = []
-                    record_resync(sym, env.receive_time_utc_ns, "capture_flag_gap")
-                    gap_episode_open[key] = True
-            elif conn_changed:
-                recon.restart_bootstrap()
-                pending_snaps[key] = None
-                buffered_upds[key] = []
-                record_resync(sym, env.receive_time_utc_ns, "connection_reset")
-                gap_episode_open[key] = True
-
-            if is_malformed:
-                continue
-
-            if _in_window(env.receive_time_utc_ns, start_ns, end_ns):
-                in_window_depth_seen[sym] = in_window_depth_seen.get(sym, 0) + 1
-                sym_in_window_depth_seen[sym] = sym_in_window_depth_seen.get(sym, 0) + 1
-
-            # Drain snapshots arriving up to this event BEFORE offering upd so an already-due
-            # snapshot synchronizes prior buffered deltas at its true arrival time without peeking at upd.
-            drain_due_snapshots(writer, key, env.receive_time_utc_ns)
-
-            try:
-                payload = _unwrap_ws_json(env)
-                pu_val = int(payload["pu"]) if (mkt != "spot" and "pu" in payload and payload["pu"] is not None) else None
-                upd = DepthUpdate(
-                    market=mkt,  # type: ignore[arg-type]
-                    symbol=sym,
-                    first_update_id=int(payload["U"]),
-                    final_update_id=int(payload["u"]),
-                    previous_final_update_id=pu_val,
-                    bids=tuple((str(p), str(q)) for p, q in payload.get("b") or []),
-                    asks=tuple((str(p), str(q)) for p, q in payload.get("a") or []),
-                    receive_time_utc_ns=env.receive_time_utc_ns,
+    try:
+        with _fast_canonical_cbor_context(native_lib):
+            for _pid, chunk, rec in _iter_partition_records(rest_req):
+                env = rec.envelope
+                if env.stream != "rest_observations":
+                    continue
+                if end_ns > 0 and env.receive_time_utc_ns >= end_ns:
+                    continue
+                try:
+                    src_stream, req_meta, model, ok, _err = _decode_rest_observation(env)
+                except Exception:
+                    continue
+                if ok and src_stream == "exchange_info" and isinstance(model, dict):
+                    ex_mkt = "spot" if env.market == "spot" else "um_perpetual"
+                    for sym_name, scales in _extract_exchange_scales(model).items():
+                        if not symbols or sym_name in symbols:
+                            exchange_scales[(ex_mkt, sym_name)] = scales
+                    continue
+                checked = _is_valid_depth_snapshot(env, src_stream, model, ok)
+                if checked is None:
+                    continue
+                uid_val, snap_epoch = checked
+                params = req_meta.get("parameters") if isinstance(req_meta.get("parameters"), dict) else {}
+                sym = str(params.get("symbol") or env.symbol).upper()
+                if sym == "__GLOBAL__" or (symbols and sym not in symbols):
+                    continue
+                mkt = "spot" if env.market == "spot" else env.market
+                if mkt not in {"spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"}:
+                    mkt = "um_perpetual"
+                snap_obj: BookSnapshot | None = None
+                baseline_json: bytes | None = None
+                if native_lib is not None:
+                    try:
+                        baseline_json = json.dumps(
+                            {
+                                "lastUpdateId": uid_val,
+                                "bids": model.get("bids") or [],
+                                "asks": model.get("asks") or [],
+                            },
+                            separators=(",", ":"),
+                        ).encode("utf-8")
+                    except Exception:
+                        continue
+                else:
+                    try:
+                        snap_obj = BookSnapshot(
+                            market=mkt,  # type: ignore[arg-type]
+                            symbol=sym,
+                            last_update_id=uid_val,
+                            bids=tuple((str(p), str(q)) for p, q in model.get("bids") or []),
+                            asks=tuple((str(p), str(q)) for p, q in model.get("asks") or []),
+                        )
+                    except Exception:
+                        continue
+                stats["snapshots_seen"] += 1
+                sym_snapshots_seen[sym] = sym_snapshots_seen.get(sym, 0) + 1
+                snap_timestamps_by_sym.setdefault(sym, []).append(env.receive_time_utc_ns)
+                snapshot_queues.setdefault((mkt, sym), []).append(
+                    (env.receive_time_utc_ns, uid_val, snap_epoch, snap_obj, baseline_json, chunk.chunk_id)
                 )
-            except (KeyError, ValueError, TypeError, json.JSONDecodeError):
-                continue
 
-            stats["depth_updates_seen"] += 1
-            sym_depth_updates_seen[sym] = sym_depth_updates_seen.get(sym, 0) + 1
-            was_reliable = recon.is_reliable
-            applied = recon.offer(upd)
-            if was_reliable and recon.state is ReconstructionState.RESYNC_REQUIRED and not applied:
-                recon.restart_bootstrap()
-                pending_snaps[key] = None
-                buffered_upds[key] = []
-                record_resync(sym, env.receive_time_utc_ns, "sequence_gap")
-                gap_episode_open[key] = True
-                # Preserve this valid triggering update in the reset bootstrap buffer so the next snapshot can bridge it.
-                applied = recon.offer(upd)
+            for q in snapshot_queues.values():
+                q.sort(key=lambda item: (item[0], item[1]))
 
-            if not recon.is_reliable:
-                buffered_upds.setdefault(key, []).append((upd.final_update_id, env.receive_time_utc_ns, chunk.chunk_id))
-                if start_ns <= 0 or env.receive_time_utc_ns >= start_ns:
-                    if pending_snaps.get(key) is None:
-                        sym_in_window_unsync_updates[sym] = sym_in_window_unsync_updates.get(sym, 0) + 1
+            ob_fields, ob_types = _orderbook_fields(top_k)
+            with _RowStreamWriter(
+                req.get("output_file"),
+                str(req.get("output_format") or "jsonl"),
+                fieldnames=ob_fields,
+                parquet_field_types=ob_types,
+            ) as writer:
+                for _pid, chunk, rec in _iter_partition_records(diff_req):
+                    env = rec.envelope
+                    if end_ns > 0 and env.receive_time_utc_ns >= end_ns and env.stream == "diff_depth":
+                        continue
+                    if env.stream != "diff_depth":
+                        continue
+                    sym = env.symbol.upper()
+                    if symbols and sym not in symbols:
+                        continue
+                    mkt = "spot" if env.market == "spot" else env.market
+                    key = (mkt, sym)
+                    recon = get_recon(mkt, sym)
 
-            prev_pending = pending_snaps.get(key)
-            pending_snaps[key] = _try_bridge(recon, prev_pending)
-            just_bridged = (not was_reliable) and recon.is_reliable
-            if just_bridged:
-                gap_episode_open[key] = False
-                pending_snap_ts = prev_pending["ts_ns"] if prev_pending is not None else env.receive_time_utc_ns
-                ready_ts_ns = max(pending_snap_ts, env.receive_time_utc_ns)
-                if buffered_upds.get(key):
-                    ready_ts_ns = max(ready_ts_ns, max(t for _, t, _ in buffered_upds[key]))
-                buffered_upds[key] = []
-                stats["recovery_count"] += 1
-                sym_recoveries[sym] = sym_recoveries.get(sym, 0) + 1
-                _mark_synchronized(sym, pending_snap_ts, ready_ts_ns)
-                write_frame(writer, mkt, sym, chunk.chunk_id, ready_ts_ns, force=True)
-            elif recon.is_reliable and applied:
-                gap_episode_open[key] = False
-                _mark_synchronized(sym, env.receive_time_utc_ns, env.receive_time_utc_ns)
-                write_frame(writer, mkt, sym, chunk.chunk_id, env.receive_time_utc_ns)
+                    raw_diff_epoch = (
+                        env.source_sequence.get("depthSnapshotEpoch")
+                        if isinstance(env.source_sequence, dict)
+                        else None
+                    )
+                    if raw_diff_epoch is not None:
+                        try:
+                            current_diff_epoch[key] = int(raw_diff_epoch)
+                        except Exception:
+                            pass
 
-        for key in list(snapshot_queues):
-            drain_due_snapshots(writer, key, None)
+                    # Drain snapshots up to previous event before processing connection/gap boundary on this event
+                    # so a post-disconnect snapshot is never wiped by the new connection's first message.
+                    if key in last_event_ts:
+                        drain_due_snapshots(writer, key, last_event_ts[key])
+                    last_event_ts[key] = env.receive_time_utc_ns
 
-        written_file = writer.close_and_commit()
+                    is_malformed = "malformed" in env.capture_flags
+                    gap_flag = is_malformed or any(f in env.capture_flags for f in ("sequence_gap", "reconnect_gap", "ingress_drop"))
+                    prev_conn = last_conn.get(key)
+                    conn_changed = prev_conn is not None and prev_conn != env.connection_id
+                    last_conn[key] = env.connection_id
+
+                    if gap_flag:
+                        q = snapshot_queues.get(key)
+                        if q:
+                            snapshot_queues[key] = [item for item in q if item[0] > env.receive_time_utc_ns]
+                        if not gap_episode_open.get(key, False) or recon.is_reliable or pending_snaps.get(key) is not None:
+                            _reset_bootstrap_state(key, sym, env.receive_time_utc_ns, "capture_flag_gap")
+                    elif conn_changed:
+                        _reset_bootstrap_state(key, sym, env.receive_time_utc_ns, "connection_reset")
+
+                    if is_malformed:
+                        continue
+
+                    if _in_window(env.receive_time_utc_ns, start_ns, end_ns):
+                        in_window_depth_seen[sym] = in_window_depth_seen.get(sym, 0) + 1
+                        sym_in_window_depth_seen[sym] = sym_in_window_depth_seen.get(sym, 0) + 1
+
+                    # Drain snapshots arriving up to this event BEFORE offering upd so an already-due
+                    # snapshot synchronizes prior buffered deltas at its true arrival time without peeking at upd.
+                    drain_due_snapshots(writer, key, env.receive_time_utc_ns)
+
+                    was_reliable = recon.is_reliable
+                    prev_reliable_uid = recon.reliable_update_id
+                    frame_advanced = False
+                    applied = False
+                    upd_obj: DepthUpdate | None = None
+                    upd_final_u = 0
+
+                    if isinstance(recon, _NativeBookAdapter):
+                        try:
+                            applied, frame_advanced = recon.offer_payload(env.raw_payload)
+                        except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+                            continue
+                        if recon.needs_resync:
+                            _reset_bootstrap_state(key, sym, env.receive_time_utc_ns, "sequence_gap")
+                            try:
+                                applied, frame_advanced = recon.offer_payload(env.raw_payload)
+                            except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+                                continue
+                        elif recon.bootstrap_buffer_overflowed:
+                            _reset_bootstrap_state(
+                                key,
+                                sym,
+                                env.receive_time_utc_ns,
+                                "bootstrap_buffer_overflow",
+                                record_only_if_new_episode=True,
+                            )
+                            try:
+                                applied, frame_advanced = recon.offer_payload(env.raw_payload)
+                            except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+                                continue
+                        stats["depth_updates_seen"] += 1
+                        sym_depth_updates_seen[sym] = sym_depth_updates_seen.get(sym, 0) + 1
+                        if recon.is_reliable:
+                            upd_final_u = int(recon.reliable_update_id or 0)
+                        elif recon._buffer:
+                            upd_final_u = recon._buffer[-1][1]
+                    else:
+                        try:
+                            payload = _unwrap_ws_json(env)
+                            pu_val = int(payload["pu"]) if (mkt != "spot" and "pu" in payload and payload["pu"] is not None) else None
+                            upd_obj = DepthUpdate(
+                                market=mkt,  # type: ignore[arg-type]
+                                symbol=sym,
+                                first_update_id=int(payload["U"]),
+                                final_update_id=int(payload["u"]),
+                                previous_final_update_id=pu_val,
+                                bids=tuple((str(p), str(q)) for p, q in payload.get("b") or []),
+                                asks=tuple((str(p), str(q)) for p, q in payload.get("a") or []),
+                                receive_time_utc_ns=env.receive_time_utc_ns,
+                            )
+                        except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+                            continue
+
+                        stats["depth_updates_seen"] += 1
+                        sym_depth_updates_seen[sym] = sym_depth_updates_seen.get(sym, 0) + 1
+                        applied = recon.offer(upd_obj)
+                        if was_reliable and recon.state is ReconstructionState.RESYNC_REQUIRED and not applied:
+                            _reset_bootstrap_state(key, sym, env.receive_time_utc_ns, "sequence_gap")
+                            # Preserve this valid triggering update in the reset bootstrap buffer so the next snapshot can bridge it.
+                            applied = recon.offer(upd_obj)
+                        elif recon.bootstrap_buffer_overflowed:
+                            _reset_bootstrap_state(
+                                key,
+                                sym,
+                                env.receive_time_utc_ns,
+                                "bootstrap_buffer_overflow",
+                                record_only_if_new_episode=True,
+                            )
+                            applied = recon.offer(upd_obj)
+                        upd_final_u = upd_obj.final_update_id
+                        cur_uid = recon.reliable_update_id
+                        frame_advanced = (
+                            recon.is_reliable
+                            and applied
+                            and prev_reliable_uid is not None
+                            and cur_uid is not None
+                            and cur_uid > prev_reliable_uid
+                        )
+
+                    if not recon.is_reliable:
+                        buf = buffered_upds.setdefault(key, [])
+                        max_buf = getattr(recon, "bootstrap_buffer_capacity", 8192)
+                        if len(buf) >= max_buf:
+                            del buf[: len(buf) - max_buf + 1]
+                        buf.append((upd_final_u, env.receive_time_utc_ns, chunk.chunk_id))
+                        if start_ns <= 0 or env.receive_time_utc_ns >= start_ns:
+                            if pending_snaps.get(key) is None:
+                                sym_in_window_unsync_updates[sym] = sym_in_window_unsync_updates.get(sym, 0) + 1
+
+                    prev_pending = pending_snaps.get(key)
+                    if prev_pending is not None:
+                        snap_ep = prev_pending.get("epoch")
+                        cur_ep = current_diff_epoch.get(key)
+                        if snap_ep is not None and cur_ep is not None and snap_ep != cur_ep:
+                            prev_pending = None
+                    pending_snaps[key] = _try_bridge(recon, prev_pending)
+                    just_bridged = (not was_reliable) and recon.is_reliable
+                    if just_bridged:
+                        gap_episode_open[key] = False
+                        pending_snap_ts = prev_pending["ts_ns"] if prev_pending is not None else env.receive_time_utc_ns
+                        ready_ts_ns = max(pending_snap_ts, env.receive_time_utc_ns)
+                        if buffered_upds.get(key):
+                            ready_ts_ns = max(ready_ts_ns, max(t for _, t, _ in buffered_upds[key]))
+                        buffered_upds[key] = []
+                        stats["recovery_count"] += 1
+                        sym_recoveries[sym] = sym_recoveries.get(sym, 0) + 1
+                        _mark_synchronized(sym, pending_snap_ts, ready_ts_ns)
+                        write_frame(writer, mkt, sym, chunk.chunk_id, ready_ts_ns, force=True)
+                    elif recon.is_reliable and applied:
+                        gap_episode_open[key] = False
+                        _mark_synchronized(sym, env.receive_time_utc_ns, env.receive_time_utc_ns)
+                        if frame_advanced:
+                            write_frame(writer, mkt, sym, chunk.chunk_id, env.receive_time_utc_ns)
+
+                for key in list(snapshot_queues):
+                    drain_due_snapshots(writer, key, None)
+
+                written_file = writer.close_and_commit()
+    finally:
+        for r in reconstructors.values():
+            if isinstance(r, _NativeBookAdapter):
+                r.close()
 
     eval_syms = sorted(
         symbols

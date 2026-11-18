@@ -790,4 +790,209 @@ def test_m6l1_l2_l3_orderbook_recovery_boundaries_and_window_coverage(tmp_path: 
     assert mixed["symbol_coverage"]["ETHUSDT"]["reason"] == "updates_did_not_bridge_snapshot"
 
 
+def test_m6p19b_superseded_epoch_duplicate_and_overflow_both_engines(tmp_path: Path) -> None:
+    """M6-P19-B: superseded/epoch snapshot rejection, duplicate non-stealing, and >8192 overflow recovery across Python and C++."""
+    import pytest
+
+    base_ms = 1_794_873_600_000
+
+    def _run_case(name: str, groups: list[list[EventEnvelope]], mkt_arg: str, start_off: int, end_off: int, step_ms: int, engine: str) -> tuple[dict[str, Any], bytes, dict[str, Any]]:
+        sub = tmp_path / f"{name}_{engine}"
+        layout = ensure_storage_layout(sub / "layout")
+        catalog = Catalog(layout.catalog)
+        chunks = []
+        try:
+            for evs in groups:
+                h = evs[0]
+                chunks.append(
+                    _make_archived_chunk(
+                        layout, catalog, sub / "external", "s-p19b",
+                        market=h.market, symbol=h.symbol, stream=h.stream, envelopes=evs,
+                    )
+                )
+        finally:
+            catalog.close()
+        out_path = sub / "out.jsonl"
+        req = {
+            "market": mkt_arg,
+            "symbols": ["BTCUSDT"],
+            "start_utc_ns": (base_ms + start_off) * 1_000_000,
+            "end_utc_ns": (base_ms + end_off) * 1_000_000,
+            "sample_step_ms": step_ms,
+            "orderbook_engine": engine,
+            "output_file": str(out_path),
+            "partitions": [{"partition_id": "p-test", "catalog_path": str(layout.catalog)}],
+            "external_roots": {"s-p19b": str(sub / "external")},
+            "chunks": chunks,
+        }
+        insp = worker.dispatch({**req, "operation": "inspect_orderbook_snapshots"})
+        res = worker.dispatch({**req, "operation": "query_orderbook"})
+        return res, out_path.read_bytes(), insp
+
+    def _snap(mkt: str, off: int, uid: int, *, flags: tuple[str, ...] = (), epoch: int | None = None, bids: list | None = None, asks: list | None = None) -> EventEnvelope:
+        env = _rest_env(
+            mkt, "BTCUSDT", "depth_snapshot", base_ms + off,
+            {"lastUpdateId": uid, "bids": bids or [["100", "1"]], "asks": asks or [["101", "1"]]},
+        )
+        upd: dict[str, Any] = {}
+        if flags:
+            upd["capture_flags"] = flags
+        if epoch is not None:
+            upd["source_sequence"] = {"sourceStream": "depth_snapshot", "sourceFamily": "REST", "depthSnapshotEpoch": epoch}
+        return env.model_copy(update=upd) if upd else env
+
+    def _upd(mkt: str, off: int, u_first: int, u_last: int, pu: int | None = None, *, b: list | None = None, a: list | None = None, epoch: int | None = None) -> EventEnvelope:
+        payload: dict[str, Any] = {"U": u_first, "u": u_last, "b": b if b is not None else [], "a": a if a is not None else []}
+        if pu is not None:
+            payload["pu"] = pu
+        env = _env(mkt, "BTCUSDT", "diff_depth", base_ms + off, payload)
+        if epoch is not None:
+            env = env.model_copy(update={"source_sequence": {"depthSnapshotEpoch": epoch}})
+        return env
+
+    for eng in ("python", "cpp"):
+        # 1. Superseded + wrong-epoch snapshot excluded; later valid snapshot recovers; pending snapshot still works.
+        sup_groups = [
+            [_snap("um_perpetual", 0, 100, flags=("depth_snapshot_superseded",), epoch=1)],
+            [_upd("um_perpetual", 1, 99, 101, 98, epoch=2), _upd("um_perpetual", 2000, 102, 102, 101, epoch=2)],
+        ]
+        res_sup, _, insp_sup = _run_case("sup_only", sup_groups, "usdm", 1000, 3000, 1000, eng)
+        assert insp_sup["latest_before_start_snapshots"] == {}
+        assert res_sup["total_rows"] == 0 and res_sup["symbol_coverage"]["BTCUSDT"]["status"] == "unavailable"
+
+        epoch_groups = [
+            [_snap("um_perpetual", 0, 100, epoch=1)],  # unflagged but old epoch=1!
+            [_upd("um_perpetual", 1, 99, 101, 98, epoch=2)],
+            [_snap("um_perpetual", 1500, 200, flags=("depth_snapshot_pending",), epoch=2)],
+            [_upd("um_perpetual", 2000, 200, 201, 199, epoch=2)],
+        ]
+        res_ep, _, _ = _run_case("epoch_and_pending", epoch_groups, "usdm", 1000, 3000, 1, eng)
+        assert [r["update_id"] for r in res_ep["rows"]] == ["201"]
+
+        # 2. Duplicate / stale updates must not consume sample_step_ms emission slot; u=101 then 102 emitted on Spot & USD-M!
+        for mkt_name, m_arg, f_u, pu0, pu_next in [("spot", "spot", 101, None, None), ("um_perpetual", "usdm", 100, 99, 101)]:
+            dup_groups = [
+                [_snap(mkt_name, 0, 100)],
+                [
+                    _upd(mkt_name, 20, f_u, 101, pu0, b=[["100", "2"]]),
+                    _upd(mkt_name, 1200, f_u, 101, pu0, b=[["100", "2"]]),  # duplicate!
+                    _upd(mkt_name, 1450, 102, 102, pu_next, b=[["100", "0"], ["99.5", "3"]]),  # level deletion + advance
+                ],
+            ]
+            res_dup, raw_dup, _ = _run_case(f"dup_{m_arg}", dup_groups, m_arg, 0, 2000, 1000, eng)
+            assert [r["update_id"] for r in res_dup["rows"]] == ["101", "102"], (eng, m_arg, res_dup["rows"])
+            assert res_dup["rows"][-1]["bids"] == [["99.5", "3"]]
+            assert b"\r\n" not in raw_dup
+
+        # First USD-M bridge update where u == L (100) still emits reliably cleanly.
+        eq_groups = [[_snap("um_perpetual", 0, 100)], [_upd("um_perpetual", 10, 99, 100, 98), _upd("um_perpetual", 1500, 101, 101, 100)]]
+        res_eq, _, _ = _run_case("usdm_eq_bridge", eq_groups, "usdm", 0, 2000, 1000, eng)
+        assert [r["update_id"] for r in res_eq["rows"]] == ["100", "101"]
+
+        # 3. Bootstrap buffer > 8192 updates without snapshot recovers cleanly on next valid snapshot & bridge!
+        ov_prefix = [_upd("spot", i, 100 + i, 100 + i) for i in range(1, 8194)]
+        ov_tail = [[_snap("spot", 8194, 8293)], [_upd("spot", 8195, 8294, 8294), _upd("spot", 8196, 8295, 8295)]]
+        res_ov, _, _ = _run_case("overflow_spot", [ov_prefix, *ov_tail], "spot", 8194, 8200, 1, eng)
+        assert [r["update_id"] for r in res_ov["rows"]] == ["8294", "8295"]
+        assert res_ov["stats"]["warmup_resync_count"] == 1 and res_ov["stats"]["recovery_count"] == 1
+        assert res_ov["symbol_coverage"]["BTCUSDT"]["status"] == "partial"
+
+        # Multi-episode >16,500 out-of-sync updates counts overflow ONCE per continuous out-of-sync episode!
+        ov2_prefix = [_upd("spot", i, 100 + i, 100 + i) for i in range(1, 16500)]
+        ov2_tail = [[_snap("spot", 16500, 16600)], [_upd("spot", 16501, 16601, 16601)]]
+        res_ov2, _, _ = _run_case("overflow_single_ep", [ov2_prefix, *ov2_tail], "spot", 16500, 16510, 1, eng)
+        assert res_ov2["stats"]["resync_count"] == 1
+        assert [r["update_id"] for r in res_ov2["rows"]] == ["16601"]
+
+
+def test_m6p21_lazy_init_numeric_spec_and_cbor_fault_injection(tmp_path: Path) -> None:
+    """M6-P21-1/2/3: Windows/lazy normalize import, exact NumericSpec error contract, 136 CBOR corpus, and Raw fault injection."""
+    import subprocess
+    import cbor2
+    import pytest
+    from binance_market_data_recorder.spool import format as raw_format
+
+    # 1. Lazy normalize __init__ preserves all 5 exports and imports worker without fcntl/pyarrow.
+    import binance_market_data_recorder.normalize as norm
+    assert all(getattr(norm, name) is not None for name in norm.__all__)
+    probe_script = Path("/Users/amada/Documents/Development/Crypto/Milestone Plan/evidence/mcp-native-20261118/import_probe.py")
+    if probe_script.is_file():
+        repo_root = Path(__file__).resolve().parents[2]
+        out_raw = subprocess.check_output(
+            [sys.executable, str(probe_script), str(repo_root), "--mask-unix"],
+            text=True,
+        )
+        out_doc = json.loads(out_raw)
+        assert out_doc["loaded"]["pyarrow"] is False
+        assert out_doc["loaded"]["binance_market_data_recorder.normalize.pipeline"] is False
+
+    # 2. Exact NumericSpec from exchange_info & explicit rejection of inexact/overflow decimals.
+    native_lib = worker._get_native_l2_lib({"orderbook_engine": "cpp"})
+    assert native_lib is not None and native_lib.simdjson_impl
+    base_ms = 1_794_873_600_000
+    sub = tmp_path / "num_spec"
+    layout = ensure_storage_layout(sub / "layout")
+    catalog = Catalog(layout.catalog)
+    try:
+        ex_info = _rest_env("spot", "__GLOBAL__", "exchange_info", base_ms, {
+            "symbols": [{"symbol": "BTCUSDT", "filters": [
+                {"filterType": "PRICE_FILTER", "tickSize": "0.01"},
+                {"filterType": "LOT_SIZE", "stepSize": "0.001"},
+            ]}]
+        })
+        c_ex = _make_archived_chunk(layout, catalog, sub / "ext", "s1", market="spot", symbol="__GLOBAL__", stream="rest_observations", envelopes=[ex_info])
+        c_sn = _make_archived_chunk(layout, catalog, sub / "ext", "s1", market="spot", symbol="BTCUSDT", stream="rest_observations", envelopes=[_rest_env("spot", "BTCUSDT", "depth_snapshot", base_ms + 1, {"lastUpdateId": 100, "bids": [["100.12", "1.234"]], "asks": [["100.13", "2.000"]]})])
+        c_ok = _make_archived_chunk(layout, catalog, sub / "ext", "s1", market="spot", symbol="BTCUSDT", stream="diff_depth", envelopes=[_env("spot", "BTCUSDT", "diff_depth", base_ms + 2, {"U": 101, "u": 101, "b": [["100.12", "1.500"]], "a": []})])
+        c_bad_scale = _make_archived_chunk(layout, catalog, sub / "ext", "s1", market="spot", symbol="BTCUSDT", stream="diff_depth", envelopes=[_env("spot", "BTCUSDT", "diff_depth", base_ms + 3, {"U": 102, "u": 102, "b": [["100.125", "1.500"]], "a": []})])
+    finally:
+        catalog.close()
+
+    base_req = {
+        "operation": "query_orderbook", "market": "spot", "symbols": ["BTCUSDT"],
+        "start_utc_ns": base_ms * 1_000_000, "end_utc_ns": (base_ms + 100) * 1_000_000,
+        "sample_step_ms": 1, "orderbook_engine": "cpp",
+        "partitions": [{"partition_id": "p-test", "catalog_path": str(layout.catalog)}],
+        "external_roots": {"s1": str(sub / "ext")},
+    }
+    res_ok = worker.dispatch({**base_req, "chunks": [c_ex, c_sn, c_ok]})
+    assert res_ok["rows"][0]["bids"] == [["100.12", "1.5"]]
+    with pytest.raises(worker._NativeDecimalError):
+        worker.dispatch({**base_req, "chunks": [c_ex, c_sn, c_ok, c_bad_scale]})
+
+    # 3. Fast canonical CBOR checker matches strict decoder across 136 edge inputs + corrupt archived Raw fault injection!
+    fast_fn = native_lib.lib.bmcp_canonical_cbor_fast
+    simple = [None, False, True, 0, 23, 24, 255, 256, 65535, 65536, 2**32, 2**64 - 1, -1, -25, -2**64, b"data", "币", "a" * 256, [], {}]
+    supported = [cbor2.dumps(v, canonical=True) for v in (simple + [{"b": v, "a": [v], "币": {"z": v}} for v in simple])]
+    rejected = [bytes.fromhex(h) for h in ("1801", "190018", "580161", "781761", "9f01ff", "a2616201616102", "a2616101616102", "0161", "1a01", "81")]
+    for b in supported:
+        assert fast_fn(b, len(b)) == 1
+    for b in rejected:
+        assert fast_fn(b, len(b)) == 0
+    for body in supported + rejected + [bytes.fromhex("61ff"), b""]:
+        try:
+            ref_val = raw_format._decode_one_cbor(body, canonical=True)
+            ref_res = ("ok", cbor2.dumps(ref_val, canonical=True))
+        except Exception:
+            ref_res = ("err", None)
+        with worker._fast_canonical_cbor_context(native_lib):
+            try:
+                fast_val = raw_format._decode_one_cbor(body, canonical=True)
+                fast_res = ("ok", cbor2.dumps(fast_val, canonical=True))
+            except Exception:
+                fast_res = ("err", None)
+        assert fast_res == ref_res
+
+    # Fault injection on archived chunk (truncation / corrupted byte -> both native and python reject identically!).
+    raw_file = Path(c_ok["raw_path"])
+    raw_orig = raw_file.read_bytes()
+    raw_file.write_bytes(raw_orig[:-10])
+    try:
+        for eng in ("python", "cpp"):
+            with pytest.raises(Exception):
+                worker.dispatch({**base_req, "orderbook_engine": eng, "chunks": [c_sn, c_ok]})
+    finally:
+        raw_file.write_bytes(raw_orig)
+
+
+
 

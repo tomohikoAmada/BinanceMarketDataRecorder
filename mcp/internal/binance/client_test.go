@@ -515,4 +515,53 @@ func TestM6D3_PublicCatalog_RESTParams_And_BoundedWSTemplates(t *testing.T) {
 	if _, err := resolveWSStreamPath(wsCap, map[string]string{"symbol": "BTC-261225-100000-C"}); err == nil {
 		t.Fatal("expected error when <interval> is missing")
 	}
+
+	// 4. M6-P19: usdm.ws.forceOrder uses USDMWSBaseURL (/market/ws) and filters symbols when provided.
+	foCap, ok := LookupCapability("usdm.ws.forceOrder")
+	if !ok {
+		t.Fatal("expected usdm.ws.forceOrder capability")
+	}
+	foPath, err := resolveWSStreamPath(foCap, nil)
+	if err != nil {
+		t.Fatalf("resolve usdm.ws.forceOrder path: %v", err)
+	}
+	if fullURL := strings.TrimRight(foCap.BaseURL, "/") + "/" + strings.TrimLeft(foPath, "/"); fullURL != "wss://fstream.binance.com/market/ws/!forceOrder@arr" {
+		t.Fatalf("unexpected usdm.ws.forceOrder URL: %s", fullURL)
+	}
+	foSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		dialedPaths = append(dialedPaths, r.URL.Path)
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		msgs := []string{
+			`{"e":"forceOrder","o":{"s":"ETHUSDT","S":"SELL"}}`,
+			`{"e":"forceOrder","o":{"s":"BTCUSDT","S":"BUY"}}`,
+			`{"e":"forceOrder","o":{"s":"SOLUSDT","S":"SELL"}}`,
+		}
+		for _, m := range msgs {
+			if err := conn.Write(r.Context(), websocket.MessageText, []byte(m)); err != nil {
+				return
+			}
+		}
+		_ = conn.Close(websocket.StatusNormalClosure, "done")
+	}))
+	defer foSrv.Close()
+	foCap.BaseURL = "ws://" + strings.TrimPrefix(foSrv.URL, "http://") + "/market/ws"
+	foRes, err := cl.ExecuteCapability(context.Background(), foCap, map[string]string{
+		"symbol":           "BTCUSDT",
+		"duration_seconds": "2",
+		"max_events":       "5",
+	}, false)
+	if err != nil {
+		t.Fatalf("sampleWS usdm.ws.forceOrder failed: %v", err)
+	}
+	var foOut map[string]any
+	if err := json.Unmarshal(foRes.Payload, &foOut); err != nil || int(foOut["sampled_count"].(float64)) != 1 || !strings.Contains(string(foRes.Payload), "BTCUSDT") {
+		t.Fatalf("expected 1 filtered BTCUSDT forceOrder event, got %s err=%v", string(foRes.Payload), err)
+	}
+	if dialedPaths[len(dialedPaths)-1] != "/market/ws/!forceOrder@arr" {
+		t.Fatalf("unexpected forceOrder dialed path: %v", dialedPaths)
+	}
 }

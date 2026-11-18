@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -82,10 +83,7 @@ func Load() (*Config, error) {
 	pythonBin := strings.TrimSpace(os.Getenv("SBMDR_PYTHON_BIN"))
 	if pythonBin == "" {
 		if recorderRepo != "" {
-			candidate := filepath.Join(recorderRepo, ".venv", "bin", "python")
-			if st, statErr := os.Stat(candidate); statErr == nil && !st.IsDir() {
-				pythonBin = candidate
-			}
+			pythonBin = findVenvPython(recorderRepo, runtime.GOOS)
 		}
 		if pythonBin == "" {
 			pythonBin = "python3"
@@ -220,4 +218,23 @@ func envInt64(k string, def, minV, maxV int64) int64 {
 		return def
 	}
 	return n
+}
+
+func findVenvPython(repoDir, goos string) string {
+	candidates := []string{
+		filepath.Join(repoDir, ".venv", "bin", "python"),
+		filepath.Join(repoDir, ".venv", "Scripts", "python.exe"),
+	}
+	if goos == "windows" {
+		candidates = []string{
+			filepath.Join(repoDir, ".venv", "Scripts", "python.exe"),
+			filepath.Join(repoDir, ".venv", "bin", "python"),
+		}
+	}
+	for _, candidate := range candidates {
+		if st, err := os.Stat(candidate); err == nil && !st.IsDir() {
+			return candidate
+		}
+	}
+	return ""
 }

@@ -1,4 +1,5 @@
 bin/
+native/build/
 *.part
 __pycache__/
 .pytest_cache/

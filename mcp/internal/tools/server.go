@@ -738,14 +738,18 @@ func (s *Server) handleQueryOrderbook(ctx context.Context, _ *mcp.CallToolReques
 			return nil, nil, fmt.Errorf("Recorder sync failed for historical orderbook (refusing REST backfill): %w", err)
 		}
 
-		plan, _, err := s.planOrderbookWithBaseline(ctx, snap, string(m), symbols, startNS, endNS, in.Offline, in.MaxDownloadBytes)
+		budget := &recorder.DownloadBudget{MaxBytes: in.MaxDownloadBytes}
+		if budget.MaxBytes <= 0 {
+			budget.MaxBytes = recorder.DefaultAutoDownloadCapBytes
+		}
+		plan, _, err := s.planOrderbookWithBaselineBudget(ctx, snap, string(m), symbols, startNS, endNS, in.Offline, budget)
 		if err != nil {
 			return nil, nil, err
 		}
 		if plan.ReadyChunksMatched == 0 {
 			return nil, nil, fmt.Errorf("no historical Recorder depth chunks covered market=%s window=[%d,%d); refusing to backfill with current REST depth", m, startNS, endNS)
 		}
-		if err := s.Recorder.MaterializePlan(ctx, plan, in.Offline, in.MaxDownloadBytes); err != nil {
+		if err := s.Recorder.MaterializePlanWithBudget(ctx, plan, in.Offline, in.MaxDownloadBytes, budget); err != nil {
 			return nil, nil, err
 		}
 		wReq := s.Recorder.BuildWorkerRequest("query_orderbook", plan)
@@ -2423,26 +2427,53 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 			return nil, nil, err
 		}
 		hasDiffDepth := len(in.Streams) == 0
+		var nonDepthStreams []string
 		for _, st := range in.Streams {
-			if strings.TrimSpace(st) == "diff_depth" {
+			trimmed := strings.TrimSpace(st)
+			if trimmed == "" {
+				continue
+			}
+			if trimmed == "diff_depth" {
 				hasDiffDepth = true
-				break
+			} else if trimmed != "rest_observations" {
+				nonDepthStreams = append(nonDepthStreams, trimmed)
 			}
 		}
 		var plan *recorder.QueryPlan
 		if in.IncludeBaseline && hasDiffDepth {
-			if action == "prefetch" {
-				plan, _, err = s.planOrderbookWithBaseline(ctx, snap, string(m), symbols, startNS, endNS, in.Offline, 0)
-			} else {
-				plan, err = s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+			allowProbe := action == "prefetch" && !in.Offline
+			obPlan, _, obErr := s.resolveOrderbookPlan(ctx, snap, string(m), symbols, startNS, endNS, in.Offline || !allowProbe, allowProbe, nil)
+			if obErr != nil {
+				return nil, nil, obErr
+			}
+			plan = obPlan
+			if len(in.Streams) == 0 || len(nonDepthStreams) > 0 {
+				var targetStreams []string
+				if len(in.Streams) > 0 {
+					targetStreams = nonDepthStreams
+				} else {
+					// When streams is omitted ("all"), union orderbook warmup+window plan with target-window non-depth streams.
+					targetStreams = []string{"agg_trade", "book_ticker", "liquidation", "mark_price", "rest_observations"}
+				}
+				extraPlan, eErr := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
 					Market:                   string(m),
-					Streams:                  in.Streams,
+					Streams:                  targetStreams,
 					Symbols:                  symbols,
 					StartUTCNS:               startNS,
 					EndUTCNS:                 endNS,
-					IncludePrecedingBaseline: true,
-					OrderbookMode:            true,
+					IncludePrecedingBaseline: false,
 				})
+				if eErr != nil {
+					return nil, nil, eErr
+				}
+				plan = recorder.MergeQueryPlans(obPlan, extraPlan, s.Recorder)
+				plan.RequestedStartUTCNS = startNS
+				plan.RequestedEndUTCNS = endNS
+				plan.WarmupConfirmed = obPlan.WarmupConfirmed
+				plan.BaselineStatus = obPlan.BaselineStatus
+				plan.BaselineSnapshots = obPlan.BaselineSnapshots
+				plan.MissingProbeChunks = obPlan.MissingProbeChunks
+				plan.EstimatedProbeDownloadBytes = obPlan.EstimatedProbeDownloadBytes
 			}
 		} else {
 			plan, err = s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
@@ -2453,14 +2484,21 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 				EndUTCNS:                 endNS,
 				IncludePrecedingBaseline: in.IncludeBaseline,
 			})
+			if err != nil {
+				return nil, nil, err
+			}
+			plan.RequestedStartUTCNS = startNS
+			plan.RequestedEndUTCNS = endNS
 		}
-		if err != nil {
-			return nil, nil, err
-		}
-		warmupIncluded := in.IncludeBaseline
+		warmupIncluded := in.IncludeBaseline && (!hasDiffDepth || plan.WarmupConfirmed)
+		warmupConfirmed := in.IncludeBaseline && (!hasDiffDepth || plan.WarmupConfirmed)
 		var warmupNote string
 		if hasDiffDepth && startNS > 0 && !in.IncludeBaseline {
 			warmupNote = "Target window raw chunks only; offline query_orderbook over this window also requires preceding rest_observations depth_snapshot and diff_depth bridge chain (set include_baseline=true with streams=['diff_depth','rest_observations'], or raise max_download_bytes on query_orderbook)."
+		} else if hasDiffDepth && in.IncludeBaseline && plan.BaselineStatus == "needs_inspection" {
+			warmupNote = fmt.Sprintf("Orderbook baseline requires inspecting %d uncached rest_observations probe chunk(s) (~%.2f MiB); warmup is NOT confirmed yet until probe objects are prefetched or inspected.", len(plan.MissingProbeChunks), float64(plan.EstimatedProbeDownloadBytes)/(1024*1024))
+		} else if hasDiffDepth && in.IncludeBaseline && !plan.WarmupConfirmed {
+			warmupNote = "No verified pre-start depth_snapshot baseline was found in rest_observations for this window; offline orderbook reconstruction may lack a starting baseline."
 		}
 		if action == "estimate" {
 			out := map[string]any{
@@ -2468,6 +2506,7 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 				"source":               "recorder",
 				"selection_time_basis": plan.SelectionTimeBasis,
 				"warmup_included":      warmupIncluded,
+				"warmup_confirmed":     warmupConfirmed,
 				"note":                 "Recorder raw chunk estimate/prefetch selects chunks by receive_time_utc metadata; omitting streams/symbols includes all ready streams/symbols in the partition.",
 				"estimate":             planSummaryMap(plan),
 			}
@@ -2493,6 +2532,7 @@ func (s *Server) handleManageLocalCache(ctx context.Context, _ *mcp.CallToolRequ
 			"source":               "recorder",
 			"selection_time_basis": plan.SelectionTimeBasis,
 			"warmup_included":      warmupIncluded,
+			"warmup_confirmed":     warmupConfirmed,
 			"note":                 "Recorder raw chunk estimate/prefetch selects chunks by receive_time_utc metadata.",
 			"estimate":             planSummaryMap(plan),
 			"job":                  job,
@@ -2620,9 +2660,60 @@ func (s *Server) planOrderbookWithBaseline(
 	offline bool,
 	maxDownloadBytes int64,
 ) (*recorder.QueryPlan, int64, error) {
+	var budget *recorder.DownloadBudget
+	if !offline && maxDownloadBytes > 0 {
+		budget = &recorder.DownloadBudget{MaxBytes: maxDownloadBytes}
+	} else if !offline {
+		budget = &recorder.DownloadBudget{MaxBytes: recorder.DefaultAutoDownloadCapBytes}
+	}
+	return s.planOrderbookWithBaselineBudget(ctx, snap, market, symbols, startNS, endNS, offline, budget)
+}
+
+func (s *Server) planOrderbookWithBaselineBudget(
+	ctx context.Context,
+	snap *recorder.SyncedSnapshot,
+	market string,
+	symbols []string,
+	startNS int64,
+	endNS int64,
+	offline bool,
+	budget *recorder.DownloadBudget,
+) (*recorder.QueryPlan, int64, error) {
+	return s.resolveOrderbookPlan(ctx, snap, market, symbols, startNS, endNS, offline, true, budget)
+}
+
+func (s *Server) resolveOrderbookPlan(
+	ctx context.Context,
+	snap *recorder.SyncedSnapshot,
+	market string,
+	symbols []string,
+	startNS int64,
+	endNS int64,
+	offline bool,
+	allowNetworkProbe bool,
+	budget *recorder.DownloadBudget,
+) (*recorder.QueryPlan, int64, error) {
 	planStart := startNS
 	foundBeforeBySym := make(map[string]bool, len(symbols))
 	baselineHints := make(map[string]recorder.OrderbookBaselineHint, len(symbols))
+	probeIncomplete := false
+	var missingProbeChunks []string
+	var estimatedProbeBytes int64
+	seenProbeChunk := make(map[string]bool)
+
+	recordMissingProbe := func(p *recorder.QueryPlan) {
+		if p == nil {
+			return
+		}
+		probeIncomplete = true
+		estimatedProbeBytes += p.EstimatedDownloadBytes
+		for _, pc := range p.PlannedChunks {
+			if (!pc.RawCached || !pc.ManifestCached) && !seenProbeChunk[pc.Chunk.ChunkID] {
+				seenProbeChunk[pc.Chunk.ChunkID] = true
+				missingProbeChunks = append(missingProbeChunks, pc.Chunk.ChunkID)
+			}
+		}
+	}
 
 	parseInspectBeforeMap := func(inspectRes map[string]any) {
 		recordHint := func(symKey string, ts int64, uid int64, chunkID string) {
@@ -2742,19 +2833,56 @@ func (s *Server) planOrderbookWithBaseline(
 	if sPlanErr != nil {
 		return nil, planStart, fmt.Errorf("plan orderbook baseline snapshots: %w", sPlanErr)
 	}
-	if snapPlan != nil && snapPlan.ReadyChunksMatched > 0 {
-		if matErr := s.Recorder.MaterializePlan(ctx, snapPlan, offline, maxDownloadBytes); matErr != nil {
-			return nil, planStart, matErr
+
+	inspectCandidatePlan := func(p *recorder.QueryPlan, targetSyms []string) (bool, error) {
+		if p == nil || p.ReadyChunksMatched == 0 {
+			return false, nil
 		}
-		inspectReq := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", snapPlan)
-		inspectReq.Symbols = symbols
+		p.RequestedStartUTCNS = startNS
+		p.RequestedEndUTCNS = endNS
+		p.RequestedSymbols = symbols
+		canInspectOffline := s.Recorder.PlanAllObjectsCached(p)
+		if !allowNetworkProbe && !canInspectOffline {
+			// Estimate mode must inspect cached REST chunks only and NEVER pull uncached files over HTTP.
+			// Try partial offline subset if at least one candidate chunk & its catalog are cached.
+			var cachedOnly []recorder.PlannedChunk
+			for _, pc := range p.PlannedChunks {
+				if pc.RawCached && pc.ManifestCached {
+					cachedOnly = append(cachedOnly, pc)
+				}
+			}
+			recordMissingProbe(p)
+			if len(cachedOnly) == 0 {
+				return false, nil
+			}
+			subPlan := *p
+			subPlan.PlannedChunks = cachedOnly
+			s.Recorder.RecomputePlanObjectMetrics(&subPlan)
+			if subPlan.MissingCatalogCount > 0 {
+				return false, nil
+			}
+			p = &subPlan
+		} else {
+			if matErr := s.Recorder.MaterializePlanWithBudget(ctx, p, offline, 0, budget); matErr != nil {
+				return false, matErr
+			}
+		}
+		inspectReq := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", p)
+		inspectReq.Symbols = targetSyms
 		inspectReq.StartUTCNS = startNS
 		inspectReq.EndUTCNS = endNS
 		inspectRes, iErr := s.Recorder.RunWorker(ctx, inspectReq)
 		if iErr != nil {
-			return nil, planStart, fmt.Errorf("inspect orderbook snapshots: %w", iErr)
+			return false, fmt.Errorf("inspect orderbook snapshots: %w", iErr)
 		}
 		parseInspectBeforeMap(inspectRes)
+		return true, nil
+	}
+
+	if snapPlan != nil && snapPlan.ReadyChunksMatched > 0 {
+		if _, err := inspectCandidatePlan(snapPlan, symbols); err != nil {
+			return nil, planStart, err
+		}
 
 		earliestInspectedMin := int64(0)
 		for _, sp := range snapPlan.SelectedPartitions {
@@ -2773,7 +2901,10 @@ func (s *Server) planOrderbookWithBaseline(
 				IncludePrecedingBaseline: true,
 				OrderbookMode:            true,
 			})
-			if oErr != nil || olderPlan == nil || olderPlan.ReadyChunksMatched == 0 {
+			if oErr != nil {
+				return nil, planStart, fmt.Errorf("plan earlier orderbook snapshots: %w", oErr)
+			}
+			if olderPlan == nil || olderPlan.ReadyChunksMatched == 0 {
 				break
 			}
 			nextEarliestMin := earliestInspectedMin
@@ -2783,18 +2914,9 @@ func (s *Server) planOrderbookWithBaseline(
 					nextEarliestMin = pMin
 				}
 			}
-			if matErr := s.Recorder.MaterializePlan(ctx, olderPlan, offline, maxDownloadBytes); matErr != nil {
-				break
+			if _, err := inspectCandidatePlan(olderPlan, missing); err != nil {
+				return nil, planStart, err
 			}
-			olderInspect := s.Recorder.BuildWorkerRequest("inspect_orderbook_snapshots", olderPlan)
-			olderInspect.Symbols = missing
-			olderInspect.StartUTCNS = startNS
-			olderInspect.EndUTCNS = endNS
-			olderRes, oIErr := s.Recorder.RunWorker(ctx, olderInspect)
-			if oIErr != nil {
-				return nil, planStart, fmt.Errorf("inspect earlier orderbook snapshots: %w", oIErr)
-			}
-			parseInspectBeforeMap(olderRes)
 			if nextEarliestMin >= earliestInspectedMin {
 				break
 			}
@@ -2802,17 +2924,60 @@ func (s *Server) planOrderbookWithBaseline(
 		}
 	}
 
-	plan, err := s.Recorder.PlanQueryWithOptions(snap, recorder.PlanOptions{
+	stage2Opts := recorder.PlanOptions{
 		Market:                   market,
 		Streams:                  []string{"diff_depth", "rest_observations"},
 		Symbols:                  symbols,
-		StartUTCNS:               planStart,
+		StartUTCNS:               startNS,
 		EndUTCNS:                 endNS,
 		IncludePrecedingBaseline: true,
 		OrderbookMode:            true,
 		BaselineSnapshots:        baselineHints,
-	})
-	return plan, planStart, err
+	}
+	plan, err := s.Recorder.PlanQueryWithOptions(snap, stage2Opts)
+	if err != nil {
+		return nil, planStart, err
+	}
+	if allowNetworkProbe && !offline && len(baselineHints) > 0 {
+		if fetched, hErr := s.Recorder.HydrateOrderbookBridgeManifests(ctx, plan, false, budget); hErr != nil {
+			return nil, planStart, hErr
+		} else if fetched > 0 {
+			plan, err = s.Recorder.PlanQueryWithOptions(snap, stage2Opts)
+			if err != nil {
+				return nil, planStart, err
+			}
+		}
+	}
+
+	plan.RequestedStartUTCNS = startNS
+	plan.RequestedEndUTCNS = endNS
+	if len(baselineHints) > 0 {
+		plan.BaselineSnapshots = baselineHints
+	}
+	allSymsFound := len(baselineHints) > 0
+	if len(symbols) > 0 {
+		for _, sym := range symbols {
+			if _, ok := baselineHints[strings.ToUpper(sym)]; !ok {
+				if _, okStar := baselineHints["*"]; !okStar {
+					allSymsFound = false
+					break
+				}
+			}
+		}
+	}
+	if probeIncomplete {
+		plan.BaselineStatus = "needs_inspection"
+		plan.WarmupConfirmed = false
+		plan.MissingProbeChunks = missingProbeChunks
+		plan.EstimatedProbeDownloadBytes = estimatedProbeBytes
+	} else if allSymsFound {
+		plan.BaselineStatus = "resolved"
+		plan.WarmupConfirmed = true
+	} else {
+		plan.BaselineStatus = "none"
+		plan.WarmupConfirmed = false
+	}
+	return plan, planStart, nil
 }
 
 func (s *Server) planAndHydrateRecorder(ctx context.Context, snap *recorder.SyncedSnapshot, opts recorder.PlanOptions, offline bool) (*recorder.QueryPlan, error) {
